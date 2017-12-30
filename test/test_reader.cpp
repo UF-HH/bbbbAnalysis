@@ -66,12 +66,14 @@ int main(int argc, char** argv)
             TLorentzVector p4;
             p4.SetPtEtaPhiM(nat.Jet_pt.At(ij), nat.Jet_eta.At(ij), nat.Jet_phi.At(ij), nat.Jet_mass.At(ij));
             cout << ij << " " << jet.getIdx() << " "
-                 << p4.Px() << " " << jet.P4().Px() << " "
-                 << p4.Py() << " " << jet.P4().Py() << " "
-                 << p4.Pz() << " " << jet.P4().Pz() << " "
-                 << p4.E() << " " << jet.P4().E() << " "
-                 << p4.M() << " " << jet.P4().M() << " "
+                 // << p4.Px() << " " << jet.P4().Px() << " "
+                 // << p4.Py() << " " << jet.P4().Py() << " "
+                 // << p4.Pz() << " " << jet.P4().Pz() << " "
+                 // << p4.E() << " " << jet.P4().E() << " "
+                 // << p4.M() << " " << jet.P4().M() << " "
+                 << get_property(jet, Jet_btagCMVA) << " " << nat.Jet_btagCMVA.At(ij)
                  << endl;
+
         }
 
 

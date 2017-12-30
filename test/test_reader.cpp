@@ -3,6 +3,8 @@
 #include "TFile.h"
 #include "TChain.h"
 
+#include "Jet.h"
+
 #include "NanoAODTree.h"
 #include "SkimUtils.h"
 
@@ -49,6 +51,29 @@ int main(int argc, char** argv)
 
         if (nat.triggerReader().getTrgResult("HLT_AK8PFJet200"))
             ++nPFJet200;
+
+        // ----------------
+        std::vector<Jet> jets;
+        for (uint ij = 0; ij < nat.Jet_pt.GetSize(); ++ij)
+        {
+            Jet j (ij, &nat);
+            jets.push_back(j);
+        }
+
+        for (uint ij = 0; ij < nat.Jet_pt.GetSize(); ++ij)
+        {
+            Jet& jet = jets.at(ij);
+            TLorentzVector p4;
+            p4.SetPtEtaPhiM(nat.Jet_pt.At(ij), nat.Jet_eta.At(ij), nat.Jet_phi.At(ij), nat.Jet_mass.At(ij));
+            cout << ij << " " << jet.getIdx() << " "
+                 << p4.Px() << " " << jet.P4().Px() << " "
+                 << p4.Py() << " " << jet.P4().Py() << " "
+                 << p4.Pz() << " " << jet.P4().Pz() << " "
+                 << p4.E() << " " << jet.P4().E() << " "
+                 << p4.M() << " " << jet.P4().M() << " "
+                 << endl;
+        }
+
 
         // cout << *(nat->run) << endl;
 

@@ -16,4 +16,12 @@
         nat -> CLNAME ## _mass . At(this->getIdx())   \
     )
 
+#define BUILDP4_MASS(CLNAME, nat, MASS) SetPtEtaPhiM ( \
+        nat -> CLNAME ## _pt   . At(this->getIdx()),  \
+        nat -> CLNAME ## _eta  . At(this->getIdx()),  \
+        nat -> CLNAME ## _phi  . At(this->getIdx()),  \
+        MASS   \
+    )
+
+
 #endif

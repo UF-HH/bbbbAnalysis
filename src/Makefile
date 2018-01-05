@@ -4,6 +4,12 @@ LIB   = ../lib/
 BIN   = ../bin/
 PRG   = ../test/
 
+ifdef CPP_BOOST_PATH
+	BOOSTLIBFLAG = -L$(CPP_BOOST_PATH)/lib
+else
+	BOOSTLIBFLAG = 
+endif
+
 HdrSuf  =  .h
 SrcSuf  =  .cc
 ObjSuf  =  .o
@@ -43,7 +49,7 @@ SONAME	 =  libbbbbAnalysis.so
 SONAME2  =  bbbbAnalysis
 SOFLAGS  =  -Wl,-soname,$(SONAME)
 
-GLIBS   =  -lm -ldl -rdynamic $(ROOTGLIBS) -lGenVector -lFoam -lMinuit -lTMVA -lMLP -lXMLIO -lGpad  -lTreePlayer -lRooFit -lRooFitCore -lRooStats
+GLIBS   =  -lm -ldl -rdynamic -lboost_program_options $(ROOTGLIBS) -lGenVector -lFoam -lMinuit -lTMVA -lMLP -lXMLIO -lGpad  -lTreePlayer -lRooFit -lRooFitCore -lRooStats
 
 
 #################################################
@@ -98,7 +104,7 @@ $(LIB)$(SONAME): $(OBJS)
 
 
 $(BIN)%$(BinSuf): $(PRG)%$(PrgSuf) $(HDRS) $(LIB)$(SONAME)
-	$(CPP) $<  -l$(SONAME2) $(CPPFLAGS) -L$(LIB) $(GLIBS)  -o $@
+	$(CPP) $<  -l$(SONAME2) $(CPPFLAGS) -L$(LIB) $(BOOSTLIBFLAG) $(GLIBS)  -o $@
 
 
 clean:

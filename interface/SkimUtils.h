@@ -1,25 +1,30 @@
+#ifndef SKIMUTILS_H
+#define SKIMUTILS_H
+
+/**
+** class  : SkimUtils
+** author : L. Cadamuro (UF)
+** date   : 10/01/2018
+** brief  : utilities for i/o of the skims
+**/
+
+#include "TChain.h"
+#include "TString.h"
+
+#include "NanoAODTree.h"
+#include "OutputTree.h"
+#include "EventInfo.h"
+
+#include <string>
+
 namespace SkimUtils
 {
-    // ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- -
     // open input txt file and append all the files it contains to TChain
-    int appendFromFileList (TChain* chain, TString filename)
-    {
-        //cout << "=== inizio parser ===" << endl;
-        std::ifstream infile(filename.Data());
-        std::string line;
-        int nfiles = 0;
-        while (std::getline(infile, line))
-        {
-            line = line.substr(0, line.find("#", 0)); // remove comments introduced by #
-            while (line.find(" ") != std::string::npos) line = line.erase(line.find(" "), 1); // remove white spaces
-            while (line.find("\n") != std::string::npos) line = line.erase(line.find("\n"), 1); // remove new line characters
-            while (line.find("\r") != std::string::npos) line = line.erase(line.find("\r"), 1); // remove carriage return characters
-            if (!line.empty()) // skip empty lines
-            {
-                chain->Add(line.c_str());
-                ++nfiles;
-            }
-         }
-        return nfiles;
-    }
+    int appendFromFileList (TChain* chain, std::string filename);
+
+    // copy the information contained in the EventInfo to the OutputTree, and call the Fill() command
+    void fill_output_tree(OutputTree& ot, NanoAODTree& nat, EventInfo& ei);
+
 }
+
+#endif

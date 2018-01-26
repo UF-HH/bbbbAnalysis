@@ -22,6 +22,9 @@ namespace su = SkimUtils;
 #include "OfflineProducerHelper.h"
 namespace oph = OfflineProducerHelper;
 
+#include "OutputTree.h"
+
+#include "TFile.h"
 
 using namespace std;
 
@@ -35,7 +38,7 @@ using namespace std;
 //       << std::endl;
 // return 0;
 
-// skim_ntuple.exe --cfg config/skim.cfg --input inputFiles/Samples_80X/VBF_HH_4b.txt --xs 10
+// skim_ntuple.exe --cfg config/skim.cfg --input inputFiles/Samples_80X/VBF_HH_4b_10gen2018.txt --output test_bbbb_tree.root --xs 10 --is-signal
 
 int main(int argc, char** argv)
 {
@@ -51,10 +54,15 @@ int main(int argc, char** argv)
         // required
         ("cfg"   , po::value<string>()->required(), "skim config")
         ("input" , po::value<string>()->required(), "input file list")
+        ("output", po::value<string>()->required(), "output file LFN")
         // optional
-        ("xs"  , po::value<float>(), "cross section")
+        ("xs"       , po::value<float>(), "cross section [pb]")
+        ("maxEvts"  , po::value<int>()->default_value(-1), "max number of events to process")
         // flags
-        ("is-data", po::value<bool>()->zero_tokens()->implicit_value(true)->default_value(false), "mark as a data sample (default is false)")
+        ("is-data",    po::value<bool>()->zero_tokens()->implicit_value(true)->default_value(false), "mark as a data sample (default is false)")
+        ("is-signal",  po::value<bool>()->zero_tokens()->implicit_value(true)->default_value(false), "mark as a HH signal sample (default is false)")
+        ("is-VBF-sig", po::value<bool>()->zero_tokens()->implicit_value(true)->default_value(false), "mark as a HH VBF signal sample (default is false)")
+        ("save-p4",    po::value<bool>()->zero_tokens()->implicit_value(true)->default_value(false), "save the tlorentzvectors in the output")
     ;
 
     po::variables_map opts;
@@ -73,7 +81,7 @@ int main(int argc, char** argv)
     }
 
     ////////////////////////////////////////////////////////////////////////
-    // Read config and other cmd line options
+    // Read config and other cmd line options for skims
     ////////////////////////////////////////////////////////////////////////
     
     CfgParser config;
@@ -87,16 +95,42 @@ int main(int argc, char** argv)
     }
     cout << "[INFO] ... is a data sample? " << std::boolalpha << is_data << std::noboolalpha << endl;
 
+    const bool is_signal = opts["is-signal"].as<bool>();
+    cout << "[INFO] ... is a HH signal sample? " << std::boolalpha << is_signal << std::noboolalpha << endl;
+
+    const bool is_VBF_sig = opts["is-VBF-sig"].as<bool>();
+    cout << "[INFO] ... is a HH VBF sample? " << std::boolalpha << is_VBF_sig << std::noboolalpha << endl;
+
     const float xs = (is_data ? 1.0 : opts["xs"].as<float>());
-    cout << "[INFO] ... cross section is : " << xs << endl;
+    cout << "[INFO] ... cross section is : " << xs << " pb" << endl;
+
+    const string bbbbChoice = config.readStringOpt("parameters::bbbbChoice");
+    const oph::bbbbSelectionStrategy b_sel_strat = (
+        bbbbChoice == "OneClosestToMh"  ? oph::bbbbSelectionStrategy::kOneClosestToMh  :
+        bbbbChoice == "BothClosestToMh" ? oph::bbbbSelectionStrategy::kBothClosestToMh :
+        bbbbChoice == "MostBackToBack"  ? oph::bbbbSelectionStrategy::kMostBackToBack  :
+        throw std::runtime_error("cannot recognize bbbb pair choice strategy " + bbbbChoice)
+    );
+    cout << "[INFO] ... chosing bb bb jet pairs with strategy : " << bbbbChoice << endl;
+    
 
     ////////////////////////////////////////////////////////////////////////
     // Prepare event loop
     ////////////////////////////////////////////////////////////////////////
 
     cout << "[INFO] ... opening file list : " << opts["input"].as<string>().c_str() << endl;
+    if ( access( opts["input"].as<string>().c_str(), F_OK ) == -1 ){
+        cerr << "** [ERROR] The input file list does not exist, aborting" << endl;
+        return 1;        
+    }
+
     TChain ch("Events");
     int nfiles = su::appendFromFileList(&ch, opts["input"].as<string>());
+    
+    if (nfiles == 0){
+        cerr << "** [ERROR] The input file list contains no files, aborting" << endl;
+        return 1;
+    }
     cout << "[INFO] ... file list contains " << nfiles << " files" << endl;
 
     cout << "[INFO] ... creating tree reader" << endl;
@@ -107,22 +141,76 @@ int main(int argc, char** argv)
         cout << "   - " << trg << endl;
     nat.triggerReader().setTriggers(config.readStringListOpt("triggers::makeORof"));
 
+    ////////////////////////////////////////////////////////////////////////
+    // Prepare the output
+    ////////////////////////////////////////////////////////////////////////
+    
+    string outputFileName = opts["output"].as<string>();
+    cout << "[INFO] ... saving output to file : " << outputFileName << endl;
+    TFile outputFile(outputFileName.c_str(), "recreate");
+    OutputTree ot(
+        opts["save-p4"].as<bool>()
+    );
 
     ////////////////////////////////////////////////////////////////////////
     // Execute event loop
     ////////////////////////////////////////////////////////////////////////
-    for (uint iEv = 0; true; ++iEv)
+
+    int maxEvts = opts["maxEvts"].as<int>();
+    if (maxEvts >= 0)
+        cout << "[INFO] ... running on : " << maxEvts << " events" << endl;
+
+    for (int iEv = 0; true; ++iEv)
     {
+        if (maxEvts >= 0 && iEv >= maxEvts)
+            break;
+
         if (!nat.Next()) break;
         if (iEv % 10000 == 0) cout << "... processing event " << iEv << endl;
 
+        ot.clear();
         EventInfo ei;
 
-        oph::select_bbbb_jets(nat, ei);
-        if (ei.jet_H1_1)
-            cout << ei.jet_H1_1->P4().Pt() << endl;
+        // --- - --- - --- --- - --- - --- --- - --- - --- 
 
+        // cout << "---- my jets" << endl;
+        // for (uint ij = 0; ij < *(nat.nJet); ++ij)
+        // {
+        //     Jet jet (ij, &nat);
+        //     // cout << jet.P4().Px() << " " << jet.P4().Py() << " " << jet.P4().Pz() << " " << jet.P4().E() << " btag " << nat.Jet_btagCSVV2.At(ij) << endl;
+        //     cout << " Pt  : "     << setw(10) << jet.P4().Pt()
+        //          << " Eta : "     << setw(10) << jet.P4().Eta()
+        //          << " Phi : "     << setw(10) << jet.P4().Phi()
+        //          << " E   : "     << setw(10) << jet.P4().E()
+        //          << " | CSV   : " << nat.Jet_btagCSVV2.At(ij)
+        //          << endl;
+        // }
+
+        // if (!nat.triggerReader().getTrgOr()) continue;
+
+        // if (!oph::select_bbbb_jets(nat, ei, oph::bbbbSelectionStrategy::kMostBackToBack)) continue;
+        if (!oph::select_bbbb_jets(nat, ei, b_sel_strat)) continue;
+
+        if (is_signal){
+            oph::select_gen_HH(nat, ei);
+            if (!oph::select_gen_bb_bb(nat, ei))
+                return 1;
+            
+        }
+
+        if (is_VBF_sig){
+            bool got_gen_VBF = oph::select_gen_VBF_partons(nat, ei);
+            if (!got_gen_VBF){
+                cout << "Failed on iEv = " << iEv << " evt num = " << *(nat.event) << " run = " << *(nat.run) << endl;
+                return 1;
+            }
+        }
+
+        // --- - --- - --- --- - --- - --- --- - --- - --- 
+
+        su::fill_output_tree(ot, nat, ei);
     }
 
-
+    outputFile.cd();
+    ot.write();
 }

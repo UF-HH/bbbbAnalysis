@@ -14,18 +14,25 @@
 
 #include "TLorentzVector.h"
 #include "NanoAODTree.h"
+#include <memory>
 
-#define get_property(OBJ, NAME) OBJ.getNanoAODTree() -> NAME .At(OBJ.getIdx())
+#define get_property(OBJ, NAME) (OBJ.isValid() ?  OBJ.getNanoAODTree() -> NAME .At(OBJ.getIdx()) : throw std::runtime_error("get property " #NAME " from invalid object"))
 
 class Candidate
 {
     public:
-        Candidate(int idx, NanoAODTree* nat){idx_ = idx; nat_ = nat;}
+        Candidate(){nat_ = nullptr; idx_ = -1;} // creates an invalid Candidate
+        Candidate(int idx, NanoAODTree* nat){idx_ = idx; nat_ = nat;} // standard ctor to be used for NanoAODTree inspection
         ~Candidate(){};
+        
         TLorentzVector P4() const      {return p4_;}
         void setP4( TLorentzVector p4) {p4_ = p4;}
+        
         int getIdx() const {return idx_;}
         NanoAODTree* getNanoAODTree() const {return nat_;}
+        
+        bool isValid() const {return idx_ >= 0;}
+        virtual std::unique_ptr<Candidate> clone() const = 0;
 
     protected:
         virtual void buildP4(NanoAODTree* nat) = 0;

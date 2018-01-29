@@ -152,6 +152,12 @@ int main(int argc, char** argv)
         opts["save-p4"].as<bool>()
     );
 
+    // /// to declare user branches for studies
+    // ot.declareUserIntBranch("integer1", 0);
+    // ot.declareUserIntBranch("integer2", 1);
+    // ot.declareUserFloatBranch("float1", 0.01);
+    // ot.declareUserFloatBranch("float2", 1.001);
+
     ////////////////////////////////////////////////////////////////////////
     // Execute event loop
     ////////////////////////////////////////////////////////////////////////
@@ -207,6 +213,30 @@ int main(int argc, char** argv)
         }
 
         // --- - --- - --- --- - --- - --- --- - --- - --- 
+
+        // --- use the user Floats
+        // if (iEv == 5)
+        //     ot.userInt("integer1") = 5;
+        // if (iEv == 6)
+        //     ot.userInt("integer2") = 66;
+        // if (iEv == 10){
+        //     ot.userFloat("float1") = 5.1;
+        //     ot.userFloat("float2") = 5.2;
+        //     ot.userInt("integer2") = 52;
+        // }
+        // wrong names cause an exception
+        // ot.userInt("integer22") = 52;
+
+        // cout << "EVENT " << *(nat.event) << endl;
+        // cout << "Selected H1_b1 : " << ei.H1_b1->getIdx() << endl;
+        // cout << "Selected H1_b2 : " << ei.H1_b2->getIdx() << endl;
+        // cout << "Selected H2_b1 : " << ei.H2_b1->getIdx() << endl;
+        // cout << "Selected H2_b2 : " << ei.H2_b2->getIdx() << endl;
+        // cout << "And linked jets " << endl;
+        // for (uint ij = 0; ij < *(nat.nJet); ++ij)
+        // {
+        //     cout << "** " <<  ij << " mothIdx " << endl; 
+        // }
 
         su::fill_output_tree(ot, nat, ei);
     }

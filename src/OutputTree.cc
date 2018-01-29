@@ -21,6 +21,7 @@ OutputTree::OutputTree (bool savetlv, string name, string title) :
 savetlv_ (savetlv)
 {
     tree_ = std::unique_ptr<TTree> (new TTree(name.c_str(), title.c_str()));
+    
     init_branches();
     clear();
 }
@@ -52,6 +53,8 @@ void OutputTree::init_branches()
     BRANCH_pt_eta_phi_p4(gen_q2_in)
     BRANCH_pt_eta_phi_p4(gen_q1_out)
     BRANCH_pt_eta_phi_p4(gen_q2_out)
+
+    // note that the initialization of the user branches is made separately when calling declareUser*Branch
 }
 
 void OutputTree::clear()
@@ -79,4 +82,43 @@ void OutputTree::clear()
     CLEAR_pt_eta_phi_p4(gen_q1_out)
     CLEAR_pt_eta_phi_p4(gen_q2_out)
 
+    userFloats_.resetAll();
+    userInts_.resetAll();
+
+}
+
+bool OutputTree::declareUserIntBranch (std::string name, int defaultClearValue)
+{
+    // check if the branch exists -- the check in the same collection is done by UserVal internally, but I have to do the cross-checks
+    if (userFloats_.hasVal(name)){
+        cout << "[WARNING] OutputTree : declareUserIntBranch : branch " << name << " was already found as a userFloat, cannot create it" << endl;
+        return false;
+    }
+    
+    if (!userInts_.addVal(name, defaultClearValue)){
+        cout << "[WARNING] OutputTree : declareUserIntBranch : branch " << name << " was already found as a userInt, cannot create it" << endl;
+        return false;
+    }
+
+    // set the branch
+    tree_->Branch(name.c_str(), userInts_.getValPtr(name));
+    return true;
+}
+
+bool OutputTree::declareUserFloatBranch (std::string name, float defaultClearValue)
+{
+    // check if the branch exists -- the check in the same collection is done by UserVal internally, but I have to do the cross-checks
+    if (userInts_.hasVal(name)){
+        cout << "[WARNING] OutputTree : declareUserFloatBranch : branch " << name << " was already found as a userInt, cannot create it" << endl;
+        return false;
+    }
+    
+    if (!userFloats_.addVal(name, defaultClearValue)){
+        cout << "[WARNING] OutputTree : declareUserFloatBranch : branch " << name << " was already found as a userFloat, cannot create it" << endl;
+        return false;
+    }
+
+    // set the branch
+    tree_->Branch(name.c_str(), userFloats_.getValPtr(name));
+    return true;
 }

@@ -17,6 +17,7 @@
 
 #include "TTree.h"
 #include "TLorentzVector.h"
+#include "UserValCollection.h"
 #include <string>
 #include <memory>
 
@@ -37,6 +38,14 @@ class OutputTree {
         int fill()  {return tree_->Fill();}
         int write() {return tree_->Write();}
     
+        // returns false if the branch could not be created, true if all ok
+        // thje second optional value specifies what the branch should be reset to at clear()
+        bool declareUserIntBranch   (std::string name, int defaultClearValue = 0);
+        bool declareUserFloatBranch (std::string name, float defaultClearValue = 0.0);
+
+        // throws an exception if the branch name was not declared
+        int&   userInt   (std::string name) {return userInts_   . getVal(name);}
+        float& userFloat (std::string name) {return userFloats_ . getVal(name);}
 
         //////////////////////////
         //// saved variables
@@ -73,6 +82,10 @@ class OutputTree {
         void init_branches();
         std::unique_ptr<TTree> tree_;
         const bool savetlv_;
+        
+        // for user declared branches
+        UserValCollection<float> userFloats_;
+        UserValCollection<int>   userInts_;
 };
 
 #endif

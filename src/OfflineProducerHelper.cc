@@ -26,12 +26,12 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, bb
     }); // sort by CSV (lowest to highest)
 
     // now need to pair the jets
-    std::array<Jet, 4> presel_jets = {
+    std::array<Jet, 4> presel_jets = {{
         *(jets.rbegin()+0),
         *(jets.rbegin()+1),
         *(jets.rbegin()+2),
         *(jets.rbegin()+3)
-    };
+    }};
 
     std::array<Jet, 4> ordered_jets = presel_jets;
 

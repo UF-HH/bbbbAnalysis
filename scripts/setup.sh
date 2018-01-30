@@ -27,7 +27,9 @@ if [ "$pathunset" = true ] ; then
 
     ## note : the CPP_BOOST_PATH is also fed to the makefile to use the boost libraries under $(CPP_BOOST_PATH)/lib
     ## comment it to use system default libraries in compilation and linking 
-    export CPP_BOOST_PATH=/cvmfs/sft.cern.ch/lcg/views/LCG_89/x86_64-slc6-gcc62-opt
+    if [ -d /cvmfs/sft.cern.ch/lcg/views/LCG_89/x86_64-slc6-gcc62-opt ]; then
+        export CPP_BOOST_PATH=/cvmfs/sft.cern.ch/lcg/views/LCG_89/x86_64-slc6-gcc62-opt
+    fi
     export CPATH=${CPATH}:${CPP_BOOST_PATH}/include
     export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${THISDIR}/lib:${CPP_BOOST_PATH}/lib
     ## NB: /cvmfs/sft.cern.ch/... is needed to source most recent boost libraries

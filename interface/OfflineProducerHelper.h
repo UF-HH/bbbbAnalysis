@@ -15,6 +15,7 @@
 #include "EventInfo.h"
 #include "CompositeCandidate.h"
 #include "Jet.h"
+#include <array>
 #include <utility>
 #include <functional>
 #include <initializer_list>
@@ -49,11 +50,18 @@ namespace OfflineProducerHelper {
     // the choice is made passing a sort_par_func that is evaluated on pairs of CompositeCandidates cc1 and cc2
     // e.g. if sort_par_func(cc1, cc2) is cc1.DeltaR(cc2), then the two CompositeCandidates that are less back-to-back is selected
     // using get_smallest = false returns the largest element instead
-    template <typename T>
+    // template <typename T>
+    // std::pair<CompositeCandidate,CompositeCandidate> get_two_best_jet_pairs (
+    //     std::vector<Jet> jets,
+    //     std::function<T (std::pair<CompositeCandidate,CompositeCandidate>)> sort_par_func,
+    //     bool get_smallest = true);
+
+    template <typename T_sortpar, typename T_coll>
     std::pair<CompositeCandidate,CompositeCandidate> get_two_best_jet_pairs (
-        std::vector<Jet> jets,
-        std::function<T (std::pair<CompositeCandidate,CompositeCandidate>)> sort_par_func,
+        T_coll jets,
+        std::function<T_sortpar (std::pair<CompositeCandidate,CompositeCandidate>)> sort_par_func,
         bool get_smallest = true);
+
 
     bool select_gen_HH    (NanoAODTree& nat, EventInfo& ei);
     bool select_gen_bb_bb (NanoAODTree& nat, EventInfo& ei);

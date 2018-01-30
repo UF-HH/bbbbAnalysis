@@ -56,7 +56,7 @@ GLIBS   =  -lm -ldl -rdynamic -lboost_program_options $(ROOTGLIBS) -lGenVector -
 #if mac 64
 ARCH  =  $(shell root-config --arch)
 ifeq ($(ARCH),macosx64)
-LibSuf  =  .dylib
+LibSuf  =  .so
 
 ARCHL = -m64
 
@@ -64,9 +64,12 @@ CPPFLAGS  =  -Wall -W -Woverloaded-virtual -O2 $(ARCHL) -pipe -I$(HDR) $(ROOTCFL
 
 CXXFLAGS  = -fPIC  -Wall -W -Woverloaded-virtual -O2 $(ARCHL) -pipe -I$(HDR) $(ROOTCFLAGS) 
 
-LDFLAGS  =  -dynamiclib -shared -03 -single_module -undefined dynamic_lookup $(ARCHL)
-SONAME	 =  libPlotter.dylib
-SOFLAGS  =
+LDFLAGS  =  -dynamiclib -shared -single_module -undefined dynamic_lookup $(ARCHL)
+#SONAME	 =  libPlotter.dylib
+# SOFLAGS  =
+SONAME	 =  libbbbbAnalysis.so
+SONAME2  =  bbbbAnalysis
+SOFLAGS  =  
 endif
 #################################################
 

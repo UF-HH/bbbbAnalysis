@@ -23,6 +23,7 @@ namespace su = SkimUtils;
 namespace oph = OfflineProducerHelper;
 
 #include "OutputTree.h"
+#include "SkimEffCounter.h"
 
 #include "TFile.h"
 
@@ -152,6 +153,8 @@ int main(int argc, char** argv)
         opts["save-p4"].as<bool>()
     );
 
+    SkimEffCounter ec;
+
     // /// to declare user branches for studies
     // ot.declareUserIntBranch("integer1", 0);
     // ot.declareUserIntBranch("integer2", 1);
@@ -176,6 +179,11 @@ int main(int argc, char** argv)
 
         ot.clear();
         EventInfo ei;
+
+        // --- - --- - --- --- - --- - --- --- - --- - --- 
+        // FIXME: compute the weights
+        double w_fixme = 0.75;
+        ec.updateProcessed(w_fixme);
 
         // --- - --- - --- --- - --- - --- --- - --- - --- 
 
@@ -238,9 +246,11 @@ int main(int argc, char** argv)
         //     cout << "** " <<  ij << " mothIdx " << endl; 
         // }
 
+        ec.updateSelected(w_fixme);
         su::fill_output_tree(ot, nat, ei);
     }
 
     outputFile.cd();
     ot.write();
+    ec.write();
 }

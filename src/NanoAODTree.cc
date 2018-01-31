@@ -2,9 +2,7 @@
 
 bool NanoAODTree::Next()
 {
-std::cout << "DEBUG: sono in next" << std::endl;
     bool next = fReader.Next();
-std::cout << "DEBUG: ho chiamato next" << std::endl;
     if (!next) return next; // it's the end
     
     int t_tmp = fReader.GetTree()->GetTreeNumber();
@@ -20,12 +18,12 @@ std::cout << "DEBUG: ho chiamato next" << std::endl;
         old_tree_nr_ = t_tmp;
     }
 
+    /*
     // do the initialization of the branches that can differ between different samples, e.g. data vs MC
     // (no gen info in the former)
     // no need to check at any tree transition but only at the first event readout
     if (!proc_first_ev_) // this is the start of the tree
     {
-std::cout << "DEBUG: verifying the readers" << std::endl;
         proc_first_ev_ = true;
         // if (!is_data_) // enable the MC branches
         // {
@@ -94,6 +92,7 @@ std::cout << "DEBUG: verifying the readers" << std::endl;
         MET_fiducialGenPt           .Verify(fReader.GetTree());
         // }
     }
+    */
 
     return next;
 }

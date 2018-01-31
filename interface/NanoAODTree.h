@@ -113,8 +113,8 @@ class NanoAODTree {
 
         // TTreeReaderArray<Int_t>     Electron_genPartIdx                  {fReader, "Electron_genPartIdx"};
         // TTreeReaderArray<UChar_t>   Electron_genPartFlav                 {fReader, "Electron_genPartFlav"};
-        NanoReaderArray<Int_t>     Electron_genPartIdx                   {fReader, "Electron_genPartIdx"};
-        NanoReaderArray<UChar_t>   Electron_genPartFlav                  {fReader, "Electron_genPartFlav"};
+        TTreeReaderArray<Int_t>     Electron_genPartIdx                   {fReader, "Electron_genPartIdx"};
+        TTreeReaderArray<UChar_t>   Electron_genPartFlav                  {fReader, "Electron_genPartFlav"};
 
         TTreeReaderArray<UChar_t>   Electron_cleanmask                   {fReader, "Electron_cleanmask"};
 
@@ -138,46 +138,46 @@ class NanoAODTree {
         TTreeReaderArray<Int_t>     FatJet_subJetIdx1                    {fReader, "FatJet_subJetIdx1"};
         TTreeReaderArray<Int_t>     FatJet_subJetIdx2                    {fReader, "FatJet_subJetIdx2"};
 
-        NanoReaderValue<UInt_t>    nGenJetAK8                           {fReader, "nGenJetAK8"};
-        NanoReaderArray<Float_t>   GenJetAK8_eta                        {fReader, "GenJetAK8_eta"};
-        NanoReaderArray<Float_t>   GenJetAK8_mass                       {fReader, "GenJetAK8_mass"};
-        NanoReaderArray<Float_t>   GenJetAK8_phi                        {fReader, "GenJetAK8_phi"};
-        NanoReaderArray<Float_t>   GenJetAK8_pt                         {fReader, "GenJetAK8_pt"};
+        TTreeReaderValue<UInt_t>    nGenJetAK8                           {fReader, "nGenJetAK8"};
+        TTreeReaderArray<Float_t>   GenJetAK8_eta                        {fReader, "GenJetAK8_eta"};
+        TTreeReaderArray<Float_t>   GenJetAK8_mass                       {fReader, "GenJetAK8_mass"};
+        TTreeReaderArray<Float_t>   GenJetAK8_phi                        {fReader, "GenJetAK8_phi"};
+        TTreeReaderArray<Float_t>   GenJetAK8_pt                         {fReader, "GenJetAK8_pt"};
         
-        NanoReaderValue<UInt_t>    nGenJet                              {fReader, "nGenJet"};
-        NanoReaderArray<Float_t>   GenJet_eta                           {fReader, "GenJet_eta"};
-        NanoReaderArray<Float_t>   GenJet_mass                          {fReader, "GenJet_mass"};
-        NanoReaderArray<Float_t>   GenJet_phi                           {fReader, "GenJet_phi"};
-        NanoReaderArray<Float_t>   GenJet_pt                            {fReader, "GenJet_pt"};
+        TTreeReaderValue<UInt_t>    nGenJet                              {fReader, "nGenJet"};
+        TTreeReaderArray<Float_t>   GenJet_eta                           {fReader, "GenJet_eta"};
+        TTreeReaderArray<Float_t>   GenJet_mass                          {fReader, "GenJet_mass"};
+        TTreeReaderArray<Float_t>   GenJet_phi                           {fReader, "GenJet_phi"};
+        TTreeReaderArray<Float_t>   GenJet_pt                            {fReader, "GenJet_pt"};
         
-        NanoReaderValue<UInt_t>    nGenPart                             {fReader, "nGenPart"};
-        NanoReaderArray<Float_t>   GenPart_eta                          {fReader, "GenPart_eta"};
-        NanoReaderArray<Float_t>   GenPart_mass                         {fReader, "GenPart_mass"};
-        NanoReaderArray<Float_t>   GenPart_phi                          {fReader, "GenPart_phi"};
-        NanoReaderArray<Float_t>   GenPart_pt                           {fReader, "GenPart_pt"};
-        NanoReaderArray<Int_t>     GenPart_genPartIdxMother             {fReader, "GenPart_genPartIdxMother"};
-        NanoReaderArray<Int_t>     GenPart_pdgId                        {fReader, "GenPart_pdgId"};
-        NanoReaderArray<Int_t>     GenPart_status                       {fReader, "GenPart_status"};
-        NanoReaderArray<Int_t>     GenPart_statusFlags                  {fReader, "GenPart_statusFlags"};
+        TTreeReaderValue<UInt_t>    nGenPart                             {fReader, "nGenPart"};
+        TTreeReaderArray<Float_t>   GenPart_eta                          {fReader, "GenPart_eta"};
+        TTreeReaderArray<Float_t>   GenPart_mass                         {fReader, "GenPart_mass"};
+        TTreeReaderArray<Float_t>   GenPart_phi                          {fReader, "GenPart_phi"};
+        TTreeReaderArray<Float_t>   GenPart_pt                           {fReader, "GenPart_pt"};
+        TTreeReaderArray<Int_t>     GenPart_genPartIdxMother             {fReader, "GenPart_genPartIdxMother"};
+        TTreeReaderArray<Int_t>     GenPart_pdgId                        {fReader, "GenPart_pdgId"};
+        TTreeReaderArray<Int_t>     GenPart_status                       {fReader, "GenPart_status"};
+        TTreeReaderArray<Int_t>     GenPart_statusFlags                  {fReader, "GenPart_statusFlags"};
         
-        NanoReaderValue<Float_t>   Generator_x1                         {fReader, "Generator_x1"};
-        NanoReaderValue<Float_t>   Generator_x2                         {fReader, "Generator_x2"};
+        TTreeReaderValue<Float_t>   Generator_x1                         {fReader, "Generator_x1"};
+        TTreeReaderValue<Float_t>   Generator_x2                         {fReader, "Generator_x2"};
         
-        NanoReaderValue<UInt_t>    nGenVisTau                           {fReader, "nGenVisTau"};
-        NanoReaderArray<Float_t>   GenVisTau_eta                        {fReader, "GenVisTau_eta"};
-        NanoReaderArray<Float_t>   GenVisTau_mass                       {fReader, "GenVisTau_mass"};
-        NanoReaderArray<Float_t>   GenVisTau_phi                        {fReader, "GenVisTau_phi"};
-        NanoReaderArray<Float_t>   GenVisTau_pt                         {fReader, "GenVisTau_pt"};
-        NanoReaderArray<Int_t>     GenVisTau_charge                     {fReader, "GenVisTau_charge"};
-        NanoReaderArray<Int_t>     GenVisTau_genPartIdxMother           {fReader, "GenVisTau_genPartIdxMother"};
-        NanoReaderArray<Int_t>     GenVisTau_status                     {fReader, "GenVisTau_status"};
+        TTreeReaderValue<UInt_t>    nGenVisTau                           {fReader, "nGenVisTau"};
+        TTreeReaderArray<Float_t>   GenVisTau_eta                        {fReader, "GenVisTau_eta"};
+        TTreeReaderArray<Float_t>   GenVisTau_mass                       {fReader, "GenVisTau_mass"};
+        TTreeReaderArray<Float_t>   GenVisTau_phi                        {fReader, "GenVisTau_phi"};
+        TTreeReaderArray<Float_t>   GenVisTau_pt                         {fReader, "GenVisTau_pt"};
+        TTreeReaderArray<Int_t>     GenVisTau_charge                     {fReader, "GenVisTau_charge"};
+        TTreeReaderArray<Int_t>     GenVisTau_genPartIdxMother           {fReader, "GenVisTau_genPartIdxMother"};
+        TTreeReaderArray<Int_t>     GenVisTau_status                     {fReader, "GenVisTau_status"};
         
-        NanoReaderValue<Float_t>   genWeight                            {fReader, "genWeight"};
-        NanoReaderValue<Float_t>   LHEWeight_originalXWGTUP             {fReader, "LHEWeight_originalXWGTUP"};
-        NanoReaderValue<UInt_t>    nLHEPdfWeight                        {fReader, "nLHEPdfWeight"};
-        NanoReaderArray<Float_t>   LHEPdfWeight                         {fReader, "LHEPdfWeight"};
-        NanoReaderValue<UInt_t>    nLHEScaleWeight                      {fReader, "nLHEScaleWeight"};
-        NanoReaderArray<Float_t>   LHEScaleWeight                       {fReader, "LHEScaleWeight"};
+        TTreeReaderValue<Float_t>   genWeight                            {fReader, "genWeight"};
+        TTreeReaderValue<Float_t>   LHEWeight_originalXWGTUP             {fReader, "LHEWeight_originalXWGTUP"};
+        TTreeReaderValue<UInt_t>    nLHEPdfWeight                        {fReader, "nLHEPdfWeight"};
+        TTreeReaderArray<Float_t>   LHEPdfWeight                         {fReader, "LHEPdfWeight"};
+        TTreeReaderValue<UInt_t>    nLHEScaleWeight                      {fReader, "nLHEScaleWeight"};
+        TTreeReaderArray<Float_t>   LHEScaleWeight                       {fReader, "LHEScaleWeight"};
         
         TTreeReaderValue<UInt_t>    nJet                                 {fReader, "nJet"};
         TTreeReaderArray<Float_t>   Jet_area                             {fReader, "Jet_area"};
@@ -206,9 +206,9 @@ class NanoAODTree {
         TTreeReaderArray<Int_t>     Jet_nMuons                           {fReader, "Jet_nMuons"};
         TTreeReaderArray<Int_t>     Jet_puId                             {fReader, "Jet_puId"};
 
-        NanoReaderArray<Int_t>     Jet_genJetIdx                         {fReader, "Jet_genJetIdx"};
-        NanoReaderArray<Int_t>     Jet_hadronFlavour                     {fReader, "Jet_hadronFlavour"};
-        NanoReaderArray<Int_t>     Jet_partonFlavour                     {fReader, "Jet_partonFlavour"};
+        TTreeReaderArray<Int_t>     Jet_genJetIdx                         {fReader, "Jet_genJetIdx"};
+        TTreeReaderArray<Int_t>     Jet_hadronFlavour                     {fReader, "Jet_hadronFlavour"};
+        TTreeReaderArray<Int_t>     Jet_partonFlavour                     {fReader, "Jet_partonFlavour"};
 
         TTreeReaderValue<Float_t>   LHE_HT                               {fReader, "LHE_HT"};
         TTreeReaderValue<Float_t>   LHE_HTIncoming                       {fReader, "LHE_HTIncoming"};
@@ -221,8 +221,8 @@ class NanoAODTree {
         TTreeReaderValue<UChar_t>   LHE_NpNLO                            {fReader, "LHE_NpNLO"};
         TTreeReaderValue<UChar_t>   LHE_NpLO                             {fReader, "LHE_NpLO"};
         
-        NanoReaderValue<Float_t>    GenMET_phi                           {fReader, "GenMET_phi"};
-        NanoReaderValue<Float_t>    GenMET_pt                            {fReader, "GenMET_pt"};
+        TTreeReaderValue<Float_t>    GenMET_phi                           {fReader, "GenMET_phi"};
+        TTreeReaderValue<Float_t>    GenMET_pt                            {fReader, "GenMET_pt"};
         TTreeReaderValue<Float_t>   MET_MetUnclustEnUpDeltaX             {fReader, "MET_MetUnclustEnUpDeltaX"};
         TTreeReaderValue<Float_t>   MET_MetUnclustEnUpDeltaY             {fReader, "MET_MetUnclustEnUpDeltaY"};
         TTreeReaderValue<Float_t>   MET_covXX                            {fReader, "MET_covXX"};
@@ -301,19 +301,19 @@ class NanoAODTree {
         TTreeReaderArray<Bool_t>    Photon_mvaID_WP90                    {fReader, "Photon_mvaID_WP90"};
         TTreeReaderArray<Bool_t>    Photon_pixelSeed                     {fReader, "Photon_pixelSeed"};
         
-        NanoReaderValue<Int_t>      Pileup_nPU                           {fReader, "Pileup_nPU"};
-        NanoReaderValue<Int_t>      Pileup_nTrueInt                      {fReader, "Pileup_nTrueInt"};
+        TTreeReaderValue<Int_t>      Pileup_nPU                           {fReader, "Pileup_nPU"};
+        TTreeReaderValue<Int_t>      Pileup_nTrueInt                      {fReader, "Pileup_nTrueInt"};
         
         TTreeReaderValue<Float_t>   fixedGridRhoFastjetAll               {fReader, "fixedGridRhoFastjetAll"};
         TTreeReaderValue<Float_t>   fixedGridRhoFastjetCentralCalo       {fReader, "fixedGridRhoFastjetCentralCalo"};
         TTreeReaderValue<Float_t>   fixedGridRhoFastjetCentralNeutral    {fReader, "fixedGridRhoFastjetCentralNeutral"};
         
-        NanoReaderValue<UInt_t>     nGenDressedLepton                    {fReader, "nGenDressedLepton"};
-        NanoReaderArray<Float_t>    GenDressedLepton_eta                 {fReader, "GenDressedLepton_eta"};
-        NanoReaderArray<Float_t>    GenDressedLepton_mass                {fReader, "GenDressedLepton_mass"};
-        NanoReaderArray<Float_t>    GenDressedLepton_phi                 {fReader, "GenDressedLepton_phi"};
-        NanoReaderArray<Float_t>    GenDressedLepton_pt                  {fReader, "GenDressedLepton_pt"};
-        NanoReaderArray<Int_t>      GenDressedLepton_pdgId               {fReader, "GenDressedLepton_pdgId"};
+        TTreeReaderValue<UInt_t>     nGenDressedLepton                    {fReader, "nGenDressedLepton"};
+        TTreeReaderArray<Float_t>    GenDressedLepton_eta                 {fReader, "GenDressedLepton_eta"};
+        TTreeReaderArray<Float_t>    GenDressedLepton_mass                {fReader, "GenDressedLepton_mass"};
+        TTreeReaderArray<Float_t>    GenDressedLepton_phi                 {fReader, "GenDressedLepton_phi"};
+        TTreeReaderArray<Float_t>    GenDressedLepton_pt                  {fReader, "GenDressedLepton_pt"};
+        TTreeReaderArray<Int_t>      GenDressedLepton_pdgId               {fReader, "GenDressedLepton_pdgId"};
         
         TTreeReaderValue<UInt_t>    nSoftActivityJet                     {fReader, "nSoftActivityJet"};
         TTreeReaderArray<Float_t>   SoftActivityJet_eta                  {fReader, "SoftActivityJet_eta"};
@@ -386,7 +386,7 @@ class NanoAODTree {
         TTreeReaderArray<Int_t>     TrigObj_l1charge                     {fReader, "TrigObj_l1charge"};
         TTreeReaderArray<Int_t>     TrigObj_filterBits                   {fReader, "TrigObj_filterBits"};
         
-        NanoReaderValue<Int_t>      genTtbarId                           {fReader, "genTtbarId"};
+        TTreeReaderValue<Int_t>      genTtbarId                           {fReader, "genTtbarId"};
         
         TTreeReaderValue<UInt_t>    nOtherPV                             {fReader, "nOtherPV"};
         TTreeReaderArray<Float_t>   OtherPV_z                            {fReader, "OtherPV_z"};
@@ -404,22 +404,22 @@ class NanoAODTree {
         TTreeReaderArray<Float_t>   SV_dlenSig                           {fReader, "SV_dlenSig"};
         TTreeReaderArray<Float_t>   SV_pAngle                            {fReader, "SV_pAngle"};
                 
-        NanoReaderArray<Int_t>     GenJetAK8_partonFlavour               {fReader, "GenJetAK8_partonFlavour"};
-        NanoReaderArray<UChar_t>   GenJetAK8_hadronFlavour               {fReader, "GenJetAK8_hadronFlavour"};
-        NanoReaderArray<Int_t>     GenJet_partonFlavour                  {fReader, "GenJet_partonFlavour"};
-        NanoReaderArray<UChar_t>   GenJet_hadronFlavour                  {fReader, "GenJet_hadronFlavour"};
+        TTreeReaderArray<Int_t>     GenJetAK8_partonFlavour               {fReader, "GenJetAK8_partonFlavour"};
+        TTreeReaderArray<UChar_t>   GenJetAK8_hadronFlavour               {fReader, "GenJetAK8_hadronFlavour"};
+        TTreeReaderArray<Int_t>     GenJet_partonFlavour                  {fReader, "GenJet_partonFlavour"};
+        TTreeReaderArray<UChar_t>   GenJet_hadronFlavour                  {fReader, "GenJet_hadronFlavour"};
         
-        NanoReaderArray<Int_t>     Muon_genPartIdx                       {fReader, "Muon_genPartIdx"};
-        NanoReaderArray<UChar_t>   Muon_genPartFlav                      {fReader, "Muon_genPartFlav"};
+        TTreeReaderArray<Int_t>     Muon_genPartIdx                       {fReader, "Muon_genPartIdx"};
+        TTreeReaderArray<UChar_t>   Muon_genPartFlav                      {fReader, "Muon_genPartFlav"};
         
-        NanoReaderArray<Int_t>     Photon_genPartIdx                     {fReader, "Photon_genPartIdx"};
-        NanoReaderArray<UChar_t>   Photon_genPartFlav                    {fReader, "Photon_genPartFlav"};
+        TTreeReaderArray<Int_t>     Photon_genPartIdx                     {fReader, "Photon_genPartIdx"};
+        TTreeReaderArray<UChar_t>   Photon_genPartFlav                    {fReader, "Photon_genPartFlav"};
 
-        NanoReaderArray<Int_t>     Tau_genPartIdx                        {fReader, "Tau_genPartIdx"};
-        NanoReaderArray<UChar_t>   Tau_genPartFlav                       {fReader, "Tau_genPartFlav"};
+        TTreeReaderArray<Int_t>     Tau_genPartIdx                        {fReader, "Tau_genPartIdx"};
+        TTreeReaderArray<UChar_t>   Tau_genPartFlav                       {fReader, "Tau_genPartFlav"};
         
-        NanoReaderValue<Float_t>   MET_fiducialGenPhi                    {fReader, "MET_fiducialGenPhi"};
-        NanoReaderValue<Float_t>   MET_fiducialGenPt                     {fReader, "MET_fiducialGenPt"};
+        TTreeReaderValue<Float_t>   MET_fiducialGenPhi                    {fReader, "MET_fiducialGenPhi"};
+        TTreeReaderValue<Float_t>   MET_fiducialGenPt                     {fReader, "MET_fiducialGenPt"};
         
         TTreeReaderArray<UChar_t>   Jet_cleanmask                        {fReader, "Jet_cleanmask"};
         TTreeReaderArray<UChar_t>   Muon_cleanmask                       {fReader, "Muon_cleanmask"};

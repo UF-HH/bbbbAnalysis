@@ -13,7 +13,7 @@
 #include <memory>
 #include <iostream>
 
-#define VERBOSE false
+// #define VERBOSE false
 
 template <typename T> class NanoReaderValue
 {
@@ -65,8 +65,8 @@ NanoReaderValue<T>::NanoReaderValue(TTreeReader &tr, const char *branchname)
 template <typename T>
 void NanoReaderValue<T>::Verify(TTree* tree)
 {
-    if (VERBOSE)
-        std::cout << "NanoReaderValue :: I am verifying value : " << branchname_ << std::endl;
+    // if (VERBOSE)
+    //     std::cout << "NanoReaderValue :: I am verifying value : " << branchname_ << std::endl;
 
     if (tree->GetListOfBranches()->FindObject(branchname_.c_str())) {
         if (!ttrv_) // not yet initialized

@@ -1,6 +1,6 @@
-#include "NanoAODTree.h"
+#include "NanoAODTree_ReaderImpl.h"
 
-bool NanoAODTree::Next()
+bool NanoAODTree_ReaderImpl::Next()
 {
     bool next = fReader.Next();
     if (!next) return next; // it's the end

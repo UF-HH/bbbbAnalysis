@@ -135,7 +135,7 @@ int main(int argc, char** argv)
     cout << "[INFO] ... file list contains " << nfiles << " files" << endl;
 
     cout << "[INFO] ... creating tree reader" << endl;
-    NanoAODTree nat (&ch);
+    NanoAODTree nat (&ch, is_data);
 
     cout << "[INFO] ... loading the following triggers" << endl;
     for (auto trg : config.readStringListOpt("triggers::makeORof"))

@@ -18,7 +18,7 @@
 #include "TTreeReader.h"
 #include "TTreeReaderValue.h"
 #include "TTreeReaderArray.h"
-#include "TriggerReader.h"
+#include "TriggerReader_ReaderImpl.h"
 #include "NanoReaderValue.h"
 #include "NanoReaderArray.h"
 
@@ -45,7 +45,7 @@ class NanoAODTree_ReaderImpl {
         
         ~NanoAODTree_ReaderImpl(){};
 
-        TriggerReader& triggerReader(){return trg_reader_;}
+        TriggerReader_ReaderImpl& triggerReader(){return trg_reader_;}
 
         // bool Next() {return fReader.Next();}
         bool Next();
@@ -54,7 +54,7 @@ class NanoAODTree_ReaderImpl {
         TTreeReader   fReader;
 
         // the trigger reader - a special care is needed for branches that can disappear
-        TriggerReader trg_reader_;
+        TriggerReader_ReaderImpl trg_reader_;
 
         // the count of the current ttree number, to verify at Next()
         int old_tree_nr_;

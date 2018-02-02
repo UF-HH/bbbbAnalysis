@@ -1,5 +1,6 @@
 #include "OfflineProducerHelper.h"
 #include <iostream>
+#include <iomanip>
 #include <cmath>
 
 #include "CompositeCandidate.h"

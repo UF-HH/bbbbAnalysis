@@ -1,9 +1,9 @@
-#include "TriggerReader_ReaderImpl.h"
+#include "TriggerReader_SetBranchImpl.h"
 
-TriggerReader_ReaderImpl::TriggerReader_ReaderImpl(TTreeReader* reader) : main_reader_(reader)
+TriggerReader_SetBranchImpl::TriggerReader_SetBranchImpl(TTree* tree) : tree_ (tree)
 {}
 
-void TriggerReader_ReaderImpl::addTrigger(std::string trgName)
+void TriggerReader_SetBranchImpl::addTrigger(std::string trgName)
 {
     // skip if name is in the trigger list
     if (name_to_idx_.find(trgName) != name_to_idx_.end())
@@ -12,19 +12,19 @@ void TriggerReader_ReaderImpl::addTrigger(std::string trgName)
         return;
     }
 
-    std::unique_ptr<NanoReaderValue<bool>> readr (new NanoReaderValue<bool>(*main_reader_, trgName.c_str()));
+    std::unique_ptr<ReaderValuePatch<bool>> readr (new ReaderValuePatch<bool>(tree_, trgName.c_str()));
     readr->SetReturnDefault(true, false); // if branch does not exist, return false
     readers_.push_back(std::move(readr));
     name_to_idx_[trgName] = readers_.size()-1;
 }
 
-void TriggerReader_ReaderImpl::setTriggers(std::vector<std::string> trgNames)
+void TriggerReader_SetBranchImpl::setTriggers(std::vector<std::string> trgNames)
 {
     for (std::string& s : trgNames)
         addTrigger(s);
 }
 
-bool TriggerReader_ReaderImpl::getTrgOr()
+bool TriggerReader_SetBranchImpl::getTrgOr()
 {
     bool the_or = false;
     for (auto& rd_ptr : readers_)
@@ -32,11 +32,11 @@ bool TriggerReader_ReaderImpl::getTrgOr()
     return the_or;
 }
 
-bool TriggerReader_ReaderImpl::getTrgResult(std::string trgName)
+bool TriggerReader_SetBranchImpl::getTrgResult(std::string trgName)
 {
     if (name_to_idx_.find(trgName) == name_to_idx_.end())
     {
-        std::cout << "** WARNING: TriggerReader_ReaderImpl : the requested trigger " << trgName << " was not declared, returning false" << std::endl;
+        std::cout << "** WARNING: TriggerReader_SetBranchImpl : the requested trigger " << trgName << " was not declared, returning false" << std::endl;
         return false;
     }
 

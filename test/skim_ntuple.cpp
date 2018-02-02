@@ -96,10 +96,10 @@ int main(int argc, char** argv)
     }
     cout << "[INFO] ... is a data sample? " << std::boolalpha << is_data << std::noboolalpha << endl;
 
-    const bool is_signal = opts["is-signal"].as<bool>();
+    const bool is_signal = (is_data ? false : opts["is-signal"].as<bool>());
     cout << "[INFO] ... is a HH signal sample? " << std::boolalpha << is_signal << std::noboolalpha << endl;
 
-    const bool is_VBF_sig = opts["is-VBF-sig"].as<bool>();
+    const bool is_VBF_sig = (is_data ? false : opts["is-VBF-sig"].as<bool>());
     cout << "[INFO] ... is a HH VBF sample? " << std::boolalpha << is_VBF_sig << std::noboolalpha << endl;
 
     const float xs = (is_data ? 1.0 : opts["xs"].as<float>());

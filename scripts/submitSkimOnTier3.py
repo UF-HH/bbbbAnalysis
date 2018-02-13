@@ -1,6 +1,7 @@
 import os
 import sys
 import argparse
+import getpass
 
 def chunks(l, n):
     """Yield successive n-sized chunks from l."""
@@ -50,8 +51,13 @@ parser.add_argument('--input',      dest='input',  help='input filelist',   requ
 parser.add_argument('--tag',        dest='tag',    help='production tag',   required = True)
 parser.add_argument('--njobs',      dest='njobs',  help='njobs', type=int,  default=500)
 ##
+############################################################
+## all the following are for "expert" use, not meant to be used by default
+##
 parser.add_argument('--outputName', dest='oname',  help='the name of the output (if not given, auto from filelist)', default = None)
-parser.add_argument('--outputDir',  dest='odir',   help='the base EOS output directory', default = "root://cmseos.fnal.gov//store/user/lcadamur/bbbb_ntuples/")
+parser.add_argument('--outputDir',  dest='odir',   help='the base EOS output directory. Use a {0} for username placeholder, or give it explicitely', default = "root://cmseos.fnal.gov//store/user/{0}/bbbb_ntuples/")
+## if leaving a {0} argument, odir will be formatted with the current username
+## otherwise a manual fixed path can also be given
 ##
 parser.add_argument('--no-tar',         dest='tar',        help='do not tar the executable folder',       action='store_false', default=True)
 parser.add_argument('--no-xrdcp-tar',   dest='xrdcptar',   help='do not xrdcp the tar to EOS',       action='store_false', default=True)
@@ -74,6 +80,9 @@ args, unknown = parser.parse_known_args()
 executable = 'bin/skim_ntuple.exe'
 ##################
 
+username = getpass.getuser()
+print "... Welcome", username
+
 oname = args.oname
 if not oname:
     # print "A:" , args.input
@@ -82,7 +91,8 @@ if not oname:
     oname = args.input.rsplit(r'/', 1)[-1].rsplit('.', 1)[0]
 oname = 'SKIM_' + oname
 
-oLFN_base = formOutName(args.odir, args.tag, oname)
+odir = args.odir.format(username)
+oLFN_base = formOutName(odir, args.tag, oname)
 if oLFN_base[-1] == '/':
     oLFN_base = oLFN_base[:-1]
 
@@ -99,12 +109,14 @@ cmssw_base    = os.environ['CMSSW_BASE']
 cmssw_version = os.environ['CMSSW_VERSION']
 scram_arch    = os.environ['SCRAM_ARCH']
 
+
+
 tarName      = 'bbbbAnalysis.tar.gz' #%s_tar.tgz' % cmssw_version
 bbbbWorkDir  = os.getcwd()
 tarLFN       = bbbbWorkDir + '/tars/' + tarName
 
-tarEOSdestLFN         = 'root://cmseos.fnal.gov//store/user/lcadamur/bbbb_analysis_tar/' + tarName
-filelistEOSdestLFNdir = 'root://cmseos.fnal.gov//store/user/lcadamur/bbbb_analysis_tar/' + tarName
+tarEOSdestLFN         = ('root://cmseos.fnal.gov//store/user/{0}/bbbb_analysis_tar/' + tarName).format(username)
+filelistEOSdestLFNdir = ('root://cmseos.fnal.gov//store/user/{0}/bbbb_analysis_tar/' + tarName).format(username)
 
 inputfiles = parseInputFileList (args.input)    ## parse input list
 njobs      = args.njobs if args.njobs <= len (inputfiles) else len (inputfiles)

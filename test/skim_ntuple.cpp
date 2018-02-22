@@ -24,6 +24,7 @@ namespace oph = OfflineProducerHelper;
 
 #include "OutputTree.h"
 #include "SkimEffCounter.h"
+#include "jsonLumiFilter.h"
 
 #include "TFile.h"
 
@@ -160,6 +161,13 @@ int main(int argc, char** argv)
     // ot.declareUserIntBranch("integer2", 1);
     // ot.declareUserFloatBranch("float1", 0.01);
     // ot.declareUserFloatBranch("float2", 1.001);
+    ot.declareUserFloatBranch("LHE_HT", 0);
+    ot.declareUserFloatBranch("my_LHE_HT", 0);
+
+    jsonLumiFilter jlf;
+    if (is_data)
+        jlf.loadJSON(config.readStringOpt("data::lumimask")); // just read the info for data, so if I just skim MC I'm not forced to parse a JSON
+    // jlf.dumpJSON(); // print JSON on screen
 
     ////////////////////////////////////////////////////////////////////////
     // Execute event loop
@@ -176,6 +184,11 @@ int main(int argc, char** argv)
 
         if (!nat.Next()) break;
         if (iEv % 10000 == 0) cout << "... processing event " << iEv << endl;
+
+        if (is_data && !jlf.isValid(*nat.run, *nat.luminosityBlock)){
+            cout << "SKIPPING THIS " << *nat.run << " " << *nat.luminosityBlock << endl;
+            continue; // not a valid lumi
+        }
 
         ot.clear();
         EventInfo ei;
@@ -221,6 +234,22 @@ int main(int argc, char** argv)
         }
 
         // --- - --- - --- --- - --- - --- --- - --- - --- 
+
+        // debug of LHE HT
+        // float my_HT = 0;
+        // my_HT += ei.gen_H1_b1->P4().Pt();
+        // my_HT += ei.gen_H1_b2->P4().Pt();
+        // my_HT += ei.gen_H2_b1->P4().Pt();
+        // my_HT += ei.gen_H2_b2->P4().Pt();
+        // if (is_VBF_sig){
+        //     my_HT += ei.gen_q1_out->P4().Pt();
+        //     my_HT += ei.gen_q2_out->P4().Pt();
+        // }
+
+        // ot.userFloat("LHE_HT") = (*(nat.LHE_HT));
+        // ot.userFloat("my_LHE_HT") = my_HT;
+
+        // cout << "Nano: " << *(nat.LHE_HT) << " Mine: " << my_HT << endl;
 
         // --- use the user Floats
         // if (iEv == 5)

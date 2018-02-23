@@ -2,6 +2,7 @@ import os
 import sys
 import argparse
 import getpass
+import subprocess
 
 def chunks(l, n):
     """Yield successive n-sized chunks from l."""
@@ -186,6 +187,7 @@ if args.tar:
         'bin/',
         'lib/',
         'config/',
+        'data/',
     ]
 
     command = 'tar -zcf {0} '.format(tarLFN)
@@ -272,8 +274,11 @@ if args.xrdcpflist:
     
     print "** INFO: copying input filelists to:", EOSfilelistProto.format('*')
     command = 'eos root://cmseos.fnal.gov mkdir -p %s' % EOSfilelistBase.replace('root://cmseos.fnal.gov/', '/eos/uscms')
+     # there is an incompatibility of EOS commands with cmsenv, so this below encapsulated the call of the command in a new shell
+    command = 'env -i PATH="$(getconf PATH)" HOME="$HOME" USER="$USER" SHELL="$SHELL" "$SHELL" -lc "%s"' % command
     if args.verbose: print "** INFO: executing:", command
     os.system(command)
+
     
     command = 'xrdcp -f -s %s %s' % (outListNameProto.format('*'), EOSfilelistBase)
     if args.verbose: print "** INFO: executing:", command

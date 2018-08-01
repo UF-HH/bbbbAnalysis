@@ -5,7 +5,7 @@
 cmsrel CMSSW_9_4_1
 cd CMSSW_9_4_1/src
 cmsenv
-git clone https://github.com/l-cadamuro/bbbbAnalysis
+git clone https://github.com/UF-HH/bbbbAnalysis
 ```
 
 ## Setup and compile

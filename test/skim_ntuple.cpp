@@ -30,6 +30,11 @@ namespace oph = OfflineProducerHelper;
 
 using namespace std;
 
+#include <experimental/any>
+ 
+using namespace std::experimental;
+
+
 // #include <boost/version.hpp>
 // std::cout << "Boost version: " 
 //       << BOOST_VERSION / 100000
@@ -85,10 +90,6 @@ int main(int argc, char** argv)
     ////////////////////////////////////////////////////////////////////////
     // Read config and other cmd line options for skims
     ////////////////////////////////////////////////////////////////////////
-    
-    CfgParser config;
-    if (!config.init(opts["cfg"].as<string>())) return 1;
-    cout << "[INFO] ... using config file " << opts["cfg"].as<string>() << endl;
 
     const bool is_data = opts["is-data"].as<bool>();
     if (!is_data && !opts.count("xs")){
@@ -106,15 +107,45 @@ int main(int argc, char** argv)
     const float xs = (is_data ? 1.0 : opts["xs"].as<float>());
     cout << "[INFO] ... cross section is : " << xs << " pb" << endl;
 
-    const string bbbbChoice = config.readStringOpt("parameters::bbbbChoice");
-    const oph::bbbbSelectionStrategy b_sel_strat = (
-        bbbbChoice == "OneClosestToMh"  ? oph::bbbbSelectionStrategy::kOneClosestToMh  :
-        bbbbChoice == "BothClosestToMh" ? oph::bbbbSelectionStrategy::kBothClosestToMh :
-        bbbbChoice == "MostBackToBack"  ? oph::bbbbSelectionStrategy::kMostBackToBack  :
-        throw std::runtime_error("cannot recognize bbbb pair choice strategy " + bbbbChoice)
-    );
-    cout << "[INFO] ... chosing bb bb jet pairs with strategy : " << bbbbChoice << endl;
+    // oph::configurationFile = config;
     
+    CfgParser config;
+    if (!config.init(opts["cfg"].as<string>())) return 1;
+    cout << "[INFO] ... using config file " << opts["cfg"].as<string>() << endl;
+
+    //Read needed fields from config file
+
+    std::map<std::string,any> parameterList;
+    const string bbbbChoice = config.readStringOpt("parameters::bbbbChoice");
+    
+    parameterList.emplace("bbbbChoice",bbbbChoice);
+    if(bbbbChoice == "OneClosestToMh"){
+        // strategy_ = bbbbSelectionStrategy::kOneClosestToMh;
+        parameterList.emplace("bbbbChoice""HiggsMass",config.readFloatOpt("parameters::HiggsMass"));
+    }
+    else if(bbbbChoice == "BothClosestToMh"){
+        // strategy_ = bbbbSelectionStrategy::kBothClosestToMh;
+        parameterList.emplace("HiggsMass",config.readFloatOpt("parameters::HiggsMass"));
+    }
+    else if(bbbbChoice == "MostBackToBack"){
+        // strategy_ = bbbbSelectionStrategy::kMostBackToBack;
+    }
+    else if(bbbbChoice == "HighestCSVandColsestToMh"){
+        // strategy_ = bbbbSelectionStrategy::kHighestCSVandColsestToMh;
+        parameterList.emplace("HiggsMass"           ,config.readFloatOpt("parameters::HiggsMass"           ));
+        parameterList.emplace("HiggsMassMaxDistance",config.readFloatOpt("parameters::HiggsMassMaxDistance"));
+        parameterList.emplace("deepCSVcut"          ,config.readFloatOpt("parameters::deepCSVcut"          ));
+    }
+    // else if(other selection type){
+    //     parameters fo be retreived;
+    // }
+    else throw std::runtime_error("cannot recognize bbbb pair choice strategy " + bbbbChoice);
+
+    cout << "[INFO] ... chosing bb bb jet pairs with strategy : " << bbbbChoice << endl;
+
+    oph::setParameterList(&parameterList);
+
+    // oph::loadConfiguration(config);    
 
     ////////////////////////////////////////////////////////////////////////
     // Prepare event loop
@@ -126,6 +157,7 @@ int main(int argc, char** argv)
         return 1;        
     }
 
+    // Joining all the NANOAD input file in a TChain in order to be used like an unique three
     TChain ch("Events");
     int nfiles = su::appendFromFileList(&ch, opts["input"].as<string>());
     
@@ -136,6 +168,8 @@ int main(int argc, char** argv)
     cout << "[INFO] ... file list contains " << nfiles << " files" << endl;
 
     cout << "[INFO] ... creating tree reader" << endl;
+
+    // The TChain is passed to the NanoAODTree_SetBranchImpl to parse all the brances
     NanoAODTree nat (&ch, is_data);
 
     cout << "[INFO] ... loading the following triggers" << endl;
@@ -177,6 +211,7 @@ int main(int argc, char** argv)
     if (maxEvts >= 0)
         cout << "[INFO] ... running on : " << maxEvts << " events" << endl;
 
+    chrono::high_resolution_clock::time_point tBegin = chrono::high_resolution_clock::now();
     for (int iEv = 0; true; ++iEv)
     {
         if (maxEvts >= 0 && iEv >= maxEvts)
@@ -186,7 +221,7 @@ int main(int argc, char** argv)
         if (iEv % 10000 == 0) cout << "... processing event " << iEv << endl;
 
         if (is_data && !jlf.isValid(*nat.run, *nat.luminosityBlock)){
-            cout << "SKIPPING THIS " << *nat.run << " " << *nat.luminosityBlock << endl;
+            // cout << "SKIPPING THIS " << *nat.run << " " << *nat.luminosityBlock << endl;
             continue; // not a valid lumi
         }
 
@@ -216,7 +251,7 @@ int main(int argc, char** argv)
         // if (!nat.triggerReader().getTrgOr()) continue;
 
         // if (!oph::select_bbbb_jets(nat, ei, oph::bbbbSelectionStrategy::kMostBackToBack)) continue;
-        if (!oph::select_bbbb_jets(nat, ei, b_sel_strat)) continue;
+        if (!oph::select_bbbb_jets(nat, ei)) continue;
 
         if (is_signal){
             oph::select_gen_HH(nat, ei);
@@ -310,7 +345,18 @@ int main(int argc, char** argv)
 
     }
 
+    chrono::high_resolution_clock::time_point tEnd = chrono::high_resolution_clock::now();
+
+    auto duration = chrono::duration_cast<chrono::seconds>( tEnd - tBegin ).count();
+    cout << "Event loop duration = " << duration << " us\n";
+
+    // cout<<"LoopDone\n";
     outputFile.cd();
+    // cout<<"FileOpened\n";
     ot.write();
+    // cout<<"Output tree written\n";
     ec.write();
+    // cout<<"Skim eff tree written\n";
 }
+
+

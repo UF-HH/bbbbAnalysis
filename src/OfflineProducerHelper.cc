@@ -6,8 +6,45 @@
 #include "CompositeCandidate.h"
 #include "Jet.h"
 #include "GenPart.h"
+#include <experimental/any>
+ 
+using namespace std::experimental;
 
 using namespace std;
+
+// bool OfflineProducerHelper::loadConfiguration(CfgParser config){
+
+//     const string bbbbChoice = config.readStringOpt("parameters::bbbbChoice");
+//     config_ = config;
+
+//     // parameterList_.emplace("bbbbChoice",bbbbChoice);
+//     if(bbbbChoice == "OneClosestToMh"){
+//         strategy_ = bbbbSelectionStrategy::kOneClosestToMh;
+//         // parameterList_.emplace("bbbbChoice""HiggsMass",config.readFloatOpt("parameters::HiggsMass"));
+//     }
+//     else if(bbbbChoice == "BothClosestToMh"){
+//         strategy_ = bbbbSelectionStrategy::kBothClosestToMh;
+//         // parameterList_.emplace("HiggsMass",config.readFloatOpt("parameters::HiggsMass"));
+//     }
+//     else if(bbbbChoice == "MostBackToBack"){
+//         strategy_ = bbbbSelectionStrategy::kMostBackToBack;
+//     }
+//     else if(bbbbChoice == "HighestCSVandColsestToMh"){
+//         strategy_ = bbbbSelectionStrategy::kHighestCSVandColsestToMh;
+//         // parameterList_.emplace("HiggsMass"           ,config.readFloatOpt("parameters::HiggsMass"           ));
+//         // parameterList_.emplace("HiggsMassMaxDistance",config.readFloatOpt("parameters::HiggsMassMaxDistance"));
+//         // parameterList_.emplace("deepCSVcut"          ,config.readFloatOpt("parameters::deepCSVcut"          ));
+//     }
+//     // else if(other selection type){
+//     //     parameters fo be retreived;
+//     // }
+//     else throw std::runtime_error("cannot recognize bbbb pair choice strategy " + bbbbChoice);
+
+//     std::cout << "[INFO] ... chosing bb bb jet pairs with strategy : " << bbbbChoice << endl;
+//     return true;
+
+// }
+
 
 std::vector<Jet> OfflineProducerHelper::make_jets(NanoAODTree& nat, const std::function<bool (Jet)>& presel_function)
 {
@@ -17,7 +54,7 @@ std::vector<Jet> OfflineProducerHelper::make_jets(NanoAODTree& nat, const std::f
         Jet jet (ij, &nat);
         bool pass = presel_function ? presel_function(jet) : true;
         if (pass)
-            jets.push_back(jet);
+            jets.emplace_back(jet);
     }
     return jets;
 }
@@ -28,7 +65,7 @@ void OfflineProducerHelper::filter_jets(std::vector<Jet>& jets, const std::funct
     return;
 }
 
-bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, bbbbSelectionStrategy strat)
+bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
 {
     // cout << "FIXME : select_bbbb_jets : this is just a dummy function " << endl;
 
@@ -38,38 +75,43 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, bb
     std::vector<Jet> jets;
     jets.reserve(*(nat.nJet));
     for (uint ij = 0; ij < *(nat.nJet); ++ij)
-        jets.push_back(Jet(ij, &nat));
+        jets.emplace_back(Jet(ij, &nat));
 
     stable_sort(jets.begin(), jets.end(), [](const Jet & a, const Jet & b) -> bool
     {
-        return ( get_property(a, Jet_btagCSVV2) < get_property(b, Jet_btagCSVV2) );
-    }); // sort by CSV (lowest to highest)
+        return ( get_property(a, Jet_btagDeepB) > get_property(b, Jet_btagDeepB) );
+    }); // sort by deepCSV (highest to lowest)
 
     // now need to pair the jets
-    std::array<Jet, 4> presel_jets = {{
+    std::vector<Jet> presel_jets = {{
         *(jets.rbegin()+0),
         *(jets.rbegin()+1),
         *(jets.rbegin()+2),
         *(jets.rbegin()+3)
     }};
 
-    std::array<Jet, 4> ordered_jets = presel_jets;
+    std::vector<Jet> ordered_jets;// = presel_jets;
 
     // cout << "IN (pt) " << endl;
     // for (auto& j : presel_jets)
     //     cout << j.P4().Pt() << endl;
 
+    // !!!!!!!!!!-----FIXME set Mh and deltaMh in the config file-----!!!!!!!!!!
     // pair the jets
-    if (strat == bbbbSelectionStrategy::kOneClosestToMh)
-        ordered_jets = bbbb_jets_idxs_OneClosestToMh(presel_jets, 115.);
-    
-    else if (strat == bbbbSelectionStrategy::kBothClosestToMh)
-        ordered_jets = bbbb_jets_idxs_BothClosestToMh(presel_jets, 115.);
-    
-    else if (strat == bbbbSelectionStrategy::kMostBackToBack)
-        ordered_jets = bbbb_jets_idxs_MostBackToBack(presel_jets);
-    else
-        cout << "** [WARNING] : select_bbbb_jets : did not recognize bbbb selection strategy, pairing by pt" << endl;
+    string strategy = any_cast<string>(parameterList_->at("bbbbChoice"));
+
+
+    if(strategy == "OneClosestToMh")
+        ordered_jets = bbbb_jets_idxs_OneClosestToMh(&presel_jets);
+    else if(strategy == "BothClosestToMh")
+        ordered_jets = bbbb_jets_idxs_BothClosestToMh(&presel_jets);
+    else if(strategy == "MostBackToBack")
+        ordered_jets = bbbb_jets_idxs_MostBackToBack(&presel_jets);
+    else if(strategy == "HighestCSVandColsestToMh")
+        ordered_jets = bbbb_jets_idxs_HighestCSVandColsestToMh(&jets);
+    else throw std::runtime_error("cannot recognize bbbb pair choice strategy " + strategy);
+
+    if(ordered_jets.size()!=4) return false;
 
     // cout << "OUT (pt) " << endl;
     // for (auto& j : ordered_jets)
@@ -106,45 +148,47 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, bb
 }
 
 // one pair is closest to the Higgs mass, the other follows
-std::array<Jet, 4> OfflineProducerHelper::bbbb_jets_idxs_OneClosestToMh(std::array<Jet, 4> presel_jets, float targetmH)
+std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_OneClosestToMh(const std::vector<Jet> *presel_jets)
 {
     // 12, 13, 14, 23, 24, 34    
+    float targetmH = any_cast<float>(parameterList_->at("HiggsMass"));
+    // float targetmH = config_.readFloatOpt("parameters::HiggsMass");
     std::vector<pair <float, pair<int,int>>> mHs_and_jetIdx; // each entry is the mH and the two idxs of the pair
     
-    for (uint i = 0; i < presel_jets.size(); ++i)
-        for (uint j = i+1; j < presel_jets.size(); ++j)
+    for (uint i = 0; i < presel_jets->size(); ++i)
+        for (uint j = i+1; j < presel_jets->size(); ++j)
         {
-            TLorentzVector p4sum = (presel_jets.at(i).P4() + presel_jets.at(j).P4());
+            TLorentzVector p4sum = (presel_jets->at(i).P4() + presel_jets->at(j).P4());
             float dmh = fabs(p4sum.Mag() - targetmH);
-            mHs_and_jetIdx.push_back(make_pair(dmh, make_pair(i,j)));
+            mHs_and_jetIdx.emplace_back(make_pair(dmh, make_pair(i,j)));
         }
 
     // sort to get the pair closest to mH
     stable_sort (mHs_and_jetIdx.begin(), mHs_and_jetIdx.end());
 
-    std::array<Jet, 4> outputJets = presel_jets;
+    std::vector<Jet> outputJets = *presel_jets;
     int ij0 = mHs_and_jetIdx.begin()->second.first;
     int ij1 = mHs_and_jetIdx.begin()->second.second;
 
     // get the other two jets. The following creates a vector with idxs 0/1/2/3, and then removes ij1 and ij2
     std::vector<int> vres;
-    for (uint i = 0; i < presel_jets.size(); ++i) vres.push_back(i);
+    for (uint i = 0; i < presel_jets->size(); ++i) vres.emplace_back(i);
     vres.erase(std::remove(vres.begin(), vres.end(), ij0), vres.end());
     vres.erase(std::remove(vres.begin(), vres.end(), ij1), vres.end());
     
     int ij2 = vres.at(0);
     int ij3 = vres.at(1);
 
-    outputJets.at(0) = presel_jets.at(ij0);
-    outputJets.at(1) = presel_jets.at(ij1);
-    outputJets.at(2) = presel_jets.at(ij2);
-    outputJets.at(3) = presel_jets.at(ij3);
+    outputJets.at(0) = presel_jets->at(ij0);
+    outputJets.at(1) = presel_jets->at(ij1);
+    outputJets.at(2) = presel_jets->at(ij2);
+    outputJets.at(3) = presel_jets->at(ij3);
 
     return outputJets;
 }
 
 // minimize the distance from (targetmH, targetmH) in the 2D plane
-std::array<Jet, 4> OfflineProducerHelper::bbbb_jets_idxs_BothClosestToMh(std::array<Jet, 4> presel_jets, float targetmH)
+std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_BothClosestToMh(const std::vector<Jet> *presel_jets)
 {
     // there are three possible pairings:
     // 12 34
@@ -153,13 +197,16 @@ std::array<Jet, 4> OfflineProducerHelper::bbbb_jets_idxs_BothClosestToMh(std::ar
     
     // 0   1   2   3   4   5
     // 12, 13, 14, 23, 24, 34    
+
+    float targetmH = any_cast<float>(parameterList_->at("HiggsMass"));
+    // float targetmH = config_.readFloatOpt("parameters::HiggsMass");
     std::vector<float> mHs;
     
-    for (uint i = 0; i < presel_jets.size(); ++i)
-        for (uint j = i+1; j < presel_jets.size(); ++j)
+    for (uint i = 0; i < presel_jets->size(); ++i)
+        for (uint j = i+1; j < presel_jets->size(); ++j)
         {
-            TLorentzVector p4sum = (presel_jets.at(i).P4() + presel_jets.at(j).P4());
-            mHs.push_back(p4sum.Mag());
+            TLorentzVector p4sum = (presel_jets->at(i).P4() + presel_jets->at(j).P4());
+            mHs.emplace_back(p4sum.Mag());
         }
 
     std::pair<float, float> m_12_34 = make_pair (mHs.at(0), mHs.at(5));
@@ -172,27 +219,27 @@ std::array<Jet, 4> OfflineProducerHelper::bbbb_jets_idxs_BothClosestToMh(std::ar
 
     float the_min = std::min({r12_34, r13_24, r14_23});
 
-    std::array<Jet, 4> outputJets = presel_jets;
+    std::vector<Jet> outputJets = *presel_jets;
 
     if (the_min == r12_34){
-        outputJets.at(0) = presel_jets.at(1 - 1);
-        outputJets.at(1) = presel_jets.at(2 - 1);
-        outputJets.at(2) = presel_jets.at(3 - 1);
-        outputJets.at(3) = presel_jets.at(4 - 1);
+        outputJets.at(0) = presel_jets->at(1 - 1);
+        outputJets.at(1) = presel_jets->at(2 - 1);
+        outputJets.at(2) = presel_jets->at(3 - 1);
+        outputJets.at(3) = presel_jets->at(4 - 1);
     }
 
     else if (the_min == r13_24){
-        outputJets.at(0) = presel_jets.at(1 - 1);
-        outputJets.at(1) = presel_jets.at(3 - 1);
-        outputJets.at(2) = presel_jets.at(2 - 1);
-        outputJets.at(3) = presel_jets.at(4 - 1);
+        outputJets.at(0) = presel_jets->at(1 - 1);
+        outputJets.at(1) = presel_jets->at(3 - 1);
+        outputJets.at(2) = presel_jets->at(2 - 1);
+        outputJets.at(3) = presel_jets->at(4 - 1);
     }
 
     else if (the_min == r14_23){
-        outputJets.at(0) = presel_jets.at(1 - 1);
-        outputJets.at(1) = presel_jets.at(4 - 1);
-        outputJets.at(2) = presel_jets.at(2 - 1);
-        outputJets.at(3) = presel_jets.at(3 - 1);   
+        outputJets.at(0) = presel_jets->at(1 - 1);
+        outputJets.at(1) = presel_jets->at(4 - 1);
+        outputJets.at(2) = presel_jets->at(2 - 1);
+        outputJets.at(3) = presel_jets->at(3 - 1);   
     }
 
     else
@@ -202,19 +249,81 @@ std::array<Jet, 4> OfflineProducerHelper::bbbb_jets_idxs_BothClosestToMh(std::ar
 }
 
 // make the pairs that maximize their dR separation
-std::array<Jet, 4> OfflineProducerHelper::bbbb_jets_idxs_MostBackToBack(std::array<Jet, 4> presel_jets)
+std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_MostBackToBack(const std::vector<Jet> *presel_jets)
 {
     std::pair<CompositeCandidate,CompositeCandidate> H1H2 = get_two_best_jet_pairs (
-        presel_jets,
+        *presel_jets,
         std::function<float (std::pair<CompositeCandidate,CompositeCandidate>)> ([](pair<CompositeCandidate,CompositeCandidate> x)-> float {return x.first.P4().DeltaR(x.second.P4());}),
         false);
 
-    std::array<Jet, 4> output_jets;
+    std::vector<Jet> output_jets;
     output_jets.at(0) = static_cast<Jet&> (H1H2.first.getComponent1());
     output_jets.at(1) = static_cast<Jet&> (H1H2.first.getComponent2());
     output_jets.at(2) = static_cast<Jet&> (H1H2.second.getComponent1());
     output_jets.at(3) = static_cast<Jet&> (H1H2.second.getComponent2());
 
+    return output_jets;
+}
+
+
+std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_HighestCSVandColsestToMh(const std::vector<Jet> *jets){
+    
+    float targetmH                = any_cast<float>(parameterList_->at("HiggsMass"           ));
+    float maxDistanceFromTargetMH = any_cast<float>(parameterList_->at("HiggsMassMaxDistance"));
+    float minimumDeepCSVaccepted  = any_cast<float>(parameterList_->at("deepCSVcut"          ));
+
+    // float targetmH = config_.readFloatOpt("parameters::HiggsMass");
+    // float maxDistanceFromTargetMH = config_.readFloatOpt("parameters::HiggsMassMaxDistance");
+    // float minimumDeepCSVaccepted  = config_.readFloatOpt("parameters::deepCSVcut");
+
+    unsigned int jetsPassingDeepCSV = 0;
+    //Jets are already ordered form highest to lowest CSV
+    // cout << "Jets:\n";
+    for(; jetsPassingDeepCSV < jets->size(); ++jetsPassingDeepCSV){
+        float tmpDeepCSV = get_property(jets->at(jetsPassingDeepCSV),Jet_btagDeepB);
+        // std::cout << tmpDeepCSV << std::endl;
+        if(tmpDeepCSV < minimumDeepCSVaccepted) break;
+    }
+    // std::cout << "Found " << jetsPassingDeepCSV << " with CSV higher than the threshold " << minimumDeepCSVaccepted << std::endl;
+
+    std::vector<Jet> output_jets;
+    if(jetsPassingDeepCSV < 4) return output_jets;
+
+    std::map< const std::array<unsigned int,4>, float> candidateMap;
+    for(unsigned int h1b1it = 0; h1b1it< jetsPassingDeepCSV-1; ++h1b1it){
+        for(unsigned int h1b2it = h1b1it+1; h1b2it< jetsPassingDeepCSV; ++h1b2it){
+            float squareDeltaMassH1 = pow((jets->at(h1b1it).P4() + jets->at(h1b2it).P4()).M()-targetmH,2);
+            if(squareDeltaMassH1> maxDistanceFromTargetMH*maxDistanceFromTargetMH) continue;
+            for(unsigned int h2b1it = h1b1it+1; h2b1it< jetsPassingDeepCSV-1; ++h2b1it){
+                if(h2b1it == h1b2it) continue;
+                for(unsigned int h2b2it = h2b1it+1; h2b2it< jetsPassingDeepCSV; ++h2b2it){
+                    if(h2b2it == h1b2it) continue;
+                    float squareDeltaMassH2 = pow((jets->at(h2b1it).P4() + jets->at(h2b2it).P4()).M()-targetmH,2);
+                    if(squareDeltaMassH2> maxDistanceFromTargetMH*maxDistanceFromTargetMH) continue;
+                    candidateMap.emplace((std::array<unsigned int,4>){h1b1it,h1b2it,h2b1it,h2b2it},squareDeltaMassH1+squareDeltaMassH2);
+                    // std::cout << "Found jets combination " << h1b1it << " " << h1b2it << " " << h2b1it << " " << h2b2it << " with ChiSquare " << squareDeltaMassH1+squareDeltaMassH2 << std::endl;
+
+
+                }
+            }
+        }
+    }
+
+    if(candidateMap.size()==0) return output_jets;
+
+    const std::pair< const std::array<unsigned int,4>, float> *itCandidateMap=NULL;
+    //find candidate with both Higgs candidates cloasest to the true Higgs mass
+    for(const auto & candidate : candidateMap)
+        if(itCandidateMap==NULL) itCandidateMap = &candidate;
+        else if(itCandidateMap->second > candidate.second) itCandidateMap = &candidate;
+
+    // std::cout<<"Selected jets";
+    for(const auto & jetPosition : itCandidateMap->first){
+        // cout << " " << jetPosition;
+        output_jets.emplace_back(jets->at(jetPosition));
+    }
+    // std::cout<<std::endl;
+  
     return output_jets;
 }
 
@@ -227,7 +336,7 @@ std::array<Jet, 4> OfflineProducerHelper::bbbb_jets_idxs_MostBackToBack(std::arr
 //         for (uint j = i+1; j < jets.size(); ++j)
 //         {
 //             CompositeCandidate cc (jets.at(i), jets.at(j));
-//             pairs.push_back(cc);
+//             pairs.emplace_back(cc);
 //         }
 
 //     // make all possible pairs of CompositeCandiates, ensuring that each jet is taken only once
@@ -238,7 +347,7 @@ std::array<Jet, 4> OfflineProducerHelper::bbbb_jets_idxs_MostBackToBack(std::arr
 //             auto& cc1 = pairs.at(i);
 //             auto& cc2 = pairs.at(j);
 //             if (cc1.sharesComponentWith(cc2)) continue;
-//             jet_combinations.push_back(make_pair(cc1, cc2));
+//             jet_combinations.emplace_back(make_pair(cc1, cc2));
 //         }
 
 //     return jet_combinations;
@@ -296,6 +405,8 @@ bool OfflineProducerHelper::select_gen_HH (NanoAODTree& nat, EventInfo& ei)
     }
     return all_ok;
 }
+
+
 
 bool OfflineProducerHelper::select_gen_bb_bb (NanoAODTree& nat, EventInfo& ei)
 {

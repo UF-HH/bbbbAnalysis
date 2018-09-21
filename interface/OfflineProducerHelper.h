@@ -11,6 +11,7 @@
 **          It's a flexible way to let the function know what it should know on the event, and possibly set extra information
 **/
 
+#include "CfgParser.h"
 #include "NanoAODTree.h"
 #include "EventInfo.h"
 #include "CompositeCandidate.h"
@@ -20,6 +21,10 @@
 #include <functional>
 #include <initializer_list>
 #include <boost/optional.hpp>
+#include <experimental/any>
+ 
+using namespace std::experimental;
+
 
 namespace OfflineProducerHelper {
 
@@ -28,25 +33,39 @@ namespace OfflineProducerHelper {
     // filter the jet collection by keeping only the elements that pass filter_function
     void filter_jets(std::vector<Jet>& jets, const std::function<bool (Jet)>& filter_function);
 
+    // Load configurations to match the b jets
+    // bool loadConfiguration(CfgParser config);
+    ///static bacause if not I got a glibc detected when the execution is completed
+    const std::map<std::string,any> *parameterList_;
+    void setParameterList(const std::map<std::string,any> *parameterList) {parameterList_=parameterList;}
+    // CfgParser config_;
+    // float higgsTargetMass_              = -999.;
+    // float higgsTargetMassMaxDifference_ = -999.;
+    // float minDeepCSV_                   = -999.;
+
     // --- - --- - --- - --- - --- - --- - --- - --- - --- - --- - --- - --- - --- - --- - 
 
-    enum class bbbbSelectionStrategy{
-        kOneClosestToMh,
-        kBothClosestToMh,
-        kMostBackToBack,
-    };
+    // enum class bbbbSelectionStrategy{
+    //     kOneClosestToMh,
+    //     kBothClosestToMh,
+    //     kMostBackToBack,
+    //     kHighestCSVandColsestToMh
+    // };
 
     // functions that act on the EventInfo
-    bool select_bbbb_jets (NanoAODTree& nat, EventInfo& ei, bbbbSelectionStrategy strat);
+    bool select_bbbb_jets (NanoAODTree& nat, EventInfo& ei);
 
+    // bbbbSelectionStrategy strategy_;
     // functions to pair a preselected set of four jets. They all shuffle the input set of jets and return them as (H1_b1, H1_b2, H2_b1, H2_b2)
     //
     // pick the pair that is closest to the Higgs mass, the other two remaining jets form the other pair
-    std::array<Jet, 4> bbbb_jets_idxs_OneClosestToMh(std::array<Jet, 4> presel_jets, float targetmH = 115.);
+    std::vector<Jet> bbbb_jets_idxs_OneClosestToMh(const std::vector<Jet> *presel_jets);
     // minimize the distance of both pairs from the (targetmH, targetmH) point in a 2D plane
-    std::array<Jet, 4> bbbb_jets_idxs_BothClosestToMh(std::array<Jet, 4> presel_jets, float targetmH = 115.);
+    std::vector<Jet> bbbb_jets_idxs_BothClosestToMh(const std::vector<Jet> *presel_jets);
     // by pair that is most back-to-back
-    std::array<Jet, 4> bbbb_jets_idxs_MostBackToBack(std::array<Jet, 4> presel_jets);
+    std::vector<Jet> bbbb_jets_idxs_MostBackToBack(const std::vector<Jet> *presel_jets);
+    //pair by ordering the jets by CSV and then finding the compination closer to targetmH for both candidates
+    std::vector<Jet> bbbb_jets_idxs_HighestCSVandColsestToMh(const std::vector<Jet> *presel_jets);
 
     // combines a collection of type C of jets (either std::vector or std::array) into a collection of H H possible combinations
     // (i.e. all possible H1 = (jA, jB) and H2 = (jC, jD) choices)

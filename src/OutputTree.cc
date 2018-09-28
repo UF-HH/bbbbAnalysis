@@ -6,12 +6,14 @@ using namespace std;
 
 // helper: creates the pt/eta/phi/p4 branches of a variable OBJ
 #define BRANCH_pt_eta_phi_p4(OBJ) \
+    tree_->Branch(#OBJ "_m",  &OBJ ## _m); \
     tree_->Branch(#OBJ "_pt",  &OBJ ## _pt); \
     tree_->Branch(#OBJ "_eta", &OBJ ## _eta); \
     tree_->Branch(#OBJ "_phi", &OBJ ## _phi); \
     if (savetlv_) tree_->Branch(#OBJ "_p4", &OBJ ## _p4);
 
 #define CLEAR_pt_eta_phi_p4(OBJ) \
+    OBJ ## _m    = -999.; \
     OBJ ## _pt   = -999.; \
     OBJ ## _eta  = -999.; \
     OBJ ## _phi  = -999.; \

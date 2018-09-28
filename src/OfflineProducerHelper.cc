@@ -269,7 +269,7 @@ std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_MostBackToBack(const std:
 std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_HighestCSVandColsestToMh(const std::vector<Jet> *jets){
     
     float targetmH                = any_cast<float>(parameterList_->at("HiggsMass"           ));
-    float maxDistanceFromTargetMH = any_cast<float>(parameterList_->at("HiggsMassMaxDistance"));
+    // float maxDistanceFromTargetMH = any_cast<float>(parameterList_->at("HiggsMassMaxDistance"));
     float minimumDeepCSVaccepted  = any_cast<float>(parameterList_->at("deepCSVcut"          ));
 
     // float targetmH = config_.readFloatOpt("parameters::HiggsMass");
@@ -293,13 +293,13 @@ std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_HighestCSVandColsestToMh(
     for(unsigned int h1b1it = 0; h1b1it< jetsPassingDeepCSV-1; ++h1b1it){
         for(unsigned int h1b2it = h1b1it+1; h1b2it< jetsPassingDeepCSV; ++h1b2it){
             float squareDeltaMassH1 = pow((jets->at(h1b1it).P4() + jets->at(h1b2it).P4()).M()-targetmH,2);
-            if(squareDeltaMassH1> maxDistanceFromTargetMH*maxDistanceFromTargetMH) continue;
+            // if(squareDeltaMassH1> maxDistanceFromTargetMH*maxDistanceFromTargetMH) continue;
             for(unsigned int h2b1it = h1b1it+1; h2b1it< jetsPassingDeepCSV-1; ++h2b1it){
                 if(h2b1it == h1b2it) continue;
                 for(unsigned int h2b2it = h2b1it+1; h2b2it< jetsPassingDeepCSV; ++h2b2it){
                     if(h2b2it == h1b2it) continue;
                     float squareDeltaMassH2 = pow((jets->at(h2b1it).P4() + jets->at(h2b2it).P4()).M()-targetmH,2);
-                    if(squareDeltaMassH2> maxDistanceFromTargetMH*maxDistanceFromTargetMH) continue;
+                    // if(squareDeltaMassH2> maxDistanceFromTargetMH*maxDistanceFromTargetMH) continue;
                     candidateMap.emplace((std::array<unsigned int,4>){h1b1it,h1b2it,h2b1it,h2b2it},squareDeltaMassH1+squareDeltaMassH2);
                     // std::cout << "Found jets combination " << h1b1it << " " << h1b2it << " " << h2b1it << " " << h2b2it << " with ChiSquare " << squareDeltaMassH1+squareDeltaMassH2 << std::endl;
 

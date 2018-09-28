@@ -23,6 +23,7 @@
 
 // helper: declares the pt/eta/phi/p4 of a variable OBJ
 #define DECLARE_pt_eta_phi_p4(OBJ) \
+    float OBJ ## _m; \
     float OBJ ## _pt; \
     float OBJ ## _eta; \
     float OBJ ## _phi; \

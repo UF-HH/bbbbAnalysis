@@ -133,7 +133,7 @@ int main(int argc, char** argv)
     else if(bbbbChoice == "HighestCSVandColsestToMh"){
         // strategy_ = bbbbSelectionStrategy::kHighestCSVandColsestToMh;
         parameterList.emplace("HiggsMass"           ,config.readFloatOpt("parameters::HiggsMass"           ));
-        parameterList.emplace("HiggsMassMaxDistance",config.readFloatOpt("parameters::HiggsMassMaxDistance"));
+        // parameterList.emplace("HiggsMassMaxDistance",config.readFloatOpt("parameters::HiggsMassMaxDistance"));
         parameterList.emplace("deepCSVcut"          ,config.readFloatOpt("parameters::deepCSVcut"          ));
     }
     // else if(other selection type){
@@ -211,7 +211,7 @@ int main(int argc, char** argv)
     if (maxEvts >= 0)
         cout << "[INFO] ... running on : " << maxEvts << " events" << endl;
 
-    chrono::high_resolution_clock::time_point tBegin = chrono::high_resolution_clock::now();
+    // chrono::high_resolution_clock::time_point tBegin = chrono::high_resolution_clock::now();
     for (int iEv = 0; true; ++iEv)
     {
         if (maxEvts >= 0 && iEv >= maxEvts)
@@ -342,13 +342,14 @@ int main(int argc, char** argv)
 
         ec.updateSelected(w_fixme);
         su::fill_output_tree(ot, nat, ei);
+        // std::cout << "Found Candidate: Run " << *(nat.run) << " lumi " << *(nat.luminosityBlock) << " event " << *(nat.event) <<std::endl;
 
     }
 
-    chrono::high_resolution_clock::time_point tEnd = chrono::high_resolution_clock::now();
+    // chrono::high_resolution_clock::time_point tEnd = chrono::high_resolution_clock::now();
 
-    auto duration = chrono::duration_cast<chrono::seconds>( tEnd - tBegin ).count();
-    cout << "Event loop duration = " << duration << " us\n";
+    // auto duration = chrono::duration_cast<chrono::seconds>( tEnd - tBegin ).count();
+    // cout << "Event loop duration = " << duration << " s\n";
 
     // cout<<"LoopDone\n";
     outputFile.cd();

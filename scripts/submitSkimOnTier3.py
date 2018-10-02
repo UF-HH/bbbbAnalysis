@@ -123,7 +123,7 @@ bbbbWorkDir  = os.getcwd()
 tarLFN       = bbbbWorkDir + '/tars/' + tarName
 
 # tarEOSdestLFN         = ('root://cmseos.fnal.gov//store/user/{0}/bbbb_analysis_tar/' + tarName).format(username)
-tarEOSdestLFN         = oLFN_base + '/analysis_tar'
+tarEOSdestLFN         = oLFN_base + '/analysis_tar/' + tarName
 tarEOSdestLFN.replace('root://cmseos.fnal.gov/', '/eos/uscms')
 # filelistEOSdestLFNdir = ('root://cmseos.fnal.gov//store/user/{0}/bbbb_analysis_tar/' + tarName).format(username)
 

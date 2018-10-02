@@ -144,6 +144,13 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
         ei.H2_b2 = ordered_jets.at(1);        
     }
 
+    ei.H1_bb_DeltaR = sqrt(pow(ei.H1_b1->P4().Eta() - ei.H1_b2->P4().Eta(),2) + pow(ei.H1_b1->P4().Phi() - ei.H1_b2->P4().Phi(),2));
+    ei.H2_bb_DeltaR = sqrt(pow(ei.H2_b1->P4().Eta() - ei.H2_b2->P4().Eta(),2) + pow(ei.H2_b1->P4().Phi() - ei.H2_b2->P4().Phi(),2));
+
+    ei.HH = CompositeCandidate(ei.H1.get(), ei.H2.get());
+    float targetmH = any_cast<float>(parameterList_->at("HiggsMass"));
+    ei.HH_2DdeltaM = pow(ei.H1->P4().M() - targetmH,2) + pow(ei.H2->P4().M() - targetmH,2);
+
     return true;
 }
 

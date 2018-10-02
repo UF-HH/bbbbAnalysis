@@ -7,11 +7,11 @@ class FatJet : public Candidate
 {
     public:
         FatJet() : Candidate(){}
-        FatJet (int idx, NanoAODTree* nat) : Candidate(idx, nat){buildP4(nat);}
+        FatJet (int idx, NanoAODTree* nat) : Candidate(idx, nat){buildP4();}
         ~FatJet(){};
         std::unique_ptr<Candidate> clone() const {return std::unique_ptr<FatJet> (new FatJet(this->getIdx(), this->getNanoAODTree()));}
     private:
-        void buildP4(NanoAODTree* nat); 
+        void buildP4(); 
 };
 
 #endif

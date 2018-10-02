@@ -35,7 +35,7 @@ class Candidate
         virtual std::unique_ptr<Candidate> clone() const = 0;
 
     protected:
-        virtual void buildP4(NanoAODTree* nat) = 0;
+        virtual void buildP4() = 0;
         int idx_;
         TLorentzVector p4_;
         NanoAODTree* nat_;

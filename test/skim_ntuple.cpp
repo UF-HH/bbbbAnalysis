@@ -230,7 +230,7 @@ int main(int argc, char** argv)
 
         // --- - --- - --- --- - --- - --- --- - --- - --- 
         // FIXME: compute the weights
-        double w_fixme = 0.75;
+        double w_fixme = 1.;
         ec.updateProcessed(w_fixme);
 
         // --- - --- - --- --- - --- - --- --- - --- - --- 

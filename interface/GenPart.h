@@ -8,7 +8,7 @@ class GenPart : public Candidate
 {
     public:
         GenPart () : Candidate(){}
-        GenPart (int idx, NanoAODTree* nat) : Candidate(idx, nat){buildP4(nat);}
+        GenPart (int idx, NanoAODTree* nat) : Candidate(idx, nat){buildP4();}
         ~GenPart(){};
         std::unique_ptr<Candidate> clone() const {return std::unique_ptr<GenPart> (new GenPart(this->getIdx(), this->getNanoAODTree()));}
 
@@ -31,7 +31,7 @@ class GenPart : public Candidate
 
     private:
         bool checkBit(int number, int bitpos) {return (number & (1 << bitpos));}
-        void buildP4(NanoAODTree* nat); 
+        void buildP4(); 
         static const std::map<int, float> gen_mass_;
 };
 

@@ -120,25 +120,24 @@ int main(int argc, char** argv)
     
     parameterList.emplace("bbbbChoice",bbbbChoice);
     if(bbbbChoice == "OneClosestToMh"){
-        // strategy_ = bbbbSelectionStrategy::kOneClosestToMh;
         parameterList.emplace("bbbbChoice""HiggsMass",config.readFloatOpt("parameters::HiggsMass"));
     }
     else if(bbbbChoice == "BothClosestToMh"){
-        // strategy_ = bbbbSelectionStrategy::kBothClosestToMh;
         parameterList.emplace("HiggsMass",config.readFloatOpt("parameters::HiggsMass"));
     }
     else if(bbbbChoice == "MostBackToBack"){
-        // strategy_ = bbbbSelectionStrategy::kMostBackToBack;
+        parameterList.emplace("HiggsMass",config.readFloatOpt("parameters::HiggsMass"));
     }
     else if(bbbbChoice == "HighestCSVandColsestToMh"){
-        // strategy_ = bbbbSelectionStrategy::kHighestCSVandColsestToMh;
-        parameterList.emplace("HiggsMass"           ,config.readFloatOpt("parameters::HiggsMass"           ));
-        // parameterList.emplace("HiggsMassMaxDistance",config.readFloatOpt("parameters::HiggsMassMaxDistance"));
+        parameterList.emplace("HiggsMassLMR"        ,config.readFloatOpt("parameters::HiggsMassLMR"        ));
+        parameterList.emplace("HiggsMassMMR"        ,config.readFloatOpt("parameters::HiggsMassMMR"        ));
+        parameterList.emplace("LMRToMMRTransition"  ,config.readFloatOpt("parameters::LMRToMMRTransition"  ));
         parameterList.emplace("deepCSVcut"          ,config.readFloatOpt("parameters::deepCSVcut"          ));
     }
     // else if(other selection type){
     //     parameters fo be retreived;
     // }
+
     else throw std::runtime_error("cannot recognize bbbb pair choice strategy " + bbbbChoice);
 
     cout << "[INFO] ... chosing bb bb jet pairs with strategy : " << bbbbChoice << endl;

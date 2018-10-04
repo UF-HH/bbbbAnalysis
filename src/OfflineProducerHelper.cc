@@ -148,8 +148,19 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
     ei.H2_bb_DeltaR = sqrt(pow(ei.H2_b1->P4().Eta() - ei.H2_b2->P4().Eta(),2) + pow(ei.H2_b1->P4().Phi() - ei.H2_b2->P4().Phi(),2));
 
     ei.HH = CompositeCandidate(ei.H1.get(), ei.H2.get());
-    float targetmH = any_cast<float>(parameterList_->at("HiggsMass"));
-    ei.HH_2DdeltaM = pow(ei.H1->P4().M() - targetmH,2) + pow(ei.H2->P4().M() - targetmH,2);
+    float targetHiggsMass;
+    if(strategy == "HighestCSVandColsestToMh")
+    {
+        targetHiggsMass = any_cast<float>(parameterList_->at("HiggsMassLMR"));
+        if(any_cast<float>(parameterList_->at("LMRToMMRTransition"))>=0. && ei.HH->P4().M() > any_cast<float>(parameterList_->at("LMRToMMRTransition"))) targetHiggsMass = any_cast<float>(parameterList_->at("HiggsMassLMR"));
+                   
+    }
+    else
+    {
+        targetHiggsMass = any_cast<float>(parameterList_->at("HiggsMass"));
+    }
+
+    ei.HH_2DdeltaM = pow(ei.H1->P4().M() - targetHiggsMass,2) + pow(ei.H2->P4().M() - targetHiggsMass,2);
 
     return true;
 }
@@ -158,15 +169,15 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
 std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_OneClosestToMh(const std::vector<Jet> *presel_jets)
 {
     // 12, 13, 14, 23, 24, 34    
-    float targetmH = any_cast<float>(parameterList_->at("HiggsMass"));
-    // float targetmH = config_.readFloatOpt("parameters::HiggsMass");
+    float targetHiggsMass = any_cast<float>(parameterList_->at("HiggsMass"));
+    // float targetHiggsMass = config_.readFloatOpt("parameters::HiggsMass");
     std::vector<pair <float, pair<int,int>>> mHs_and_jetIdx; // each entry is the mH and the two idxs of the pair
     
     for (uint i = 0; i < presel_jets->size(); ++i)
         for (uint j = i+1; j < presel_jets->size(); ++j)
         {
             TLorentzVector p4sum = (presel_jets->at(i).P4() + presel_jets->at(j).P4());
-            float dmh = fabs(p4sum.Mag() - targetmH);
+            float dmh = fabs(p4sum.Mag() - targetHiggsMass);
             mHs_and_jetIdx.emplace_back(make_pair(dmh, make_pair(i,j)));
         }
 
@@ -194,7 +205,7 @@ std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_OneClosestToMh(const std:
     return outputJets;
 }
 
-// minimize the distance from (targetmH, targetmH) in the 2D plane
+// minimize the distance from (targetHiggsMass, targetHiggsMass) in the 2D plane
 std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_BothClosestToMh(const std::vector<Jet> *presel_jets)
 {
     // there are three possible pairings:
@@ -205,8 +216,8 @@ std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_BothClosestToMh(const std
     // 0   1   2   3   4   5
     // 12, 13, 14, 23, 24, 34    
 
-    float targetmH = any_cast<float>(parameterList_->at("HiggsMass"));
-    // float targetmH = config_.readFloatOpt("parameters::HiggsMass");
+    float targetHiggsMass = any_cast<float>(parameterList_->at("HiggsMass"));
+    // float targetHiggsMass = config_.readFloatOpt("parameters::HiggsMass");
     std::vector<float> mHs;
     
     for (uint i = 0; i < presel_jets->size(); ++i)
@@ -220,9 +231,9 @@ std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_BothClosestToMh(const std
     std::pair<float, float> m_13_24 = make_pair (mHs.at(1), mHs.at(4));
     std::pair<float, float> m_14_23 = make_pair (mHs.at(2), mHs.at(3));
 
-    float r12_34 = sqrt (pow(m_12_34.first - targetmH, 2) + pow(m_12_34.second - targetmH, 2) );
-    float r13_24 = sqrt (pow(m_13_24.first - targetmH, 2) + pow(m_13_24.second - targetmH, 2) );
-    float r14_23 = sqrt (pow(m_14_23.first - targetmH, 2) + pow(m_14_23.second - targetmH, 2) );
+    float r12_34 = sqrt (pow(m_12_34.first - targetHiggsMass, 2) + pow(m_12_34.second - targetHiggsMass, 2) );
+    float r13_24 = sqrt (pow(m_13_24.first - targetHiggsMass, 2) + pow(m_13_24.second - targetHiggsMass, 2) );
+    float r14_23 = sqrt (pow(m_14_23.first - targetHiggsMass, 2) + pow(m_14_23.second - targetHiggsMass, 2) );
 
     float the_min = std::min({r12_34, r13_24, r14_23});
 
@@ -275,12 +286,14 @@ std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_MostBackToBack(const std:
 
 std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_HighestCSVandColsestToMh(const std::vector<Jet> *jets){
     
-    float targetmH                = any_cast<float>(parameterList_->at("HiggsMass"           ));
-    // float maxDistanceFromTargetMH = any_cast<float>(parameterList_->at("HiggsMassMaxDistance"));
+    float targetHiggsMassLMR                = any_cast<float>(parameterList_->at("HiggsMassLMR"        ));
+    float targetHiggsMassMMR                = any_cast<float>(parameterList_->at("HiggsMassMMR"        ));
+    float LMRToMMRTransition                = any_cast<float>(parameterList_->at("LMRToMMRTransition" ));
+    // float maxDistanceFromTargetHiggsMass = any_cast<float>(parameterList_->at("HiggsMassMaxDistance"));
     float minimumDeepCSVaccepted  = any_cast<float>(parameterList_->at("deepCSVcut"          ));
 
-    // float targetmH = config_.readFloatOpt("parameters::HiggsMass");
-    // float maxDistanceFromTargetMH = config_.readFloatOpt("parameters::HiggsMassMaxDistance");
+    // float targetHiggsMass = config_.readFloatOpt("parameters::HiggsMass");
+    // float maxDistanceFromTargetHiggsMass = config_.readFloatOpt("parameters::HiggsMassMaxDistance");
     // float minimumDeepCSVaccepted  = config_.readFloatOpt("parameters::deepCSVcut");
 
     unsigned int jetsPassingDeepCSV = 0;
@@ -299,14 +312,17 @@ std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_HighestCSVandColsestToMh(
     std::map< const std::array<unsigned int,4>, float> candidateMap;
     for(unsigned int h1b1it = 0; h1b1it< jetsPassingDeepCSV-1; ++h1b1it){
         for(unsigned int h1b2it = h1b1it+1; h1b2it< jetsPassingDeepCSV; ++h1b2it){
-            float squareDeltaMassH1 = pow((jets->at(h1b1it).P4() + jets->at(h1b2it).P4()).M()-targetmH,2);
-            // if(squareDeltaMassH1> maxDistanceFromTargetMH*maxDistanceFromTargetMH) continue;
+            // if(squareDeltaMassH1> maxDistanceFromTargetHiggsMass*maxDistanceFromTargetHiggsMass) continue;
             for(unsigned int h2b1it = h1b1it+1; h2b1it< jetsPassingDeepCSV-1; ++h2b1it){
                 if(h2b1it == h1b2it) continue;
                 for(unsigned int h2b2it = h2b1it+1; h2b2it< jetsPassingDeepCSV; ++h2b2it){
                     if(h2b2it == h1b2it) continue;
-                    float squareDeltaMassH2 = pow((jets->at(h2b1it).P4() + jets->at(h2b2it).P4()).M()-targetmH,2);
-                    // if(squareDeltaMassH2> maxDistanceFromTargetMH*maxDistanceFromTargetMH) continue;
+                    float targetHiggsMass = targetHiggsMassLMR;
+                    float candidateMass = (jets->at(h1b1it).P4() + jets->at(h1b2it).P4() + jets->at(h2b1it).P4() + jets->at(h2b2it).P4()).M();
+                    if(LMRToMMRTransition>=0. && candidateMass > LMRToMMRTransition) targetHiggsMass = targetHiggsMassMMR;
+                    float squareDeltaMassH1 = pow((jets->at(h1b1it).P4() + jets->at(h1b2it).P4()).M()-targetHiggsMass,2);
+                    float squareDeltaMassH2 = pow((jets->at(h2b1it).P4() + jets->at(h2b2it).P4()).M()-targetHiggsMass,2);
+                    // if(squareDeltaMassH2> maxDistanceFromTargetHiggsMass*maxDistanceFromTargetHiggsMass) continue;
                     candidateMap.emplace((std::array<unsigned int,4>){h1b1it,h1b2it,h2b1it,h2b2it},squareDeltaMassH1+squareDeltaMassH2);
                     // std::cout << "Found jets combination " << h1b1it << " " << h1b2it << " " << h2b1it << " " << h2b2it << " with ChiSquare " << squareDeltaMassH1+squareDeltaMassH2 << std::endl;
 

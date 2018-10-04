@@ -177,7 +177,7 @@ string CfgParser::readStringOpt(string section, string option)
     //     return string("");
     // }
     if(!hasOpt(section,option)){
-        throw std::runtime_error("option " + section + "::" + option + " is requested by the OfflineProducerHelper");
+        throw std::runtime_error("option " + section + "::" + option + " is requested");
     }
     return config_[section][option];
 }
@@ -190,9 +190,6 @@ string CfgParser::readStringOpt(string compact)
 
 int CfgParser::readIntOpt(string section, string option)
 {
-    // if(!hasOpt(section,option)){
-    //     throw std::runtime_error("option " + section + "::" + option + " is requested by the OfflineProducerHelper");
-    // }
     string s = readStringOpt(section, option);
     return stoi(s);
 }
@@ -205,9 +202,6 @@ int CfgParser::readIntOpt(string compact)
 
 bool CfgParser::readBoolOpt(string section, string option)
 {
-    // if(!hasOpt(section,option)){
-    //     throw std::runtime_error("option " + section + "::" + option + " is requested by the OfflineProducerHelper");
-    // }
     string s = readStringOpt(section, option);
     // return stoi(s);
     if (s == "true" || s == "True") return true;
@@ -224,9 +218,6 @@ bool CfgParser::readBoolOpt(string compact)
 
 float CfgParser::readFloatOpt(string section, string option)
 {
-    // if(!hasOpt(section,option)){
-    //     throw std::runtime_error("option " + section + "::" + option + " is requested by the OfflineProducerHelper");
-    // }
     string s = readStringOpt(section, option);
     return stof(s);
 }
@@ -242,7 +233,7 @@ vector<string> CfgParser::readStringListOpt(string section, string option)
     //  if(!hasOpt(section,option)){
     //     throw std::runtime_error("option " + section + "::" + option + " is requested by the OfflineProducerHelper");
     // }
-   string s = readStringOpt(section, option);
+    string s = readStringOpt(section, option);
     vector<string> values = splitStringInList(s);
     return values;
 }
@@ -256,9 +247,6 @@ vector<string> CfgParser::readStringListOpt(string compact)
 vector<int> CfgParser::readIntListOpt(string section, string option)
 {
 
-    // if(!hasOpt(section,option)){
-    //     throw std::runtime_error("option " + section + "::" + option + " is requested by the OfflineProducerHelper");
-    // }
     vector<string> vs = readStringListOpt(section, option);
     vector<int> result;
     for (string s : vs)
@@ -274,9 +262,6 @@ vector<int> CfgParser::readIntListOpt(string compact)
 
 vector<bool> CfgParser::readBoolListOpt(string section, string option)
 {
-    // if(!hasOpt(section,option)){
-    //     throw std::runtime_error("option " + section + "::" + option + " is requested by the OfflineProducerHelper");
-    // }
     vector<string> vs = readStringListOpt(section, option);
     vector<bool> result;
     for (string s : vs)
@@ -302,9 +287,6 @@ vector<bool> CfgParser::readBoolListOpt(string compact)
 
 vector<float> CfgParser::readFloatListOpt(string section, string option)
 {
-    // if(!hasOpt(section,option)){
-    //     throw std::runtime_error("option " + section + "::" + option + " is requested by the OfflineProducerHelper");
-    // }
     vector<string> vs = readStringListOpt(section, option);
     vector<float> result;
     for (string s : vs)

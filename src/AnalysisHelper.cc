@@ -64,7 +64,13 @@ bool AnalysisHelper::readMainInfo()
     
     if (!(mainCfg_->hasOpt("general::outputFolder"))) return false;
     outputFolder_ = mainCfg_->readStringOpt("general::outputFolder");   
-    cout << "@@ output folder       : " << outputFolder_<< endl;   
+    cout << "@@ output folder       : " << outputFolder_<< endl;
+
+    if (is_dir(outputFolder_.data()))
+    {
+        cout << "... Output folder " << outputFolder_ << " already exist, delated it or change name\n";
+        return false;
+    }
 
     outputFileName_ = "outPlotter.root"; // override default only if specified
     if (mainCfg_->hasOpt("general::outputFileName"))

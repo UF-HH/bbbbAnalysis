@@ -1,5 +1,9 @@
 # bbbbAnalysis
 
+INFO: the code in this branch (YR2018-proj) features small modifications to run on the Delphes-based ntuples for the 2018 CERN YR HH bbbb projection.
+Only the histogram filler code is used.
+This branch is *not* meant to be merged with the master code for the Run 2 analysis.
+
 ## Install instructions
 ```
 cmsrel CMSSW_9_4_1

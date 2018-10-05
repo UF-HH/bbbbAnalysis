@@ -115,20 +115,28 @@ void AnalysisHelper::saveOutputsToFile()
     
     // nesting orderd: type of events --> sample --> selection --> variable --> systematics
 
-    fOut->cd();
     for (uint itype = 0; itype < allToSave.size(); ++itype)        
     {
         // cout << "itype " << itype << "/" << allToSave.size() << endl;
         for (uint isample = 0; isample < allToSave.at(itype)->size(); ++isample)
         {
+            fOut->cd();
+            string sampleDir = "";
+            sampleDir  = allToSave.at(itype)->at(isample)->getName();
+            fOut->mkdir(sampleDir.data());
+            fOut->cd   (sampleDir.data());
+
             // cout << "isample " << isample << "/" << allToSave.at(itype)->size() << endl;
             Sample::selColl& plotSet = allToSave.at(itype)->at(isample)->plots();
             for (uint isel = 0; isel < plotSet.size(); ++isel)
             {
+                string selectionDir = sampleDir + "/" + plotSet.key(isel);
+                fOut->mkdir(selectionDir.data());
+                fOut->cd   (selectionDir.data());
                 // cout << "isel " << isel << "/" << plotSet.size() << endl;
                 for (uint ivar = 0; ivar < plotSet.at(isel).size(); ++ivar)
                 {
-                    // cout << "ivar " << ivar << "/" << plotSet.at(isel).size() << endl;
+                     // cout << "ivar " << ivar << "/" << plotSet.at(isel).size() << endl;
                     for (uint isyst = 0; isyst < plotSet.at(isel).at(ivar).size(); ++isyst)
                     {
                         // cout << "isyst " << isyst << "/" << plotSet.at(isel).at(ivar).size() << endl;

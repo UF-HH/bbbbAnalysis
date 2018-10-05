@@ -128,7 +128,7 @@ int main(int argc, char** argv)
     else if(bbbbChoice == "MostBackToBack"){
         parameterList.emplace("HiggsMass",config.readFloatOpt("parameters::HiggsMass"));
     }
-    else if(bbbbChoice == "HighestCSVandColsestToMh"){
+    else if(bbbbChoice == "HighestCSVandClosestToMh"){
         parameterList.emplace("HiggsMassLMR"        ,config.readFloatOpt("parameters::HiggsMassLMR"        ));
         parameterList.emplace("HiggsMassMMR"        ,config.readFloatOpt("parameters::HiggsMassMMR"        ));
         parameterList.emplace("LMRToMMRTransition"  ,config.readFloatOpt("parameters::LMRToMMRTransition"  ));

@@ -29,8 +29,8 @@ using namespace std;
 //     else if(bbbbChoice == "MostBackToBack"){
 //         strategy_ = bbbbSelectionStrategy::kMostBackToBack;
 //     }
-//     else if(bbbbChoice == "HighestCSVandColsestToMh"){
-//         strategy_ = bbbbSelectionStrategy::kHighestCSVandColsestToMh;
+//     else if(bbbbChoice == "HighestCSVandClosestToMh"){
+//         strategy_ = bbbbSelectionStrategy::kHighestCSVandClosestToMh;
 //         // parameterList_.emplace("HiggsMass"           ,config.readFloatOpt("parameters::HiggsMass"           ));
 //         // parameterList_.emplace("HiggsMassMaxDistance",config.readFloatOpt("parameters::HiggsMassMaxDistance"));
 //         // parameterList_.emplace("deepCSVcut"          ,config.readFloatOpt("parameters::deepCSVcut"          ));
@@ -107,8 +107,8 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
         ordered_jets = bbbb_jets_idxs_BothClosestToMh(&presel_jets);
     else if(strategy == "MostBackToBack")
         ordered_jets = bbbb_jets_idxs_MostBackToBack(&presel_jets);
-    else if(strategy == "HighestCSVandColsestToMh")
-        ordered_jets = bbbb_jets_idxs_HighestCSVandColsestToMh(&jets);
+    else if(strategy == "HighestCSVandClosestToMh")
+        ordered_jets = bbbb_jets_idxs_HighestCSVandClosestToMh(&jets);
     else throw std::runtime_error("cannot recognize bbbb pair choice strategy " + strategy);
 
     if(ordered_jets.size()!=4) return false;
@@ -149,10 +149,10 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
 
     ei.HH = CompositeCandidate(ei.H1.get(), ei.H2.get());
     float targetHiggsMass;
-    if(strategy == "HighestCSVandColsestToMh")
+    if(strategy == "HighestCSVandClosestToMh")
     {
         targetHiggsMass = any_cast<float>(parameterList_->at("HiggsMassLMR"));
-        if(any_cast<float>(parameterList_->at("LMRToMMRTransition"))>=0. && ei.HH->P4().M() > any_cast<float>(parameterList_->at("LMRToMMRTransition"))) targetHiggsMass = any_cast<float>(parameterList_->at("HiggsMassLMR"));
+        if(any_cast<float>(parameterList_->at("LMRToMMRTransition"))>=0. && ei.HH->P4().M() > any_cast<float>(parameterList_->at("LMRToMMRTransition"))) targetHiggsMass = any_cast<float>(parameterList_->at("HiggsMassMMR"));
                    
     }
     else
@@ -161,6 +161,7 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
     }
 
     ei.HH_2DdeltaM = pow(ei.H1->P4().M() - targetHiggsMass,2) + pow(ei.H2->P4().M() - targetHiggsMass,2);
+    // cout<<" ----------- Selected candidate mass = " << ei.HH->P4().M() << " Delta Value = "<<*ei.HH_2DdeltaM<<" targetHiggsMass = "<<targetHiggsMass<<endl;
 
     return true;
 }
@@ -284,7 +285,7 @@ std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_MostBackToBack(const std:
 }
 
 
-std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_HighestCSVandColsestToMh(const std::vector<Jet> *jets){
+std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_HighestCSVandClosestToMh(const std::vector<Jet> *jets){
     
     float targetHiggsMassLMR                = any_cast<float>(parameterList_->at("HiggsMassLMR"        ));
     float targetHiggsMassMMR                = any_cast<float>(parameterList_->at("HiggsMassMMR"        ));
@@ -320,11 +321,12 @@ std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_HighestCSVandColsestToMh(
                     float targetHiggsMass = targetHiggsMassLMR;
                     float candidateMass = (jets->at(h1b1it).P4() + jets->at(h1b2it).P4() + jets->at(h2b1it).P4() + jets->at(h2b2it).P4()).M();
                     if(LMRToMMRTransition>=0. && candidateMass > LMRToMMRTransition) targetHiggsMass = targetHiggsMassMMR;
+                    // cout<< "Candidate mass = "<<candidateMass<<" Transition = "<<LMRToMMRTransition<<" targetHiggsMass = "<<targetHiggsMass<<std::endl;
                     float squareDeltaMassH1 = pow((jets->at(h1b1it).P4() + jets->at(h1b2it).P4()).M()-targetHiggsMass,2);
                     float squareDeltaMassH2 = pow((jets->at(h2b1it).P4() + jets->at(h2b2it).P4()).M()-targetHiggsMass,2);
                     // if(squareDeltaMassH2> maxDistanceFromTargetHiggsMass*maxDistanceFromTargetHiggsMass) continue;
                     candidateMap.emplace((std::array<unsigned int,4>){h1b1it,h1b2it,h2b1it,h2b2it},squareDeltaMassH1+squareDeltaMassH2);
-                    // std::cout << "Found jets combination " << h1b1it << " " << h1b2it << " " << h2b1it << " " << h2b2it << " with ChiSquare " << squareDeltaMassH1+squareDeltaMassH2 << std::endl;
+                    // std::cout << "Found jets combination " << h1b1it << " " << h1b2it << " " << h2b1it << " " << h2b2it << " with ChiSquare " << squareDeltaMassH1+squareDeltaMassH2 << " Candidate mass = "<<candidateMass<<" Transition = "<<LMRToMMRTransition<<" targetHiggsMass = "<<targetHiggsMass<<std::endl;
 
 
                 }

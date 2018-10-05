@@ -65,7 +65,7 @@ namespace OfflineProducerHelper {
     // by pair that is most back-to-back
     std::vector<Jet> bbbb_jets_idxs_MostBackToBack(const std::vector<Jet> *presel_jets);
     //pair by ordering the jets by CSV and then finding the compination closer to targetmH for both candidates
-    std::vector<Jet> bbbb_jets_idxs_HighestCSVandColsestToMh(const std::vector<Jet> *presel_jets);
+    std::vector<Jet> bbbb_jets_idxs_HighestCSVandClosestToMh(const std::vector<Jet> *presel_jets);
 
     // combines a collection of type C of jets (either std::vector or std::array) into a collection of H H possible combinations
     // (i.e. all possible H1 = (jA, jB) and H2 = (jC, jD) choices)

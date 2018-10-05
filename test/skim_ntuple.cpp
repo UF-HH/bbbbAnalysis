@@ -34,17 +34,6 @@ using namespace std;
  
 using namespace std::experimental;
 
-
-// #include <boost/version.hpp>
-// std::cout << "Boost version: " 
-//       << BOOST_VERSION / 100000
-//       << "."
-//       << BOOST_VERSION / 100 % 1000
-//       << "."
-//       << BOOST_VERSION % 100 
-//       << std::endl;
-// return 0;
-
 // skim_ntuple.exe --cfg config/skim.cfg --input inputFiles/Samples_80X/VBF_HH_4b_10gen2018.txt --output test_bbbb_tree.root --xs 10 --is-signal
 
 int main(int argc, char** argv)
@@ -82,7 +71,6 @@ int main(int argc, char** argv)
         po::notify(opts);
     }    
     catch (po::error& e) {
-        // cerr << "ERROR: " << e.what() << endl << endl << desc << endl;
         cerr << "** [ERROR] " << e.what() << endl;
         return 1;
     }
@@ -107,8 +95,6 @@ int main(int argc, char** argv)
     const float xs = (is_data ? 1.0 : opts["xs"].as<float>());
     cout << "[INFO] ... cross section is : " << xs << " pb" << endl;
 
-    // oph::configurationFile = config;
-    
     CfgParser config;
     if (!config.init(opts["cfg"].as<string>())) return 1;
     cout << "[INFO] ... using config file " << opts["cfg"].as<string>() << endl;
@@ -143,8 +129,6 @@ int main(int argc, char** argv)
     cout << "[INFO] ... chosing bb bb jet pairs with strategy : " << bbbbChoice << endl;
 
     oph::setParameterList(&parameterList);
-
-    // oph::loadConfiguration(config);    
 
     ////////////////////////////////////////////////////////////////////////
     // Prepare event loop
@@ -189,18 +173,12 @@ int main(int argc, char** argv)
 
     SkimEffCounter ec;
 
-    // /// to declare user branches for studies
-    // ot.declareUserIntBranch("integer1", 0);
-    // ot.declareUserIntBranch("integer2", 1);
-    // ot.declareUserFloatBranch("float1", 0.01);
-    // ot.declareUserFloatBranch("float2", 1.001);
     ot.declareUserFloatBranch("LHE_HT", 0);
     ot.declareUserFloatBranch("my_LHE_HT", 0);
 
     jsonLumiFilter jlf;
     if (is_data)
         jlf.loadJSON(config.readStringOpt("data::lumimask")); // just read the info for data, so if I just skim MC I'm not forced to parse a JSON
-    // jlf.dumpJSON(); // print JSON on screen
 
     ////////////////////////////////////////////////////////////////////////
     // Execute event loop
@@ -210,7 +188,6 @@ int main(int argc, char** argv)
     if (maxEvts >= 0)
         cout << "[INFO] ... running on : " << maxEvts << " events" << endl;
 
-    // chrono::high_resolution_clock::time_point tBegin = chrono::high_resolution_clock::now();
     for (int iEv = 0; true; ++iEv)
     {
         if (maxEvts >= 0 && iEv >= maxEvts)
@@ -220,36 +197,20 @@ int main(int argc, char** argv)
         if (iEv % 10000 == 0) cout << "... processing event " << iEv << endl;
 
         if (is_data && !jlf.isValid(*nat.run, *nat.luminosityBlock)){
-            // cout << "SKIPPING THIS " << *nat.run << " " << *nat.luminosityBlock << endl;
             continue; // not a valid lumi
         }
 
         ot.clear();
         EventInfo ei;
 
-        // --- - --- - --- --- - --- - --- --- - --- - --- 
-        // FIXME: compute the weights
-        double w_fixme = 1.;
-        ec.updateProcessed(w_fixme);
+        double weight = 1.;
+        if(!is_data){
+            // !!!!!!!!!!!  -------  FIXME: compute the weights -------  !!!!!!!!!!!
+            weight=0.75;
+        }
 
-        // --- - --- - --- --- - --- - --- --- - --- - --- 
+        ec.updateProcessed(weight);
 
-        // cout << "---- my jets" << endl;
-        // for (uint ij = 0; ij < *(nat.nJet); ++ij)
-        // {
-        //     Jet jet (ij, &nat);
-        //     // cout << jet.P4().Px() << " " << jet.P4().Py() << " " << jet.P4().Pz() << " " << jet.P4().E() << " btag " << nat.Jet_btagCSVV2.At(ij) << endl;
-        //     cout << " Pt  : "     << setw(10) << jet.P4().Pt()
-        //          << " Eta : "     << setw(10) << jet.P4().Eta()
-        //          << " Phi : "     << setw(10) << jet.P4().Phi()
-        //          << " E   : "     << setw(10) << jet.P4().E()
-        //          << " | CSV   : " << nat.Jet_btagCSVV2.At(ij)
-        //          << endl;
-        // }
-
-        // if (!nat.triggerReader().getTrgOr()) continue;
-
-        // if (!oph::select_bbbb_jets(nat, ei, oph::bbbbSelectionStrategy::kMostBackToBack)) continue;
         if (!oph::select_bbbb_jets(nat, ei)) continue;
 
         if (is_signal){
@@ -267,96 +228,15 @@ int main(int argc, char** argv)
             }
         }
 
-        // --- - --- - --- --- - --- - --- --- - --- - --- 
-
-        // debug of LHE HT
-        // float my_HT = 0;
-        // my_HT += ei.gen_H1_b1->P4().Pt();
-        // my_HT += ei.gen_H1_b2->P4().Pt();
-        // my_HT += ei.gen_H2_b1->P4().Pt();
-        // my_HT += ei.gen_H2_b2->P4().Pt();
-        // if (is_VBF_sig){
-        //     my_HT += ei.gen_q1_out->P4().Pt();
-        //     my_HT += ei.gen_q2_out->P4().Pt();
-        // }
-
-        // ot.userFloat("LHE_HT") = (*(nat.LHE_HT));
-        // ot.userFloat("my_LHE_HT") = my_HT;
-
-        // cout << "Nano: " << *(nat.LHE_HT) << " Mine: " << my_HT << endl;
-
-        // --- use the user Floats
-        // if (iEv == 5)
-        //     ot.userInt("integer1") = 5;
-        // if (iEv == 6)
-        //     ot.userInt("integer2") = 66;
-        // if (iEv == 10){
-        //     ot.userFloat("float1") = 5.1;
-        //     ot.userFloat("float2") = 5.2;
-        //     ot.userInt("integer2") = 52;
-        // }
-        // wrong names cause an exception
-        // ot.userInt("integer22") = 52;
-
-        // cout << "EVENT " << *(nat.event) << endl;
-        // cout << "Selected H1_b1 : " << ei.H1_b1->getIdx() << endl;
-        // cout << "Selected H1_b2 : " << ei.H1_b2->getIdx() << endl;
-        // cout << "Selected H2_b1 : " << ei.H2_b1->getIdx() << endl;
-        // cout << "Selected H2_b2 : " << ei.H2_b2->getIdx() << endl;
-        // cout << "And linked jets " << endl;
-        // for (uint ij = 0; ij < *(nat.nJet); ++ij)
-        // {
-        //     cout << "** " <<  ij << " mothIdx " << endl; 
-        // }
-
-        // --- - --- - --- --- - --- - --- --- - --- - --- 
-        // auto jets_all  = oph::make_jets(nat);
-        // auto jets_pt50 = oph::make_jets(nat);
-        // oph::filter_jets(jets_pt50,
-        //     std::function<bool (Jet)> ([](Jet jet) -> bool {return jet.P4().Pt() > 50;})
-        // );
-
-        // auto jets_pt50 = oph::make_jets (
-        //     nat,
-        //     std::function<bool (Jet)> ([](Jet jet) -> bool {return jet.P4().Pt() > 50;})
-        // );
-        // auto jets_pt50_etapos = oph::make_jets(
-        //     nat,
-        //     std::function<bool (Jet)> ([](Jet jet) -> bool {return (jet.P4().Pt() > 50 && jet.P4().Eta() > 0);})
-        // );
-
-        // cout << "ALL - iEv " << iEv << endl;
-        // for (auto& j : jets_all)
-        //     cout << j.P4().Pt() << " " << j.P4().Eta() << endl;
-
-        // cout << "PT 50 - iEv " << iEv << endl;
-        // for (auto& j : jets_pt50)
-        //     cout << j.P4().Pt() << " " << j.P4().Eta() << endl;
-        
-        // cout << "PT 50 - eta pos iEv " << iEv << endl;
-        // for (auto& j : jets_pt50_etapos)
-        //     cout << j.P4().Pt() << " " << j.P4().Eta() << endl;
-
-        // --- - --- - --- --- - --- - --- --- - --- - --- 
-
-        ec.updateSelected(w_fixme);
+        ec.updateSelected(weight);
         su::fill_output_tree(ot, nat, ei);
-        // std::cout << "Found Candidate: Run " << *(nat.run) << " lumi " << *(nat.luminosityBlock) << " event " << *(nat.event) <<std::endl;
 
     }
 
-    // chrono::high_resolution_clock::time_point tEnd = chrono::high_resolution_clock::now();
-
-    // auto duration = chrono::duration_cast<chrono::seconds>( tEnd - tBegin ).count();
-    // cout << "Event loop duration = " << duration << " s\n";
-
-    // cout<<"LoopDone\n";
     outputFile.cd();
-    // cout<<"FileOpened\n";
     ot.write();
-    // cout<<"Output tree written\n";
     ec.write();
-    // cout<<"Skim eff tree written\n";
+
 }
 
 

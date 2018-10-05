@@ -12,39 +12,6 @@ using namespace std::experimental;
 
 using namespace std;
 
-// bool OfflineProducerHelper::loadConfiguration(CfgParser config){
-
-//     const string bbbbChoice = config.readStringOpt("parameters::bbbbChoice");
-//     config_ = config;
-
-//     // parameterList_.emplace("bbbbChoice",bbbbChoice);
-//     if(bbbbChoice == "OneClosestToMh"){
-//         strategy_ = bbbbSelectionStrategy::kOneClosestToMh;
-//         // parameterList_.emplace("bbbbChoice""HiggsMass",config.readFloatOpt("parameters::HiggsMass"));
-//     }
-//     else if(bbbbChoice == "BothClosestToMh"){
-//         strategy_ = bbbbSelectionStrategy::kBothClosestToMh;
-//         // parameterList_.emplace("HiggsMass",config.readFloatOpt("parameters::HiggsMass"));
-//     }
-//     else if(bbbbChoice == "MostBackToBack"){
-//         strategy_ = bbbbSelectionStrategy::kMostBackToBack;
-//     }
-//     else if(bbbbChoice == "HighestCSVandClosestToMh"){
-//         strategy_ = bbbbSelectionStrategy::kHighestCSVandClosestToMh;
-//         // parameterList_.emplace("HiggsMass"           ,config.readFloatOpt("parameters::HiggsMass"           ));
-//         // parameterList_.emplace("HiggsMassMaxDistance",config.readFloatOpt("parameters::HiggsMassMaxDistance"));
-//         // parameterList_.emplace("deepCSVcut"          ,config.readFloatOpt("parameters::deepCSVcut"          ));
-//     }
-//     // else if(other selection type){
-//     //     parameters fo be retreived;
-//     // }
-//     else throw std::runtime_error("cannot recognize bbbb pair choice strategy " + bbbbChoice);
-
-//     std::cout << "[INFO] ... chosing bb bb jet pairs with strategy : " << bbbbChoice << endl;
-//     return true;
-
-// }
-
 
 std::vector<Jet> OfflineProducerHelper::make_jets(NanoAODTree& nat, const std::function<bool (Jet)>& presel_function)
 {
@@ -67,8 +34,7 @@ void OfflineProducerHelper::filter_jets(std::vector<Jet>& jets, const std::funct
 
 bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
 {
-    // cout << "FIXME : select_bbbb_jets : this is just a dummy function " << endl;
-
+    
     if (*(nat.nJet) < 4)
         return false;
 
@@ -90,14 +56,7 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
         *(jets.rbegin()+3)
     }};
 
-    std::vector<Jet> ordered_jets;// = presel_jets;
-
-    // cout << "IN (pt) " << endl;
-    // for (auto& j : presel_jets)
-    //     cout << j.P4().Pt() << endl;
-
-    // !!!!!!!!!!-----FIXME set Mh and deltaMh in the config file-----!!!!!!!!!!
-    // pair the jets
+    std::vector<Jet> ordered_jets;
     string strategy = any_cast<string>(parameterList_->at("bbbbChoice"));
 
 
@@ -113,15 +72,8 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
 
     if(ordered_jets.size()!=4) return false;
 
-    // cout << "OUT (pt) " << endl;
-    // for (auto& j : ordered_jets)
-    //     cout << j.P4().Pt() << endl;
-
     order_by_pT(ordered_jets.at(0), ordered_jets.at(1));
     order_by_pT(ordered_jets.at(2), ordered_jets.at(3));
-
-    // ei.H1 = CompositeCandidate(ei.H1_b1.get(), ei.H1_b2.get());
-    // ei.H2 = CompositeCandidate(ei.H2_b1.get(), ei.H2_b2.get());
 
     ei.H1 = CompositeCandidate(ordered_jets.at(0), ordered_jets.at(1));
     ei.H2 = CompositeCandidate(ordered_jets.at(2), ordered_jets.at(3));
@@ -161,7 +113,6 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
     }
 
     ei.HH_2DdeltaM = pow(ei.H1->P4().M() - targetHiggsMass,2) + pow(ei.H2->P4().M() - targetHiggsMass,2);
-    // cout<<" ----------- Selected candidate mass = " << ei.HH->P4().M() << " Delta Value = "<<*ei.HH_2DdeltaM<<" targetHiggsMass = "<<targetHiggsMass<<endl;
 
     return true;
 }
@@ -169,9 +120,7 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
 // one pair is closest to the Higgs mass, the other follows
 std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_OneClosestToMh(const std::vector<Jet> *presel_jets)
 {
-    // 12, 13, 14, 23, 24, 34    
     float targetHiggsMass = any_cast<float>(parameterList_->at("HiggsMass"));
-    // float targetHiggsMass = config_.readFloatOpt("parameters::HiggsMass");
     std::vector<pair <float, pair<int,int>>> mHs_and_jetIdx; // each entry is the mH and the two idxs of the pair
     
     for (uint i = 0; i < presel_jets->size(); ++i)
@@ -209,16 +158,8 @@ std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_OneClosestToMh(const std:
 // minimize the distance from (targetHiggsMass, targetHiggsMass) in the 2D plane
 std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_BothClosestToMh(const std::vector<Jet> *presel_jets)
 {
-    // there are three possible pairings:
-    // 12 34
-    // 13 24
-    // 14 23
-    
-    // 0   1   2   3   4   5
-    // 12, 13, 14, 23, 24, 34    
 
     float targetHiggsMass = any_cast<float>(parameterList_->at("HiggsMass"));
-    // float targetHiggsMass = config_.readFloatOpt("parameters::HiggsMass");
     std::vector<float> mHs;
     
     for (uint i = 0; i < presel_jets->size(); ++i)
@@ -290,22 +231,15 @@ std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_HighestCSVandClosestToMh(
     float targetHiggsMassLMR                = any_cast<float>(parameterList_->at("HiggsMassLMR"        ));
     float targetHiggsMassMMR                = any_cast<float>(parameterList_->at("HiggsMassMMR"        ));
     float LMRToMMRTransition                = any_cast<float>(parameterList_->at("LMRToMMRTransition" ));
-    // float maxDistanceFromTargetHiggsMass = any_cast<float>(parameterList_->at("HiggsMassMaxDistance"));
     float minimumDeepCSVaccepted  = any_cast<float>(parameterList_->at("deepCSVcut"          ));
 
-    // float targetHiggsMass = config_.readFloatOpt("parameters::HiggsMass");
-    // float maxDistanceFromTargetHiggsMass = config_.readFloatOpt("parameters::HiggsMassMaxDistance");
-    // float minimumDeepCSVaccepted  = config_.readFloatOpt("parameters::deepCSVcut");
-
     unsigned int jetsPassingDeepCSV = 0;
+
     //Jets are already ordered form highest to lowest CSV
-    // cout << "Jets:\n";
     for(; jetsPassingDeepCSV < jets->size(); ++jetsPassingDeepCSV){
         float tmpDeepCSV = get_property(jets->at(jetsPassingDeepCSV),Jet_btagDeepB);
-        // std::cout << tmpDeepCSV << std::endl;
         if(tmpDeepCSV < minimumDeepCSVaccepted) break;
     }
-    // std::cout << "Found " << jetsPassingDeepCSV << " with CSV higher than the threshold " << minimumDeepCSVaccepted << std::endl;
 
     std::vector<Jet> output_jets;
     if(jetsPassingDeepCSV < 4) return output_jets;
@@ -313,22 +247,16 @@ std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_HighestCSVandClosestToMh(
     std::map< const std::array<unsigned int,4>, float> candidateMap;
     for(unsigned int h1b1it = 0; h1b1it< jetsPassingDeepCSV-1; ++h1b1it){
         for(unsigned int h1b2it = h1b1it+1; h1b2it< jetsPassingDeepCSV; ++h1b2it){
-            // if(squareDeltaMassH1> maxDistanceFromTargetHiggsMass*maxDistanceFromTargetHiggsMass) continue;
             for(unsigned int h2b1it = h1b1it+1; h2b1it< jetsPassingDeepCSV-1; ++h2b1it){
                 if(h2b1it == h1b2it) continue;
                 for(unsigned int h2b2it = h2b1it+1; h2b2it< jetsPassingDeepCSV; ++h2b2it){
                     if(h2b2it == h1b2it) continue;
-                    float targetHiggsMass = targetHiggsMassLMR;
                     float candidateMass = (jets->at(h1b1it).P4() + jets->at(h1b2it).P4() + jets->at(h2b1it).P4() + jets->at(h2b2it).P4()).M();
-                    if(LMRToMMRTransition>=0. && candidateMass > LMRToMMRTransition) targetHiggsMass = targetHiggsMassMMR;
-                    // cout<< "Candidate mass = "<<candidateMass<<" Transition = "<<LMRToMMRTransition<<" targetHiggsMass = "<<targetHiggsMass<<std::endl;
+                    float targetHiggsMass = targetHiggsMassLMR;
+                    if(LMRToMMRTransition>=0. && candidateMass > LMRToMMRTransition) targetHiggsMass = targetHiggsMassMMR; //use different range for mass
                     float squareDeltaMassH1 = pow((jets->at(h1b1it).P4() + jets->at(h1b2it).P4()).M()-targetHiggsMass,2);
                     float squareDeltaMassH2 = pow((jets->at(h2b1it).P4() + jets->at(h2b2it).P4()).M()-targetHiggsMass,2);
-                    // if(squareDeltaMassH2> maxDistanceFromTargetHiggsMass*maxDistanceFromTargetHiggsMass) continue;
                     candidateMap.emplace((std::array<unsigned int,4>){h1b1it,h1b2it,h2b1it,h2b2it},squareDeltaMassH1+squareDeltaMassH2);
-                    // std::cout << "Found jets combination " << h1b1it << " " << h1b2it << " " << h2b1it << " " << h2b2it << " with ChiSquare " << squareDeltaMassH1+squareDeltaMassH2 << " Candidate mass = "<<candidateMass<<" Transition = "<<LMRToMMRTransition<<" targetHiggsMass = "<<targetHiggsMass<<std::endl;
-
-
                 }
             }
         }
@@ -342,41 +270,13 @@ std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_HighestCSVandClosestToMh(
         if(itCandidateMap==NULL) itCandidateMap = &candidate;
         else if(itCandidateMap->second > candidate.second) itCandidateMap = &candidate;
 
-    // std::cout<<"Selected jets";
     for(const auto & jetPosition : itCandidateMap->first){
-        // cout << " " << jetPosition;
         output_jets.emplace_back(jets->at(jetPosition));
     }
-    // std::cout<<std::endl;
-  
+    
     return output_jets;
 }
 
-
-// std::vector<std::pair<CompositeCandidate, CompositeCandidate>> OfflineProducerHelper::make_jet_combinations (std::vector<Jet> jets)
-// {
-//     // make all possible jet pairs (CompositeCandidates)
-//     std::vector<CompositeCandidate> pairs;
-//     for (uint i = 0; i < jets.size(); ++i)
-//         for (uint j = i+1; j < jets.size(); ++j)
-//         {
-//             CompositeCandidate cc (jets.at(i), jets.at(j));
-//             pairs.emplace_back(cc);
-//         }
-
-//     // make all possible pairs of CompositeCandiates, ensuring that each jet is taken only once
-//     std::vector<pair<CompositeCandidate, CompositeCandidate>> jet_combinations;
-//     for (uint i = 0; i < pairs.size(); ++i)
-//         for (uint j = i+1; j < pairs.size(); ++j)
-//         {
-//             auto& cc1 = pairs.at(i);
-//             auto& cc2 = pairs.at(j);
-//             if (cc1.sharesComponentWith(cc2)) continue;
-//             jet_combinations.emplace_back(make_pair(cc1, cc2));
-//         }
-
-//     return jet_combinations;
-// }
 
 bool OfflineProducerHelper::select_gen_HH (NanoAODTree& nat, EventInfo& ei)
 {

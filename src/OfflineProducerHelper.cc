@@ -75,14 +75,17 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
     order_by_pT(ordered_jets.at(0), ordered_jets.at(1));
     order_by_pT(ordered_jets.at(2), ordered_jets.at(3));
 
-    ei.H1 = CompositeCandidate(ordered_jets.at(0), ordered_jets.at(1));
-    ei.H2 = CompositeCandidate(ordered_jets.at(2), ordered_jets.at(3));
-
     // order H1, H2 by pT: pT(H1) > pT (H2)
-    bool swapped = order_by_pT(ei.H1.get(), ei.H2.get());
+    // bool swapped = order_by_pT(ei.H1.get(), ei.H2.get());
+    CompositeCandidate H1 = CompositeCandidate(ordered_jets.at(0), ordered_jets.at(1));
+    CompositeCandidate H2 = CompositeCandidate(ordered_jets.at(2), ordered_jets.at(3));
+    //Do a random swap to be sure that the m1 and m2 are simmetric
+    bool swapped = (int(H1.P4().Pt()*100.) % 2 == 1);
 
     if (!swapped)
     {
+        ei.H1 = H1;
+        ei.H2 = H2;
         ei.H1_b1 = ordered_jets.at(0);
         ei.H1_b2 = ordered_jets.at(1);
         ei.H2_b1 = ordered_jets.at(2);
@@ -90,6 +93,8 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
     }
     else
     {
+        ei.H1 = H2;
+        ei.H2 = H1;
         ei.H1_b1 = ordered_jets.at(2);
         ei.H1_b2 = ordered_jets.at(3);
         ei.H2_b1 = ordered_jets.at(0);

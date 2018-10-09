@@ -40,8 +40,20 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
 
     std::vector<Jet> jets;
     jets.reserve(*(nat.nJet));
-    for (uint ij = 0; ij < *(nat.nJet); ++ij)
+    for (uint ij = 0; ij < *(nat.nJet); ++ij){
         jets.emplace_back(Jet(ij, &nat));
+        TLorentzVector jetP4_regressionCorrected;
+        jetP4_regressionCorrected.SetPtEtaPhiM(
+            jets.back().P4().Pt()*get_property(jets.back(),Jet_bRegCorr), //use b regression correction for pt
+            jets.back().P4().Eta(),
+            jets.back().P4().Phi(),
+            jets.back().P4().M()
+        );
+        // cout<<jets.back().P4().Pt()<<endl;
+        jets.back().setP4(jetP4_regressionCorrected);
+        // cout<<get_property(jets.back(),Jet_bRegCorr)<<endl;
+        // cout<<jets.back().P4().Pt()<<endl;
+    }
 
     stable_sort(jets.begin(), jets.end(), [](const Jet & a, const Jet & b) -> bool
     {

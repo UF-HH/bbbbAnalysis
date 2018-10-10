@@ -36,9 +36,9 @@ ROOTGLIBS     = $(shell root-config --glibs)
 
 ARCHL = -m64
 CXX  =  g++
-CXXFLAGS  =  -Wall -O -fPIC -I$(HDR) $(ROOTCFLAGS) 
+CXXFLAGS  = $(ROOTCFLAGS) -Wall -O -fPIC -I$(HDR)
 CPP  =  g++
-CPPFLAGS  = -Wall  $(ARCHL) -I$(HDR) $(ROOTCFLAGS) 
+CPPFLAGS  = $(ROOTCFLAGS) -Wall  $(ARCHL) -I$(HDR)
 
 F    = gfortran
 FFLAGS = -c
@@ -49,7 +49,7 @@ SONAME	 =  libbbbbAnalysis.so
 SONAME2  =  bbbbAnalysis
 SOFLAGS  =  -Wl,-soname,$(SONAME)
 
-GLIBS   =  -lm -ldl -rdynamic -lboost_program_options $(ROOTGLIBS) -lGenVector -lFoam -lMinuit -lTMVA -lMLP -lXMLIO -lGpad  -lTreePlayer -lRooFit -lRooFitCore -lRooStats
+GLIBS   =  $(ROOTGLIBS) -lm -ldl -rdynamic -lboost_program_options -lGenVector -lFoam -lMinuit -lTMVA -lMLP -lXMLIO -lGpad  -lTreePlayer -lRooFit -lRooFitCore -lRooStats
 
 
 #################################################
@@ -81,12 +81,31 @@ exe: $(BINS)
 
 
 test:
-	@echo "HDRS = $(HDRS)"
-	@echo "DICTHDRS = $(DICTHDRS)"
-	@echo "SRCS = $(SRCS)"
-	@echo "OBJS = $(OBJS)"
-	@echo "PRGS = $(PRGS)"
-	@echo "BINS = $(BIN)%$(BinSuf): $(PRG)%$(PrgSuf)"
+	@echo "..............................."
+	@echo "HDRS          = $(HDRS)"
+	@echo "....."
+	@echo "DICTHDRS      = $(DICTHDRS)"
+	@echo "....."
+	@echo "SRCS          = $(SRCS)"
+	@echo "....."
+	@echo "OBJS          = $(OBJS)"
+	@echo "....."
+	@echo "PRGS          = $(PRGS)"
+	@echo "....."
+	@echo "BINS          = $(BIN)%$(BinSuf): $(PRG)%$(PrgSuf)"
+	@echo "....."
+	@echo "LIBS/SONAME   = $(LIB)$(SONAME)"
+	@echo "....."
+	@echo "CPP           = $(CPP)"
+	@echo "....."
+	@echo "CPPFLAGS      = $(CPPFLAGS)"
+	@echo "....."
+	@echo "LIB           = $(LIB)"
+	@echo "....."
+	@echo "BOOSTLIBFLAG  = $(BOOSTLIBFLAG)"
+	@echo "....."
+	@echo "GLIBS         = $(GLIBS)"
+	@echo "..............................."
 
 
 $(OBJ)%$(ObjSuf): %$(SrcSuf) $(HDRS)
@@ -107,7 +126,7 @@ $(LIB)$(SONAME): $(OBJS)
 
 
 $(BIN)%$(BinSuf): $(PRG)%$(PrgSuf) $(HDRS) $(LIB)$(SONAME)
-	$(CPP) $<  -l$(SONAME2) $(CPPFLAGS) -L$(LIB) $(BOOSTLIBFLAG) $(GLIBS)  -o $@
+	$(CPP) $<  -l$(SONAME2) $(CPPFLAGS) $(GLIBS) -L$(LIB) $(BOOSTLIBFLAG) -o $@
 
 
 clean:

@@ -60,6 +60,7 @@ NanoReaderValue<T>::NanoReaderValue(TTreeReader &tr, const char *branchname)
     branchname_ = branchname;
     do_return_default_  = false;
     val_return_default_ = T();
+    this->Verify(tr.GetTree());
 }
 
 template <typename T>

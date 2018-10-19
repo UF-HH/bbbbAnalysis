@@ -49,6 +49,7 @@ class NanoAODTree_ReaderImpl {
 
         // bool Next() {return fReader.Next();}
         bool Next();
+        bool getTrgOr() {return trg_reader_.getTrgOr();};
 
         // the chain and TTreeReader
         TTreeReader   fReader;

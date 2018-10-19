@@ -199,6 +199,7 @@ int main(int argc, char** argv)
         if (is_data && !jlf.isValid(*nat.run, *nat.luminosityBlock)){
             continue; // not a valid lumi
         }
+        if( nat.getTrgOr() ) continue;
 
         ot.clear();
         EventInfo ei;

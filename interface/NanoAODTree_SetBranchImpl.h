@@ -39,6 +39,8 @@ class NanoAODTree_SetBranchImpl {
 
         // bool Next() {return fReader.Next();}
         bool Next();
+        bool getTrgOr() {return trg_reader_.getTrgOr();};
+        
 
         TChain* chain_;
 

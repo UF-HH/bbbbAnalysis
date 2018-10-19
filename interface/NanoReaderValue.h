@@ -79,6 +79,7 @@ void NanoReaderValue<T>::Verify(TTree* tree)
     else {
         if (ttrv_) // branch disappeared, thus disable reader
             ttrv_.release();
+        std::cout<<"** Warning - Branch " << branchname_ << " does not exist!\n";
     }
 }
 

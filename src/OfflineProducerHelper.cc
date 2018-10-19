@@ -38,11 +38,14 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
     if (*(nat.nJet) < 4)
         return false;
 
+    // vector<float> pt_beforeRegression;
+    // vector<float> pt_afterRegression;
     std::vector<Jet> jets;
     jets.reserve(*(nat.nJet));
     for (uint ij = 0; ij < *(nat.nJet); ++ij){
         jets.emplace_back(Jet(ij, &nat));
         TLorentzVector jetP4_regressionCorrected;
+        // pt_beforeRegression.emplace_back(jets.back().P4().Pt());
         jetP4_regressionCorrected.SetPtEtaPhiM(
             jets.back().P4().Pt()*get_property(jets.back(),Jet_bRegCorr), //use b regression correction for pt
             jets.back().P4().Eta(),
@@ -51,6 +54,7 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
         );
         // cout<<jets.back().P4().Pt()<<endl;
         jets.back().setP4(jetP4_regressionCorrected);
+        // pt_afterRegression.emplace_back(jets.back().P4().Pt());
         // cout<<get_property(jets.back(),Jet_bRegCorr)<<endl;
         // cout<<jets.back().P4().Pt()<<endl;
     }
@@ -84,6 +88,8 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
 
     if(ordered_jets.size()!=4) return false;
 
+
+
     order_by_pT(ordered_jets.at(0), ordered_jets.at(1));
     order_by_pT(ordered_jets.at(2), ordered_jets.at(3));
 
@@ -112,6 +118,17 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
         ei.H2_b1 = ordered_jets.at(0);
         ei.H2_b2 = ordered_jets.at(1);        
     }
+
+    // cout<<"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  Found"<<endl;
+    // for(unsigned int iPt=0; iPt<pt_beforeRegression.size(); ++iPt){
+    //     cout<<"Before regression - id "<< iPt << " pt " << pt_beforeRegression.at(iPt) << endl;
+    //     cout<<"After  regression - id "<< iPt << " pt " << pt_afterRegression.at(iPt) << endl;
+    // }
+
+    // cout<< "H1_b1 pt = " << ei.H1_b1->P4().Pt() << endl;
+    // cout<< "H1_b2 pt = " << ei.H1_b2->P4().Pt() << endl;
+    // cout<< "H2_b1 pt = " << ei.H2_b1->P4().Pt() << endl;
+    // cout<< "H2_b2 pt = " << ei.H2_b2->P4().Pt() << endl;
 
     ei.H1_bb_DeltaR = sqrt(pow(ei.H1_b1->P4().Eta() - ei.H1_b2->P4().Eta(),2) + pow(ei.H1_b1->P4().Phi() - ei.H1_b2->P4().Phi(),2));
     ei.H2_bb_DeltaR = sqrt(pow(ei.H2_b1->P4().Eta() - ei.H2_b2->P4().Eta(),2) + pow(ei.H2_b1->P4().Phi() - ei.H2_b2->P4().Phi(),2));
@@ -255,6 +272,7 @@ std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_HighestCSVandClosestToMh(
     //Jets are already ordered form highest to lowest CSV
     for(; jetsPassingDeepCSV < jets->size(); ++jetsPassingDeepCSV){
         float tmpDeepCSV = get_property(jets->at(jetsPassingDeepCSV),Jet_btagDeepB);
+        // cout<<"Before regression - id "<< jetsPassingDeepCSV << " pt " << jets->at(jetsPassingDeepCSV).P4().Pt() << endl;
         if(tmpDeepCSV < minimumDeepCSVaccepted) break;
     }
 

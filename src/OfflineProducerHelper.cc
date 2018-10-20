@@ -271,17 +271,16 @@ std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_HighestCSVandClosestToMh(
 
     //Jets are already ordered form highest to lowest CSV
     for(; jetsPassingDeepCSV < jets->size(); ++jetsPassingDeepCSV){
-        cout<<jetsPassingDeepCSV<<" ";
         float tmpDeepCSV = get_property(jets->at(jetsPassingDeepCSV),Jet_btagDeepB);
         // cout<<"Before regression - id "<< jetsPassingDeepCSV << " pt " << jets->at(jetsPassingDeepCSV).P4().Pt() << endl;
-        if(tmpDeepCSV < minimumDeepCSVaccepted) break;
+        if(tmpDeepCSV < minimumDeepCSVaccepted){
+            ++jetsPassingDeepCSV;
+            break;
+        }
     }
-    ++jetsPassingDeepCSV;
-
-    cout<<"Result = "<<jetsPassingDeepCSV<<endl;
 
     std::vector<Jet> output_jets;
-    if(jetsPassingDeepCSV < 4) return output_jets;
+    if(jetsPassingDeepCSV  < 4) return output_jets;
 
     std::map< const std::array<unsigned int,4>, float> candidateMap;
     for(unsigned int h1b1it = 0; h1b1it< jetsPassingDeepCSV-1; ++h1b1it){
@@ -312,7 +311,6 @@ std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_HighestCSVandClosestToMh(
     for(const auto & jetPosition : itCandidateMap->first){
         output_jets.emplace_back(jets->at(jetPosition));
     }
-    
     return output_jets;
 }
 

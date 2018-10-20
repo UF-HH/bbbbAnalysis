@@ -265,7 +265,7 @@ std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_HighestCSVandClosestToMh(
     float targetHiggsMassLMR                = any_cast<float>(parameterList_->at("HiggsMassLMR"        ));
     float targetHiggsMassMMR                = any_cast<float>(parameterList_->at("HiggsMassMMR"        ));
     float LMRToMMRTransition                = any_cast<float>(parameterList_->at("LMRToMMRTransition" ));
-    float minimumDeepCSVaccepted  = any_cast<float>(parameterList_->at("deepCSVcut"          ));
+    float minimumDeepCSVaccepted            = any_cast<float>(parameterList_->at("deepCSVcut"          ));
 
     unsigned int jetsPassingDeepCSV = 0;
 
@@ -273,14 +273,16 @@ std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_HighestCSVandClosestToMh(
     for(; jetsPassingDeepCSV < jets->size(); ++jetsPassingDeepCSV){
         float tmpDeepCSV = get_property(jets->at(jetsPassingDeepCSV),Jet_btagDeepB);
         // cout<<"Before regression - id "<< jetsPassingDeepCSV << " pt " << jets->at(jetsPassingDeepCSV).P4().Pt() << endl;
+        // cout<<tmpDeepCSV<<" ";
         if(tmpDeepCSV < minimumDeepCSVaccepted){
-            ++jetsPassingDeepCSV;
             break;
         }
     }
+    // cout<<endl;
 
     std::vector<Jet> output_jets;
     if(jetsPassingDeepCSV  < 4) return output_jets;
+    // cout<<"Last "<<get_property(jets->at(jetsPassingDeepCSV-1),Jet_btagDeepB)<<endl;
 
     std::map< const std::array<unsigned int,4>, float> candidateMap;
     for(unsigned int h1b1it = 0; h1b1it< jetsPassingDeepCSV-1; ++h1b1it){
@@ -294,6 +296,7 @@ std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_HighestCSVandClosestToMh(
                     if(LMRToMMRTransition>=0. && candidateMass > LMRToMMRTransition) targetHiggsMass = targetHiggsMassMMR; //use different range for mass
                     float squareDeltaMassH1 = pow((jets->at(h1b1it).P4() + jets->at(h1b2it).P4()).M()-targetHiggsMass,2);
                     float squareDeltaMassH2 = pow((jets->at(h2b1it).P4() + jets->at(h2b2it).P4()).M()-targetHiggsMass,2);
+                    // cout<<"Found "<<h1b1it <<" "<< h1b2it <<" "<< h2b1it <<" "<< h2b2it <<" "<< " with chi2 "<< squareDeltaMassH1+squareDeltaMassH2<<endl;
                     candidateMap.emplace((std::array<unsigned int,4>){h1b1it,h1b2it,h2b1it,h2b2it},squareDeltaMassH1+squareDeltaMassH2);
                 }
             }
@@ -304,13 +307,17 @@ std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_HighestCSVandClosestToMh(
 
     const std::pair< const std::array<unsigned int,4>, float> *itCandidateMap=NULL;
     //find candidate with both Higgs candidates cloasest to the true Higgs mass
-    for(const auto & candidate : candidateMap)
+    for(const auto & candidate : candidateMap){
         if(itCandidateMap==NULL) itCandidateMap = &candidate;
         else if(itCandidateMap->second > candidate.second) itCandidateMap = &candidate;
+    }
 
+    // cout<<"Selected";
     for(const auto & jetPosition : itCandidateMap->first){
         output_jets.emplace_back(jets->at(jetPosition));
+        // cout<<" "<<jetPosition;
     }
+    // cout<<endl;
     return output_jets;
 }
 

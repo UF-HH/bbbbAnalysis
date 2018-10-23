@@ -10,7 +10,11 @@ class GenPart : public Candidate
         GenPart () : Candidate(){}
         GenPart (int idx, NanoAODTree* nat) : Candidate(idx, nat){buildP4();}
         ~GenPart(){};
-        std::unique_ptr<Candidate> clone() const {return std::unique_ptr<GenPart> (new GenPart(this->getIdx(), this->getNanoAODTree()));}
+        std::unique_ptr<Candidate> clone() const {
+            GenPart *clonedGenPart = new GenPart(this->getIdx(), this->getNanoAODTree());
+            clonedGenPart->setP4(this->P4());
+            return std::unique_ptr<GenPart> (clonedGenPart);
+        }
 
         // status flags
         bool isPrompt()                             {return checkBit(get_property((*this), GenPart_statusFlags), 0);}

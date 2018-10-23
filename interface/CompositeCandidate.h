@@ -28,8 +28,6 @@ class CompositeCandidate : public Candidate
         CompositeCandidate(const CompositeCandidate& rhs); // copy ctor
         CompositeCandidate& operator = (const CompositeCandidate& rhs);        // assignment
         
-        TLorentzVector P4() const      {return p4_;}
-        
         void setComponents(const Candidate& c1, const Candidate& c2);
 
         int                getIdxComponent1 () const {return idx1_;}

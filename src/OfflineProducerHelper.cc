@@ -38,25 +38,18 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
     if (*(nat.nJet) < 4)
         return false;
 
-    // vector<float> pt_beforeRegression;
-    // vector<float> pt_afterRegression;
     std::vector<Jet> jets;
     jets.reserve(*(nat.nJet));
     for (uint ij = 0; ij < *(nat.nJet); ++ij){
         jets.emplace_back(Jet(ij, &nat));
         TLorentzVector jetP4_regressionCorrected;
-        // pt_beforeRegression.emplace_back(jets.back().P4().Pt());
         jetP4_regressionCorrected.SetPtEtaPhiM(
             jets.back().P4().Pt()*get_property(jets.back(),Jet_bRegCorr), //use b regression correction for pt
             jets.back().P4().Eta(),
             jets.back().P4().Phi(),
             jets.back().P4().M()
         );
-        // cout<<jets.back().P4().Pt()<<endl;
         jets.back().setP4(jetP4_regressionCorrected);
-        // pt_afterRegression.emplace_back(jets.back().P4().Pt());
-        // cout<<get_property(jets.back(),Jet_bRegCorr)<<endl;
-        // cout<<jets.back().P4().Pt()<<endl;
     }
 
     stable_sort(jets.begin(), jets.end(), [](const Jet & a, const Jet & b) -> bool
@@ -94,9 +87,9 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
     order_by_pT(ordered_jets.at(2), ordered_jets.at(3));
 
     // order H1, H2 by pT: pT(H1) > pT (H2)
-    // bool swapped = order_by_pT(ei.H1.get(), ei.H2.get());
     CompositeCandidate H1 = CompositeCandidate(ordered_jets.at(0), ordered_jets.at(1));
     CompositeCandidate H2 = CompositeCandidate(ordered_jets.at(2), ordered_jets.at(3));
+    
     //Do a random swap to be sure that the m1 and m2 are simmetric
     bool swapped = (int(H1.P4().Pt()*100.) % 2 == 1);
 
@@ -118,17 +111,6 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
         ei.H2_b1 = ordered_jets.at(0);
         ei.H2_b2 = ordered_jets.at(1);        
     }
-
-    // cout<<"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  Found"<<endl;
-    // for(unsigned int iPt=0; iPt<pt_beforeRegression.size(); ++iPt){
-    //     cout<<"Before regression - id "<< iPt << " pt " << pt_beforeRegression.at(iPt) << endl;
-    //     cout<<"After  regression - id "<< iPt << " pt " << pt_afterRegression.at(iPt) << endl;
-    // }
-
-    // cout<< "H1_b1 pt = " << ei.H1_b1->P4().Pt() << endl;
-    // cout<< "H1_b2 pt = " << ei.H1_b2->P4().Pt() << endl;
-    // cout<< "H2_b1 pt = " << ei.H2_b1->P4().Pt() << endl;
-    // cout<< "H2_b2 pt = " << ei.H2_b2->P4().Pt() << endl;
 
     ei.H1_bb_DeltaR = sqrt(pow(ei.H1_b1->P4().Eta() - ei.H1_b2->P4().Eta(),2) + pow(ei.H1_b1->P4().Phi() - ei.H1_b2->P4().Phi(),2));
     ei.H2_bb_DeltaR = sqrt(pow(ei.H2_b1->P4().Eta() - ei.H2_b2->P4().Eta(),2) + pow(ei.H2_b1->P4().Phi() - ei.H2_b2->P4().Phi(),2));
@@ -272,17 +254,13 @@ std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_HighestCSVandClosestToMh(
     //Jets are already ordered form highest to lowest CSV
     for(; jetsPassingDeepCSV < jets->size(); ++jetsPassingDeepCSV){
         float tmpDeepCSV = get_property(jets->at(jetsPassingDeepCSV),Jet_btagDeepB);
-        // cout<<"Before regression - id "<< jetsPassingDeepCSV << " pt " << jets->at(jetsPassingDeepCSV).P4().Pt() << endl;
-        // cout<<tmpDeepCSV<<" ";
         if(tmpDeepCSV < minimumDeepCSVaccepted){
             break;
         }
     }
-    // cout<<endl;
-
+    
     std::vector<Jet> output_jets;
     if(jetsPassingDeepCSV  < 4) return output_jets;
-    // cout<<"Last "<<get_property(jets->at(jetsPassingDeepCSV-1),Jet_btagDeepB)<<endl;
 
     std::map< const std::array<unsigned int,4>, float> candidateMap;
     for(unsigned int h1b1it = 0; h1b1it< jetsPassingDeepCSV-1; ++h1b1it){
@@ -296,7 +274,6 @@ std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_HighestCSVandClosestToMh(
                     if(LMRToMMRTransition>=0. && candidateMass > LMRToMMRTransition) targetHiggsMass = targetHiggsMassMMR; //use different range for mass
                     float squareDeltaMassH1 = pow((jets->at(h1b1it).P4() + jets->at(h1b2it).P4()).M()-targetHiggsMass,2);
                     float squareDeltaMassH2 = pow((jets->at(h2b1it).P4() + jets->at(h2b2it).P4()).M()-targetHiggsMass,2);
-                    // cout<<"Found "<<h1b1it <<" "<< h1b2it <<" "<< h2b1it <<" "<< h2b2it <<" "<< " with chi2 "<< squareDeltaMassH1+squareDeltaMassH2<<endl;
                     candidateMap.emplace((std::array<unsigned int,4>){h1b1it,h1b2it,h2b1it,h2b2it},squareDeltaMassH1+squareDeltaMassH2);
                 }
             }
@@ -312,12 +289,9 @@ std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_HighestCSVandClosestToMh(
         else if(itCandidateMap->second > candidate.second) itCandidateMap = &candidate;
     }
 
-    // cout<<"Selected";
     for(const auto & jetPosition : itCandidateMap->first){
         output_jets.emplace_back(jets->at(jetPosition));
-        // cout<<" "<<jetPosition;
     }
-    // cout<<endl;
     return output_jets;
 }
 

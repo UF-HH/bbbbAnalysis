@@ -52,6 +52,12 @@ namespace OfflineProducerHelper {
     //     kHighestCSVandColsestToMh
     // };
 
+    // functions to select events based on non-jet particles:
+    bool select_event(NanoAODTree& nat);
+    // reject events with leptons that may come from W and Z decays
+    bool event_selector_CutWandZleptondecays (NanoAODTree& nat);
+
+
     // functions that act on the EventInfo
     bool select_bbbb_jets (NanoAODTree& nat, EventInfo& ei);
 
@@ -66,6 +72,7 @@ namespace OfflineProducerHelper {
     std::vector<Jet> bbbb_jets_idxs_MostBackToBack(const std::vector<Jet> *presel_jets);
     //pair by ordering the jets by CSV and then finding the compination closer to targetmH for both candidates
     std::vector<Jet> bbbb_jets_idxs_HighestCSVandClosestToMh(const std::vector<Jet> *presel_jets);
+
 
     // combines a collection of type C of jets (either std::vector or std::array) into a collection of H H possible combinations
     // (i.e. all possible H1 = (jA, jB) and H2 = (jC, jD) choices)

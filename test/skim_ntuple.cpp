@@ -102,6 +102,11 @@ int main(int argc, char** argv)
     //Read needed fields from config file
 
     std::map<std::string,any> parameterList;
+
+    const string eventChoice = config.readStringOpt("parameters::eventChoice");
+    parameterList.emplace("eventChoice",eventChoice);
+
+
     const string bbbbChoice = config.readStringOpt("parameters::bbbbChoice");
     
     parameterList.emplace("bbbbChoice",bbbbChoice);
@@ -122,7 +127,7 @@ int main(int argc, char** argv)
     }
     // else if(other selection type){
     //     parameters fo be retreived;
-    // }
+    // }  
 
     else throw std::runtime_error("cannot recognize bbbb pair choice strategy " + bbbbChoice);
 
@@ -200,7 +205,6 @@ int main(int argc, char** argv)
             continue; // not a valid lumi
         }
         
-        if( !nat.getTrgOr() ) continue;
 
         ot.clear();
         EventInfo ei;
@@ -210,8 +214,15 @@ int main(int argc, char** argv)
             // !!!!!!!!!!!  -------  FIXME: compute the weights -------  !!!!!!!!!!!
             weight=0.75;
         }
-
         ec.updateProcessed(weight);
+        
+        if( !nat.getTrgOr() ) continue;
+
+        ec.updateTriggered(weight);
+
+        if (!oph::select_event(nat)) continue;
+
+        ec.updateEventSelected(weight);
 
         if (!oph::select_bbbb_jets(nat, ei)) continue;
 

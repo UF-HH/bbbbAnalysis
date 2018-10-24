@@ -5,12 +5,116 @@
 
 #include "CompositeCandidate.h"
 #include "Jet.h"
+#include "Electron.h"
+#include "Muon.h"
 #include "GenPart.h"
 #include <experimental/any>
  
 using namespace std::experimental;
 
 using namespace std;
+
+
+bool OfflineProducerHelper::select_event(NanoAODTree& nat){
+
+    bool selectionPassed = false;
+
+    string strategy = any_cast<string>(parameterList_->at("eventChoice"));
+
+    if(strategy == "None")
+        selectionPassed = true;
+    if(strategy == "CutWandZleptondecays")
+        selectionPassed = event_selector_CutWandZleptondecays(nat);
+    else throw std::runtime_error("cannot recognize event choice strategy " + strategy);
+
+    return selectionPassed;
+}
+
+
+// reject events with leptons that may come from W and Z decays
+bool OfflineProducerHelper::event_selector_CutWandZleptondecays (NanoAODTree& nat){
+
+    std::vector<Electron> electronFromW;
+    electronFromW.reserve(*(nat.nElectron));
+    std::vector<Electron> electronFromZ;
+    electronFromZ.reserve(*(nat.nElectron));
+    std::vector<Muon> muonFromW;
+    muonFromW.reserve(*(nat.nMuon));
+    std::vector<Muon> muonFromZ;
+    muonFromZ.reserve(*(nat.nMuon));
+
+    for (uint eIt = 0; eIt < *(nat.nElectron); ++eIt){
+        Electron theElectron(eIt, &nat);
+        
+        if( theElectron.P4().Pt()                                 >25.0 && 
+            get_property(theElectron,Electron_mvaSpring16GP_WP80)      && 
+            get_property(theElectron,Electron_pfRelIso03_all     )<0.12 )
+            electronFromW.emplace_back(theElectron);
+
+        if( theElectron.P4().Pt()                                 >20.0 && 
+            get_property(theElectron,Electron_mvaSpring16GP_WP90)      && 
+            get_property(theElectron,Electron_pfRelIso03_all     )<0.15 )
+            electronFromZ.emplace_back(theElectron);
+    }
+
+    if(electronFromZ.size()>0){
+        return false;
+    }
+
+    for (uint eIt = 0; eIt < *(nat.nMuon); ++eIt){
+        Muon theMuon(eIt, &nat);
+
+        if( theMuon.P4().Pt()                                     >25.0 && 
+            get_property(theMuon,Muon_tightId                    )      &&
+            get_property(theMuon,Muon_pfRelIso04_all             )<0.15 &&
+            get_property(theMuon,Muon_dxy                        )<0.05 &&
+            get_property(theMuon,Muon_dz                         )<0.20 )
+            muonFromW.emplace_back(theMuon);
+
+        if( theMuon.P4().Pt()                                     >20.0 && 
+            get_property(theMuon,Muon_pfRelIso04_all             )<0.25 &&
+            get_property(theMuon,Muon_dxy                        )<0.05 &&
+            get_property(theMuon,Muon_dz                         )<0.20 )
+            muonFromZ.emplace_back(theMuon);
+    }
+
+
+    if(muonFromZ.size()>0){
+        return false;
+    }
+
+
+    // stable_sort(electronFromZ.begin(), electronFromZ.end(), [](const Electron & a, const Electron & b) -> bool
+    // {
+    //     return ( a.P4().Pt() > b.P4().Pt() );
+    // }); // sort electrons by pt (highest to lowest)
+
+    // stable_sort(muonFromZ.begin(), muonFromZ.end(), [](const Muon & a, const Muon & b) -> bool
+    // {
+    //     return ( a.P4().Pt() > b.P4().Pt() );
+    // }); // sort muons by pt (highest to lowest)
+
+
+
+    // if(electronFromZ.size() >=2){
+    //     for(int mIt=1; mIt<electronFromZ.size(); ++mIt){
+    //         if(get_property(electronFromZ[0],Electron_charge)*get_property(electronFromZ[mIt],Electron_charge)<0) return false; //skip events with two isoleted electrons with opposite charge
+    //     }
+    // }
+
+    // if(muonFromZ.size() >=2){
+    //     for(int mIt=1; mIt<muonFromZ.size(); ++mIt){
+    //         if(get_property(muonFromZ[0],Muon_charge)*get_property(muonFromZ[mIt],Muon_charge)<0) return false; //skip events with two isoleted muons with opposite charge
+    //     }
+    // }
+
+    if(electronFromW.size()==1 || muonFromW.size()==1){
+        return false;
+    }
+
+    return true;
+}
+
 
 
 std::vector<Jet> OfflineProducerHelper::make_jets(NanoAODTree& nat, const std::function<bool (Jet)>& presel_function)
@@ -75,9 +179,10 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
         ordered_jets = bbbb_jets_idxs_BothClosestToMh(&presel_jets);
     else if(strategy == "MostBackToBack")
         ordered_jets = bbbb_jets_idxs_MostBackToBack(&presel_jets);
-    else if(strategy == "HighestCSVandClosestToMh")
+    else if(strategy == "HighestCSVandClosestToMh"){
         ordered_jets = bbbb_jets_idxs_HighestCSVandClosestToMh(&jets);
-    else throw std::runtime_error("cannot recognize bbbb pair choice strategy " + strategy);
+    }
+    else throw std::runtime_error("cannot recognize bbbb choice strategy " + strategy);
 
     if(ordered_jets.size()!=4) return false;
 

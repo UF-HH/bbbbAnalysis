@@ -153,10 +153,16 @@ void AnalysisHelper::saveOutputsToFile()
         // cout << "itype " << itype << "/" << allToSave.size() << endl;
         for (uint isample = 0; isample < allToSave.at(itype)->size(); ++isample)
         {
+            fOut->cd();
+            string sampleDir = "";
+            sampleDir  = allToSave.at(itype)->at(isample)->getName();
+            fOut->cd   (sampleDir.data());
             // cout << "isample " << isample << "/" << allToSave.at(itype)->size() << endl;
             Sample::selColl2D& plotSet = allToSave.at(itype)->at(isample)->plots2D();
             for (uint isel = 0; isel < plotSet.size(); ++isel)
             {
+                string selectionDir = sampleDir + "/" + plotSet.key(isel);
+                fOut->cd   (selectionDir.data());
                 // cout << "isel " << isel << "/" << plotSet.size() << endl;
                 for (uint ivar = 0; ivar < plotSet.at(isel).size(); ++ivar)
                 {

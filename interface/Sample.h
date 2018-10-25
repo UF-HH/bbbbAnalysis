@@ -55,7 +55,7 @@ class Sample
         sType getType () {return sampleType_;}
 
         // file handling and preparation
-        bool openFileAndTree();
+        bool openFileAndTree(TH1F *hCutInSkim);
         // void getEfficiency(std::string histoname="h_eff");
         long long int getEntries(){return nentries_;}
         void setEffBin(int ibin){

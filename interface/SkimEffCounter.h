@@ -18,6 +18,17 @@ class SkimEffCounter {
         SkimEffCounter();
         ~SkimEffCounter(){};
 
+        enum BinValue{
+            kNtot_w    = 1,
+            kNtot_uw   = 2,
+            kNtrg_w    = 3,
+            kNtrg_uw   = 4,
+            kNevSel_w  = 5,
+            kNevSel_uw = 6,
+            kNsel_w    = 7,
+            kNsel_uw   = 8,
+        };
+
         void updateProcessed      (double evtW);
         void updateTriggered      (double evtW);
         void updateEventSelected  (double evtW);
@@ -36,16 +47,6 @@ class SkimEffCounter {
         int  write();
 
     private:
-        enum BinValue{
-            kNtot_w    = 1,
-            kNtot_uw   = 2,
-            kNtrg_w    = 3,
-            kNtrg_uw   = 4,
-            kNevSel_w  = 5,
-            kNevSel_uw = 6,
-            kNsel_w    = 7,
-            kNsel_uw   = 8,
-        };
         std::unique_ptr<TH1D>  eff_histo_;
 
         // _w  : weighted

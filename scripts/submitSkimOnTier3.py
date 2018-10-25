@@ -50,12 +50,6 @@ def writeln(f, line):
 parser = argparse.ArgumentParser(description='Command line parser of skim options')
 parser.add_argument('--input'     ,  dest = 'input'     ,  help = 'input filelist'           ,  required = True        )
 parser.add_argument('--tag'       ,  dest = 'tag'       ,  help = 'production tag'           ,  required = True        )
-parser.add_argument('--cfg'       ,  dest = 'cfg'       ,  help = 'skim configuration'       ,  required = False       )
-parser.add_argument('--xs'        ,  dest = 'xs'        ,  help = 'cross section'            ,  required = False       )
-parser.add_argument('--is-data'   ,  dest = 'isData'    ,  help = 'is data'                  ,  action   = 'store_true',   default = False)
-parser.add_argument('--is-signal' ,  dest = 'isSignal'  ,  help = 'is gluon fusion MC'       ,  action   = 'store_true',   default = False)
-parser.add_argument('--is-VBF-sig',  dest = 'isVBFsig'  ,  help = 'is vector boson fusion MC',  action   = 'store_true',   default = False)
-parser.add_argument('--save-p4'   ,  dest = 'saveP4'    ,  help = 'save p4'                  ,  action   = 'store_true',   default = False)
 parser.add_argument('--njobs'     ,  dest = 'njobs'     ,  help = 'njobs'                    ,  type     = int         ,   default = 500    )
 ##
 ############################################################
@@ -147,41 +141,9 @@ if '--output' in unknown:
 
 commands = [
     executable,
-    '--cfg %s' % args.cfg,
     '--input %s'  % outListNameBareProto,
     '--output %s' % outFileNameProto,
     ]
-
-if args.isData:
-    if args.isSignal or args.isVBFsig:
-        print "** You must chose one between --is-data ,--is-signal or --is-VBF-sig, exiting..."
-        sys.exit()
-    typeOfSample = '--is-data'
-    commands.append(typeOfSample)
-
-if args.isSignal:
-    if args.isData or args.isVBFsig:
-        print "** You must chose one between --is-data ,--is-signal or --is-VBF-sig, exiting..."
-        sys.exit()
-    if args.xs is None:
-        print "** You must provide also the cross section in case of a MC sample, exiting..."
-        sys.exit()
-    typeOfSample = '--is-signal --xs ' + args.xs
-    commands.append(typeOfSample)
-
-if args.isVBFsig:
-    if args.isSignal or args.isData:
-        print "** You must chose one between --is-data ,--is-signal or --is-VBF-sig, exiting..."
-        sys.exit()
-    if args.xs is None:
-        print "** You must provide also the cross section in case of a MC sample, exiting..."
-        sys.exit()
-    typeOfSample = '--is-VBF-sig --xs ' + args.xs
-    commands.append(typeOfSample)
-
-if args.saveP4:
-    commands.append('--save-p4')
-
 
 full_command = ' '.join(commands)
 ## now forward all the other commands to full_command

@@ -32,6 +32,7 @@
 #include "ordered_map.h"
 
 #include "TCut.h"
+#include "TH1F.h"
 
 class AnalysisHelper
 {
@@ -84,6 +85,7 @@ class AnalysisHelper
         std::unique_ptr<CfgParser> mainCfg_;
         std::unique_ptr<CfgParser> cutCfg_;
         std::unique_ptr<CfgParser> sampleCfg_;
+        TH1F *hCutInSkim_;
         // FIXME: sytematics cfg?
 
         int nsplit_;

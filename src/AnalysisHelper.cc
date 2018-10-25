@@ -130,9 +130,11 @@ void AnalysisHelper::saveOutputsToFile()
             Sample::selColl& plotSet = allToSave.at(itype)->at(isample)->plots();
             for (uint isel = 0; isel < plotSet.size(); ++isel)
             {
-                string selectionDir = sampleDir + "/" + plotSet.key(isel);
-                fOut->mkdir(selectionDir.data());
-                fOut->cd   (selectionDir.data());
+                bool firstIteration=true;
+                string selectionDir = plotSet.key(isel);
+                string selectionFullDir = sampleDir + "/" + selectionDir;
+                fOut->mkdir(selectionFullDir.data());
+                fOut->cd   (selectionFullDir.data());
                 // cout << "isel " << isel << "/" << plotSet.size() << endl;
                 for (uint ivar = 0; ivar < plotSet.at(isel).size(); ++ivar)
                 {
@@ -140,6 +142,22 @@ void AnalysisHelper::saveOutputsToFile()
                     for (uint isyst = 0; isyst < plotSet.at(isel).at(ivar).size(); ++isyst)
                     {
                         // cout << "isyst " << isyst << "/" << plotSet.at(isel).at(ivar).size() << endl;
+                        if(firstIteration){
+                            firstIteration=false;
+                            // cout<<1<<endl;
+                            // hCutInSkim_->Write();
+                            // if(hCutInSkim_==NULL) cout<<"culo\n";
+                            // TH1F *hCutInSkimTmp = (TH1F*)hCutInSkim_->Clone("hCut_");
+                            // cout<<1.1<<endl;
+
+                            TH1F *hCutInSkimTmp = (TH1F*)hCutInSkim_->Clone(("hCut_" + selectionDir).data());
+                            // cout<<2<<endl;
+
+                            hCutInSkimTmp->SetBinContent(hCutInSkimTmp->GetNbinsX(),plotSet.at(isel).at(ivar).at(isyst)->GetEntries());
+                            // cout<<3<<endl;
+                            hCutInSkimTmp->Write();
+                            // cout<<4<<endl;
+                        }
                         plotSet.at(isel).at(ivar).at(isyst)->Write();
                         // cout << "DONE" << endl;
                     }
@@ -161,8 +179,9 @@ void AnalysisHelper::saveOutputsToFile()
             Sample::selColl2D& plotSet = allToSave.at(itype)->at(isample)->plots2D();
             for (uint isel = 0; isel < plotSet.size(); ++isel)
             {
-                string selectionDir = sampleDir + "/" + plotSet.key(isel);
-                fOut->cd   (selectionDir.data());
+                string selectionDir = plotSet.key(isel);
+                string selectionFullDir = sampleDir + "/" + selectionDir;
+                fOut->cd   (selectionFullDir.data());
                 // cout << "isel " << isel << "/" << plotSet.size() << endl;
                 for (uint ivar = 0; ivar < plotSet.at(isel).size(); ++ivar)
                 {
@@ -249,7 +268,9 @@ shared_ptr<Sample> AnalysisHelper::openSample(string sampleName)
         int ubin = sampleCfg_->readIntOpt(Form("userEffBin::%s",sampleName.c_str()));
         sample->setEffBin(ubin);
     }
-    bool success = sample->openFileAndTree();
+
+    hCutInSkim_ = new TH1F();
+    bool success = sample->openFileAndTree(hCutInSkim_);
     if (!success)
     {
         throw std::runtime_error("cannot open input file for sample " + sampleName);

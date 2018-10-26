@@ -17,6 +17,11 @@
 #include "GenPart.h"
 
 struct EventInfo{
+
+    boost::optional<unsigned int>           Run;
+    boost::optional<unsigned int>           LumiSec;
+    boost::optional<unsigned long long int> Event;
+
     boost::optional<GenPart> gen_H1;
     boost::optional<GenPart> gen_H2;
     boost::optional<GenPart> gen_H1_last;

@@ -235,6 +235,10 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
 
     ei.HH_2DdeltaM = pow(ei.H1->P4().M() - targetHiggsMass,2) + pow(ei.H2->P4().M() - targetHiggsMass,2);
 
+    ei.Run = *(nat.run);
+    ei.LumiSec = *(nat.luminosityBlock);
+    ei.Event = *(nat.event);
+
     return true;
 }
 

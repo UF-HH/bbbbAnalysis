@@ -52,6 +52,9 @@ class OutputTree {
         //// saved variables
         //////////////////////////
 
+        unsigned int           Run;
+        unsigned int           LumiSec;
+        unsigned long long int Event;
         //////////////////----- reco H1 and H2
         DECLARE_pt_eta_phi_p4(H1)
         float H1_bb_DeltaR;

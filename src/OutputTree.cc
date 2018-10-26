@@ -30,6 +30,12 @@ savetlv_ (savetlv)
 
 void OutputTree::init_branches()
 {
+
+    //event information
+    tree_->Branch("Run", &Run);
+    tree_->Branch("LumiSec", &LumiSec);
+    tree_->Branch("Event", &Event);
+
     // reco b jets
     BRANCH_pt_eta_phi_p4(H1_b1)
     BRANCH_pt_eta_phi_p4(H1_b2)
@@ -66,6 +72,10 @@ void OutputTree::init_branches()
 
 void OutputTree::clear()
 {
+    Run=0;
+    LumiSec=0;
+    Event=0;
+
     CLEAR_pt_eta_phi_p4(H1_b1)
     CLEAR_pt_eta_phi_p4(H1_b2)
     CLEAR_pt_eta_phi_p4(H2_b1)

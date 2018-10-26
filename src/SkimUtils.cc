@@ -53,7 +53,12 @@ int SkimUtils::appendFromFileList (TChain* chain, string filename)
 
 void SkimUtils::fill_output_tree(OutputTree& ot, NanoAODTree& nat, EventInfo& ei)
 {
+
     // set the variables
+    ot.Run  = *ei.Run;
+    ot.LumiSec  = *ei.LumiSec;
+    ot.Event  = *ei.Event;
+
     COPY_pt_eta_phi_p4(H1_b1)
     COPY_pt_eta_phi_p4(H1_b2)
     COPY_pt_eta_phi_p4(H2_b1)

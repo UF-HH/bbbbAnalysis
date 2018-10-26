@@ -138,7 +138,6 @@ void OfflineProducerHelper::filter_jets(std::vector<Jet>& jets, const std::funct
 
 bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
 {
-    
     if (*(nat.nJet) < 4)
         return false;
 
@@ -221,6 +220,7 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
     ei.H2_bb_DeltaR = sqrt(pow(ei.H2_b1->P4().Eta() - ei.H2_b2->P4().Eta(),2) + pow(ei.H2_b1->P4().Phi() - ei.H2_b2->P4().Phi(),2));
 
     ei.HH = CompositeCandidate(ei.H1.get(), ei.H2.get());
+
     float targetHiggsMass;
     if(strategy == "HighestCSVandClosestToMh")
     {
@@ -397,6 +397,7 @@ std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_HighestCSVandClosestToMh(
     for(const auto & jetPosition : itCandidateMap->first){
         output_jets.emplace_back(jets->at(jetPosition));
     }
+
     return output_jets;
 }
 

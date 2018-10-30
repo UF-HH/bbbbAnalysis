@@ -71,7 +71,7 @@ Sample::~Sample ()
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-bool Sample::openFileAndTree(TH1F *hCutInSkim)
+bool Sample::openFileAndTree(TH1F *hCutInSkim, const std::vector<Selection> &selections)
 {
     cout << "@ Opening sample: " << name_ << endl;
     cout << "  ---> " << filelistname_ << endl;
@@ -87,7 +87,7 @@ bool Sample::openFileAndTree(TH1F *hCutInSkim)
     string line;
     int counter = 0;
     bool cutHistogramSet=false;
-    int nBins=0;
+    int skimNBins=0;
     while (std::getline(fList, line))
     {
         line = line.substr(0, line.find("#", 0)); // remove comments introduced by #
@@ -107,16 +107,19 @@ bool Sample::openFileAndTree(TH1F *hCutInSkim)
             nentries_ += hCutTmp->GetBinContent (SkimEffCounter::BinValue::kNsel_uw) ; // NB! rounding errors could make this different from the actual entries in the tree --> better to use TH1D
             if (!cutHistogramSet){
                 cutHistogramSet=true;
-                nBins = (SkimEffCounter::BinValue::kNsel_uw)/2 + 2; //weight form the skims plus selection and region
+                skimNBins = (SkimEffCounter::BinValue::kNsel_uw)/2;
+                int selNBins = selections.size();
+                int nBins = skimNBins + selNBins;
                 hCutInSkim->SetBins(nBins, 0, nBins);
-                for(int xBin=1; xBin<=nBins-2; ++xBin){
+                for(int xBin=1; xBin<=skimNBins; ++xBin){
                     hCutInSkim->GetXaxis()->SetBinLabel(xBin, hCutTmp->GetXaxis()->GetBinLabel(xBin*2) );
                 }
-                hCutInSkim->GetXaxis()->SetBinLabel(nBins-1, "selection" );
-                hCutInSkim->GetXaxis()->SetBinLabel(nBins,   "region"    );
+                for(int xBin=1; xBin<=selNBins; ++ xBin){
+                    hCutInSkim->GetXaxis()->SetBinLabel(xBin+skimNBins, selections.at(xBin-1).getName().data() );
+                }
             }
 
-            for(int xBin=1; xBin<=nBins-2; ++xBin){
+            for(int xBin=1; xBin<=skimNBins; ++xBin){
                 hCutInSkim->Fill(xBin-1, hCutTmp->GetBinContent(xBin*2) );
             }
 

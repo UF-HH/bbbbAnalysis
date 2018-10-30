@@ -128,6 +128,9 @@ void AnalysisHelper::saveOutputsToFile()
 
             // cout << "isample " << isample << "/" << allToSave.at(itype)->size() << endl;
             Sample::selColl& plotSet = allToSave.at(itype)->at(isample)->plots();
+            // TH1F *selections = new TH1F((sampleDir + "_selections",plotSet.size(),0,plotSet.size());
+            TH1F *hCutInSkimTmp = (TH1F*)hCutInSkim_->Clone(("hCut_" + sampleDir).data());
+
             for (uint isel = 0; isel < plotSet.size(); ++isel)
             {
                 bool firstIteration=true;
@@ -144,25 +147,25 @@ void AnalysisHelper::saveOutputsToFile()
                         // cout << "isyst " << isyst << "/" << plotSet.at(isel).at(ivar).size() << endl;
                         if(firstIteration){
                             firstIteration=false;
-                            // cout<<1<<endl;
-                            // hCutInSkim_->Write();
-                            // if(hCutInSkim_==NULL) cout<<"culo\n";
-                            // TH1F *hCutInSkimTmp = (TH1F*)hCutInSkim_->Clone("hCut_");
-                            // cout<<1.1<<endl;
+                            bool foundBin = false;
+                            for(int xBin=1; xBin<=hCutInSkimTmp->GetNbinsX(); ++xBin){
+                                if(hCutInSkimTmp->GetXaxis()->GetBinLabel(xBin) == selectionDir){
+                                    foundBin=true;
+                                    hCutInSkimTmp->SetBinContent(xBin,plotSet.at(isel).at(ivar).at(isyst)->GetEntries());
+                                    break;
+                                }
+                            }
+                            if(!foundBin) throw std::runtime_error("Bin corresponding to selection " + selectionDir + " not found in the cut histogram");
+                        
 
-                            TH1F *hCutInSkimTmp = (TH1F*)hCutInSkim_->Clone(("hCut_" + selectionDir).data());
-                            // cout<<2<<endl;
-
-                            hCutInSkimTmp->SetBinContent(hCutInSkimTmp->GetNbinsX(),plotSet.at(isel).at(ivar).at(isyst)->GetEntries());
-                            // cout<<3<<endl;
-                            hCutInSkimTmp->Write();
-                            // cout<<4<<endl;
                         }
                         plotSet.at(isel).at(ivar).at(isyst)->Write();
                         // cout << "DONE" << endl;
                     }
                 }
             }
+            fOut->cd(sampleDir.data());
+            hCutInSkimTmp->Write();
         }
     }
 
@@ -270,7 +273,7 @@ shared_ptr<Sample> AnalysisHelper::openSample(string sampleName)
     }
 
     hCutInSkim_ = new TH1F();
-    bool success = sample->openFileAndTree(hCutInSkim_);
+    bool success = sample->openFileAndTree(hCutInSkim_,selections_);
     if (!success)
     {
         throw std::runtime_error("cannot open input file for sample " + sampleName);

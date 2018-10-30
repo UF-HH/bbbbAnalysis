@@ -19,6 +19,8 @@
 #include "TChain.h"
 #include "TH1F.h"
 #include "TH2F.h"
+#include "Selection.h"
+
 
 class Sample
 {
@@ -55,7 +57,7 @@ class Sample
         sType getType () {return sampleType_;}
 
         // file handling and preparation
-        bool openFileAndTree(TH1F *hCutInSkim);
+        bool openFileAndTree(TH1F *hCutInSkim, const std::vector<Selection> &selections);
         // void getEfficiency(std::string histoname="h_eff");
         long long int getEntries(){return nentries_;}
         void setEffBin(int ibin){

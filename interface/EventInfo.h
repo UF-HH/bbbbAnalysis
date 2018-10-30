@@ -17,6 +17,11 @@
 #include "GenPart.h"
 
 struct EventInfo{
+
+    boost::optional<unsigned int>           Run;
+    boost::optional<unsigned int>           LumiSec;
+    boost::optional<unsigned long long int> Event;
+
     boost::optional<GenPart> gen_H1;
     boost::optional<GenPart> gen_H2;
     boost::optional<GenPart> gen_H1_last;
@@ -39,7 +44,11 @@ struct EventInfo{
     // boost::optional<GenPart> gen_q2_out_lastcopy;
 
     boost::optional<CompositeCandidate> H1;
+    boost::optional<float> H1_bb_DeltaR;
     boost::optional<CompositeCandidate> H2;
+    boost::optional<float> H2_bb_DeltaR;
+    boost::optional<CompositeCandidate> HH;
+    boost::optional<float> HH_2DdeltaM;
 
     boost::optional<Jet> H1_b1;
     boost::optional<Jet> H1_b2;

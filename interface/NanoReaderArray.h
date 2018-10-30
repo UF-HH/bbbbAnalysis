@@ -27,6 +27,7 @@ class NanoReaderArray {
         T& operator[] (size_t idx){return (*ttra_)[idx];} 
         auto  begin () {return ttra_->begin();}
         auto  end () const {return ttra_->end();}
+        size_t GetSize() const { return ttra_->GetSize();}
     private:
         TTreeReader* reader_;
         std::string branchname_;
@@ -38,6 +39,7 @@ NanoReaderArray<T>::NanoReaderArray (TTreeReader &tr, const char *branchname)
 {
     reader_ = &tr;
     branchname_ = branchname;
+    this->Verify(tr.GetTree());
 }
 
 template <typename T>

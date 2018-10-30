@@ -171,10 +171,13 @@ bool CfgParser::endsWith (string line, string suffix)
 
 string CfgParser::readStringOpt(string section, string option)
 {
-    if (!hasOpt (section, option))
-    {
-        cerr << "** CfgParser: option " << section << "::" << option << " not defined" << endl;
-        return string("");
+    // if (!hasOpt (section, option))
+    // {
+    //     cerr << "** CfgParser: option " << section << "::" << option << " not defined" << endl;
+    //     return string("");
+    // }
+    if(!hasOpt(section,option)){
+        throw std::runtime_error("option " + section + "::" + option + " is requested");
     }
     return config_[section][option];
 }
@@ -227,6 +230,9 @@ float CfgParser::readFloatOpt(string compact)
 
 vector<string> CfgParser::readStringListOpt(string section, string option)
 {
+    //  if(!hasOpt(section,option)){
+    //     throw std::runtime_error("option " + section + "::" + option + " is requested by the OfflineProducerHelper");
+    // }
     string s = readStringOpt(section, option);
     vector<string> values = splitStringInList(s);
     return values;
@@ -240,6 +246,7 @@ vector<string> CfgParser::readStringListOpt(string compact)
 
 vector<int> CfgParser::readIntListOpt(string section, string option)
 {
+
     vector<string> vs = readStringListOpt(section, option);
     vector<int> result;
     for (string s : vs)

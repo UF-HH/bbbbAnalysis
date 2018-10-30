@@ -5,9 +5,133 @@
 
 #include "CompositeCandidate.h"
 #include "Jet.h"
+#include "Electron.h"
+#include "Muon.h"
 #include "GenPart.h"
+#include <experimental/any>
+ 
+using namespace std::experimental;
 
 using namespace std;
+
+
+void OfflineProducerHelper::initializeUserDefinedBranches(OutputTree &ot){
+
+    string objectsForCut = any_cast<string>(parameterList_->at("ObjectsForCut"));
+
+    if(objectsForCut == "None")
+        save_objects_for_cut = [](NanoAODTree& nat, OutputTree &ot) -> void {return;};
+    else if(objectsForCut == "WandZleptonDecays"){
+        save_objects_for_cut = &save_WandZleptondecays;
+        ot.declareUserFloatBranch("LeadingIsolatedZElectron_pt", -1.);
+        ot.declareUserFloatBranch("LeadingIsolatedZMuon_pt", -1.);
+        ot.declareUserFloatBranch("LeadingIsolatedWElectron_pt", -1.);
+        ot.declareUserFloatBranch("LeadingIsolatedWMuon_pt", -1.);
+    }
+
+    ot.declareUserFloatBranch("LHE_HT", 0);
+    ot.declareUserFloatBranch("my_LHE_HT", 0);
+
+    return;
+
+}
+
+// reject events with leptons that may come from W and Z decays
+void OfflineProducerHelper::save_WandZleptondecays (NanoAODTree& nat, OutputTree &ot){
+
+    std::vector<Electron> electronFromW;
+    electronFromW.reserve(*(nat.nElectron));
+    std::vector<Electron> electronFromZ;
+    electronFromZ.reserve(*(nat.nElectron));
+    std::vector<Muon> muonFromW;
+    muonFromW.reserve(*(nat.nMuon));
+    std::vector<Muon> muonFromZ;
+    muonFromZ.reserve(*(nat.nMuon));
+
+    for (uint eIt = 0; eIt < *(nat.nElectron); ++eIt){
+        Electron theElectron(eIt, &nat);
+        
+        if( //theElectron.P4().Pt()                                 >25.0 && 
+            get_property(theElectron,Electron_mvaSpring16GP_WP80) && 
+            get_property(theElectron,Electron_pfRelIso03_all    ) < any_cast<float>(parameterList_->at("WElectronMaxPfIso")) )
+            electronFromW.emplace_back(theElectron);
+
+        if( //theElectron.P4().Pt()                                 >20.0 && 
+            get_property(theElectron,Electron_mvaSpring16GP_WP90) && 
+            get_property(theElectron,Electron_pfRelIso03_all    ) < any_cast<float>(parameterList_->at("ZElectronMaxPfIso")) )
+            electronFromZ.emplace_back(theElectron);
+    }
+
+    if(electronFromZ.size()>0){
+        stable_sort(electronFromZ.begin(), electronFromZ.end(), [](const Electron & a, const Electron & b) -> bool
+        {
+            return ( a.P4().Pt() > b.P4().Pt() );
+        }); // sort electrons by pt (highest to lowest)
+        
+        ot.userFloat("LeadingIsolatedZElectron_pt") = electronFromZ.at(0).P4().Pt();
+    }
+
+    if(electronFromW.size()>0){
+        stable_sort(electronFromW.begin(), electronFromW.end(), [](const Electron & a, const Electron & b) -> bool
+        {
+            return ( a.P4().Pt() > b.P4().Pt() );
+        }); // sort electrons by pt (highest to lowest)
+        
+        ot.userFloat("LeadingIsolatedWElectron_pt") = electronFromW.at(0).P4().Pt();
+    }
+
+    for (uint eIt = 0; eIt < *(nat.nMuon); ++eIt){
+        Muon theMuon(eIt, &nat);
+
+        if( //theMuon.P4().Pt()                                     >25.0 && 
+            get_property(theMuon,Muon_tightId                    )      &&
+            get_property(theMuon,Muon_pfRelIso04_all             ) < any_cast<float>(parameterList_->at("WMuonMaxPfIso")) &&
+            get_property(theMuon,Muon_dxy                        ) < any_cast<float>(parameterList_->at("MuonMaxDxy")) &&
+            get_property(theMuon,Muon_dz                         ) < any_cast<float>(parameterList_->at("MuonMaxDz")) )
+            muonFromW.emplace_back(theMuon);
+
+        if( //theMuon.P4().Pt()                                     >20.0 && 
+            get_property(theMuon,Muon_pfRelIso04_all             ) < any_cast<float>(parameterList_->at("ZMuonMaxPfIso")) &&
+            get_property(theMuon,Muon_dxy                        ) < any_cast<float>(parameterList_->at("MuonMaxDxy")) &&
+            get_property(theMuon,Muon_dz                         ) < any_cast<float>(parameterList_->at("MuonMaxDz")) )
+            muonFromZ.emplace_back(theMuon);
+    }
+
+    if(muonFromZ.size()>0){
+        stable_sort(muonFromZ.begin(), muonFromZ.end(), [](const Muon & a, const Muon & b) -> bool
+        {
+            return ( a.P4().Pt() > b.P4().Pt() );
+        }); // sort muons by pt (highest to lowest)
+        
+        ot.userFloat("LeadingIsolatedZMuon_pt") = muonFromZ.at(0).P4().Pt();
+    }
+
+    if(muonFromW.size()>0){
+        stable_sort(muonFromW.begin(), muonFromW.end(), [](const Muon & a, const Muon & b) -> bool
+        {
+            return ( a.P4().Pt() > b.P4().Pt() );
+        }); // sort muons by pt (highest to lowest)
+        
+        ot.userFloat("LeadingIsolatedWMuon_pt") = muonFromW.at(0).P4().Pt();
+    }
+
+
+    // if(electronFromZ.size()>0){
+    //     return false;
+    // }
+
+    // if(muonFromZ.size()>0){
+    //     return false;
+    // }
+
+    // if(electronFromW.size()==1 || muonFromW.size()==1){
+    //     return false;
+    // }
+
+    // return true;
+}
+
+
 
 std::vector<Jet> OfflineProducerHelper::make_jets(NanoAODTree& nat, const std::function<bool (Jet)>& presel_function)
 {
@@ -17,7 +141,7 @@ std::vector<Jet> OfflineProducerHelper::make_jets(NanoAODTree& nat, const std::f
         Jet jet (ij, &nat);
         bool pass = presel_function ? presel_function(jet) : true;
         if (pass)
-            jets.push_back(jet);
+            jets.emplace_back(jet);
     }
     return jets;
 }
@@ -28,67 +152,71 @@ void OfflineProducerHelper::filter_jets(std::vector<Jet>& jets, const std::funct
     return;
 }
 
-bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, bbbbSelectionStrategy strat)
+bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
 {
-    // cout << "FIXME : select_bbbb_jets : this is just a dummy function " << endl;
-
     if (*(nat.nJet) < 4)
         return false;
 
     std::vector<Jet> jets;
     jets.reserve(*(nat.nJet));
-    for (uint ij = 0; ij < *(nat.nJet); ++ij)
-        jets.push_back(Jet(ij, &nat));
+    for (uint ij = 0; ij < *(nat.nJet); ++ij){
+        jets.emplace_back(Jet(ij, &nat));
+        TLorentzVector jetP4_regressionCorrected;
+        jetP4_regressionCorrected.SetPtEtaPhiM(
+            jets.back().P4().Pt()*get_property(jets.back(),Jet_bRegCorr), //use b regression correction for pt
+            jets.back().P4().Eta(),
+            jets.back().P4().Phi(),
+            jets.back().P4().M()
+        );
+        jets.back().setP4(jetP4_regressionCorrected);
+    }
 
     stable_sort(jets.begin(), jets.end(), [](const Jet & a, const Jet & b) -> bool
     {
-        return ( get_property(a, Jet_btagCSVV2) < get_property(b, Jet_btagCSVV2) );
-    }); // sort by CSV (lowest to highest)
+        return ( get_property(a, Jet_btagDeepB) > get_property(b, Jet_btagDeepB) );
+    }); // sort by deepCSV (highest to lowest)
 
     // now need to pair the jets
-    std::array<Jet, 4> presel_jets = {{
+    std::vector<Jet> presel_jets = {{
         *(jets.rbegin()+0),
         *(jets.rbegin()+1),
         *(jets.rbegin()+2),
         *(jets.rbegin()+3)
     }};
 
-    std::array<Jet, 4> ordered_jets = presel_jets;
+    std::vector<Jet> ordered_jets;
+    string strategy = any_cast<string>(parameterList_->at("bbbbChoice"));
 
-    // cout << "IN (pt) " << endl;
-    // for (auto& j : presel_jets)
-    //     cout << j.P4().Pt() << endl;
 
-    // pair the jets
-    if (strat == bbbbSelectionStrategy::kOneClosestToMh)
-        ordered_jets = bbbb_jets_idxs_OneClosestToMh(presel_jets, 115.);
-    
-    else if (strat == bbbbSelectionStrategy::kBothClosestToMh)
-        ordered_jets = bbbb_jets_idxs_BothClosestToMh(presel_jets, 115.);
-    
-    else if (strat == bbbbSelectionStrategy::kMostBackToBack)
-        ordered_jets = bbbb_jets_idxs_MostBackToBack(presel_jets);
-    else
-        cout << "** [WARNING] : select_bbbb_jets : did not recognize bbbb selection strategy, pairing by pt" << endl;
+    if(strategy == "OneClosestToMh")
+        ordered_jets = bbbb_jets_idxs_OneClosestToMh(&presel_jets);
+    else if(strategy == "BothClosestToMh")
+        ordered_jets = bbbb_jets_idxs_BothClosestToMh(&presel_jets);
+    else if(strategy == "MostBackToBack")
+        ordered_jets = bbbb_jets_idxs_MostBackToBack(&presel_jets);
+    else if(strategy == "HighestCSVandClosestToMh"){
+        ordered_jets = bbbb_jets_idxs_HighestCSVandClosestToMh(&jets);
+    }
+    else throw std::runtime_error("cannot recognize bbbb choice strategy " + strategy);
 
-    // cout << "OUT (pt) " << endl;
-    // for (auto& j : ordered_jets)
-    //     cout << j.P4().Pt() << endl;
+    if(ordered_jets.size()!=4) return false;
+
+
 
     order_by_pT(ordered_jets.at(0), ordered_jets.at(1));
     order_by_pT(ordered_jets.at(2), ordered_jets.at(3));
 
-    // ei.H1 = CompositeCandidate(ei.H1_b1.get(), ei.H1_b2.get());
-    // ei.H2 = CompositeCandidate(ei.H2_b1.get(), ei.H2_b2.get());
-
-    ei.H1 = CompositeCandidate(ordered_jets.at(0), ordered_jets.at(1));
-    ei.H2 = CompositeCandidate(ordered_jets.at(2), ordered_jets.at(3));
-
     // order H1, H2 by pT: pT(H1) > pT (H2)
-    bool swapped = order_by_pT(ei.H1.get(), ei.H2.get());
+    CompositeCandidate H1 = CompositeCandidate(ordered_jets.at(0), ordered_jets.at(1));
+    CompositeCandidate H2 = CompositeCandidate(ordered_jets.at(2), ordered_jets.at(3));
+    
+    //Do a random swap to be sure that the m1 and m2 are simmetric
+    bool swapped = (int(H1.P4().Pt()*100.) % 2 == 1);
 
     if (!swapped)
     {
+        ei.H1 = H1;
+        ei.H2 = H2;
         ei.H1_b1 = ordered_jets.at(0);
         ei.H1_b2 = ordered_jets.at(1);
         ei.H2_b1 = ordered_jets.at(2);
@@ -96,103 +224,123 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, bb
     }
     else
     {
+        ei.H1 = H2;
+        ei.H2 = H1;
         ei.H1_b1 = ordered_jets.at(2);
         ei.H1_b2 = ordered_jets.at(3);
         ei.H2_b1 = ordered_jets.at(0);
         ei.H2_b2 = ordered_jets.at(1);        
     }
 
+    ei.H1_bb_DeltaR = sqrt(pow(ei.H1_b1->P4().Eta() - ei.H1_b2->P4().Eta(),2) + pow(ei.H1_b1->P4().Phi() - ei.H1_b2->P4().Phi(),2));
+    ei.H2_bb_DeltaR = sqrt(pow(ei.H2_b1->P4().Eta() - ei.H2_b2->P4().Eta(),2) + pow(ei.H2_b1->P4().Phi() - ei.H2_b2->P4().Phi(),2));
+
+    ei.HH = CompositeCandidate(ei.H1.get(), ei.H2.get());
+
+    float targetHiggsMass;
+    if(strategy == "HighestCSVandClosestToMh")
+    {
+        targetHiggsMass = any_cast<float>(parameterList_->at("HiggsMassLMR"));
+        if(any_cast<float>(parameterList_->at("LMRToMMRTransition"))>=0. && ei.HH->P4().M() > any_cast<float>(parameterList_->at("LMRToMMRTransition"))) targetHiggsMass = any_cast<float>(parameterList_->at("HiggsMassMMR"));
+                   
+    }
+    else
+    {
+        targetHiggsMass = any_cast<float>(parameterList_->at("HiggsMass"));
+    }
+
+    ei.HH_2DdeltaM = pow(ei.H1->P4().M() - targetHiggsMass,2) + pow(ei.H2->P4().M() - targetHiggsMass,2);
+
+    ei.Run = *(nat.run);
+    ei.LumiSec = *(nat.luminosityBlock);
+    ei.Event = *(nat.event);
+
     return true;
 }
 
 // one pair is closest to the Higgs mass, the other follows
-std::array<Jet, 4> OfflineProducerHelper::bbbb_jets_idxs_OneClosestToMh(std::array<Jet, 4> presel_jets, float targetmH)
+std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_OneClosestToMh(const std::vector<Jet> *presel_jets)
 {
-    // 12, 13, 14, 23, 24, 34    
+    float targetHiggsMass = any_cast<float>(parameterList_->at("HiggsMass"));
     std::vector<pair <float, pair<int,int>>> mHs_and_jetIdx; // each entry is the mH and the two idxs of the pair
     
-    for (uint i = 0; i < presel_jets.size(); ++i)
-        for (uint j = i+1; j < presel_jets.size(); ++j)
+    for (uint i = 0; i < presel_jets->size(); ++i)
+        for (uint j = i+1; j < presel_jets->size(); ++j)
         {
-            TLorentzVector p4sum = (presel_jets.at(i).P4() + presel_jets.at(j).P4());
-            float dmh = fabs(p4sum.Mag() - targetmH);
-            mHs_and_jetIdx.push_back(make_pair(dmh, make_pair(i,j)));
+            TLorentzVector p4sum = (presel_jets->at(i).P4() + presel_jets->at(j).P4());
+            float dmh = fabs(p4sum.Mag() - targetHiggsMass);
+            mHs_and_jetIdx.emplace_back(make_pair(dmh, make_pair(i,j)));
         }
 
     // sort to get the pair closest to mH
     stable_sort (mHs_and_jetIdx.begin(), mHs_and_jetIdx.end());
 
-    std::array<Jet, 4> outputJets = presel_jets;
+    std::vector<Jet> outputJets = *presel_jets;
     int ij0 = mHs_and_jetIdx.begin()->second.first;
     int ij1 = mHs_and_jetIdx.begin()->second.second;
 
     // get the other two jets. The following creates a vector with idxs 0/1/2/3, and then removes ij1 and ij2
     std::vector<int> vres;
-    for (uint i = 0; i < presel_jets.size(); ++i) vres.push_back(i);
+    for (uint i = 0; i < presel_jets->size(); ++i) vres.emplace_back(i);
     vres.erase(std::remove(vres.begin(), vres.end(), ij0), vres.end());
     vres.erase(std::remove(vres.begin(), vres.end(), ij1), vres.end());
     
     int ij2 = vres.at(0);
     int ij3 = vres.at(1);
 
-    outputJets.at(0) = presel_jets.at(ij0);
-    outputJets.at(1) = presel_jets.at(ij1);
-    outputJets.at(2) = presel_jets.at(ij2);
-    outputJets.at(3) = presel_jets.at(ij3);
+    outputJets.at(0) = presel_jets->at(ij0);
+    outputJets.at(1) = presel_jets->at(ij1);
+    outputJets.at(2) = presel_jets->at(ij2);
+    outputJets.at(3) = presel_jets->at(ij3);
 
     return outputJets;
 }
 
-// minimize the distance from (targetmH, targetmH) in the 2D plane
-std::array<Jet, 4> OfflineProducerHelper::bbbb_jets_idxs_BothClosestToMh(std::array<Jet, 4> presel_jets, float targetmH)
+// minimize the distance from (targetHiggsMass, targetHiggsMass) in the 2D plane
+std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_BothClosestToMh(const std::vector<Jet> *presel_jets)
 {
-    // there are three possible pairings:
-    // 12 34
-    // 13 24
-    // 14 23
-    
-    // 0   1   2   3   4   5
-    // 12, 13, 14, 23, 24, 34    
+
+    float targetHiggsMass = any_cast<float>(parameterList_->at("HiggsMass"));
     std::vector<float> mHs;
     
-    for (uint i = 0; i < presel_jets.size(); ++i)
-        for (uint j = i+1; j < presel_jets.size(); ++j)
+    for (uint i = 0; i < presel_jets->size(); ++i)
+        for (uint j = i+1; j < presel_jets->size(); ++j)
         {
-            TLorentzVector p4sum = (presel_jets.at(i).P4() + presel_jets.at(j).P4());
-            mHs.push_back(p4sum.Mag());
+            TLorentzVector p4sum = (presel_jets->at(i).P4() + presel_jets->at(j).P4());
+            mHs.emplace_back(p4sum.Mag());
         }
 
     std::pair<float, float> m_12_34 = make_pair (mHs.at(0), mHs.at(5));
     std::pair<float, float> m_13_24 = make_pair (mHs.at(1), mHs.at(4));
     std::pair<float, float> m_14_23 = make_pair (mHs.at(2), mHs.at(3));
 
-    float r12_34 = sqrt (pow(m_12_34.first - targetmH, 2) + pow(m_12_34.second - targetmH, 2) );
-    float r13_24 = sqrt (pow(m_13_24.first - targetmH, 2) + pow(m_13_24.second - targetmH, 2) );
-    float r14_23 = sqrt (pow(m_14_23.first - targetmH, 2) + pow(m_14_23.second - targetmH, 2) );
+    float r12_34 = sqrt (pow(m_12_34.first - targetHiggsMass, 2) + pow(m_12_34.second - targetHiggsMass, 2) );
+    float r13_24 = sqrt (pow(m_13_24.first - targetHiggsMass, 2) + pow(m_13_24.second - targetHiggsMass, 2) );
+    float r14_23 = sqrt (pow(m_14_23.first - targetHiggsMass, 2) + pow(m_14_23.second - targetHiggsMass, 2) );
 
     float the_min = std::min({r12_34, r13_24, r14_23});
 
-    std::array<Jet, 4> outputJets = presel_jets;
+    std::vector<Jet> outputJets = *presel_jets;
 
     if (the_min == r12_34){
-        outputJets.at(0) = presel_jets.at(1 - 1);
-        outputJets.at(1) = presel_jets.at(2 - 1);
-        outputJets.at(2) = presel_jets.at(3 - 1);
-        outputJets.at(3) = presel_jets.at(4 - 1);
+        outputJets.at(0) = presel_jets->at(1 - 1);
+        outputJets.at(1) = presel_jets->at(2 - 1);
+        outputJets.at(2) = presel_jets->at(3 - 1);
+        outputJets.at(3) = presel_jets->at(4 - 1);
     }
 
     else if (the_min == r13_24){
-        outputJets.at(0) = presel_jets.at(1 - 1);
-        outputJets.at(1) = presel_jets.at(3 - 1);
-        outputJets.at(2) = presel_jets.at(2 - 1);
-        outputJets.at(3) = presel_jets.at(4 - 1);
+        outputJets.at(0) = presel_jets->at(1 - 1);
+        outputJets.at(1) = presel_jets->at(3 - 1);
+        outputJets.at(2) = presel_jets->at(2 - 1);
+        outputJets.at(3) = presel_jets->at(4 - 1);
     }
 
     else if (the_min == r14_23){
-        outputJets.at(0) = presel_jets.at(1 - 1);
-        outputJets.at(1) = presel_jets.at(4 - 1);
-        outputJets.at(2) = presel_jets.at(2 - 1);
-        outputJets.at(3) = presel_jets.at(3 - 1);   
+        outputJets.at(0) = presel_jets->at(1 - 1);
+        outputJets.at(1) = presel_jets->at(4 - 1);
+        outputJets.at(2) = presel_jets->at(2 - 1);
+        outputJets.at(3) = presel_jets->at(3 - 1);   
     }
 
     else
@@ -202,14 +350,14 @@ std::array<Jet, 4> OfflineProducerHelper::bbbb_jets_idxs_BothClosestToMh(std::ar
 }
 
 // make the pairs that maximize their dR separation
-std::array<Jet, 4> OfflineProducerHelper::bbbb_jets_idxs_MostBackToBack(std::array<Jet, 4> presel_jets)
+std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_MostBackToBack(const std::vector<Jet> *presel_jets)
 {
     std::pair<CompositeCandidate,CompositeCandidate> H1H2 = get_two_best_jet_pairs (
-        presel_jets,
+        *presel_jets,
         std::function<float (std::pair<CompositeCandidate,CompositeCandidate>)> ([](pair<CompositeCandidate,CompositeCandidate> x)-> float {return x.first.P4().DeltaR(x.second.P4());}),
         false);
 
-    std::array<Jet, 4> output_jets;
+    std::vector<Jet> output_jets;
     output_jets.at(0) = static_cast<Jet&> (H1H2.first.getComponent1());
     output_jets.at(1) = static_cast<Jet&> (H1H2.first.getComponent2());
     output_jets.at(2) = static_cast<Jet&> (H1H2.second.getComponent1());
@@ -219,30 +367,60 @@ std::array<Jet, 4> OfflineProducerHelper::bbbb_jets_idxs_MostBackToBack(std::arr
 }
 
 
-// std::vector<std::pair<CompositeCandidate, CompositeCandidate>> OfflineProducerHelper::make_jet_combinations (std::vector<Jet> jets)
-// {
-//     // make all possible jet pairs (CompositeCandidates)
-//     std::vector<CompositeCandidate> pairs;
-//     for (uint i = 0; i < jets.size(); ++i)
-//         for (uint j = i+1; j < jets.size(); ++j)
-//         {
-//             CompositeCandidate cc (jets.at(i), jets.at(j));
-//             pairs.push_back(cc);
-//         }
+std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_HighestCSVandClosestToMh(const std::vector<Jet> *jets){
+    
+    float targetHiggsMassLMR                = any_cast<float>(parameterList_->at("HiggsMassLMR"        ));
+    float targetHiggsMassMMR                = any_cast<float>(parameterList_->at("HiggsMassMMR"        ));
+    float LMRToMMRTransition                = any_cast<float>(parameterList_->at("LMRToMMRTransition" ));
+    float minimumDeepCSVaccepted            = any_cast<float>(parameterList_->at("deepCSVcut"          ));
 
-//     // make all possible pairs of CompositeCandiates, ensuring that each jet is taken only once
-//     std::vector<pair<CompositeCandidate, CompositeCandidate>> jet_combinations;
-//     for (uint i = 0; i < pairs.size(); ++i)
-//         for (uint j = i+1; j < pairs.size(); ++j)
-//         {
-//             auto& cc1 = pairs.at(i);
-//             auto& cc2 = pairs.at(j);
-//             if (cc1.sharesComponentWith(cc2)) continue;
-//             jet_combinations.push_back(make_pair(cc1, cc2));
-//         }
+    unsigned int jetsPassingDeepCSV = 0;
 
-//     return jet_combinations;
-// }
+    //Jets are already ordered form highest to lowest CSV
+    for(; jetsPassingDeepCSV < jets->size(); ++jetsPassingDeepCSV){
+        float tmpDeepCSV = get_property(jets->at(jetsPassingDeepCSV),Jet_btagDeepB);
+        if(tmpDeepCSV < minimumDeepCSVaccepted){
+            break;
+        }
+    }
+    
+    std::vector<Jet> output_jets;
+    if(jetsPassingDeepCSV  < 4) return output_jets;
+
+    std::map< const std::array<unsigned int,4>, float> candidateMap;
+    for(unsigned int h1b1it = 0; h1b1it< jetsPassingDeepCSV-1; ++h1b1it){
+        for(unsigned int h1b2it = h1b1it+1; h1b2it< jetsPassingDeepCSV; ++h1b2it){
+            for(unsigned int h2b1it = h1b1it+1; h2b1it< jetsPassingDeepCSV-1; ++h2b1it){
+                if(h2b1it == h1b2it) continue;
+                for(unsigned int h2b2it = h2b1it+1; h2b2it< jetsPassingDeepCSV; ++h2b2it){
+                    if(h2b2it == h1b2it) continue;
+                    float candidateMass = (jets->at(h1b1it).P4() + jets->at(h1b2it).P4() + jets->at(h2b1it).P4() + jets->at(h2b2it).P4()).M();
+                    float targetHiggsMass = targetHiggsMassLMR;
+                    if(LMRToMMRTransition>=0. && candidateMass > LMRToMMRTransition) targetHiggsMass = targetHiggsMassMMR; //use different range for mass
+                    float squareDeltaMassH1 = pow((jets->at(h1b1it).P4() + jets->at(h1b2it).P4()).M()-targetHiggsMass,2);
+                    float squareDeltaMassH2 = pow((jets->at(h2b1it).P4() + jets->at(h2b2it).P4()).M()-targetHiggsMass,2);
+                    candidateMap.emplace((std::array<unsigned int,4>){h1b1it,h1b2it,h2b1it,h2b2it},squareDeltaMassH1+squareDeltaMassH2);
+                }
+            }
+        }
+    }
+
+    if(candidateMap.size()==0) return output_jets;
+
+    const std::pair< const std::array<unsigned int,4>, float> *itCandidateMap=NULL;
+    //find candidate with both Higgs candidates cloasest to the true Higgs mass
+    for(const auto & candidate : candidateMap){
+        if(itCandidateMap==NULL) itCandidateMap = &candidate;
+        else if(itCandidateMap->second > candidate.second) itCandidateMap = &candidate;
+    }
+
+    for(const auto & jetPosition : itCandidateMap->first){
+        output_jets.emplace_back(jets->at(jetPosition));
+    }
+
+    return output_jets;
+}
+
 
 bool OfflineProducerHelper::select_gen_HH (NanoAODTree& nat, EventInfo& ei)
 {
@@ -296,6 +474,8 @@ bool OfflineProducerHelper::select_gen_HH (NanoAODTree& nat, EventInfo& ei)
     }
     return all_ok;
 }
+
+
 
 bool OfflineProducerHelper::select_gen_bb_bb (NanoAODTree& nat, EventInfo& ei)
 {

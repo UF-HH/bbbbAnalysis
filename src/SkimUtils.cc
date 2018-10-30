@@ -11,6 +11,7 @@ using namespace std;
 // helper: copies the pt/eta/phi/p4 branches from a candidate OBJ to the output tree
 // NOTE: requires the matching of the names (and enforces it)
 #define COPY_pt_eta_phi_p4(OBJ) \
+    ot.OBJ ## _m   = ei. OBJ -> P4().M(); \
     ot.OBJ ## _pt  = ei. OBJ -> P4().Pt(); \
     ot.OBJ ## _eta = ei. OBJ -> P4().Eta(); \
     ot.OBJ ## _phi = ei. OBJ -> P4().Phi(); \
@@ -19,6 +20,7 @@ using namespace std;
 //helperM same as above, but encloses the obj (a boost::optional is expected) in a if clause to check whether it is initialized
 #define COPY_OPTIONAL_pt_eta_phi_p4(OBJ) \
     if (ei.OBJ) { \
+        ot.OBJ ## _m   = ei. OBJ -> P4().M(); \
         ot.OBJ ## _pt  = ei. OBJ -> P4().Pt(); \
         ot.OBJ ## _eta = ei. OBJ -> P4().Eta(); \
         ot.OBJ ## _phi = ei. OBJ -> P4().Phi(); \
@@ -51,14 +53,23 @@ int SkimUtils::appendFromFileList (TChain* chain, string filename)
 
 void SkimUtils::fill_output_tree(OutputTree& ot, NanoAODTree& nat, EventInfo& ei)
 {
+
     // set the variables
+    ot.Run  = *ei.Run;
+    ot.LumiSec  = *ei.LumiSec;
+    ot.Event  = *ei.Event;
+
     COPY_pt_eta_phi_p4(H1_b1)
     COPY_pt_eta_phi_p4(H1_b2)
     COPY_pt_eta_phi_p4(H2_b1)
     COPY_pt_eta_phi_p4(H2_b2)
 
     COPY_pt_eta_phi_p4(H1)
+    ot.H1_bb_DeltaR  = *ei.H1_bb_DeltaR;
     COPY_pt_eta_phi_p4(H2)
+    ot.H2_bb_DeltaR  = *ei.H2_bb_DeltaR;
+    COPY_pt_eta_phi_p4(HH)
+    ot.HH_2DdeltaM  = *ei.HH_2DdeltaM;
     
     // gen info are not stored for all samples --> set only if initialized (macro checks if object is initialized, else does not set)
     COPY_OPTIONAL_pt_eta_phi_p4(gen_H1)

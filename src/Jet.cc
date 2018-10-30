@@ -2,7 +2,7 @@
 
 #include "BuildP4.h"
 
-void Jet::buildP4(NanoAODTree* nat)
+void Jet::buildP4()
 {
-    p4_.BUILDP4(Jet, nat);
+    p4_.BUILDP4(Jet, nat_);
 }

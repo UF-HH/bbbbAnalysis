@@ -21,24 +21,40 @@
 class Candidate
 {
     public:
-        Candidate(){nat_ = nullptr; idx_ = -1;} // creates an invalid Candidate
-        Candidate(int idx, NanoAODTree* nat){idx_ = idx; nat_ = nat;} // standard ctor to be used for NanoAODTree inspection
+        Candidate(){nat_ = nullptr; idx_ = -1; isComposite_=false;} // creates an invalid Candidate
+        Candidate(int idx, NanoAODTree* nat){idx_ = idx; nat_ = nat; isComposite_=false; parentIdxVector_.emplace_back(idx);} // standard ctor to be used for NanoAODTree inspection
         ~Candidate(){};
         
         TLorentzVector P4() const      {return p4_;}
         void setP4( TLorentzVector p4) {p4_ = p4;}
+        bool getIsComposite() const {return isComposite_;}
         
-        int getIdx() const {return idx_;}
+        int getIdx() const {
+            if(isComposite_) throw std::runtime_error("Composite particles do not have id");
+            return idx_;
+        }
+
+        std::vector<int> getIdxParents() const 
+        {
+            if(!isComposite_) throw std::runtime_error("Non composite particles do not have parent ids");
+            return parentIdxVector_;
+        }
+
         NanoAODTree* getNanoAODTree() const {return nat_;}
         
         bool isValid() const {return idx_ >= 0;}
         virtual std::unique_ptr<Candidate> clone() const = 0;
 
     protected:
-        virtual void buildP4(NanoAODTree* nat) = 0;
+        virtual void buildP4() = 0;
         int idx_;
+        std::vector<int> parentIdxVector_;
+
         TLorentzVector p4_;
         NanoAODTree* nat_;
+        bool isComposite_;
+
+
 };
 
 #endif

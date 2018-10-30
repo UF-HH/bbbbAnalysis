@@ -23,6 +23,7 @@
 
 // helper: declares the pt/eta/phi/p4 of a variable OBJ
 #define DECLARE_pt_eta_phi_p4(OBJ) \
+    float OBJ ## _m; \
     float OBJ ## _pt; \
     float OBJ ## _eta; \
     float OBJ ## _phi; \
@@ -51,9 +52,16 @@ class OutputTree {
         //// saved variables
         //////////////////////////
 
+        unsigned int           Run;
+        unsigned int           LumiSec;
+        unsigned long long int Event;
         //////////////////----- reco H1 and H2
         DECLARE_pt_eta_phi_p4(H1)
+        float H1_bb_DeltaR;
         DECLARE_pt_eta_phi_p4(H2)
+        float H2_bb_DeltaR;
+        DECLARE_pt_eta_phi_p4(HH)
+        float HH_2DdeltaM;
 
         //////////////////----- reco bs
         DECLARE_pt_eta_phi_p4(H1_b1)

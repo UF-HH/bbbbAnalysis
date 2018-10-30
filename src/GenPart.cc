@@ -25,7 +25,7 @@ const std::map<int, float> GenPart::gen_mass_ = {
     {22 , 0}                // photon
 };
 
-void GenPart::buildP4(NanoAODTree* nat)
+void GenPart::buildP4()
 {
     // NOTE: some care is required here, because particles with mass < 10 do not have the mass stored
     // so I need to look up a pdgId vector
@@ -33,14 +33,14 @@ void GenPart::buildP4(NanoAODTree* nat)
     auto aPdgId = abs(get_property((*this), GenPart_pdgId));
     auto mass   = get_property((*this), GenPart_pdgId);
     if (mass != 0){
-        p4_.BUILDP4(GenPart, nat);    
+        p4_.BUILDP4(GenPart, nat_);    
     }
     else{
         if (gen_mass_.find(aPdgId) != gen_mass_.end())
-            p4_.BUILDP4_MASS(GenPart, nat, gen_mass_.at(aPdgId));
+            p4_.BUILDP4_MASS(GenPart, nat_, gen_mass_.at(aPdgId));
         else{
             std::cout << " ** GenPart :: buildP4 :: WARNING: no mass info specified for particle of pdgId " << aPdgId << " , using 0" << std::endl;
-            p4_.BUILDP4_MASS(GenPart, nat, 0.0);
+            p4_.BUILDP4_MASS(GenPart, nat_, 0.0);
         }
     }
 }

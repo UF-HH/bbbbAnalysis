@@ -22,7 +22,7 @@ def getExitCode(fname):
     for line in f:
         if code == -888:
             if "*** Break *** segmentation violation" in line:
-                return -666;
+                code = -666;
             if '... job finished with status' in line:
                 code = int(re.search('... job finished with status (\d+)', line).group(1))
         if "... copy done with status 0" in line:
@@ -92,7 +92,7 @@ failedButCopied = []
 for idx, ID in enumerate(jobs_ID):
     code = exitCodes[idx]
     if code <=-10000:
-        failedButCopied.append((ID, code))
+        failedButCopied.append(ID)
         code = code + 10000
     if   code == -999: 
         missing.append((ID, code))
@@ -130,11 +130,12 @@ if not args.short:
 #######################
 if args.resubCmd or args.issueCmd:
     print "\n** Resubmit commands\n"
+    print len(failedButCopied)
     # print "cd %s" % args.folder
     resubCmds = []
     failed = failed + notCopied
     for val in failed:
-        if val in failedButCopied or val in notCopied:
+        if val[0] in failedButCopied:
             print "file from job ", val[0], " need to be canceled"
         jobscript = job_proto.format(val[0]).replace(args.folder + '/', '')
         command   = "scripts/t3submit %s" % jobscript

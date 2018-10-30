@@ -15,24 +15,29 @@ using namespace std::experimental;
 using namespace std;
 
 
-bool OfflineProducerHelper::select_event(NanoAODTree& nat){
+void OfflineProducerHelper::initializeUserDefinedBranches(OutputTree &ot){
 
-    bool selectionPassed = false;
+    string objectsForCut = any_cast<string>(parameterList_->at("ObjectsForCut"));
 
-    string strategy = any_cast<string>(parameterList_->at("eventChoice"));
+    if(objectsForCut == "None")
+        save_objects_for_cut = [](NanoAODTree& nat, OutputTree &ot) -> void {return;};
+    else if(objectsForCut == "WandZleptonDecays"){
+        save_objects_for_cut = &save_WandZleptondecays;
+        ot.declareUserFloatBranch("LeadingIsolatedZElectron_pt", -1.);
+        ot.declareUserFloatBranch("LeadingIsolatedZMuon_pt", -1.);
+        ot.declareUserFloatBranch("LeadingIsolatedWElectron_pt", -1.);
+        ot.declareUserFloatBranch("LeadingIsolatedWMuon_pt", -1.);
+    }
 
-    if(strategy == "None")
-        selectionPassed = true;
-    if(strategy == "CutWandZleptondecays")
-        selectionPassed = event_selector_CutWandZleptondecays(nat);
-    else throw std::runtime_error("cannot recognize event choice strategy " + strategy);
+    ot.declareUserFloatBranch("LHE_HT", 0);
+    ot.declareUserFloatBranch("my_LHE_HT", 0);
 
-    return selectionPassed;
+    return;
+
 }
 
-
 // reject events with leptons that may come from W and Z decays
-bool OfflineProducerHelper::event_selector_CutWandZleptondecays (NanoAODTree& nat){
+void OfflineProducerHelper::save_WandZleptondecays (NanoAODTree& nat, OutputTree &ot){
 
     std::vector<Electron> electronFromW;
     electronFromW.reserve(*(nat.nElectron));
@@ -46,73 +51,84 @@ bool OfflineProducerHelper::event_selector_CutWandZleptondecays (NanoAODTree& na
     for (uint eIt = 0; eIt < *(nat.nElectron); ++eIt){
         Electron theElectron(eIt, &nat);
         
-        if( theElectron.P4().Pt()                                 >25.0 && 
-            get_property(theElectron,Electron_mvaSpring16GP_WP80)      && 
-            get_property(theElectron,Electron_pfRelIso03_all     )<0.12 )
+        if( //theElectron.P4().Pt()                                 >25.0 && 
+            get_property(theElectron,Electron_mvaSpring16GP_WP80) && 
+            get_property(theElectron,Electron_pfRelIso03_all    ) < any_cast<float>(parameterList_->at("WElectronMaxPfIso")) )
             electronFromW.emplace_back(theElectron);
 
-        if( theElectron.P4().Pt()                                 >20.0 && 
-            get_property(theElectron,Electron_mvaSpring16GP_WP90)      && 
-            get_property(theElectron,Electron_pfRelIso03_all     )<0.15 )
+        if( //theElectron.P4().Pt()                                 >20.0 && 
+            get_property(theElectron,Electron_mvaSpring16GP_WP90) && 
+            get_property(theElectron,Electron_pfRelIso03_all    ) < any_cast<float>(parameterList_->at("ZElectronMaxPfIso")) )
             electronFromZ.emplace_back(theElectron);
     }
 
     if(electronFromZ.size()>0){
-        return false;
+        stable_sort(electronFromZ.begin(), electronFromZ.end(), [](const Electron & a, const Electron & b) -> bool
+        {
+            return ( a.P4().Pt() > b.P4().Pt() );
+        }); // sort electrons by pt (highest to lowest)
+        
+        ot.userFloat("LeadingIsolatedZElectron_pt") = electronFromZ.at(0).P4().Pt();
+    }
+
+    if(electronFromW.size()>0){
+        stable_sort(electronFromW.begin(), electronFromW.end(), [](const Electron & a, const Electron & b) -> bool
+        {
+            return ( a.P4().Pt() > b.P4().Pt() );
+        }); // sort electrons by pt (highest to lowest)
+        
+        ot.userFloat("LeadingIsolatedWElectron_pt") = electronFromW.at(0).P4().Pt();
     }
 
     for (uint eIt = 0; eIt < *(nat.nMuon); ++eIt){
         Muon theMuon(eIt, &nat);
 
-        if( theMuon.P4().Pt()                                     >25.0 && 
+        if( //theMuon.P4().Pt()                                     >25.0 && 
             get_property(theMuon,Muon_tightId                    )      &&
-            get_property(theMuon,Muon_pfRelIso04_all             )<0.15 &&
-            get_property(theMuon,Muon_dxy                        )<0.05 &&
-            get_property(theMuon,Muon_dz                         )<0.20 )
+            get_property(theMuon,Muon_pfRelIso04_all             ) < any_cast<float>(parameterList_->at("WMuonMaxPfIso")) &&
+            get_property(theMuon,Muon_dxy                        ) < any_cast<float>(parameterList_->at("MuonMaxDxy")) &&
+            get_property(theMuon,Muon_dz                         ) < any_cast<float>(parameterList_->at("MuonMaxDz")) )
             muonFromW.emplace_back(theMuon);
 
-        if( theMuon.P4().Pt()                                     >20.0 && 
-            get_property(theMuon,Muon_pfRelIso04_all             )<0.25 &&
-            get_property(theMuon,Muon_dxy                        )<0.05 &&
-            get_property(theMuon,Muon_dz                         )<0.20 )
+        if( //theMuon.P4().Pt()                                     >20.0 && 
+            get_property(theMuon,Muon_pfRelIso04_all             ) < any_cast<float>(parameterList_->at("ZMuonMaxPfIso")) &&
+            get_property(theMuon,Muon_dxy                        ) < any_cast<float>(parameterList_->at("MuonMaxDxy")) &&
+            get_property(theMuon,Muon_dz                         ) < any_cast<float>(parameterList_->at("MuonMaxDz")) )
             muonFromZ.emplace_back(theMuon);
     }
 
-
     if(muonFromZ.size()>0){
-        return false;
+        stable_sort(muonFromZ.begin(), muonFromZ.end(), [](const Muon & a, const Muon & b) -> bool
+        {
+            return ( a.P4().Pt() > b.P4().Pt() );
+        }); // sort muons by pt (highest to lowest)
+        
+        ot.userFloat("LeadingIsolatedZMuon_pt") = muonFromZ.at(0).P4().Pt();
+    }
+
+    if(muonFromW.size()>0){
+        stable_sort(muonFromW.begin(), muonFromW.end(), [](const Muon & a, const Muon & b) -> bool
+        {
+            return ( a.P4().Pt() > b.P4().Pt() );
+        }); // sort muons by pt (highest to lowest)
+        
+        ot.userFloat("LeadingIsolatedWMuon_pt") = muonFromW.at(0).P4().Pt();
     }
 
 
-    // stable_sort(electronFromZ.begin(), electronFromZ.end(), [](const Electron & a, const Electron & b) -> bool
-    // {
-    //     return ( a.P4().Pt() > b.P4().Pt() );
-    // }); // sort electrons by pt (highest to lowest)
-
-    // stable_sort(muonFromZ.begin(), muonFromZ.end(), [](const Muon & a, const Muon & b) -> bool
-    // {
-    //     return ( a.P4().Pt() > b.P4().Pt() );
-    // }); // sort muons by pt (highest to lowest)
-
-
-
-    // if(electronFromZ.size() >=2){
-    //     for(int mIt=1; mIt<electronFromZ.size(); ++mIt){
-    //         if(get_property(electronFromZ[0],Electron_charge)*get_property(electronFromZ[mIt],Electron_charge)<0) return false; //skip events with two isoleted electrons with opposite charge
-    //     }
+    // if(electronFromZ.size()>0){
+    //     return false;
     // }
 
-    // if(muonFromZ.size() >=2){
-    //     for(int mIt=1; mIt<muonFromZ.size(); ++mIt){
-    //         if(get_property(muonFromZ[0],Muon_charge)*get_property(muonFromZ[mIt],Muon_charge)<0) return false; //skip events with two isoleted muons with opposite charge
-    //     }
+    // if(muonFromZ.size()>0){
+    //     return false;
     // }
 
-    if(electronFromW.size()==1 || muonFromW.size()==1){
-        return false;
-    }
+    // if(electronFromW.size()==1 || muonFromW.size()==1){
+    //     return false;
+    // }
 
-    return true;
+    // return true;
 }
 
 

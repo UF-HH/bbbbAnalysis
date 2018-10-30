@@ -103,10 +103,6 @@ int main(int argc, char** argv)
 
     std::map<std::string,any> parameterList;
 
-    const string eventChoice = config.readStringOpt("parameters::eventChoice");
-    parameterList.emplace("eventChoice",eventChoice);
-
-
     const string bbbbChoice = config.readStringOpt("parameters::bbbbChoice");
     
     parameterList.emplace("bbbbChoice",bbbbChoice);
@@ -128,10 +124,25 @@ int main(int argc, char** argv)
     // else if(other selection type){
     //     parameters fo be retreived;
     // }  
-
     else throw std::runtime_error("cannot recognize bbbb pair choice strategy " + bbbbChoice);
 
     cout << "[INFO] ... chosing bb bb jet pairs with strategy : " << bbbbChoice << endl;
+
+    const string objectsForCut = config.readStringOpt("parameters::ObjectsForCut");
+    parameterList.emplace("ObjectsForCut",objectsForCut);
+    if(objectsForCut == "WandZleptonDecays"){
+        parameterList.emplace("WElectronMaxPfIso"   ,config.readFloatOpt("parameters::WElectronMaxPfIso"   ));
+        parameterList.emplace("ZElectronMaxPfIso"   ,config.readFloatOpt("parameters::ZElectronMaxPfIso"   ));
+        parameterList.emplace("WMuonMaxPfIso"       ,config.readFloatOpt("parameters::WMuonMaxPfIso"       ));
+        parameterList.emplace("ZMuonMaxPfIso"       ,config.readFloatOpt("parameters::ZMuonMaxPfIso"       ));
+        parameterList.emplace("MuonMaxDxy"          ,config.readFloatOpt("parameters::MuonMaxDxy"          ));
+        parameterList.emplace("MuonMaxDz"           ,config.readFloatOpt("parameters::MuonMaxDz"           ));
+    }
+    // else if(other selection type){
+    //     parameters fo be retreived;
+    // }  
+    else throw std::runtime_error("cannot recognize event choice ObjectsForCut " + objectsForCut);
+
 
     oph::setParameterList(&parameterList);
 
@@ -178,8 +189,7 @@ int main(int argc, char** argv)
 
     SkimEffCounter ec;
 
-    ot.declareUserFloatBranch("LHE_HT", 0);
-    ot.declareUserFloatBranch("my_LHE_HT", 0);
+    oph::initializeUserDefinedBranches(ot);
 
     jsonLumiFilter jlf;
     if (is_data)
@@ -220,10 +230,6 @@ int main(int argc, char** argv)
 
         ec.updateTriggered(weight);
 
-        if (!oph::select_event(nat)) continue;
-
-        ec.updateEventSelected(weight);
-
         if (!oph::select_bbbb_jets(nat, ei)) continue;
 
         if (is_signal){
@@ -240,6 +246,8 @@ int main(int argc, char** argv)
                 return 1;
             }
         }
+
+        oph::save_objects_for_cut(nat, ot);
 
         ec.updateSelected(weight);
         su::fill_output_tree(ot, nat, ei);

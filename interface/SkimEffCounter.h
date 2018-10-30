@@ -23,15 +23,12 @@ class SkimEffCounter {
             kNtot_uw   = 2,
             kNtrg_w    = 3,
             kNtrg_uw   = 4,
-            kNevSel_w  = 5,
-            kNevSel_uw = 6,
-            kNsel_w    = 7,
-            kNsel_uw   = 8,
+            kNsel_w    = 5,
+            kNsel_uw   = 6,
         };
 
         void updateProcessed      (double evtW);
         void updateTriggered      (double evtW);
-        void updateEventSelected  (double evtW);
         void updateSelected       (double evtW);
 
         double   getSumWProcessed()      {return Ntot_w;}
@@ -40,9 +37,7 @@ class SkimEffCounter {
         long int getNTriggered()         {return Ntrg_uw;}
         double   getSumWSelected()       {return Nsel_w;}
         long int getNSelected()          {return Nsel_uw;}
-        double   getSumWEventSelected()  {return NevSel_w;}
-        long int getNEventSelected()     {return NevSel_uw;}
-
+        
         void createHisto();
         int  write();
 
@@ -56,8 +51,6 @@ class SkimEffCounter {
         long int Ntot_uw;
         double   Ntrg_w;
         long int Ntrg_uw;
-        double   NevSel_w;
-        long int NevSel_uw;
         double   Nsel_w;
         long int Nsel_uw;
 

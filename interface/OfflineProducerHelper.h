@@ -15,6 +15,7 @@
 #include "NanoAODTree.h"
 #include "EventInfo.h"
 #include "CompositeCandidate.h"
+#include "OutputTree.h"
 #include "Jet.h"
 #include <array>
 #include <utility>
@@ -38,6 +39,8 @@ namespace OfflineProducerHelper {
     ///static bacause if not I got a glibc detected when the execution is completed
     const std::map<std::string,any> *parameterList_;
     void setParameterList(const std::map<std::string,any> *parameterList) {parameterList_=parameterList;}
+
+    void initializeUserDefinedBranches(OutputTree &ot);
     // CfgParser config_;
     // float higgsTargetMass_              = -999.;
     // float higgsTargetMassMaxDifference_ = -999.;
@@ -53,9 +56,9 @@ namespace OfflineProducerHelper {
     // };
 
     // functions to select events based on non-jet particles:
-    bool select_event(NanoAODTree& nat);
+    void (*save_objects_for_cut)(NanoAODTree&, OutputTree&);
     // reject events with leptons that may come from W and Z decays
-    bool event_selector_CutWandZleptondecays (NanoAODTree& nat);
+    void save_WandZleptondecays (NanoAODTree& nat, OutputTree &ot);
 
 
     // functions that act on the EventInfo

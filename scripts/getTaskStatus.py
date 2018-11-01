@@ -130,7 +130,6 @@ if not args.short:
 #######################
 if args.resubCmd or args.issueCmd:
     print "\n** Resubmit commands\n"
-    print len(failedButCopied)
     # print "cd %s" % args.folder
     resubCmds = []
     failed = failed + notCopied

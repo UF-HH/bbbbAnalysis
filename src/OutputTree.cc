@@ -38,9 +38,13 @@ void OutputTree::init_branches()
 
     // reco b jets
     BRANCH_pt_eta_phi_m_p4(H1_b1)
+    tree_->Branch("H1_b1_deepCSV", &H1_b1_deepCSV);
     BRANCH_pt_eta_phi_m_p4(H1_b2)
+    tree_->Branch("H1_b2_deepCSV", &H1_b2_deepCSV);
     BRANCH_pt_eta_phi_m_p4(H2_b1)
+    tree_->Branch("H2_b1_deepCSV", &H2_b1_deepCSV);
     BRANCH_pt_eta_phi_m_p4(H2_b2)
+    tree_->Branch("H2_b2_deepCSV", &H2_b2_deepCSV);
 
     // reco H1 (H1_b1 + H1_b2)
     // reco H2 (H2_b1 + H2_b2)
@@ -77,9 +81,13 @@ void OutputTree::clear()
     Event=0;
 
     CLEAR_pt_eta_phi_m_p4(H1_b1)
+    H1_b1_deepCSV = 0.;
     CLEAR_pt_eta_phi_m_p4(H1_b2)
+    H1_b2_deepCSV = 0.;
     CLEAR_pt_eta_phi_m_p4(H2_b1)
+    H2_b1_deepCSV = 0.;
     CLEAR_pt_eta_phi_m_p4(H2_b2)
+    H2_b2_deepCSV = 0.;
 
     CLEAR_pt_eta_phi_m_p4(H1)
     H1_bb_DeltaR = 0.;

@@ -65,9 +65,13 @@ class OutputTree {
 
         //////////////////----- reco bs
         DECLARE_pt_eta_phi_p4(H1_b1)
+        float H1_b1_deepCSV;
         DECLARE_pt_eta_phi_p4(H1_b2)
+        float H1_b2_deepCSV;
         DECLARE_pt_eta_phi_p4(H2_b1)
+        float H2_b1_deepCSV;
         DECLARE_pt_eta_phi_p4(H2_b2)
+        float H2_b2_deepCSV;
 
         //////////////////----- gen level
         float gen_mHH;

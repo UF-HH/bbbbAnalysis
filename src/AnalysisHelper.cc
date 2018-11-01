@@ -151,7 +151,7 @@ void AnalysisHelper::saveOutputsToFile()
                             for(int xBin=1; xBin<=hCutInSkimTmp->GetNbinsX(); ++xBin){
                                 if(hCutInSkimTmp->GetXaxis()->GetBinLabel(xBin) == selectionDir){
                                     foundBin=true;
-                                    hCutInSkimTmp->SetBinContent(xBin,plotSet.at(isel).at(ivar).at(isyst)->GetEntries());
+                                    hCutInSkimTmp->SetBinContent(xBin,plotSet.at(isel).at(ivar).at(isyst)->Integral(-1,plotSet.at(isel).at(ivar).at(isyst)->GetNbinsX()+1));
                                     break;
                                 }
                             }

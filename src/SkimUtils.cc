@@ -60,9 +60,13 @@ void SkimUtils::fill_output_tree(OutputTree& ot, NanoAODTree& nat, EventInfo& ei
     ot.Event  = *ei.Event;
 
     COPY_pt_eta_phi_p4(H1_b1)
+    ot.H1_b1_deepCSV = get_property(ei.H1_b1.get(),Jet_btagDeepB);
     COPY_pt_eta_phi_p4(H1_b2)
+    ot.H1_b2_deepCSV = get_property(ei.H1_b2.get(),Jet_btagDeepB);
     COPY_pt_eta_phi_p4(H2_b1)
+    ot.H2_b1_deepCSV = get_property(ei.H2_b1.get(),Jet_btagDeepB);
     COPY_pt_eta_phi_p4(H2_b2)
+    ot.H2_b2_deepCSV = get_property(ei.H2_b2.get(),Jet_btagDeepB);
 
     COPY_pt_eta_phi_p4(H1)
     ot.H1_bb_DeltaR  = *ei.H1_bb_DeltaR;

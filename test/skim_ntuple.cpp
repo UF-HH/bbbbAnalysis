@@ -189,6 +189,14 @@ int main(int argc, char** argv)
 
     SkimEffCounter ec;
 
+    //REMOVE_ME_BEGIN
+    map<unsigned int, TH1F*> mapDeepCVSHistograms;
+    for(unsigned int i=1; i<=4; ++i){
+        mapDeepCVSHistograms[i] = new TH1F(Form("JetDeepCSVOrdered_DeepCSV_%i",i),Form("JetDeepCSVOrdered_DeepCSV_%i",i),25,0.,1.);
+    }
+    oph::setHistoMap(&mapDeepCVSHistograms);
+    //REMOVE_ME_END
+
     oph::initializeUserDefinedBranches(ot);
 
     jsonLumiFilter jlf;
@@ -257,6 +265,12 @@ int main(int argc, char** argv)
     outputFile.cd();
     ot.write();
     ec.write();
+
+    //REMOVE_ME_BEGIN
+    for(unsigned int i=1; i<=4; ++i){
+        mapDeepCVSHistograms[i]->Write();
+    }
+    //REMOVE_ME_END
 
 }
 

@@ -1024,7 +1024,7 @@ void AnalysisHelper::fillHistosSample(Sample& sample)
     {
         TBranch* br = (TBranch*) branchList->FindObject(it->first.c_str());
         if (!br)
-            cerr << endl << "** ERROR: AnalysisHelper::fillHistosSample : sample : " << sample.getName() << " does not havre branch " << it->first << ", expect a crash..." << endl;
+            cerr << endl << "** ERROR: AnalysisHelper::fillHistosSample : sample : " << sample.getName() << " does not have branch " << it->first << ", expect a crash..." << endl;
 
         string brName = br->GetTitle();
         if (brName.find(string("/F")) != string::npos) // F : a 32 bit floating point (Float_t)

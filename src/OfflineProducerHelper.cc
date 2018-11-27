@@ -154,8 +154,8 @@ void OfflineProducerHelper::filter_jets(std::vector<Jet>& jets, const std::funct
 
 bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
 {
-    if (*(nat.nJet) < 4)
-        return false;
+    // if (*(nat.nJet) < 4)
+    //     return false;
 
     std::vector<Jet> jets;
     jets.reserve(*(nat.nJet));
@@ -175,6 +175,16 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
     {
         return ( get_property(a, Jet_btagDeepB) > get_property(b, Jet_btagDeepB) );
     }); // sort by deepCSV (highest to lowest)
+
+    //REMOVE_ME_BEGIN
+    for(unsigned int iJet=0; iJet < jets.size() && iJet <4; ++iJet){
+        float tmpDeepCSV = get_property(jets.at(iJet),Jet_btagDeepB);
+        mapDeepCVSHistograms_->at(iJet+1)->Fill(tmpDeepCSV);
+    }
+    //REMOVE_ME_END
+    if (*(nat.nJet) < 4)
+        return false;
+
 
     // now need to pair the jets
     std::vector<Jet> presel_jets = {{

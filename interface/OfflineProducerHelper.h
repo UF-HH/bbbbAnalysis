@@ -11,6 +11,7 @@
 **          It's a flexible way to let the function know what it should know on the event, and possibly set extra information
 **/
 
+#include <TH1F.h>
 #include "CfgParser.h"
 #include "NanoAODTree.h"
 #include "EventInfo.h"
@@ -37,6 +38,12 @@ namespace OfflineProducerHelper {
     // Load configurations to match the b jets
     // bool loadConfiguration(CfgParser config);
     ///static bacause if not I got a glibc detected when the execution is completed
+
+    //REMOVE_ME_BEGIN
+    std::map<unsigned int, TH1F*> *mapDeepCVSHistograms_;
+    void setHistoMap(std::map<unsigned int, TH1F*> *mapDeepCVSHistograms) {mapDeepCVSHistograms_=mapDeepCVSHistograms;};
+    //REMOVE_ME_END
+   
     const std::map<std::string,any> *parameterList_;
     void setParameterList(const std::map<std::string,any> *parameterList) {parameterList_=parameterList;}
 

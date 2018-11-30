@@ -47,25 +47,19 @@ namespace OfflineProducerHelper {
     const std::map<std::string,any> *parameterList_;
     void setParameterList(const std::map<std::string,any> *parameterList) {parameterList_=parameterList;}
 
-    void initializeUserDefinedBranches(OutputTree &ot);
-    // CfgParser config_;
-    // float higgsTargetMass_              = -999.;
-    // float higgsTargetMassMaxDifference_ = -999.;
-    // float minDeepCSV_                   = -999.;
-
-    // --- - --- - --- - --- - --- - --- - --- - --- - --- - --- - --- - --- - --- - --- - 
-
-    // enum class bbbbSelectionStrategy{
-    //     kOneClosestToMh,
-    //     kBothClosestToMh,
-    //     kMostBackToBack,
-    //     kHighestCSVandColsestToMh
-    // };
-
+    void initializeObjectsForCuts(OutputTree &ot);
     // functions to select events based on non-jet particles:
     void (*save_objects_for_cut)(NanoAODTree&, OutputTree&);
     // reject events with leptons that may come from W and Z decays
     void save_WandZleptondecays (NanoAODTree& nat, OutputTree &ot);
+
+
+    void initializeObjectsForWeights(OutputTree &ot);
+    // functions to select events based on non-jet particles:
+    float (*compute_weights)(NanoAODTree& nat, EventInfo& ei, OutputTree &ot);
+    // reject events with leptons that may come from W and Z decays
+    float compute_weights_fourBtag_eventReweighting (NanoAODTree& nat, EventInfo& ei, OutputTree &ot);
+
 
 
     // functions that act on the EventInfo

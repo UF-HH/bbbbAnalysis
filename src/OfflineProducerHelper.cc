@@ -14,8 +14,9 @@ using namespace std::experimental;
 
 using namespace std;
 
+// ----------------- Objects for cut - BEGIN ----------------- //
 
-void OfflineProducerHelper::initializeUserDefinedBranches(OutputTree &ot){
+void OfflineProducerHelper::initializeObjectsForCuts(OutputTree &ot){
 
     string objectsForCut = any_cast<string>(parameterList_->at("ObjectsForCut"));
 
@@ -28,9 +29,6 @@ void OfflineProducerHelper::initializeUserDefinedBranches(OutputTree &ot){
         ot.declareUserFloatBranch("LeadingIsolatedWElectron_pt", -1.);
         ot.declareUserFloatBranch("LeadingIsolatedWMuon_pt", -1.);
     }
-
-    ot.declareUserFloatBranch("LHE_HT", 0);
-    ot.declareUserFloatBranch("my_LHE_HT", 0);
 
     return;
 
@@ -131,6 +129,34 @@ void OfflineProducerHelper::save_WandZleptondecays (NanoAODTree& nat, OutputTree
     // return true;
 }
 
+// ----------------- Objects for cut - END ----------------- //
+
+
+
+// ----------------- Compute weights - BEGIN ----------------- //
+
+void OfflineProducerHelper::initializeObjectsForWeights(OutputTree &ot){
+
+    string weightsMethod = any_cast<string>(parameterList_->at("WeightsMethod"));
+
+    if(weightsMethod == "None")
+        compute_weights = [](NanoAODTree& nat, EventInfo& ei, OutputTree &ot) -> float {return 0.75;};
+    else if(weightsMethod == "FourBtag_EventReweighting"){
+        compute_weights = &compute_weights_fourBtag_eventReweighting;
+        ot.declareUserFloatBranch("PUweight", 0.);
+    }
+
+    return;
+
+}
+
+// reject events with leptons that may come from W and Z decays
+float OfflineProducerHelper::compute_weights_fourBtag_eventReweighting (NanoAODTree& nat, EventInfo& ei, OutputTree &ot){
+    return 0.75;
+}
+
+// ----------------- Compute weights - END ----------------- //
+
 
 
 std::vector<Jet> OfflineProducerHelper::make_jets(NanoAODTree& nat, const std::function<bool (Jet)>& presel_function)
@@ -145,6 +171,7 @@ std::vector<Jet> OfflineProducerHelper::make_jets(NanoAODTree& nat, const std::f
     }
     return jets;
 }
+
 
 void OfflineProducerHelper::filter_jets(std::vector<Jet>& jets, const std::function<bool (Jet)>& filter_function)
 {

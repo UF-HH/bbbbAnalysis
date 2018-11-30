@@ -138,10 +138,27 @@ int main(int argc, char** argv)
         parameterList.emplace("MuonMaxDxy"          ,config.readFloatOpt("parameters::MuonMaxDxy"          ));
         parameterList.emplace("MuonMaxDz"           ,config.readFloatOpt("parameters::MuonMaxDz"           ));
     }
+    else if(objectsForCut == "None"){
+    }  
     // else if(other selection type){
     //     parameters fo be retreived;
     // }  
     else throw std::runtime_error("cannot recognize event choice ObjectsForCut " + objectsForCut);
+
+
+    const string weightsMethod = config.readStringOpt("parameters::WeightsMethod");
+    parameterList.emplace("WeightsMethod",weightsMethod);
+    if(weightsMethod == "FourBtag_EventReweighting"){
+        parameterList.emplace("BJetScaleFactorsFile"   ,config.readFloatOpt("parameters::BJetScaleFactorsFile"  ));
+        parameterList.emplace("BTagEfficiencyFile"     ,config.readFloatOpt("parameters::BTagEfficiencyFile"    ));
+        parameterList.emplace("BTagEfficiencyHistName" ,config.readFloatOpt("parameters::BTagEfficiencyHistName"));
+    }
+    else if(weightsMethod == "None"){
+    }  
+    // else if(other selection type){
+    //     parameters fo be retreived;
+    // }  
+    else throw std::runtime_error("cannot recognize event choice WeightsMethod " + weightsMethod);
 
 
     oph::setParameterList(&parameterList);
@@ -197,7 +214,9 @@ int main(int argc, char** argv)
     oph::setHistoMap(&mapDeepCVSHistograms);
     //REMOVE_ME_END
 
-    oph::initializeUserDefinedBranches(ot);
+    oph::initializeObjectsForCuts(ot);
+
+    oph::initializeObjectsForWeights(ot);
 
     jsonLumiFilter jlf;
     if (is_data)
@@ -226,13 +245,6 @@ int main(int argc, char** argv)
 
         ot.clear();
         EventInfo ei;
-
-        double weight = 1.;
-        if(!is_data){
-            // !!!!!!!!!!!  -------  FIXME: compute the weights -------  !!!!!!!!!!!
-            weight=0.75;
-        }
-        ec.updateProcessed(weight);
         
         if( !nat.getTrgOr() ) continue;
 
@@ -254,6 +266,14 @@ int main(int argc, char** argv)
                 return 1;
             }
         }
+
+        double weight = 1.;
+        if(!is_data){
+            // !!!!!!!!!!!  -------  FIXME: compute the weights -------  !!!!!!!!!!!
+            // weight=0.75;
+            weight = oph::compute_weights(nat, ei, ot);
+        }
+        ec.updateProcessed(weight);
 
         oph::save_objects_for_cut(nat, ot);
 

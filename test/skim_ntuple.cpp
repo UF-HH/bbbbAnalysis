@@ -190,11 +190,20 @@ int main(int argc, char** argv)
     SkimEffCounter ec;
 
     //REMOVE_ME_BEGIN
-    map<unsigned int, TH1F*> mapDeepCVSHistograms;
-    for(unsigned int i=1; i<=4; ++i){
-        mapDeepCVSHistograms[i] = new TH1F(Form("JetDeepCSVOrdered_DeepCSV_%i",i),Form("JetDeepCSVOrdered_DeepCSV_%i",i),25,0.,1.);
-    }
-    oph::setHistoMap(&mapDeepCVSHistograms);
+    // map<unsigned int, TH1F*> mapDeepCVSHistograms;
+    // for(unsigned int i=1; i<=4; ++i){
+    //     mapDeepCVSHistograms[i] = new TH1F(Form("JetDeepCSVOrdered_DeepCSV_%i",i),Form("%i jet deepCSV ordered with |#eta|<2.4 and p_{T}>30 GeV ; Jet deepCSV; Events",i),25,0.,1.);
+    // }
+    // oph::setDeepCSVHistoMap(&mapDeepCVSHistograms);
+    // map<unsigned int, TH1F*> mapPtHistograms;
+              
+    // mapPtHistograms[1]=new TH1F("h_pTOrder_JetpT_1", "1 jet p_{T} ordered with |#eta|<2.4 ; Jet p_{T}; Events", 50, 0., 800.);
+    // mapPtHistograms[2]=new TH1F("h_pTOrder_JetpT_2", "2 jet p_{T} ordered with |#eta|<2.4 ; Jet p_{T}; Events", 50, 0., 500.);
+    // mapPtHistograms[3]=new TH1F("h_pTOrder_JetpT_3", "3 jet p_{T} ordered with |#eta|<2.4 ; Jet p_{T}; Events", 50, 0., 350.);
+    // mapPtHistograms[4]=new TH1F("h_pTOrder_JetpT_4", "4 jet p_{T} ordered with |#eta|<2.4 ; Jet p_{T}; Events", 50, 0., 250.);
+    // mapPtHistograms[5]=new TH1F("h_pTOrder_JetpT_5", "5 jet p_{T} ordered with |#eta|<2.4 ; Jet p_{T}; Events", 50, 0., 250.);
+ 
+    // oph::setPtHistoMap(&mapPtHistograms);
     //REMOVE_ME_END
 
     oph::initializeUserDefinedBranches(ot);
@@ -267,9 +276,12 @@ int main(int argc, char** argv)
     ec.write();
 
     //REMOVE_ME_BEGIN
-    for(unsigned int i=1; i<=4; ++i){
-        mapDeepCVSHistograms[i]->Write();
-    }
+    // for(unsigned int i=1; i<=4; ++i){
+    //     mapDeepCVSHistograms[i]->Write();
+    // }
+    // for(unsigned int i=1; i<=5; ++i){
+    //     mapPtHistograms[i]->Write();
+    // }
     //REMOVE_ME_END
 
 }

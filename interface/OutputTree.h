@@ -30,10 +30,10 @@
     TLorentzVector OBJ ## _p4;
 
 // helper: declares the m/pt/eta/phi/p4 of a variable OBJ
-#define DECLARE_m_pt_ptRegressed_eta_phi_p4(OBJ) \
+#define DECLARE_m_pt_ptUnRegressed_eta_phi_p4(OBJ) \
     float OBJ ## _m; \
     float OBJ ## _pt; \
-    float OBJ ## _ptRegressed; \
+    float OBJ ## _ptUnRegressed; \
     float OBJ ## _eta; \
     float OBJ ## _phi; \
     TLorentzVector OBJ ## _p4;
@@ -73,13 +73,13 @@ class OutputTree {
         float HH_2DdeltaM;
 
         //////////////////----- reco bs
-        DECLARE_m_pt_ptRegressed_eta_phi_p4(H1_b1)
+        DECLARE_m_pt_ptUnRegressed_eta_phi_p4(H1_b1)
         float H1_b1_deepCSV;
-        DECLARE_m_pt_ptRegressed_eta_phi_p4(H1_b2)
+        DECLARE_m_pt_ptUnRegressed_eta_phi_p4(H1_b2)
         float H1_b2_deepCSV;
-        DECLARE_m_pt_ptRegressed_eta_phi_p4(H2_b1)
+        DECLARE_m_pt_ptUnRegressed_eta_phi_p4(H2_b1)
         float H2_b1_deepCSV;
-        DECLARE_m_pt_ptRegressed_eta_phi_p4(H2_b2)
+        DECLARE_m_pt_ptUnRegressed_eta_phi_p4(H2_b2)
         float H2_b2_deepCSV;
 
         //////////////////----- gen level

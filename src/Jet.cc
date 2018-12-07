@@ -2,19 +2,19 @@
 
 #include "BuildP4.h"
 
-void Jet::buildP4()
-{
-    p4_.BUILDP4(Jet, nat_);
+void Jet::buildP4UnRegressed(){
+    p4UnRegressed_.BUILDP4(Jet, nat_);
 }
 
-void Jet::buildP4Regressed(){
+void Jet::buildP4()
+{
 
-	if(p4_.Pt()==0.) this->buildP4();
+	if(p4UnRegressed_.Pt()==0.) this->buildP4UnRegressed();
 
-	p4Regressed_.SetPtEtaPhiM(
-            p4_.Pt()*get_property((*this),Jet_bRegCorr),
-            p4_.Eta(),
-            p4_.Phi(),
-            p4_.M()
+	p4_.SetPtEtaPhiM(
+            p4UnRegressed_.Pt()*get_property((*this),Jet_bRegCorr),
+            p4UnRegressed_.Eta(),
+            p4UnRegressed_.Phi(),
+            p4UnRegressed_.M()
         );
 }

@@ -8,24 +8,24 @@ class Jet : public Candidate
     public:
         Jet () : Candidate(){}
         Jet (int idx, NanoAODTree* nat) : Candidate(idx, nat){
+            buildP4UnRegressed();
             buildP4(); 
-            buildP4Regressed();
         }
         ~Jet(){};
         std::unique_ptr<Candidate> clone() const {
         	Jet *clonedJet = new Jet(this->getIdx(), this->getNanoAODTree());
+        	clonedJet->setP4UnRegressed(this->P4UnRegressed());
             clonedJet->setP4(this->P4());
-        	clonedJet->setP4Regressed(this->P4Regressed());
         	return std::unique_ptr<Jet> (clonedJet);
         }
-        TLorentzVector P4Regressed() const      {return p4Regressed_;}
-        void setP4Regressed( TLorentzVector p4Regressed) {p4Regressed_ = p4Regressed;}
+        TLorentzVector P4UnRegressed() const      {return p4UnRegressed_;}
+        void setP4UnRegressed( TLorentzVector p4UnRegressed_) {p4UnRegressed_ = p4UnRegressed_;}
         
 
     private:
+        void buildP4UnRegressed(); 
         void buildP4(); 
-        void buildP4Regressed(); 
-        TLorentzVector p4Regressed_;
+        TLorentzVector p4UnRegressed_;
 
 };
 

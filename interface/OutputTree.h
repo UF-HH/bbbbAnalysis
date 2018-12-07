@@ -21,10 +21,19 @@
 #include <string>
 #include <memory>
 
-// helper: declares the pt/eta/phi/p4 of a variable OBJ
-#define DECLARE_pt_eta_phi_p4(OBJ) \
+// helper: declares the m/pt/eta/phi/p4 of a variable OBJ
+#define DECLARE_m_pt_eta_phi_p4(OBJ) \
     float OBJ ## _m; \
     float OBJ ## _pt; \
+    float OBJ ## _eta; \
+    float OBJ ## _phi; \
+    TLorentzVector OBJ ## _p4;
+
+// helper: declares the m/pt/eta/phi/p4 of a variable OBJ
+#define DECLARE_m_pt_ptRegressed_eta_phi_p4(OBJ) \
+    float OBJ ## _m; \
+    float OBJ ## _pt; \
+    float OBJ ## _ptRegressed; \
     float OBJ ## _eta; \
     float OBJ ## _phi; \
     TLorentzVector OBJ ## _p4;
@@ -56,38 +65,38 @@ class OutputTree {
         unsigned int           LumiSec;
         unsigned long long int Event;
         //////////////////----- reco H1 and H2
-        DECLARE_pt_eta_phi_p4(H1)
+        DECLARE_m_pt_eta_phi_p4(H1)
         float H1_bb_DeltaR;
-        DECLARE_pt_eta_phi_p4(H2)
+        DECLARE_m_pt_eta_phi_p4(H2)
         float H2_bb_DeltaR;
-        DECLARE_pt_eta_phi_p4(HH)
+        DECLARE_m_pt_eta_phi_p4(HH)
         float HH_2DdeltaM;
 
         //////////////////----- reco bs
-        DECLARE_pt_eta_phi_p4(H1_b1)
+        DECLARE_m_pt_ptRegressed_eta_phi_p4(H1_b1)
         float H1_b1_deepCSV;
-        DECLARE_pt_eta_phi_p4(H1_b2)
+        DECLARE_m_pt_ptRegressed_eta_phi_p4(H1_b2)
         float H1_b2_deepCSV;
-        DECLARE_pt_eta_phi_p4(H2_b1)
+        DECLARE_m_pt_ptRegressed_eta_phi_p4(H2_b1)
         float H2_b1_deepCSV;
-        DECLARE_pt_eta_phi_p4(H2_b2)
+        DECLARE_m_pt_ptRegressed_eta_phi_p4(H2_b2)
         float H2_b2_deepCSV;
 
         //////////////////----- gen level
         float gen_mHH;
 
-        DECLARE_pt_eta_phi_p4(gen_H1)
-        DECLARE_pt_eta_phi_p4(gen_H2)
-        DECLARE_pt_eta_phi_p4(gen_H1_last)
-        DECLARE_pt_eta_phi_p4(gen_H2_last)
-        DECLARE_pt_eta_phi_p4(gen_H1_b1)
-        DECLARE_pt_eta_phi_p4(gen_H1_b2)
-        DECLARE_pt_eta_phi_p4(gen_H2_b1)
-        DECLARE_pt_eta_phi_p4(gen_H2_b2)
-        DECLARE_pt_eta_phi_p4(gen_q1_in)
-        DECLARE_pt_eta_phi_p4(gen_q2_in)
-        DECLARE_pt_eta_phi_p4(gen_q1_out)
-        DECLARE_pt_eta_phi_p4(gen_q2_out)
+        DECLARE_m_pt_eta_phi_p4(gen_H1)
+        DECLARE_m_pt_eta_phi_p4(gen_H2)
+        DECLARE_m_pt_eta_phi_p4(gen_H1_last)
+        DECLARE_m_pt_eta_phi_p4(gen_H2_last)
+        DECLARE_m_pt_eta_phi_p4(gen_H1_b1)
+        DECLARE_m_pt_eta_phi_p4(gen_H1_b2)
+        DECLARE_m_pt_eta_phi_p4(gen_H2_b1)
+        DECLARE_m_pt_eta_phi_p4(gen_H2_b2)
+        DECLARE_m_pt_eta_phi_p4(gen_q1_in)
+        DECLARE_m_pt_eta_phi_p4(gen_q2_in)
+        DECLARE_m_pt_eta_phi_p4(gen_q1_out)
+        DECLARE_m_pt_eta_phi_p4(gen_q2_out)
 
     
     private:

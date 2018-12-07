@@ -167,29 +167,31 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
     //REMOVE_ME_END
 
     for (uint ij = 0; ij < *(nat.nJet); ++ij){
-        Jet tmpJet = Jet(ij, &nat);
+        jets.emplace_back(Jet(ij, &nat));
+        // Jet tmpJet = Jet(ij, &nat);
         
         //REMOVE_ME_BEGIN
-        // if(abs(tmpJet.P4().Eta())>2.4) continue; //cut jet before correction
+        if(jets.back().P4().Pt()<30. || abs(jets.back().P4().Eta())>2.4 || jets.back().P4Regressed().Pt()<30.) jets.pop_back();
+        // if(abs(jets.back().P4().Eta())>2.4) continue; //cut jet before correction
         // if(nJetFoundPt <=5) mapPtHistograms_->at(nJetFoundPt++)->Fill(tmpJet.P4().Pt());
-        // if(tmpJet.P4().Pt()<30.) continue; //cut jet before correction
+        // if(jets.back().P4().Pt()<30.) continue; //cut jet before correction
         // unCorrectedJets.emplace_back(tmpJet);
         //REMOVE_ME_END
 
-        TLorentzVector jetP4_regressionCorrected;
-        jetP4_regressionCorrected.SetPtEtaPhiM(
-            tmpJet.P4().Pt()*get_property(tmpJet,Jet_bRegCorr), //use b regression correction for pt
-            tmpJet.P4().Eta(),
-            tmpJet.P4().Phi(),
-            tmpJet.P4().M()
-        );
+        // TLorentzVector jetP4_regressionCorrected;
+        // jetP4_regressionCorrected.SetPtEtaPhiM(
+        //     tmpJet.P4().Pt()*get_property(tmpJet,Jet_bRegCorr), //use b regression correction for pt
+        //     tmpJet.P4().Eta(),
+        //     tmpJet.P4().Phi(),
+        //     tmpJet.P4().M()
+        // );
 
         //REMOVE_ME_BEGIN
-        // if(jetP4_regressionCorrected.Pt()<30.) continue; //cut after before correction
+        // if(jets.back().P4Regressed().Pt()<30.) continue; //cut after before correction
         //REMOVE_ME_END
 
-        tmpJet.setP4(jetP4_regressionCorrected);
-        jets.emplace_back(tmpJet);
+        // tmpJet.setP4(jetP4_regressionCorrected);
+        // jets.emplace_back(tmpJet);
     }
     
     if(jets.size()<4) return false;
@@ -451,11 +453,11 @@ std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_HighestCSVandClosestToMh(
                 if(h2b1it == h1b2it) continue;
                 for(unsigned int h2b2it = h2b1it+1; h2b2it< jetsPassingDeepCSV; ++h2b2it){
                     if(h2b2it == h1b2it) continue;
-                    float candidateMass = (jets->at(h1b1it).P4() + jets->at(h1b2it).P4() + jets->at(h2b1it).P4() + jets->at(h2b2it).P4()).M();
+                    float candidateMass = (jets->at(h1b1it).P4Regressed() + jets->at(h1b2it).P4Regressed() + jets->at(h2b1it).P4Regressed() + jets->at(h2b2it).P4Regressed()).M();
                     float targetHiggsMass = targetHiggsMassLMR;
                     if(LMRToMMRTransition>=0. && candidateMass > LMRToMMRTransition) targetHiggsMass = targetHiggsMassMMR; //use different range for mass
-                    float squareDeltaMassH1 = pow((jets->at(h1b1it).P4() + jets->at(h1b2it).P4()).M()-targetHiggsMass,2);
-                    float squareDeltaMassH2 = pow((jets->at(h2b1it).P4() + jets->at(h2b2it).P4()).M()-targetHiggsMass,2);
+                    float squareDeltaMassH1 = pow((jets->at(h1b1it).P4Regressed() + jets->at(h1b2it).P4Regressed()).M()-targetHiggsMass,2);
+                    float squareDeltaMassH2 = pow((jets->at(h2b1it).P4Regressed() + jets->at(h2b2it).P4Regressed()).M()-targetHiggsMass,2);
                     candidateMap.emplace((std::array<unsigned int,4>){h1b1it,h1b2it,h2b1it,h2b2it},squareDeltaMassH1+squareDeltaMassH2);
                 }
             }

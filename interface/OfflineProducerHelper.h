@@ -40,8 +40,10 @@ namespace OfflineProducerHelper {
     ///static bacause if not I got a glibc detected when the execution is completed
 
     //REMOVE_ME_BEGIN
-    std::map<unsigned int, TH1F*> *mapDeepCVSHistograms_;
-    void setHistoMap(std::map<unsigned int, TH1F*> *mapDeepCVSHistograms) {mapDeepCVSHistograms_=mapDeepCVSHistograms;};
+    // std::map<unsigned int, TH1F*> *mapPtHistograms_;
+    // void setPtHistoMap(std::map<unsigned int, TH1F*> *mapPtHistograms) {mapPtHistograms_=mapPtHistograms;};
+    // std::map<unsigned int, TH1F*> *mapDeepCVSHistograms_;
+    // void setDeepCSVHistoMap(std::map<unsigned int, TH1F*> *mapDeepCVSHistograms) {mapDeepCVSHistograms_=mapDeepCVSHistograms;};
     //REMOVE_ME_END
    
     const std::map<std::string,any> *parameterList_;

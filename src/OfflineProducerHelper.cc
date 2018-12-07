@@ -181,37 +181,67 @@ void OfflineProducerHelper::filter_jets(std::vector<Jet>& jets, const std::funct
 
 bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
 {
-    // if (*(nat.nJet) < 4)
-    //     return false;
+    if (*(nat.nJet) < 4)
+        return false;
 
     std::vector<Jet> jets;
     jets.reserve(*(nat.nJet));
+
+    //REMOVE_ME_BEGIN
+    // std::vector<Jet> unCorrectedJets;
+    // unCorrectedJets.reserve(*(nat.nJet));
+    // unsigned int nJetFoundPt=1;
+    //REMOVE_ME_END
+
     for (uint ij = 0; ij < *(nat.nJet); ++ij){
         jets.emplace_back(Jet(ij, &nat));
-        TLorentzVector jetP4_regressionCorrected;
-        jetP4_regressionCorrected.SetPtEtaPhiM(
-            jets.back().P4().Pt()*get_property(jets.back(),Jet_bRegCorr), //use b regression correction for pt
-            jets.back().P4().Eta(),
-            jets.back().P4().Phi(),
-            jets.back().P4().M()
-        );
-        jets.back().setP4(jetP4_regressionCorrected);
+        // Jet tmpJet = Jet(ij, &nat);
+        
+        //REMOVE_ME_BEGIN
+        // if(jets.back().P4().Pt()<30. || abs(jets.back().P4().Eta())>2.4 || jets.back().P4UnRegressed().Pt()<30.) jets.pop_back();
+        // if(abs(jets.back().P4().Eta())>2.4) continue; //cut jet before correction
+        // if(nJetFoundPt <=5) mapPtHistograms_->at(nJetFoundPt++)->Fill(tmpJet.P4().Pt());
+        // if(jets.back().P4().Pt()<30.) continue; //cut jet before correction
+        // unCorrectedJets.emplace_back(tmpJet);
+        //REMOVE_ME_END
+
+        // TLorentzVector jetP4_regressionCorrected;
+        // jetP4_regressionCorrected.SetPtEtaPhiM(
+        //     tmpJet.P4().Pt()*get_property(tmpJet,Jet_bRegCorr), //use b regression correction for pt
+        //     tmpJet.P4().Eta(),
+        //     tmpJet.P4().Phi(),
+        //     tmpJet.P4().M()
+        // );
+
+        //REMOVE_ME_BEGIN
+        // if(jets.back().P4Regressed().Pt()<30.) continue; //cut after before correction
+        //REMOVE_ME_END
+
+        // tmpJet.setP4(jetP4_regressionCorrected);
+        // jets.emplace_back(tmpJet);
     }
+    
+    if(jets.size()<4) return false;
 
     stable_sort(jets.begin(), jets.end(), [](const Jet & a, const Jet & b) -> bool
     {
         return ( get_property(a, Jet_btagDeepB) > get_property(b, Jet_btagDeepB) );
     }); // sort by deepCSV (highest to lowest)
 
-    //REMOVE_ME_BEGIN
-    for(unsigned int iJet=0; iJet < jets.size() && iJet <4; ++iJet){
-        float tmpDeepCSV = get_property(jets.at(iJet),Jet_btagDeepB);
-        mapDeepCVSHistograms_->at(iJet+1)->Fill(tmpDeepCSV);
-    }
-    //REMOVE_ME_END
-    if (*(nat.nJet) < 4)
-        return false;
 
+    //REMOVE_ME_BEGIN
+    // unsigned int nJetFoundDeepCSV=1;
+    // for(uint iJet=0; iJet < jets.size(); ++iJet){
+    //     if(nJetFoundDeepCSV <=4){
+    //         float tmpDeepCSV = get_property(jets.at(iJet),Jet_btagDeepB);
+    //         mapDeepCVSHistograms_->at(nJetFoundDeepCSV++)->Fill(tmpDeepCSV);
+    //     }
+    //     else break;
+    // }
+    //REMOVE_ME_END
+
+    //Put me before the stable_sort - BEGIN !!!!!
+    //Put me before the stable_sort - END !!!!!
 
     // now need to pair the jets
     std::vector<Jet> presel_jets = {{
@@ -240,8 +270,8 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
 
 
 
-    order_by_pT(ordered_jets.at(0), ordered_jets.at(1));
-    order_by_pT(ordered_jets.at(2), ordered_jets.at(3));
+    // order_by_pT(ordered_jets.at(0), ordered_jets.at(1));
+    // order_by_pT(ordered_jets.at(2), ordered_jets.at(3));
 
     // order H1, H2 by pT: pT(H1) > pT (H2)
     CompositeCandidate H1 = CompositeCandidate(ordered_jets.at(0), ordered_jets.at(1));
@@ -249,24 +279,43 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
     
     //Do a random swap to be sure that the m1 and m2 are simmetric
     bool swapped = (int(H1.P4().Pt()*100.) % 2 == 1);
+    // bool swapped_bJets = (int(H1.P4().Pt()*1000.) % 2 == 1);
 
     if (!swapped)
     {
         ei.H1 = H1;
         ei.H2 = H2;
+        // if(swapped_bJets){
+        //     ei.H1_b1 = ordered_jets.at(1);
+        //     ei.H1_b2 = ordered_jets.at(0);
+        //     ei.H2_b1 = ordered_jets.at(3);
+        //     ei.H2_b2 = ordered_jets.at(2);            
+        // }
+        // else
+        // {
         ei.H1_b1 = ordered_jets.at(0);
         ei.H1_b2 = ordered_jets.at(1);
         ei.H2_b1 = ordered_jets.at(2);
         ei.H2_b2 = ordered_jets.at(3);
+        // }
     }
     else
     {
         ei.H1 = H2;
         ei.H2 = H1;
+        // if(swapped_bJets){
+        //     ei.H1_b1 = ordered_jets.at(3);
+        //     ei.H1_b2 = ordered_jets.at(2);
+        //     ei.H2_b1 = ordered_jets.at(1);
+        //     ei.H2_b2 = ordered_jets.at(0);            
+        // }
+        // else
+        // {
         ei.H1_b1 = ordered_jets.at(2);
         ei.H1_b2 = ordered_jets.at(3);
         ei.H2_b1 = ordered_jets.at(0);
-        ei.H2_b2 = ordered_jets.at(1);        
+        ei.H2_b2 = ordered_jets.at(1);
+        // }      
     }
 
     ei.H1_bb_DeltaR = sqrt(pow(ei.H1_b1->P4().Eta() - ei.H1_b2->P4().Eta(),2) + pow(ei.H1_b1->P4().Phi() - ei.H1_b2->P4().Phi(),2));

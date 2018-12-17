@@ -257,6 +257,7 @@ int main(int argc, char** argv)
         
         if( !nat.getTrgOr() ) continue;
 
+        double weight = 1.;
         ec.updateTriggered(weight);
 
         if (!oph::select_bbbb_jets(nat, ei)) continue;
@@ -276,7 +277,6 @@ int main(int argc, char** argv)
             }
         }
 
-        double weight = 1.;
         if(!is_data){
             // !!!!!!!!!!!  -------  FIXME: compute the weights -------  !!!!!!!!!!!
             // weight=0.75;

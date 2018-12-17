@@ -113,20 +113,6 @@ void OfflineProducerHelper::save_WandZleptondecays (NanoAODTree& nat, OutputTree
         ot.userFloat("LeadingIsolatedWMuon_pt") = muonFromW.at(0).P4().Pt();
     }
 
-
-    // if(electronFromZ.size()>0){
-    //     return false;
-    // }
-
-    // if(muonFromZ.size()>0){
-    //     return false;
-    // }
-
-    // if(electronFromW.size()==1 || muonFromW.size()==1){
-    //     return false;
-    // }
-
-    // return true;
 }
 
 // ----------------- Objects for cut - END ----------------- //
@@ -140,10 +126,21 @@ void OfflineProducerHelper::initializeObjectsForWeights(OutputTree &ot){
     string weightsMethod = any_cast<string>(parameterList_->at("WeightsMethod"));
 
     if(weightsMethod == "None")
-        compute_weights = [](NanoAODTree& nat, EventInfo& ei, OutputTree &ot) -> float {return 0.75;};
+        compute_weights = [](NanoAODTree& nat, EventInfo& ei, OutputTree &ot) -> float {return 1.;};
     else if(weightsMethod == "FourBtag_EventReweighting"){
         compute_weights = &compute_weights_fourBtag_eventReweighting;
         ot.declareUserFloatBranch("PUweight", 0.);
+
+        BTagCalibration btagCalibration("DeepCSV","weights/DeepCSV_Moriond17_B_H.csv");    
+        BTagCalibrationReader btagCalibrationReader_lightJets(BTagEntry::OP_MEDIUM,"central",{"up", "down"});      
+        BTagCalibrationReader btagCalibrationReader_cJets(BTagEntry::OP_MEDIUM,"central",{"up", "down"});      
+        BTagCalibrationReader btagCalibrationReader_bJets(BTagEntry::OP_MEDIUM,"central",{"up", "down"}); 
+
+        btagCalibrationReader_lightJets.load(btagCalibration, BTagEntry::FLAV_UDSG, "incl");
+        btagCalibrationReader_cJets.load(btagCalibration, BTagEntry::FLAV_C, "mujets");
+        btagCalibrationReader_bJets.load(btagCalibration, BTagEntry::FLAV_B, "mujets");
+
+
     }
 
     return;
@@ -187,61 +184,28 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
     std::vector<Jet> jets;
     jets.reserve(*(nat.nJet));
 
-    //REMOVE_ME_BEGIN
-    // std::vector<Jet> unCorrectedJets;
-    // unCorrectedJets.reserve(*(nat.nJet));
-    // unsigned int nJetFoundPt=1;
-    //REMOVE_ME_END
-
     for (uint ij = 0; ij < *(nat.nJet); ++ij){
         jets.emplace_back(Jet(ij, &nat));
-        // Jet tmpJet = Jet(ij, &nat);
-        
-        //REMOVE_ME_BEGIN
-        // if(jets.back().P4().Pt()<30. || abs(jets.back().P4().Eta())>2.4 || jets.back().P4UnRegressed().Pt()<30.) jets.pop_back();
-        // if(abs(jets.back().P4().Eta())>2.4) continue; //cut jet before correction
-        // if(nJetFoundPt <=5) mapPtHistograms_->at(nJetFoundPt++)->Fill(tmpJet.P4().Pt());
-        // if(jets.back().P4().Pt()<30.) continue; //cut jet before correction
-        // unCorrectedJets.emplace_back(tmpJet);
-        //REMOVE_ME_END
-
-        // TLorentzVector jetP4_regressionCorrected;
-        // jetP4_regressionCorrected.SetPtEtaPhiM(
-        //     tmpJet.P4().Pt()*get_property(tmpJet,Jet_bRegCorr), //use b regression correction for pt
-        //     tmpJet.P4().Eta(),
-        //     tmpJet.P4().Phi(),
-        //     tmpJet.P4().M()
-        // );
-
-        //REMOVE_ME_BEGIN
-        // if(jets.back().P4Regressed().Pt()<30.) continue; //cut after before correction
-        //REMOVE_ME_END
-
-        // tmpJet.setP4(jetP4_regressionCorrected);
-        // jets.emplace_back(tmpJet);
-    }
+      }
     
+    //Apply preselection cuts
+    const string preselectionCutStrategy = any_cast<string>(parameterList_->at("PreselectionCut"));
+    
+    if(preselectionCutStrategy=="bJetCut"){
+        bJets_PreselectionCut(jets);
+    }
+    else if(preselectionCutStrategy=="None"){
+        //do nothing
+    }
+    else throw std::runtime_error("cannot recognize cut strategy " + preselectionCutStrategy);
+
     if(jets.size()<4) return false;
 
+    // sort by deepCSV (highest to lowest)
     stable_sort(jets.begin(), jets.end(), [](const Jet & a, const Jet & b) -> bool
     {
         return ( get_property(a, Jet_btagDeepB) > get_property(b, Jet_btagDeepB) );
-    }); // sort by deepCSV (highest to lowest)
-
-
-    //REMOVE_ME_BEGIN
-    // unsigned int nJetFoundDeepCSV=1;
-    // for(uint iJet=0; iJet < jets.size(); ++iJet){
-    //     if(nJetFoundDeepCSV <=4){
-    //         float tmpDeepCSV = get_property(jets.at(iJet),Jet_btagDeepB);
-    //         mapDeepCVSHistograms_->at(nJetFoundDeepCSV++)->Fill(tmpDeepCSV);
-    //     }
-    //     else break;
-    // }
-    //REMOVE_ME_END
-
-    //Put me before the stable_sort - BEGIN !!!!!
-    //Put me before the stable_sort - END !!!!!
+    });
 
     // now need to pair the jets
     std::vector<Jet> presel_jets = {{
@@ -254,7 +218,7 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
     std::vector<Jet> ordered_jets;
     string strategy = any_cast<string>(parameterList_->at("bbbbChoice"));
 
-
+    //Select the fouf b jets 
     if(strategy == "OneClosestToMh")
         ordered_jets = bbbb_jets_idxs_OneClosestToMh(&presel_jets);
     else if(strategy == "BothClosestToMh")
@@ -268,54 +232,30 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
 
     if(ordered_jets.size()!=4) return false;
 
-
-
-    // order_by_pT(ordered_jets.at(0), ordered_jets.at(1));
-    // order_by_pT(ordered_jets.at(2), ordered_jets.at(3));
-
     // order H1, H2 by pT: pT(H1) > pT (H2)
     CompositeCandidate H1 = CompositeCandidate(ordered_jets.at(0), ordered_jets.at(1));
     CompositeCandidate H2 = CompositeCandidate(ordered_jets.at(2), ordered_jets.at(3));
     
     //Do a random swap to be sure that the m1 and m2 are simmetric
     bool swapped = (int(H1.P4().Pt()*100.) % 2 == 1);
-    // bool swapped_bJets = (int(H1.P4().Pt()*1000.) % 2 == 1);
-
+ 
     if (!swapped)
     {
         ei.H1 = H1;
         ei.H2 = H2;
-        // if(swapped_bJets){
-        //     ei.H1_b1 = ordered_jets.at(1);
-        //     ei.H1_b2 = ordered_jets.at(0);
-        //     ei.H2_b1 = ordered_jets.at(3);
-        //     ei.H2_b2 = ordered_jets.at(2);            
-        // }
-        // else
-        // {
         ei.H1_b1 = ordered_jets.at(0);
         ei.H1_b2 = ordered_jets.at(1);
         ei.H2_b1 = ordered_jets.at(2);
         ei.H2_b2 = ordered_jets.at(3);
-        // }
     }
     else
     {
         ei.H1 = H2;
         ei.H2 = H1;
-        // if(swapped_bJets){
-        //     ei.H1_b1 = ordered_jets.at(3);
-        //     ei.H1_b2 = ordered_jets.at(2);
-        //     ei.H2_b1 = ordered_jets.at(1);
-        //     ei.H2_b2 = ordered_jets.at(0);            
-        // }
-        // else
-        // {
         ei.H1_b1 = ordered_jets.at(2);
         ei.H1_b2 = ordered_jets.at(3);
         ei.H2_b1 = ordered_jets.at(0);
         ei.H2_b2 = ordered_jets.at(1);
-        // }      
     }
 
     ei.H1_bb_DeltaR = sqrt(pow(ei.H1_b1->P4().Eta() - ei.H1_b2->P4().Eta(),2) + pow(ei.H1_b1->P4().Phi() - ei.H1_b2->P4().Phi(),2));
@@ -343,6 +283,43 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
 
     return true;
 }
+
+
+//functions fo apply preselection cuts:
+void OfflineProducerHelper::bJets_PreselectionCut(std::vector<Jet> &jets)
+{
+
+    float minimumDeepCSVaccepted            = any_cast<float>(parameterList_->at("MinDeepCSV"          ));
+    float maximumPtAccepted                 = any_cast<float>(parameterList_->at("MinPt"               ));
+    float maximumAbsEtaCSVaccepted          = any_cast<float>(parameterList_->at("MaxAbsEta"           ));
+
+    auto it = jets.begin();
+    while (it != jets.end()){
+        if(minimumDeepCSVaccepted>=0.){
+            if(get_property((*it),Jet_btagDeepB)<minimumDeepCSVaccepted){
+                it=jets.erase(it);
+                continue;
+            }
+        }
+        if(maximumPtAccepted>0.){
+            if(it->P4UnRegressed().Pt()<maximumPtAccepted){
+                it=jets.erase(it);
+                continue;                
+            }
+        }
+        if(maximumAbsEtaCSVaccepted>0.){
+            if(abs(it->P4UnRegressed().Eta())>maximumAbsEtaCSVaccepted){
+                it=jets.erase(it);
+                continue;                
+            }
+        }
+        ++it;
+    }
+
+    return;
+
+}
+
 
 // one pair is closest to the Higgs mass, the other follows
 std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_OneClosestToMh(const std::vector<Jet> *presel_jets)
@@ -458,27 +435,17 @@ std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_HighestCSVandClosestToMh(
     float targetHiggsMassLMR                = any_cast<float>(parameterList_->at("HiggsMassLMR"        ));
     float targetHiggsMassMMR                = any_cast<float>(parameterList_->at("HiggsMassMMR"        ));
     float LMRToMMRTransition                = any_cast<float>(parameterList_->at("LMRToMMRTransition" ));
-    float minimumDeepCSVaccepted            = any_cast<float>(parameterList_->at("deepCSVcut"          ));
-
-    unsigned int jetsPassingDeepCSV = 0;
-
-    //Jets are already ordered form highest to lowest CSV
-    for(; jetsPassingDeepCSV < jets->size(); ++jetsPassingDeepCSV){
-        float tmpDeepCSV = get_property(jets->at(jetsPassingDeepCSV),Jet_btagDeepB);
-        if(tmpDeepCSV < minimumDeepCSVaccepted){
-            break;
-        }
-    }
-    
+ 
     std::vector<Jet> output_jets;
-    if(jetsPassingDeepCSV  < 4) return output_jets;
+    unsigned int numberOfJets = jets->size();
+    if(numberOfJets  < 4) return output_jets;
 
     std::map< const std::array<unsigned int,4>, float> candidateMap;
-    for(unsigned int h1b1it = 0; h1b1it< jetsPassingDeepCSV-1; ++h1b1it){
-        for(unsigned int h1b2it = h1b1it+1; h1b2it< jetsPassingDeepCSV; ++h1b2it){
-            for(unsigned int h2b1it = h1b1it+1; h2b1it< jetsPassingDeepCSV-1; ++h2b1it){
+    for(unsigned int h1b1it = 0; h1b1it< numberOfJets-1; ++h1b1it){
+        for(unsigned int h1b2it = h1b1it+1; h1b2it< numberOfJets; ++h1b2it){
+            for(unsigned int h2b1it = h1b1it+1; h2b1it< numberOfJets-1; ++h2b1it){
                 if(h2b1it == h1b2it) continue;
-                for(unsigned int h2b2it = h2b1it+1; h2b2it< jetsPassingDeepCSV; ++h2b2it){
+                for(unsigned int h2b2it = h2b1it+1; h2b2it< numberOfJets; ++h2b2it){
                     if(h2b2it == h1b2it) continue;
                     float candidateMass = (jets->at(h1b1it).P4() + jets->at(h1b2it).P4() + jets->at(h2b1it).P4() + jets->at(h2b2it).P4()).M();
                     float targetHiggsMass = targetHiggsMassLMR;

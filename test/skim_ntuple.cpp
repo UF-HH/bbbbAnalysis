@@ -103,6 +103,7 @@ int main(int argc, char** argv)
 
     std::map<std::string,any> parameterList;
 
+
     const string bbbbChoice = config.readStringOpt("parameters::bbbbChoice");
     
     parameterList.emplace("bbbbChoice",bbbbChoice);
@@ -119,7 +120,6 @@ int main(int argc, char** argv)
         parameterList.emplace("HiggsMassLMR"        ,config.readFloatOpt("parameters::HiggsMassLMR"        ));
         parameterList.emplace("HiggsMassMMR"        ,config.readFloatOpt("parameters::HiggsMassMMR"        ));
         parameterList.emplace("LMRToMMRTransition"  ,config.readFloatOpt("parameters::LMRToMMRTransition"  ));
-        parameterList.emplace("deepCSVcut"          ,config.readFloatOpt("parameters::deepCSVcut"          ));
     }
     // else if(other selection type){
     //     parameters fo be retreived;
@@ -127,6 +127,22 @@ int main(int argc, char** argv)
     else throw std::runtime_error("cannot recognize bbbb pair choice strategy " + bbbbChoice);
 
     cout << "[INFO] ... chosing bb bb jet pairs with strategy : " << bbbbChoice << endl;
+
+
+    const string preselectionCutStrategy = config.readStringOpt("parameters::PreselectionCut");
+    parameterList.emplace("PreselectionCut",preselectionCutStrategy);
+    if(preselectionCutStrategy == "bJetCut"){
+        parameterList.emplace("MinDeepCSV"          ,config.readFloatOpt("parameters::MinDeepCSV"          ));
+        parameterList.emplace("MinPt"               ,config.readFloatOpt("parameters::MinPt"               ));
+        parameterList.emplace("MaxAbsEta"           ,config.readFloatOpt("parameters::MaxAbsEta"           ));
+    }
+    else if(preselectionCutStrategy == "None"){
+    }  
+    // else if(other selection type){
+    //     parameters fo be retreived;
+    // }  
+    else throw std::runtime_error("cannot recognize event choice ObjectsForCut " + preselectionCutStrategy);
+
 
     const string objectsForCut = config.readStringOpt("parameters::ObjectsForCut");
     parameterList.emplace("ObjectsForCut",objectsForCut);
@@ -149,9 +165,9 @@ int main(int argc, char** argv)
     const string weightsMethod = config.readStringOpt("parameters::WeightsMethod");
     parameterList.emplace("WeightsMethod",weightsMethod);
     if(weightsMethod == "FourBtag_EventReweighting"){
-        parameterList.emplace("BJetScaleFactorsFile"   ,config.readFloatOpt("parameters::BJetScaleFactorsFile"  ));
-        parameterList.emplace("BTagEfficiencyFile"     ,config.readFloatOpt("parameters::BTagEfficiencyFile"    ));
-        parameterList.emplace("BTagEfficiencyHistName" ,config.readFloatOpt("parameters::BTagEfficiencyHistName"));
+        parameterList.emplace("BJetScaleFactorsFile"   ,config.readStringOpt("parameters::BJetScaleFactorsFile"  ));
+        parameterList.emplace("BTagEfficiencyFile"     ,config.readStringOpt("parameters::BTagEfficiencyFile"    ));
+        parameterList.emplace("BTagEfficiencyHistName" ,config.readStringOpt("parameters::BTagEfficiencyHistName"));
     }
     else if(weightsMethod == "None"){
     }  

@@ -17,7 +17,9 @@
 #include "EventInfo.h"
 #include "CompositeCandidate.h"
 #include "OutputTree.h"
+#include "BTagCalibrationStandalone.h"
 #include "Jet.h"
+
 #include <array>
 #include <utility>
 #include <functional>
@@ -62,7 +64,8 @@ namespace OfflineProducerHelper {
     // reject events with leptons that may come from W and Z decays
     float compute_weights_fourBtag_eventReweighting (NanoAODTree& nat, EventInfo& ei, OutputTree &ot);
 
-
+    //functions fo apply preselection cuts:
+    void bJets_PreselectionCut(std::vector<Jet> &jets);
 
     // functions that act on the EventInfo
     bool select_bbbb_jets (NanoAODTree& nat, EventInfo& ei);

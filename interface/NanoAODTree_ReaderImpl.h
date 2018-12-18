@@ -199,7 +199,7 @@ class NanoAODTree_ReaderImpl {
         NanoReaderArray<Float_t>   Jet_pt                               {fReader, "Jet_pt"};
         NanoReaderArray<Float_t>   Jet_qgl                              {fReader, "Jet_qgl"};
         NanoReaderArray<Float_t>   Jet_rawFactor                        {fReader, "Jet_rawFactor"};
-        NanoReaderArray<Float_t>   Jet_bRegCorr                         {fReader, "Jet_bRegCorr"};
+        NanoReaderArray<Float_t>   Jet_bRegCorr                         {fReader, is_data_ ? "Jet_bRegCorr" : "Jet_bReg"};
         NanoReaderArray<Int_t>     Jet_electronIdx1                     {fReader, "Jet_electronIdx1"};
         NanoReaderArray<Int_t>     Jet_electronIdx2                     {fReader, "Jet_electronIdx2"};
         NanoReaderArray<Int_t>     Jet_jetId                            {fReader, "Jet_jetId"};
@@ -306,7 +306,7 @@ class NanoAODTree_ReaderImpl {
         NanoReaderArray<Bool_t>    Photon_pixelSeed                     {fReader, "Photon_pixelSeed"};
         
         NanoReaderValue<Int_t>      Pileup_nPU                           {fReader, "Pileup_nPU"};
-        NanoReaderValue<Int_t>      Pileup_nTrueInt                      {fReader, "Pileup_nTrueInt"};
+        NanoReaderValue<Float_t>    Pileup_nTrueInt                      {fReader, "Pileup_nTrueInt"};
         
         NanoReaderValue<Float_t>   fixedGridRhoFastjetAll               {fReader, "fixedGridRhoFastjetAll"};
         NanoReaderValue<Float_t>   fixedGridRhoFastjetCentralCalo       {fReader, "fixedGridRhoFastjetCentralCalo"};

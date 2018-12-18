@@ -98,11 +98,12 @@ int main(int argc, char** argv)
     CfgParser config;
     if (!config.init(opts["cfg"].as<string>())) return 1;
     cout << "[INFO] ... using config file " << opts["cfg"].as<string>() << endl;
-
-    //Read needed fields from config file
+    
+    ////////////////////////////////////////////////////////////////////////
+    // Read needed fields from config file and pass them to the oph
+    ////////////////////////////////////////////////////////////////////////
 
     std::map<std::string,any> parameterList;
-
 
     const string bbbbChoice = config.readStringOpt("parameters::bbbbChoice");
     
@@ -162,20 +163,21 @@ int main(int argc, char** argv)
     else throw std::runtime_error("cannot recognize event choice ObjectsForCut " + objectsForCut);
 
 
-    const string weightsMethod = config.readStringOpt("parameters::WeightsMethod");
-    parameterList.emplace("WeightsMethod",weightsMethod);
-    if(weightsMethod == "FourBtag_EventReweighting"){
-        parameterList.emplace("BJetScaleFactorsFile"   ,config.readStringOpt("parameters::BJetScaleFactorsFile"  ));
-        parameterList.emplace("BTagEfficiencyFile"     ,config.readStringOpt("parameters::BTagEfficiencyFile"    ));
-        parameterList.emplace("BTagEfficiencyHistName" ,config.readStringOpt("parameters::BTagEfficiencyHistName"));
+    if(!is_data){
+        const string weightsMethod = config.readStringOpt("parameters::WeightsMethod");
+        parameterList.emplace("WeightsMethod",weightsMethod);
+        if(weightsMethod == "FourBtag_EventReweighting"){
+            parameterList.emplace("BJetScaleFactorsFile"   ,config.readStringOpt("parameters::BJetScaleFactorsFile"  ));
+            parameterList.emplace("BTagEfficiencyFile"     ,config.readStringOpt("parameters::BTagEfficiencyFile"    ));
+            parameterList.emplace("BTagEfficiencyHistName" ,config.readStringOpt("parameters::BTagEfficiencyHistName"));
+        }
+        else if(weightsMethod == "None"){
+        }  
+        // else if(other selection type){
+        //     parameters fo be retreived;
+        // }  
+        else throw std::runtime_error("cannot recognize event choice WeightsMethod " + weightsMethod);
     }
-    else if(weightsMethod == "None"){
-    }  
-    // else if(other selection type){
-    //     parameters fo be retreived;
-    // }  
-    else throw std::runtime_error("cannot recognize event choice WeightsMethod " + weightsMethod);
-
 
     oph::setParameterList(&parameterList);
 
@@ -222,26 +224,9 @@ int main(int argc, char** argv)
 
     SkimEffCounter ec;
 
-    //REMOVE_ME_BEGIN
-    // map<unsigned int, TH1F*> mapDeepCVSHistograms;
-    // for(unsigned int i=1; i<=4; ++i){
-    //     mapDeepCVSHistograms[i] = new TH1F(Form("JetDeepCSVOrdered_DeepCSV_%i",i),Form("%i jet deepCSV ordered with |#eta|<2.4 and p_{T}>30 GeV ; Jet deepCSV; Events",i),25,0.,1.);
-    // }
-    // oph::setDeepCSVHistoMap(&mapDeepCVSHistograms);
-    // map<unsigned int, TH1F*> mapPtHistograms;
-              
-    // mapPtHistograms[1]=new TH1F("h_pTOrder_JetpT_1", "1 jet p_{T} ordered with |#eta|<2.4 ; Jet p_{T}; Events", 50, 0., 800.);
-    // mapPtHistograms[2]=new TH1F("h_pTOrder_JetpT_2", "2 jet p_{T} ordered with |#eta|<2.4 ; Jet p_{T}; Events", 50, 0., 500.);
-    // mapPtHistograms[3]=new TH1F("h_pTOrder_JetpT_3", "3 jet p_{T} ordered with |#eta|<2.4 ; Jet p_{T}; Events", 50, 0., 350.);
-    // mapPtHistograms[4]=new TH1F("h_pTOrder_JetpT_4", "4 jet p_{T} ordered with |#eta|<2.4 ; Jet p_{T}; Events", 50, 0., 250.);
-    // mapPtHistograms[5]=new TH1F("h_pTOrder_JetpT_5", "5 jet p_{T} ordered with |#eta|<2.4 ; Jet p_{T}; Events", 50, 0., 250.);
- 
-    // oph::setPtHistoMap(&mapPtHistograms);
-    //REMOVE_ME_END
-
     oph::initializeObjectsForCuts(ot);
 
-    oph::initializeObjectsForWeights(ot);
+    if(!is_data) oph::initializeObjectsForWeights(ot);
 
     jsonLumiFilter jlf;
     if (is_data)
@@ -276,7 +261,7 @@ int main(int argc, char** argv)
         double weight = 1.;
         ec.updateTriggered(weight);
 
-        if (!oph::select_bbbb_jets(nat, ei)) continue;
+        if (!oph::select_bbbb_jets(nat, ei, ot)) continue;
 
         if (is_signal){
             oph::select_gen_HH(nat, ei);
@@ -293,11 +278,6 @@ int main(int argc, char** argv)
             }
         }
 
-        if(!is_data){
-            // !!!!!!!!!!!  -------  FIXME: compute the weights -------  !!!!!!!!!!!
-            // weight=0.75;
-            weight = oph::compute_weights(nat, ei, ot);
-        }
         ec.updateProcessed(weight);
 
         oph::save_objects_for_cut(nat, ot);
@@ -310,15 +290,6 @@ int main(int argc, char** argv)
     outputFile.cd();
     ot.write();
     ec.write();
-
-    //REMOVE_ME_BEGIN
-    // for(unsigned int i=1; i<=4; ++i){
-    //     mapDeepCVSHistograms[i]->Write();
-    // }
-    // for(unsigned int i=1; i<=5; ++i){
-    //     mapPtHistograms[i]->Write();
-    // }
-    //REMOVE_ME_END
 
 }
 

@@ -125,58 +125,84 @@ void OfflineProducerHelper::initializeObjectsForWeights(OutputTree &ot){
 
     string weightsMethod = any_cast<string>(parameterList_->at("WeightsMethod"));
 
-    if(weightsMethod == "None")
-        compute_weights = [](NanoAODTree& nat, EventInfo& ei, OutputTree &ot) -> float {return 1.;};
+    if(weightsMethod == "None"){
+        //do nothing
+    }
     else if(weightsMethod == "FourBtag_EventReweighting"){
-        compute_weights = &compute_weights_fourBtag_eventReweighting;
-        ot.declareUserFloatBranch("PUweight", 0.);
+        ot.declareUserFloatBranch("bTagWeight_bJets_central"    , 1.);
+        ot.declareUserFloatBranch("bTagWeight_bJets_up"         , 1.);
+        ot.declareUserFloatBranch("bTagWeight_bJets_down"       , 1.);
+        ot.declareUserFloatBranch("bTagWeight_cJets_central"    , 1.);
+        ot.declareUserFloatBranch("bTagWeight_cJets_up"         , 1.);
+        ot.declareUserFloatBranch("bTagWeight_cJets_down"       , 1.);
+        ot.declareUserFloatBranch("bTagWeight_lightJets_central", 1.);
+        ot.declareUserFloatBranch("bTagWeight_lightJets_up"     , 1.);
+        ot.declareUserFloatBranch("bTagWeight_lightJets_down"   , 1.);
 
         BTagCalibration btagCalibration("DeepCSV","weights/DeepCSV_Moriond17_B_H.csv");    
-        BTagCalibrationReader btagCalibrationReader_lightJets(BTagEntry::OP_MEDIUM,"central",{"up", "down"});      
-        BTagCalibrationReader btagCalibrationReader_cJets(BTagEntry::OP_MEDIUM,"central",{"up", "down"});      
-        BTagCalibrationReader btagCalibrationReader_bJets(BTagEntry::OP_MEDIUM,"central",{"up", "down"}); 
+        btagCalibrationReader_lightJets_ = new BTagCalibrationReader(BTagEntry::OP_MEDIUM,"central",{"up", "down"});      
+        btagCalibrationReader_cJets_     = new BTagCalibrationReader(BTagEntry::OP_MEDIUM,"central",{"up", "down"});      
+        btagCalibrationReader_bJets_     = new BTagCalibrationReader(BTagEntry::OP_MEDIUM,"central",{"up", "down"}); 
 
-        btagCalibrationReader_lightJets.load(btagCalibration, BTagEntry::FLAV_UDSG, "incl");
-        btagCalibrationReader_cJets.load(btagCalibration, BTagEntry::FLAV_C, "mujets");
-        btagCalibrationReader_bJets.load(btagCalibration, BTagEntry::FLAV_B, "mujets");
-
-
+        btagCalibrationReader_lightJets_->load(btagCalibration, BTagEntry::FLAV_UDSG, "incl"  );
+        btagCalibrationReader_cJets_    ->load(btagCalibration, BTagEntry::FLAV_C   , "mujets");
+        btagCalibrationReader_bJets_    ->load(btagCalibration, BTagEntry::FLAV_B   , "mujets");
     }
 
     return;
 
 }
 
+
 // reject events with leptons that may come from W and Z decays
-float OfflineProducerHelper::compute_weights_fourBtag_eventReweighting (NanoAODTree& nat, EventInfo& ei, OutputTree &ot){
-    return 0.75;
+void OfflineProducerHelper::compute_weights_fourBtag_eventReweighting (const std::vector<Jet> &jets, NanoAODTree& nat, OutputTree &ot){
+    
+    float bTagWeight_bJets_central     = 1.;
+    float bTagWeight_bJets_up          = 1.;
+    float bTagWeight_bJets_down        = 1.;
+    float bTagWeight_cJets_central     = 1.;
+    float bTagWeight_cJets_up          = 1.;
+    float bTagWeight_cJets_down        = 1.;
+    float bTagWeight_lightJets_central = 1.;
+    float bTagWeight_lightJets_up      = 1.;
+    float bTagWeight_lightJets_down    = 1.;
+
+    for(const auto &iJet : jets){
+        int jetFlavour = abs(get_property(iJet,Jet_partonFlavour));
+        if(jetFlavour==5){
+            bTagWeight_bJets_central     *= btagCalibrationReader_bJets_    ->eval_auto_bounds("central", BTagEntry::FLAV_B   , iJet.P4UnRegressed().Eta(), iJet.P4UnRegressed().Pt());
+            bTagWeight_bJets_up          *= btagCalibrationReader_bJets_    ->eval_auto_bounds("up"     , BTagEntry::FLAV_B   , iJet.P4UnRegressed().Eta(), iJet.P4UnRegressed().Pt());
+            bTagWeight_bJets_down        *= btagCalibrationReader_bJets_    ->eval_auto_bounds("down"   , BTagEntry::FLAV_B   , iJet.P4UnRegressed().Eta(), iJet.P4UnRegressed().Pt());
+        }
+        else if(jetFlavour==4){
+            bTagWeight_cJets_central     *= btagCalibrationReader_cJets_    ->eval_auto_bounds("central", BTagEntry::FLAV_C   , iJet.P4UnRegressed().Eta(), iJet.P4UnRegressed().Pt());
+            bTagWeight_cJets_up          *= btagCalibrationReader_cJets_    ->eval_auto_bounds("up"     , BTagEntry::FLAV_C   , iJet.P4UnRegressed().Eta(), iJet.P4UnRegressed().Pt());
+            bTagWeight_cJets_down        *= btagCalibrationReader_cJets_    ->eval_auto_bounds("down"   , BTagEntry::FLAV_C   , iJet.P4UnRegressed().Eta(), iJet.P4UnRegressed().Pt());
+        }
+        else{
+            bTagWeight_lightJets_central *= btagCalibrationReader_lightJets_->eval_auto_bounds("central", BTagEntry::FLAV_UDSG, iJet.P4UnRegressed().Eta(), iJet.P4UnRegressed().Pt());
+            bTagWeight_lightJets_up      *= btagCalibrationReader_lightJets_->eval_auto_bounds("up"     , BTagEntry::FLAV_UDSG, iJet.P4UnRegressed().Eta(), iJet.P4UnRegressed().Pt());
+            bTagWeight_lightJets_down    *= btagCalibrationReader_lightJets_->eval_auto_bounds("down"   , BTagEntry::FLAV_UDSG, iJet.P4UnRegressed().Eta(), iJet.P4UnRegressed().Pt());
+        }   
+    }
+
+    ot.userFloat("bTagWeight_bJets_central"    ) = bTagWeight_bJets_central    ;
+    ot.userFloat("bTagWeight_bJets_up"         ) = bTagWeight_bJets_up         ;
+    ot.userFloat("bTagWeight_bJets_down"       ) = bTagWeight_bJets_down       ;
+    ot.userFloat("bTagWeight_cJets_central"    ) = bTagWeight_cJets_central    ;
+    ot.userFloat("bTagWeight_cJets_up"         ) = bTagWeight_cJets_up         ;
+    ot.userFloat("bTagWeight_cJets_down"       ) = bTagWeight_cJets_down       ;
+    ot.userFloat("bTagWeight_lightJets_central") = bTagWeight_lightJets_central;
+    ot.userFloat("bTagWeight_lightJets_up"     ) = bTagWeight_lightJets_up     ;
+    ot.userFloat("bTagWeight_lightJets_down"   ) = bTagWeight_lightJets_down   ;
+
+    return;
 }
 
 // ----------------- Compute weights - END ----------------- //
 
 
-
-std::vector<Jet> OfflineProducerHelper::make_jets(NanoAODTree& nat, const std::function<bool (Jet)>& presel_function)
-{
-    std::vector<Jet> jets;
-    for (uint ij = 0; ij < *(nat.nJet); ++ij)
-    {
-        Jet jet (ij, &nat);
-        bool pass = presel_function ? presel_function(jet) : true;
-        if (pass)
-            jets.emplace_back(jet);
-    }
-    return jets;
-}
-
-
-void OfflineProducerHelper::filter_jets(std::vector<Jet>& jets, const std::function<bool (Jet)>& filter_function)
-{
-    jets.erase(remove_if(jets.begin(), jets.end(), std::not1(filter_function)), jets.end());
-    return;
-}
-
-bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
+bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, OutputTree &ot)
 {
     if (*(nat.nJet) < 4)
         return false;
@@ -186,8 +212,10 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
 
     for (uint ij = 0; ij < *(nat.nJet); ++ij){
         jets.emplace_back(Jet(ij, &nat));
-      }
+    }
     
+    //if some montecarlo weight are applied via a reshaping of the jets variables, they must be applied here
+
     //Apply preselection cuts
     const string preselectionCutStrategy = any_cast<string>(parameterList_->at("PreselectionCut"));
     
@@ -199,7 +227,18 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
     }
     else throw std::runtime_error("cannot recognize cut strategy " + preselectionCutStrategy);
 
+    //at least 4 jets required
     if(jets.size()<4) return false;
+
+    // calculate weights after preselection cuts
+    if(parameterList_->find("WeightsMethod") != parameterList_->end()){ //is it a MC event
+        const string weightsMethod = any_cast<string>(parameterList_->at("WeightsMethod"));
+
+        if(weightsMethod == "FourBtag_EventReweighting"){
+            compute_weights_fourBtag_eventReweighting(jets,nat,ot);
+        }
+    }
+
 
     // sort by deepCSV (highest to lowest)
     stable_sort(jets.begin(), jets.end(), [](const Jet & a, const Jet & b) -> bool

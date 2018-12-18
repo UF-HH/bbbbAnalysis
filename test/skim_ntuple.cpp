@@ -266,15 +266,14 @@ int main(int argc, char** argv)
         if (is_signal){
             oph::select_gen_HH(nat, ei);
             if (!oph::select_gen_bb_bb(nat, ei))
-                return 1;
-            
+                continue; 
         }
 
         if (is_VBF_sig){
             bool got_gen_VBF = oph::select_gen_VBF_partons(nat, ei);
             if (!got_gen_VBF){
                 cout << "Failed on iEv = " << iEv << " evt num = " << *(nat.event) << " run = " << *(nat.run) << endl;
-                return 1;
+                continue;
             }
         }
 

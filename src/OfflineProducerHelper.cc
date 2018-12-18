@@ -828,11 +828,11 @@ void OfflineProducerHelper::dump_gen_part (NanoAODTree& nat, bool printFlags)
     cout << endl << endl;
 }
 
-bool OfflineProducerHelper::checkBit (int number, int bitpos)
-{
-    bool res = number & (1 << bitpos);
-    return res;
-}
+// bool OfflineProducerHelper::checkBit (int number, int bitpos)
+// {
+//     bool res = number & (1 << bitpos);
+//     return res;
+// }
 
 int OfflineProducerHelper::recursive_gen_mother_idx(const GenPart& gp, bool stop_at_moth_zero)
 {

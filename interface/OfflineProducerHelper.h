@@ -101,7 +101,7 @@ namespace OfflineProducerHelper {
 
     // other utilities
     void dump_gen_part (NanoAODTree& nat, bool printFlags = true);
-    bool checkBit(int number, int bitpos);
+    // bool checkBit(int number, int bitpos);
     int  recursive_gen_mother_idx(const GenPart& gp, bool stop_at_moth_zero = true); // returns the uppermost ancestor in the gen particle chain
                                                                                     // if stop_at_moth_zero = true, it returns when a GenPart is found and his mother has idx 0
                                                                                     // instead of returning the GenPart # 0 itself

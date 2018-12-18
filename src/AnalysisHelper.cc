@@ -10,7 +10,7 @@
 
 using namespace std;
 
-#define DEBUG true
+#define DEBUG false
 
 // helper function 
 bool is_dir(const char* path) {

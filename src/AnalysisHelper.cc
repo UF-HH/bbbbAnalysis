@@ -1025,7 +1025,6 @@ void AnalysisHelper::fillHistosSample(Sample& sample)
     TObjArray *branchList = tree->GetListOfBranches();
     for (auto it = valuesMap.begin(); it != valuesMap.end(); ++it)
     {
-        std::cout<<it->first<<std::endl;
         TBranch* br = (TBranch*) branchList->FindObject(it->first.c_str());
         if (!br)
             cerr << endl << "** ERROR: AnalysisHelper::fillHistosSample : sample : " << sample.getName() << " does not have branch " << it->first << ", expect a crash..." << endl;

@@ -49,7 +49,7 @@ void OfflineProducerHelper::save_WandZleptondecays (NanoAODTree& nat, OutputTree
     for (uint eIt = 0; eIt < *(nat.nElectron); ++eIt){
         Electron theElectron(eIt, &nat);
         
-        if( //theElectron.P4().Pt()                                 >25.0 && 
+        if( //theElectron.P4Regressed().Pt()                                 >25.0 && 
             get_property(theElectron,Electron_mvaSpring16GP_WP80) && 
             get_property(theElectron,Electron_pfRelIso03_all    ) < any_cast<float>(parameterList_->at("WElectronMaxPfIso")) )
             electronFromW.emplace_back(theElectron);
@@ -170,19 +170,19 @@ void OfflineProducerHelper::compute_weights_fourBtag_eventReweighting (const std
     for(const auto &iJet : jets){
         int jetFlavour = abs(get_property(iJet,Jet_partonFlavour));
         if(jetFlavour==5){
-            bTagWeight_bJets_central     *= btagCalibrationReader_bJets_    ->eval_auto_bounds("central", BTagEntry::FLAV_B   , iJet.P4UnRegressed().Eta(), iJet.P4UnRegressed().Pt());
-            bTagWeight_bJets_up          *= btagCalibrationReader_bJets_    ->eval_auto_bounds("up"     , BTagEntry::FLAV_B   , iJet.P4UnRegressed().Eta(), iJet.P4UnRegressed().Pt());
-            bTagWeight_bJets_down        *= btagCalibrationReader_bJets_    ->eval_auto_bounds("down"   , BTagEntry::FLAV_B   , iJet.P4UnRegressed().Eta(), iJet.P4UnRegressed().Pt());
+            bTagWeight_bJets_central     *= btagCalibrationReader_bJets_    ->eval_auto_bounds("central", BTagEntry::FLAV_B   , iJet.P4().Eta(), iJet.P4().Pt());
+            bTagWeight_bJets_up          *= btagCalibrationReader_bJets_    ->eval_auto_bounds("up"     , BTagEntry::FLAV_B   , iJet.P4().Eta(), iJet.P4().Pt());
+            bTagWeight_bJets_down        *= btagCalibrationReader_bJets_    ->eval_auto_bounds("down"   , BTagEntry::FLAV_B   , iJet.P4().Eta(), iJet.P4().Pt());
         }
         else if(jetFlavour==4){
-            bTagWeight_cJets_central     *= btagCalibrationReader_cJets_    ->eval_auto_bounds("central", BTagEntry::FLAV_C   , iJet.P4UnRegressed().Eta(), iJet.P4UnRegressed().Pt());
-            bTagWeight_cJets_up          *= btagCalibrationReader_cJets_    ->eval_auto_bounds("up"     , BTagEntry::FLAV_C   , iJet.P4UnRegressed().Eta(), iJet.P4UnRegressed().Pt());
-            bTagWeight_cJets_down        *= btagCalibrationReader_cJets_    ->eval_auto_bounds("down"   , BTagEntry::FLAV_C   , iJet.P4UnRegressed().Eta(), iJet.P4UnRegressed().Pt());
+            bTagWeight_cJets_central     *= btagCalibrationReader_cJets_    ->eval_auto_bounds("central", BTagEntry::FLAV_C   , iJet.P4().Eta(), iJet.P4().Pt());
+            bTagWeight_cJets_up          *= btagCalibrationReader_cJets_    ->eval_auto_bounds("up"     , BTagEntry::FLAV_C   , iJet.P4().Eta(), iJet.P4().Pt());
+            bTagWeight_cJets_down        *= btagCalibrationReader_cJets_    ->eval_auto_bounds("down"   , BTagEntry::FLAV_C   , iJet.P4().Eta(), iJet.P4().Pt());
         }
         else{
-            bTagWeight_lightJets_central *= btagCalibrationReader_lightJets_->eval_auto_bounds("central", BTagEntry::FLAV_UDSG, iJet.P4UnRegressed().Eta(), iJet.P4UnRegressed().Pt());
-            bTagWeight_lightJets_up      *= btagCalibrationReader_lightJets_->eval_auto_bounds("up"     , BTagEntry::FLAV_UDSG, iJet.P4UnRegressed().Eta(), iJet.P4UnRegressed().Pt());
-            bTagWeight_lightJets_down    *= btagCalibrationReader_lightJets_->eval_auto_bounds("down"   , BTagEntry::FLAV_UDSG, iJet.P4UnRegressed().Eta(), iJet.P4UnRegressed().Pt());
+            bTagWeight_lightJets_central *= btagCalibrationReader_lightJets_->eval_auto_bounds("central", BTagEntry::FLAV_UDSG, iJet.P4().Eta(), iJet.P4().Pt());
+            bTagWeight_lightJets_up      *= btagCalibrationReader_lightJets_->eval_auto_bounds("up"     , BTagEntry::FLAV_UDSG, iJet.P4().Eta(), iJet.P4().Pt());
+            bTagWeight_lightJets_down    *= btagCalibrationReader_lightJets_->eval_auto_bounds("down"   , BTagEntry::FLAV_UDSG, iJet.P4().Eta(), iJet.P4().Pt());
         }   
     }
 
@@ -273,7 +273,10 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
 
     // order H1, H2 by pT: pT(H1) > pT (H2)
     CompositeCandidate H1 = CompositeCandidate(ordered_jets.at(0), ordered_jets.at(1));
+    H1.rebuildP4UsingRegressedPt(true,true);
+    
     CompositeCandidate H2 = CompositeCandidate(ordered_jets.at(2), ordered_jets.at(3));
+    H2.rebuildP4UsingRegressedPt(true,true);
     
     //Do a random swap to be sure that the m1 and m2 are simmetric
     bool swapped = (int(H1.P4().Pt()*100.) % 2 == 1);
@@ -297,11 +300,11 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
         ei.H2_b2 = ordered_jets.at(1);
     }
 
-    ei.H1_bb_DeltaR = sqrt(pow(ei.H1_b1->P4().Eta() - ei.H1_b2->P4().Eta(),2) + pow(ei.H1_b1->P4().Phi() - ei.H1_b2->P4().Phi(),2));
-    ei.H2_bb_DeltaR = sqrt(pow(ei.H2_b1->P4().Eta() - ei.H2_b2->P4().Eta(),2) + pow(ei.H2_b1->P4().Phi() - ei.H2_b2->P4().Phi(),2));
+    ei.H1_bb_DeltaR = sqrt(pow(ei.H1_b1->P4Regressed().Eta() - ei.H1_b2->P4Regressed().Eta(),2) + pow(ei.H1_b1->P4Regressed().Phi() - ei.H1_b2->P4Regressed().Phi(),2));
+    ei.H2_bb_DeltaR = sqrt(pow(ei.H2_b1->P4Regressed().Eta() - ei.H2_b2->P4Regressed().Eta(),2) + pow(ei.H2_b1->P4Regressed().Phi() - ei.H2_b2->P4Regressed().Phi(),2));
 
     ei.HH = CompositeCandidate(ei.H1.get(), ei.H2.get());
-
+ 
     float targetHiggsMass;
     if(strategy == "HighestCSVandClosestToMh")
     {
@@ -341,13 +344,13 @@ void OfflineProducerHelper::bJets_PreselectionCut(std::vector<Jet> &jets)
             }
         }
         if(maximumPtAccepted>0.){
-            if(it->P4UnRegressed().Pt()<maximumPtAccepted){
+            if(it->P4().Pt()<maximumPtAccepted){
                 it=jets.erase(it);
                 continue;                
             }
         }
         if(maximumAbsEtaCSVaccepted>0.){
-            if(abs(it->P4UnRegressed().Eta())>maximumAbsEtaCSVaccepted){
+            if(abs(it->P4().Eta())>maximumAbsEtaCSVaccepted){
                 it=jets.erase(it);
                 continue;                
             }
@@ -369,7 +372,7 @@ std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_OneClosestToMh(const std:
     for (uint i = 0; i < presel_jets->size(); ++i)
         for (uint j = i+1; j < presel_jets->size(); ++j)
         {
-            TLorentzVector p4sum = (presel_jets->at(i).P4() + presel_jets->at(j).P4());
+            TLorentzVector p4sum = (presel_jets->at(i).P4Regressed() + presel_jets->at(j).P4Regressed());
             float dmh = fabs(p4sum.Mag() - targetHiggsMass);
             mHs_and_jetIdx.emplace_back(make_pair(dmh, make_pair(i,j)));
         }
@@ -408,7 +411,7 @@ std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_BothClosestToMh(const std
     for (uint i = 0; i < presel_jets->size(); ++i)
         for (uint j = i+1; j < presel_jets->size(); ++j)
         {
-            TLorentzVector p4sum = (presel_jets->at(i).P4() + presel_jets->at(j).P4());
+            TLorentzVector p4sum = (presel_jets->at(i).P4Regressed() + presel_jets->at(j).P4Regressed());
             mHs.emplace_back(p4sum.Mag());
         }
 
@@ -486,11 +489,11 @@ std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_HighestCSVandClosestToMh(
                 if(h2b1it == h1b2it) continue;
                 for(unsigned int h2b2it = h2b1it+1; h2b2it< numberOfJets; ++h2b2it){
                     if(h2b2it == h1b2it) continue;
-                    float candidateMass = (jets->at(h1b1it).P4() + jets->at(h1b2it).P4() + jets->at(h2b1it).P4() + jets->at(h2b2it).P4()).M();
+                    float candidateMass = (jets->at(h1b1it).P4Regressed() + jets->at(h1b2it).P4Regressed() + jets->at(h2b1it).P4Regressed() + jets->at(h2b2it).P4Regressed()).M();
                     float targetHiggsMass = targetHiggsMassLMR;
                     if(LMRToMMRTransition>=0. && candidateMass > LMRToMMRTransition) targetHiggsMass = targetHiggsMassMMR; //use different range for mass
-                    float squareDeltaMassH1 = pow((jets->at(h1b1it).P4() + jets->at(h1b2it).P4()).M()-targetHiggsMass,2);
-                    float squareDeltaMassH2 = pow((jets->at(h2b1it).P4() + jets->at(h2b2it).P4()).M()-targetHiggsMass,2);
+                    float squareDeltaMassH1 = pow((jets->at(h1b1it).P4Regressed() + jets->at(h1b2it).P4Regressed()).M()-targetHiggsMass,2);
+                    float squareDeltaMassH2 = pow((jets->at(h2b1it).P4Regressed() + jets->at(h2b2it).P4Regressed()).M()-targetHiggsMass,2);
                     candidateMap.emplace((std::array<unsigned int,4>){h1b1it,h1b2it,h2b1it,h2b2it},squareDeltaMassH1+squareDeltaMassH2);
                 }
             }

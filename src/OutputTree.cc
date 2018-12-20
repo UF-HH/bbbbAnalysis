@@ -19,18 +19,18 @@ using namespace std;
     OBJ ## _phi  = -999.; \
     OBJ ## _p4 . SetPxPyPzE(0,0,0,0);
 
-#define BRANCH_m_pt_ptUnRegressed_eta_phi_p4(OBJ) \
+#define BRANCH_m_pt_ptRegressed_eta_phi_p4(OBJ) \
     tree_->Branch(#OBJ "_m"          ,  &OBJ ## _m); \
     tree_->Branch(#OBJ "_pt"         ,  &OBJ ## _pt); \
-    tree_->Branch(#OBJ "_ptUnRegressed",  &OBJ ## _ptUnRegressed); \
+    tree_->Branch(#OBJ "_ptRegressed",  &OBJ ## _ptRegressed); \
     tree_->Branch(#OBJ "_eta"        , &OBJ ## _eta); \
     tree_->Branch(#OBJ "_phi"        , &OBJ ## _phi); \
     if (savetlv_) tree_->Branch(#OBJ "_p4", &OBJ ## _p4);
 
-#define CLEAR_m_pt_ptUnRegressed_eta_phi_p4(OBJ) \
+#define CLEAR_m_pt_ptRegressed_eta_phi_p4(OBJ) \
     OBJ ## _m             = -999.; \
     OBJ ## _pt            = -999.; \
-    OBJ ## _ptUnRegressed   = -999.; \
+    OBJ ## _ptRegressed   = -999.; \
     OBJ ## _eta           = -999.; \
     OBJ ## _phi           = -999.; \
     OBJ ## _p4            . SetPxPyPzE(0,0,0,0);
@@ -53,13 +53,13 @@ void OutputTree::init_branches()
     tree_->Branch("Event", &Event);
 
     // reco b jets
-    BRANCH_m_pt_ptUnRegressed_eta_phi_p4(H1_b1)
+    BRANCH_m_pt_ptRegressed_eta_phi_p4(H1_b1)
     tree_->Branch("H1_b1_deepCSV", &H1_b1_deepCSV);
-    BRANCH_m_pt_ptUnRegressed_eta_phi_p4(H1_b2)
+    BRANCH_m_pt_ptRegressed_eta_phi_p4(H1_b2)
     tree_->Branch("H1_b2_deepCSV", &H1_b2_deepCSV);
-    BRANCH_m_pt_ptUnRegressed_eta_phi_p4(H2_b1)
+    BRANCH_m_pt_ptRegressed_eta_phi_p4(H2_b1)
     tree_->Branch("H2_b1_deepCSV", &H2_b1_deepCSV);
-    BRANCH_m_pt_ptUnRegressed_eta_phi_p4(H2_b2)
+    BRANCH_m_pt_ptRegressed_eta_phi_p4(H2_b2)
     tree_->Branch("H2_b2_deepCSV", &H2_b2_deepCSV);
 
     // reco H1 (H1_b1 + H1_b2)
@@ -96,13 +96,13 @@ void OutputTree::clear()
     LumiSec=0;
     Event=0;
 
-    CLEAR_m_pt_ptUnRegressed_eta_phi_p4(H1_b1)
+    CLEAR_m_pt_ptRegressed_eta_phi_p4(H1_b1)
     H1_b1_deepCSV = 0.;
-    CLEAR_m_pt_ptUnRegressed_eta_phi_p4(H1_b2)
+    CLEAR_m_pt_ptRegressed_eta_phi_p4(H1_b2)
     H1_b2_deepCSV = 0.;
-    CLEAR_m_pt_ptUnRegressed_eta_phi_p4(H2_b1)
+    CLEAR_m_pt_ptRegressed_eta_phi_p4(H2_b1)
     H2_b1_deepCSV = 0.;
-    CLEAR_m_pt_ptUnRegressed_eta_phi_p4(H2_b2)
+    CLEAR_m_pt_ptRegressed_eta_phi_p4(H2_b2)
     H2_b2_deepCSV = 0.;
 
     CLEAR_m_pt_eta_phi_p4(H1)

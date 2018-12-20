@@ -17,10 +17,10 @@ using namespace std;
     ot.OBJ ## _phi = ei. OBJ -> P4().Phi(); \
     ot.OBJ ## _p4  = ei. OBJ -> P4();
 
-#define COPY_m_pt_ptUnRegressed_eta_phi_p4(OBJ) \
+#define COPY_m_pt_ptRegressed_eta_phi_p4(OBJ) \
     ot.OBJ ## _m            = ei. OBJ -> P4().M(); \
     ot.OBJ ## _pt           = ei. OBJ -> P4().Pt(); \
-    ot.OBJ ## _ptUnRegressed  = ei. OBJ -> P4UnRegressed().Pt(); \
+    ot.OBJ ## _ptRegressed  = ei. OBJ -> P4Regressed().Pt(); \
     ot.OBJ ## _eta          = ei. OBJ -> P4().Eta(); \
     ot.OBJ ## _phi          = ei. OBJ -> P4().Phi(); \
     ot.OBJ ## _p4           = ei. OBJ -> P4();
@@ -67,13 +67,13 @@ void SkimUtils::fill_output_tree(OutputTree& ot, NanoAODTree& nat, EventInfo& ei
     ot.LumiSec  = *ei.LumiSec;
     ot.Event  = *ei.Event;
 
-    COPY_m_pt_ptUnRegressed_eta_phi_p4(H1_b1)
+    COPY_m_pt_ptRegressed_eta_phi_p4(H1_b1)
     ot.H1_b1_deepCSV = get_property(ei.H1_b1.get(),Jet_btagDeepB);
-    COPY_m_pt_ptUnRegressed_eta_phi_p4(H1_b2)
+    COPY_m_pt_ptRegressed_eta_phi_p4(H1_b2)
     ot.H1_b2_deepCSV = get_property(ei.H1_b2.get(),Jet_btagDeepB);
-    COPY_m_pt_ptUnRegressed_eta_phi_p4(H2_b1)
+    COPY_m_pt_ptRegressed_eta_phi_p4(H2_b1)
     ot.H2_b1_deepCSV = get_property(ei.H2_b1.get(),Jet_btagDeepB);
-    COPY_m_pt_ptUnRegressed_eta_phi_p4(H2_b2)
+    COPY_m_pt_ptRegressed_eta_phi_p4(H2_b2)
     ot.H2_b2_deepCSV = get_property(ei.H2_b2.get(),Jet_btagDeepB);
 
     COPY_m_pt_eta_phi_p4(H1)

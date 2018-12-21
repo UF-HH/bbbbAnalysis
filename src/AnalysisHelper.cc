@@ -151,7 +151,7 @@ void AnalysisHelper::saveOutputsToFile()
                             for(int xBin=1; xBin<=hCutInSkimTmp->GetNbinsX(); ++xBin){
                                 if(hCutInSkimTmp->GetXaxis()->GetBinLabel(xBin) == selectionDir){
                                     foundBin=true;
-                                    hCutInSkimTmp->SetBinContent(xBin,plotSet.at(isel).at(ivar).at(isyst)->GetEntries());
+                                    hCutInSkimTmp->SetBinContent(xBin,plotSet.at(isel).at(ivar).at(isyst)->Integral(-1,plotSet.at(isel).at(ivar).at(isyst)->GetNbinsX()+1));
                                     break;
                                 }
                             }
@@ -961,55 +961,58 @@ void AnalysisHelper::fillHistosSample(Sample& sample)
 
     if (DEBUG) cout << " ..........DEBUG: AnalysisHelper : fillHistosSample : going to setup map for SetBranchAddress --- SAMPLE" << endl;
     // weoghts - sample
-    for (uint iw = 0; iw < sample.getWeights().size(); ++iw)
+    if(sample.getType() != Sample::kData)
     {
-        const Weight& currW = sample.getWeights().at(iw);
-        string wname = currW.getName();
-        if (valuesMap.find(wname) == valuesMap.end())
+        for (uint iw = 0; iw < sample.getWeights().size(); ++iw)
         {
-            if (DEBUG) cout << " .......... >> DEBUG: AnalysisHelper : fillHistosSample : sample : " << sample.getName() << " , adding sample weight " << wname << endl;
-            valuesMap[wname] = float(0);
-            for (int isys = 0; isys < currW.getNSysts(); ++isys)
-            {
-                string sysName = currW.getSyst(isys);
-                if (valuesMap.find(sysName) == valuesMap.end())
-                {
-                    if (DEBUG) cout << " .......... >> >> DEBUG: AnalysisHelper : fillHistosSample : sample : " << sample.getName() << " , adding syst weight " << sysName << endl;
-                    if (DEBUG) cout << " .......... >> >> DEBUG: AnalysisHelper : fillHistosSample : sample : " << sample.getName() << " , adding syst map    " << currW.getSystName(isys) << " = [" << wname << " , " << sysName << "]" << endl;
-                    valuesMap[sysName] = float(0);
-                    systMap[currW.getSystName(isys)] = make_pair(wname, sysName);
-                }
-                else
-                    cout << "** Warning: AnalysisHelper::fillHistosSample : sample : " << sample.getName() << " , syst " << sysName << " from weight " << wname << " was already added to valuesMap, duplicated?" << endl;
-            }
-        }
-        else
-            cout << "** Warning: AnalysisHelper::fillHistosSample : sample : " << sample.getName() << " , weight " << wname << " was already added to valuesMap, duplicated?" << endl;
-    }
-
-    if (DEBUG) cout << " ..........DEBUG: AnalysisHelper : fillHistosSample : going to setup map for SetBranchAddress --- SELECTIONS" << endl;
-    // selection -- probably not the most efficient as many w are shared so will be chacked many times
-    // but this function is called only a few times
-    for (uint isel = 0; isel < selections_.size(); ++isel)
-    {
-        const Selection& currSel = selections_.at(isel);
-        for (uint iw = 0; iw < currSel.getWeights().size(); ++iw)
-        {
-            const Weight& currW = currSel.getWeights().at(iw);
+            const Weight& currW = sample.getWeights().at(iw);
             string wname = currW.getName();
             if (valuesMap.find(wname) == valuesMap.end())
             {
-                if (DEBUG) cout << " .......... >> DEBUG: AnalysisHelper : fillHistosSample : sample : " << sample.getName() << " : sel : " << currSel.getName() << " , adding selection weight " << wname << endl;
+                if (DEBUG) cout << " .......... >> DEBUG: AnalysisHelper : fillHistosSample : sample : " << sample.getName() << " , adding sample weight " << wname << endl;
                 valuesMap[wname] = float(0);
                 for (int isys = 0; isys < currW.getNSysts(); ++isys)
                 {
                     string sysName = currW.getSyst(isys);
                     if (valuesMap.find(sysName) == valuesMap.end())
                     {
-                        if (DEBUG) cout << " .......... >> >> DEBUG: AnalysisHelper : fillHistosSample : sample : " << sample.getName() << " : sel : " << currSel.getName() << " , adding selection syst weight " << sysName << endl;
-                        if (DEBUG) cout << " .......... >> >> DEBUG: AnalysisHelper : fillHistosSample : sample : " << sample.getName() << " : sel : " << currSel.getName() << " , adding selection syst map    " << currW.getSystName(isys) << " = [" << wname << " , " << sysName << "]" << endl;
+                        if (DEBUG) cout << " .......... >> >> DEBUG: AnalysisHelper : fillHistosSample : sample : " << sample.getName() << " , adding syst weight " << sysName << endl;
+                        if (DEBUG) cout << " .......... >> >> DEBUG: AnalysisHelper : fillHistosSample : sample : " << sample.getName() << " , adding syst map    " << currW.getSystName(isys) << " = [" << wname << " , " << sysName << "]" << endl;
                         valuesMap[sysName] = float(0);
                         systMap[currW.getSystName(isys)] = make_pair(wname, sysName);
+                    }
+                    else
+                        cout << "** Warning: AnalysisHelper::fillHistosSample : sample : " << sample.getName() << " , syst " << sysName << " from weight " << wname << " was already added to valuesMap, duplicated?" << endl;
+                }
+            }
+            else
+                cout << "** Warning: AnalysisHelper::fillHistosSample : sample : " << sample.getName() << " , weight " << wname << " was already added to valuesMap, duplicated?" << endl;
+        }
+
+        if (DEBUG) cout << " ..........DEBUG: AnalysisHelper : fillHistosSample : going to setup map for SetBranchAddress --- SELECTIONS" << endl;
+        // selection -- probably not the most efficient as many w are shared so will be chacked many times
+        // but this function is called only a few times
+        for (uint isel = 0; isel < selections_.size(); ++isel)
+        {
+            const Selection& currSel = selections_.at(isel);
+            for (uint iw = 0; iw < currSel.getWeights().size(); ++iw)
+            {
+                const Weight& currW = currSel.getWeights().at(iw);
+                string wname = currW.getName();
+                if (valuesMap.find(wname) == valuesMap.end())
+                {
+                    if (DEBUG) cout << " .......... >> DEBUG: AnalysisHelper : fillHistosSample : sample : " << sample.getName() << " : sel : " << currSel.getName() << " , adding selection weight " << wname << endl;
+                    valuesMap[wname] = float(0);
+                    for (int isys = 0; isys < currW.getNSysts(); ++isys)
+                    {
+                        string sysName = currW.getSyst(isys);
+                        if (valuesMap.find(sysName) == valuesMap.end())
+                        {
+                            if (DEBUG) cout << " .......... >> >> DEBUG: AnalysisHelper : fillHistosSample : sample : " << sample.getName() << " : sel : " << currSel.getName() << " , adding selection syst weight " << sysName << endl;
+                            if (DEBUG) cout << " .......... >> >> DEBUG: AnalysisHelper : fillHistosSample : sample : " << sample.getName() << " : sel : " << currSel.getName() << " , adding selection syst map    " << currW.getSystName(isys) << " = [" << wname << " , " << sysName << "]" << endl;
+                            valuesMap[sysName] = float(0);
+                            systMap[currW.getSystName(isys)] = make_pair(wname, sysName);
+                        }
                     }
                 }
             }
@@ -1024,7 +1027,7 @@ void AnalysisHelper::fillHistosSample(Sample& sample)
     {
         TBranch* br = (TBranch*) branchList->FindObject(it->first.c_str());
         if (!br)
-            cerr << endl << "** ERROR: AnalysisHelper::fillHistosSample : sample : " << sample.getName() << " does not havre branch " << it->first << ", expect a crash..." << endl;
+            cerr << endl << "** ERROR: AnalysisHelper::fillHistosSample : sample : " << sample.getName() << " does not have branch " << it->first << ", expect a crash..." << endl;
 
         string brName = br->GetTitle();
         if (brName.find(string("/F")) != string::npos) // F : a 32 bit floating point (Float_t)
@@ -1091,9 +1094,11 @@ void AnalysisHelper::fillHistosSample(Sample& sample)
 
         double wEvSample = 1.0;
         // get the product of all the event weights -- sample
-        for (unsigned int iw = 0; iw < sample.getWeights().size(); ++iw)
-        {
-            wEvSample *= boost::apply_visitor(get_variant_as_double(), valuesMap[sample.getWeights().at(iw).getName()]);
+        if (sample.getType() != Sample::kData){
+            for (unsigned int iw = 0; iw < sample.getWeights().size(); ++iw)
+            {
+                wEvSample *= boost::apply_visitor(get_variant_as_double(), valuesMap[sample.getWeights().at(iw).getName()]);
+            }
         }
 
         for (unsigned int isel = 0; isel < selections_.size(); ++isel)
@@ -1104,12 +1109,15 @@ void AnalysisHelper::fillHistosSample(Sample& sample)
 
             double wEvSel = 1.0;
             const Selection& currSel = selections_.at(isel);
-            for (unsigned int iw = 0; iw < currSel.getWeights().size(); ++iw)
-            {   
-                wEvSel *= boost::apply_visitor(get_variant_as_double(), valuesMap[currSel.getWeights().at(iw).getName()]);
-                
-                // if (sample.getType() == Sample::kBkg)
-                //     cout << "~~~~~~~  : ~~~ " << iEv << " / evt sel: " << currSel.getWeights().at(iw).getName() << " = " << boost::apply_visitor(get_variant_as_double(), valuesMap[currSel.getWeights().at(iw).getName()]) << endl;
+            if (sample.getType() != Sample::kData)
+            {
+                for (unsigned int iw = 0; iw < currSel.getWeights().size(); ++iw)
+                {   
+                    wEvSel *= boost::apply_visitor(get_variant_as_double(), valuesMap[currSel.getWeights().at(iw).getName()]);
+                    
+                    // if (sample.getType() == Sample::kBkg)
+                    //     cout << "~~~~~~~  : ~~~ " << iEv << " / evt sel: " << currSel.getWeights().at(iw).getName() << " = " << boost::apply_visitor(get_variant_as_double(), valuesMap[currSel.getWeights().at(iw).getName()]) << endl;
+                }
             }
             
             // loop on all vars to fill
@@ -1195,34 +1203,38 @@ void AnalysisHelper::activateBranches(Sample& sample)
 
     // activate all weights
     // sample
-    for (uint iw = 0; iw < sample.getWeights().size(); ++iw)
-    {
-        const Weight& currW = sample.getWeights().at(iw);
-        tree->SetBranchStatus(currW.getName().c_str(), 1);
-        for (int isys = 0; isys < currW.getNSysts(); ++isys)
+    if(sample.getType() != Sample::kData){
+        for (uint iw = 0; iw < sample.getWeights().size(); ++iw)
         {
-           //currW.getSyst(isys); // <----- keep an eye on it. It happened to throw range 
-           tree->SetBranchStatus(currW.getSyst(isys).c_str(), 1); 
-        }
-    }
-    if (DEBUG) cout << " ..........DEBUG: activated sample weights branches" << endl;
-
-    // selection -- probably not the most efficient as many w are shared so will be chacked many times
-    // but this function is called only a few times
-    for (uint isel = 0; isel < selections_.size(); ++isel)
-    {
-        const Selection& currSel = selections_.at(isel);
-        for (uint iw = 0; iw < currSel.getWeights().size(); ++iw)
-        {
-            const Weight& currW = currSel.getWeights().at(iw);
+            const Weight& currW = sample.getWeights().at(iw);
             tree->SetBranchStatus(currW.getName().c_str(), 1);
             for (int isys = 0; isys < currW.getNSysts(); ++isys)
             {
+               //currW.getSyst(isys); // <----- keep an eye on it. It happened to throw range 
                tree->SetBranchStatus(currW.getSyst(isys).c_str(), 1); 
             }
         }
+        if (DEBUG) cout << " ..........DEBUG: activated sample weights branches" << endl;
     }
-    if (DEBUG) cout << " ..........DEBUG: activated selections weights branches" << endl;
+
+    // selection -- probably not the most efficient as many w are shared so will be chacked many times
+    // but this function is called only a few times
+    if(sample.getType() != Sample::kData){
+        for (uint isel = 0; isel < selections_.size(); ++isel)
+        {
+            const Selection& currSel = selections_.at(isel);
+            for (uint iw = 0; iw < currSel.getWeights().size(); ++iw)
+            {
+                const Weight& currW = currSel.getWeights().at(iw);
+                tree->SetBranchStatus(currW.getName().c_str(), 1);
+                for (int isys = 0; isys < currW.getNSysts(); ++isys)
+                {
+                   tree->SetBranchStatus(currW.getSyst(isys).c_str(), 1); 
+                }
+            }
+        }
+        if (DEBUG) cout << " ..........DEBUG: activated selections weights branches" << endl;
+    }
 
     // // activate all variables for cuts
     TObjArray* branchList =  tree->GetListOfBranches();

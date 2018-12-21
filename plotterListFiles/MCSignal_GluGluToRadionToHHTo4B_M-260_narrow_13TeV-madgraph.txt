@@ -1,0 +1,1 @@
+/eos/uscms/store/user/fravera/bbbb_ntuples/2016AnalysisSample_03Feb2017_v4//SKIM_MCSignal_GluGluToRadionToHHTo4B_M-260_narrow_13TeV-madgraph/output/bbbbNtuple_0.root

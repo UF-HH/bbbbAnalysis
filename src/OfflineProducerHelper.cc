@@ -14,8 +14,9 @@ using namespace std::experimental;
 
 using namespace std;
 
+// ----------------- Objects for cut - BEGIN ----------------- //
 
-void OfflineProducerHelper::initializeUserDefinedBranches(OutputTree &ot){
+void OfflineProducerHelper::initializeObjectsForCuts(OutputTree &ot){
 
     string objectsForCut = any_cast<string>(parameterList_->at("ObjectsForCut"));
 
@@ -28,9 +29,6 @@ void OfflineProducerHelper::initializeUserDefinedBranches(OutputTree &ot){
         ot.declareUserFloatBranch("LeadingIsolatedWElectron_pt", -1.);
         ot.declareUserFloatBranch("LeadingIsolatedWMuon_pt", -1.);
     }
-
-    ot.declareUserFloatBranch("LHE_HT", 0);
-    ot.declareUserFloatBranch("my_LHE_HT", 0);
 
     return;
 
@@ -51,7 +49,7 @@ void OfflineProducerHelper::save_WandZleptondecays (NanoAODTree& nat, OutputTree
     for (uint eIt = 0; eIt < *(nat.nElectron); ++eIt){
         Electron theElectron(eIt, &nat);
         
-        if( //theElectron.P4().Pt()                                 >25.0 && 
+        if( //theElectron.P4Regressed().Pt()                                 >25.0 && 
             get_property(theElectron,Electron_mvaSpring16GP_WP80) && 
             get_property(theElectron,Electron_pfRelIso03_all    ) < any_cast<float>(parameterList_->at("WElectronMaxPfIso")) )
             electronFromW.emplace_back(theElectron);
@@ -115,66 +113,138 @@ void OfflineProducerHelper::save_WandZleptondecays (NanoAODTree& nat, OutputTree
         ot.userFloat("LeadingIsolatedWMuon_pt") = muonFromW.at(0).P4().Pt();
     }
 
-
-    // if(electronFromZ.size()>0){
-    //     return false;
-    // }
-
-    // if(muonFromZ.size()>0){
-    //     return false;
-    // }
-
-    // if(electronFromW.size()==1 || muonFromW.size()==1){
-    //     return false;
-    // }
-
-    // return true;
 }
 
+// ----------------- Objects for cut - END ----------------- //
 
 
-std::vector<Jet> OfflineProducerHelper::make_jets(NanoAODTree& nat, const std::function<bool (Jet)>& presel_function)
-{
-    std::vector<Jet> jets;
-    for (uint ij = 0; ij < *(nat.nJet); ++ij)
-    {
-        Jet jet (ij, &nat);
-        bool pass = presel_function ? presel_function(jet) : true;
-        if (pass)
-            jets.emplace_back(jet);
+
+// ----------------- Compute weights - BEGIN ----------------- //
+
+void OfflineProducerHelper::initializeObjectsForWeights(OutputTree &ot){
+
+    string weightsMethod = any_cast<string>(parameterList_->at("WeightsMethod"));
+
+    if(weightsMethod == "None"){
+        //do nothing
     }
-    return jets;
+    else if(weightsMethod == "FourBtag_EventReweighting"){
+        ot.declareUserFloatBranch("bTagWeight_bJets_central"    , 1.);
+        ot.declareUserFloatBranch("bTagWeight_bJets_up"         , 1.);
+        ot.declareUserFloatBranch("bTagWeight_bJets_down"       , 1.);
+        ot.declareUserFloatBranch("bTagWeight_cJets_central"    , 1.);
+        ot.declareUserFloatBranch("bTagWeight_cJets_up"         , 1.);
+        ot.declareUserFloatBranch("bTagWeight_cJets_down"       , 1.);
+        ot.declareUserFloatBranch("bTagWeight_lightJets_central", 1.);
+        ot.declareUserFloatBranch("bTagWeight_lightJets_up"     , 1.);
+        ot.declareUserFloatBranch("bTagWeight_lightJets_down"   , 1.);
+
+        BTagCalibration btagCalibration("DeepCSV","weights/DeepCSV_Moriond17_B_H.csv");    
+        btagCalibrationReader_lightJets_ = new BTagCalibrationReader(BTagEntry::OP_MEDIUM,"central",{"up", "down"});      
+        btagCalibrationReader_cJets_     = new BTagCalibrationReader(BTagEntry::OP_MEDIUM,"central",{"up", "down"});      
+        btagCalibrationReader_bJets_     = new BTagCalibrationReader(BTagEntry::OP_MEDIUM,"central",{"up", "down"}); 
+
+        btagCalibrationReader_lightJets_->load(btagCalibration, BTagEntry::FLAV_UDSG, "incl"  );
+        btagCalibrationReader_cJets_    ->load(btagCalibration, BTagEntry::FLAV_C   , "mujets");
+        btagCalibrationReader_bJets_    ->load(btagCalibration, BTagEntry::FLAV_B   , "mujets");
+    }
+
+    return;
+
 }
 
-void OfflineProducerHelper::filter_jets(std::vector<Jet>& jets, const std::function<bool (Jet)>& filter_function)
-{
-    jets.erase(remove_if(jets.begin(), jets.end(), std::not1(filter_function)), jets.end());
+
+// reject events with leptons that may come from W and Z decays
+void OfflineProducerHelper::compute_weights_fourBtag_eventReweighting (const std::vector<Jet> &jets, NanoAODTree& nat, OutputTree &ot){
+    
+    float bTagWeight_bJets_central     = 1.;
+    float bTagWeight_bJets_up          = 1.;
+    float bTagWeight_bJets_down        = 1.;
+    float bTagWeight_cJets_central     = 1.;
+    float bTagWeight_cJets_up          = 1.;
+    float bTagWeight_cJets_down        = 1.;
+    float bTagWeight_lightJets_central = 1.;
+    float bTagWeight_lightJets_up      = 1.;
+    float bTagWeight_lightJets_down    = 1.;
+
+    for(const auto &iJet : jets){
+        int jetFlavour = abs(get_property(iJet,Jet_partonFlavour));
+        if(jetFlavour==5){
+            bTagWeight_bJets_central     *= btagCalibrationReader_bJets_    ->eval_auto_bounds("central", BTagEntry::FLAV_B   , iJet.P4().Eta(), iJet.P4().Pt());
+            bTagWeight_bJets_up          *= btagCalibrationReader_bJets_    ->eval_auto_bounds("up"     , BTagEntry::FLAV_B   , iJet.P4().Eta(), iJet.P4().Pt());
+            bTagWeight_bJets_down        *= btagCalibrationReader_bJets_    ->eval_auto_bounds("down"   , BTagEntry::FLAV_B   , iJet.P4().Eta(), iJet.P4().Pt());
+        }
+        else if(jetFlavour==4){
+            bTagWeight_cJets_central     *= btagCalibrationReader_cJets_    ->eval_auto_bounds("central", BTagEntry::FLAV_C   , iJet.P4().Eta(), iJet.P4().Pt());
+            bTagWeight_cJets_up          *= btagCalibrationReader_cJets_    ->eval_auto_bounds("up"     , BTagEntry::FLAV_C   , iJet.P4().Eta(), iJet.P4().Pt());
+            bTagWeight_cJets_down        *= btagCalibrationReader_cJets_    ->eval_auto_bounds("down"   , BTagEntry::FLAV_C   , iJet.P4().Eta(), iJet.P4().Pt());
+        }
+        else{
+            bTagWeight_lightJets_central *= btagCalibrationReader_lightJets_->eval_auto_bounds("central", BTagEntry::FLAV_UDSG, iJet.P4().Eta(), iJet.P4().Pt());
+            bTagWeight_lightJets_up      *= btagCalibrationReader_lightJets_->eval_auto_bounds("up"     , BTagEntry::FLAV_UDSG, iJet.P4().Eta(), iJet.P4().Pt());
+            bTagWeight_lightJets_down    *= btagCalibrationReader_lightJets_->eval_auto_bounds("down"   , BTagEntry::FLAV_UDSG, iJet.P4().Eta(), iJet.P4().Pt());
+        }   
+    }
+
+    ot.userFloat("bTagWeight_bJets_central"    ) = bTagWeight_bJets_central    ;
+    ot.userFloat("bTagWeight_bJets_up"         ) = bTagWeight_bJets_up         ;
+    ot.userFloat("bTagWeight_bJets_down"       ) = bTagWeight_bJets_down       ;
+    ot.userFloat("bTagWeight_cJets_central"    ) = bTagWeight_cJets_central    ;
+    ot.userFloat("bTagWeight_cJets_up"         ) = bTagWeight_cJets_up         ;
+    ot.userFloat("bTagWeight_cJets_down"       ) = bTagWeight_cJets_down       ;
+    ot.userFloat("bTagWeight_lightJets_central") = bTagWeight_lightJets_central;
+    ot.userFloat("bTagWeight_lightJets_up"     ) = bTagWeight_lightJets_up     ;
+    ot.userFloat("bTagWeight_lightJets_down"   ) = bTagWeight_lightJets_down   ;
+
     return;
 }
 
-bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
+// ----------------- Compute weights - END ----------------- //
+
+
+bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, OutputTree &ot)
 {
     if (*(nat.nJet) < 4)
         return false;
 
     std::vector<Jet> jets;
     jets.reserve(*(nat.nJet));
+
     for (uint ij = 0; ij < *(nat.nJet); ++ij){
         jets.emplace_back(Jet(ij, &nat));
-        TLorentzVector jetP4_regressionCorrected;
-        jetP4_regressionCorrected.SetPtEtaPhiM(
-            jets.back().P4().Pt()*get_property(jets.back(),Jet_bRegCorr), //use b regression correction for pt
-            jets.back().P4().Eta(),
-            jets.back().P4().Phi(),
-            jets.back().P4().M()
-        );
-        jets.back().setP4(jetP4_regressionCorrected);
+    }
+    
+    //if some montecarlo weight are applied via a reshaping of the jets variables, they must be applied here
+
+    //Apply preselection cuts
+    const string preselectionCutStrategy = any_cast<string>(parameterList_->at("PreselectionCut"));
+    
+    if(preselectionCutStrategy=="bJetCut"){
+        bJets_PreselectionCut(jets);
+    }
+    else if(preselectionCutStrategy=="None"){
+        //do nothing
+    }
+    else throw std::runtime_error("cannot recognize cut strategy " + preselectionCutStrategy);
+
+    //at least 4 jets required
+    if(jets.size()<4) return false;
+
+    // calculate weights after preselection cuts
+    if(parameterList_->find("WeightsMethod") != parameterList_->end()){ //is it a MC event
+        const string weightsMethod = any_cast<string>(parameterList_->at("WeightsMethod"));
+
+        if(weightsMethod == "FourBtag_EventReweighting"){
+            compute_weights_fourBtag_eventReweighting(jets,nat,ot);
+        }
     }
 
+
+    // sort by deepCSV (highest to lowest)
     stable_sort(jets.begin(), jets.end(), [](const Jet & a, const Jet & b) -> bool
     {
         return ( get_property(a, Jet_btagDeepB) > get_property(b, Jet_btagDeepB) );
-    }); // sort by deepCSV (highest to lowest)
+    });
 
     // now need to pair the jets
     std::vector<Jet> presel_jets = {{
@@ -187,7 +257,7 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
     std::vector<Jet> ordered_jets;
     string strategy = any_cast<string>(parameterList_->at("bbbbChoice"));
 
-
+    //Select the fouf b jets 
     if(strategy == "OneClosestToMh")
         ordered_jets = bbbb_jets_idxs_OneClosestToMh(&presel_jets);
     else if(strategy == "BothClosestToMh")
@@ -201,18 +271,16 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
 
     if(ordered_jets.size()!=4) return false;
 
-
-
-    order_by_pT(ordered_jets.at(0), ordered_jets.at(1));
-    order_by_pT(ordered_jets.at(2), ordered_jets.at(3));
-
     // order H1, H2 by pT: pT(H1) > pT (H2)
     CompositeCandidate H1 = CompositeCandidate(ordered_jets.at(0), ordered_jets.at(1));
+    H1.rebuildP4UsingRegressedPt(true,true);
+    
     CompositeCandidate H2 = CompositeCandidate(ordered_jets.at(2), ordered_jets.at(3));
+    H2.rebuildP4UsingRegressedPt(true,true);
     
     //Do a random swap to be sure that the m1 and m2 are simmetric
     bool swapped = (int(H1.P4().Pt()*100.) % 2 == 1);
-
+ 
     if (!swapped)
     {
         ei.H1 = H1;
@@ -229,14 +297,14 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
         ei.H1_b1 = ordered_jets.at(2);
         ei.H1_b2 = ordered_jets.at(3);
         ei.H2_b1 = ordered_jets.at(0);
-        ei.H2_b2 = ordered_jets.at(1);        
+        ei.H2_b2 = ordered_jets.at(1);
     }
 
-    ei.H1_bb_DeltaR = sqrt(pow(ei.H1_b1->P4().Eta() - ei.H1_b2->P4().Eta(),2) + pow(ei.H1_b1->P4().Phi() - ei.H1_b2->P4().Phi(),2));
-    ei.H2_bb_DeltaR = sqrt(pow(ei.H2_b1->P4().Eta() - ei.H2_b2->P4().Eta(),2) + pow(ei.H2_b1->P4().Phi() - ei.H2_b2->P4().Phi(),2));
+    ei.H1_bb_DeltaR = sqrt(pow(ei.H1_b1->P4Regressed().Eta() - ei.H1_b2->P4Regressed().Eta(),2) + pow(ei.H1_b1->P4Regressed().Phi() - ei.H1_b2->P4Regressed().Phi(),2));
+    ei.H2_bb_DeltaR = sqrt(pow(ei.H2_b1->P4Regressed().Eta() - ei.H2_b2->P4Regressed().Eta(),2) + pow(ei.H2_b1->P4Regressed().Phi() - ei.H2_b2->P4Regressed().Phi(),2));
 
     ei.HH = CompositeCandidate(ei.H1.get(), ei.H2.get());
-
+ 
     float targetHiggsMass;
     if(strategy == "HighestCSVandClosestToMh")
     {
@@ -258,6 +326,43 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei)
     return true;
 }
 
+
+//functions fo apply preselection cuts:
+void OfflineProducerHelper::bJets_PreselectionCut(std::vector<Jet> &jets)
+{
+
+    float minimumDeepCSVaccepted            = any_cast<float>(parameterList_->at("MinDeepCSV"          ));
+    float maximumPtAccepted                 = any_cast<float>(parameterList_->at("MinPt"               ));
+    float maximumAbsEtaCSVaccepted          = any_cast<float>(parameterList_->at("MaxAbsEta"           ));
+
+    auto it = jets.begin();
+    while (it != jets.end()){
+        if(minimumDeepCSVaccepted>=0.){
+            if(get_property((*it),Jet_btagDeepB)<minimumDeepCSVaccepted){
+                it=jets.erase(it);
+                continue;
+            }
+        }
+        if(maximumPtAccepted>0.){
+            if(it->P4().Pt()<maximumPtAccepted){
+                it=jets.erase(it);
+                continue;                
+            }
+        }
+        if(maximumAbsEtaCSVaccepted>0.){
+            if(abs(it->P4().Eta())>maximumAbsEtaCSVaccepted){
+                it=jets.erase(it);
+                continue;                
+            }
+        }
+        ++it;
+    }
+
+    return;
+
+}
+
+
 // one pair is closest to the Higgs mass, the other follows
 std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_OneClosestToMh(const std::vector<Jet> *presel_jets)
 {
@@ -267,7 +372,7 @@ std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_OneClosestToMh(const std:
     for (uint i = 0; i < presel_jets->size(); ++i)
         for (uint j = i+1; j < presel_jets->size(); ++j)
         {
-            TLorentzVector p4sum = (presel_jets->at(i).P4() + presel_jets->at(j).P4());
+            TLorentzVector p4sum = (presel_jets->at(i).P4Regressed() + presel_jets->at(j).P4Regressed());
             float dmh = fabs(p4sum.Mag() - targetHiggsMass);
             mHs_and_jetIdx.emplace_back(make_pair(dmh, make_pair(i,j)));
         }
@@ -306,7 +411,7 @@ std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_BothClosestToMh(const std
     for (uint i = 0; i < presel_jets->size(); ++i)
         for (uint j = i+1; j < presel_jets->size(); ++j)
         {
-            TLorentzVector p4sum = (presel_jets->at(i).P4() + presel_jets->at(j).P4());
+            TLorentzVector p4sum = (presel_jets->at(i).P4Regressed() + presel_jets->at(j).P4Regressed());
             mHs.emplace_back(p4sum.Mag());
         }
 
@@ -372,33 +477,23 @@ std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_HighestCSVandClosestToMh(
     float targetHiggsMassLMR                = any_cast<float>(parameterList_->at("HiggsMassLMR"        ));
     float targetHiggsMassMMR                = any_cast<float>(parameterList_->at("HiggsMassMMR"        ));
     float LMRToMMRTransition                = any_cast<float>(parameterList_->at("LMRToMMRTransition" ));
-    float minimumDeepCSVaccepted            = any_cast<float>(parameterList_->at("deepCSVcut"          ));
-
-    unsigned int jetsPassingDeepCSV = 0;
-
-    //Jets are already ordered form highest to lowest CSV
-    for(; jetsPassingDeepCSV < jets->size(); ++jetsPassingDeepCSV){
-        float tmpDeepCSV = get_property(jets->at(jetsPassingDeepCSV),Jet_btagDeepB);
-        if(tmpDeepCSV < minimumDeepCSVaccepted){
-            break;
-        }
-    }
-    
+ 
     std::vector<Jet> output_jets;
-    if(jetsPassingDeepCSV  < 4) return output_jets;
+    unsigned int numberOfJets = jets->size();
+    if(numberOfJets  < 4) return output_jets;
 
     std::map< const std::array<unsigned int,4>, float> candidateMap;
-    for(unsigned int h1b1it = 0; h1b1it< jetsPassingDeepCSV-1; ++h1b1it){
-        for(unsigned int h1b2it = h1b1it+1; h1b2it< jetsPassingDeepCSV; ++h1b2it){
-            for(unsigned int h2b1it = h1b1it+1; h2b1it< jetsPassingDeepCSV-1; ++h2b1it){
+    for(unsigned int h1b1it = 0; h1b1it< numberOfJets-1; ++h1b1it){
+        for(unsigned int h1b2it = h1b1it+1; h1b2it< numberOfJets; ++h1b2it){
+            for(unsigned int h2b1it = h1b1it+1; h2b1it< numberOfJets-1; ++h2b1it){
                 if(h2b1it == h1b2it) continue;
-                for(unsigned int h2b2it = h2b1it+1; h2b2it< jetsPassingDeepCSV; ++h2b2it){
+                for(unsigned int h2b2it = h2b1it+1; h2b2it< numberOfJets; ++h2b2it){
                     if(h2b2it == h1b2it) continue;
-                    float candidateMass = (jets->at(h1b1it).P4() + jets->at(h1b2it).P4() + jets->at(h2b1it).P4() + jets->at(h2b2it).P4()).M();
+                    float candidateMass = (jets->at(h1b1it).P4Regressed() + jets->at(h1b2it).P4Regressed() + jets->at(h2b1it).P4Regressed() + jets->at(h2b2it).P4Regressed()).M();
                     float targetHiggsMass = targetHiggsMassLMR;
                     if(LMRToMMRTransition>=0. && candidateMass > LMRToMMRTransition) targetHiggsMass = targetHiggsMassMMR; //use different range for mass
-                    float squareDeltaMassH1 = pow((jets->at(h1b1it).P4() + jets->at(h1b2it).P4()).M()-targetHiggsMass,2);
-                    float squareDeltaMassH2 = pow((jets->at(h2b1it).P4() + jets->at(h2b2it).P4()).M()-targetHiggsMass,2);
+                    float squareDeltaMassH1 = pow((jets->at(h1b1it).P4Regressed() + jets->at(h1b2it).P4Regressed()).M()-targetHiggsMass,2);
+                    float squareDeltaMassH2 = pow((jets->at(h2b1it).P4Regressed() + jets->at(h2b2it).P4Regressed()).M()-targetHiggsMass,2);
                     candidateMap.emplace((std::array<unsigned int,4>){h1b1it,h1b2it,h2b1it,h2b2it},squareDeltaMassH1+squareDeltaMassH2);
                 }
             }
@@ -736,11 +831,11 @@ void OfflineProducerHelper::dump_gen_part (NanoAODTree& nat, bool printFlags)
     cout << endl << endl;
 }
 
-bool OfflineProducerHelper::checkBit (int number, int bitpos)
-{
-    bool res = number & (1 << bitpos);
-    return res;
-}
+// bool OfflineProducerHelper::checkBit (int number, int bitpos)
+// {
+//     bool res = number & (1 << bitpos);
+//     return res;
+// }
 
 int OfflineProducerHelper::recursive_gen_mother_idx(const GenPart& gp, bool stop_at_moth_zero)
 {

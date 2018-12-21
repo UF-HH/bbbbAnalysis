@@ -38,7 +38,12 @@ class CompositeCandidate : public Candidate
 
         bool sharesComponentWith (const CompositeCandidate& cc) const;
         bool isValid() {return (cand1_ && cand2_);}
-        std::unique_ptr<Candidate> clone() const {return std::unique_ptr<CompositeCandidate> (new CompositeCandidate(this->getComponent1 (), this->getComponent2 ()));}
+        std::unique_ptr<Candidate> clone() const {
+            std::unique_ptr<CompositeCandidate> CompositeCandidateClone(new CompositeCandidate(this->getComponent1 (), this->getComponent2 ()));
+            CompositeCandidateClone->setP4(this->P4()); //In case the P4 had been re-evaluated
+            return CompositeCandidateClone;
+        }
+        void rebuildP4UsingRegressedPt(bool usePtRegressedCandidate1, bool usePtRegressedCandidate2);
 
     protected:
         void buildP4() {p4_ = cand1_->P4() + cand2_->P4();}; 

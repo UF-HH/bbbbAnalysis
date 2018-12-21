@@ -11,12 +11,15 @@
 **          It's a flexible way to let the function know what it should know on the event, and possibly set extra information
 **/
 
+#include <TH1F.h>
 #include "CfgParser.h"
 #include "NanoAODTree.h"
 #include "EventInfo.h"
 #include "CompositeCandidate.h"
 #include "OutputTree.h"
+#include "BTagCalibrationStandalone.h"
 #include "Jet.h"
+
 #include <array>
 #include <utility>
 #include <functional>
@@ -29,40 +32,33 @@ using namespace std::experimental;
 
 namespace OfflineProducerHelper {
 
-    // build a collection of jets in the event. If a prese;_function is given, preselect the jets
-    std::vector<Jet> make_jets(NanoAODTree& nat, const std::function<bool (Jet)>& presel_function = nullptr);
-    // filter the jet collection by keeping only the elements that pass filter_function
-    void filter_jets(std::vector<Jet>& jets, const std::function<bool (Jet)>& filter_function);
-
     // Load configurations to match the b jets
     // bool loadConfiguration(CfgParser config);
     ///static bacause if not I got a glibc detected when the execution is completed
+
     const std::map<std::string,any> *parameterList_;
     void setParameterList(const std::map<std::string,any> *parameterList) {parameterList_=parameterList;}
 
-    void initializeUserDefinedBranches(OutputTree &ot);
-    // CfgParser config_;
-    // float higgsTargetMass_              = -999.;
-    // float higgsTargetMassMaxDifference_ = -999.;
-    // float minDeepCSV_                   = -999.;
-
-    // --- - --- - --- - --- - --- - --- - --- - --- - --- - --- - --- - --- - --- - --- - 
-
-    // enum class bbbbSelectionStrategy{
-    //     kOneClosestToMh,
-    //     kBothClosestToMh,
-    //     kMostBackToBack,
-    //     kHighestCSVandColsestToMh
-    // };
-
+    void initializeObjectsForCuts(OutputTree &ot);
     // functions to select events based on non-jet particles:
     void (*save_objects_for_cut)(NanoAODTree&, OutputTree&);
     // reject events with leptons that may come from W and Z decays
     void save_WandZleptondecays (NanoAODTree& nat, OutputTree &ot);
 
 
+    void initializeObjectsForWeights(OutputTree &ot);
+    // compute events weight for four be 0- event reweighting
+    void compute_weights_fourBtag_eventReweighting (const std::vector<Jet> &jets, NanoAODTree& nat, OutputTree &ot);
+
+
+    BTagCalibrationReader *btagCalibrationReader_lightJets_;
+    BTagCalibrationReader *btagCalibrationReader_cJets_;
+    BTagCalibrationReader *btagCalibrationReader_bJets_;
+    //functions fo apply preselection cuts:
+    void bJets_PreselectionCut(std::vector<Jet> &jets);
+
     // functions that act on the EventInfo
-    bool select_bbbb_jets (NanoAODTree& nat, EventInfo& ei);
+    bool select_bbbb_jets (NanoAODTree& nat, EventInfo& ei, OutputTree &ot);
 
     // bbbbSelectionStrategy strategy_;
     // functions to pair a preselected set of four jets. They all shuffle the input set of jets and return them as (H1_b1, H1_b2, H2_b1, H2_b2)
@@ -105,7 +101,7 @@ namespace OfflineProducerHelper {
 
     // other utilities
     void dump_gen_part (NanoAODTree& nat, bool printFlags = true);
-    bool checkBit(int number, int bitpos);
+    // bool checkBit(int number, int bitpos);
     int  recursive_gen_mother_idx(const GenPart& gp, bool stop_at_moth_zero = true); // returns the uppermost ancestor in the gen particle chain
                                                                                     // if stop_at_moth_zero = true, it returns when a GenPart is found and his mother has idx 0
                                                                                     // instead of returning the GenPart # 0 itself
@@ -120,6 +116,7 @@ namespace OfflineProducerHelper {
     // if max_first = true, pt (val1) > pt (val2), if max_first = false the opposite
     template <typename T>
     bool order_by_pT(T& val1, T& val2, bool max_first = true);
+
 };
 
 template <typename C>

@@ -98,8 +98,10 @@ int main(int argc, char** argv)
     CfgParser config;
     if (!config.init(opts["cfg"].as<string>())) return 1;
     cout << "[INFO] ... using config file " << opts["cfg"].as<string>() << endl;
-
-    //Read needed fields from config file
+    
+    ////////////////////////////////////////////////////////////////////////
+    // Read needed fields from config file and pass them to the oph
+    ////////////////////////////////////////////////////////////////////////
 
     std::map<std::string,any> parameterList;
 
@@ -119,7 +121,6 @@ int main(int argc, char** argv)
         parameterList.emplace("HiggsMassLMR"        ,config.readFloatOpt("parameters::HiggsMassLMR"        ));
         parameterList.emplace("HiggsMassMMR"        ,config.readFloatOpt("parameters::HiggsMassMMR"        ));
         parameterList.emplace("LMRToMMRTransition"  ,config.readFloatOpt("parameters::LMRToMMRTransition"  ));
-        parameterList.emplace("deepCSVcut"          ,config.readFloatOpt("parameters::deepCSVcut"          ));
     }
     // else if(other selection type){
     //     parameters fo be retreived;
@@ -127,6 +128,22 @@ int main(int argc, char** argv)
     else throw std::runtime_error("cannot recognize bbbb pair choice strategy " + bbbbChoice);
 
     cout << "[INFO] ... chosing bb bb jet pairs with strategy : " << bbbbChoice << endl;
+
+
+    const string preselectionCutStrategy = config.readStringOpt("parameters::PreselectionCut");
+    parameterList.emplace("PreselectionCut",preselectionCutStrategy);
+    if(preselectionCutStrategy == "bJetCut"){
+        parameterList.emplace("MinDeepCSV"          ,config.readFloatOpt("parameters::MinDeepCSV"          ));
+        parameterList.emplace("MinPt"               ,config.readFloatOpt("parameters::MinPt"               ));
+        parameterList.emplace("MaxAbsEta"           ,config.readFloatOpt("parameters::MaxAbsEta"           ));
+    }
+    else if(preselectionCutStrategy == "None"){
+    }  
+    // else if(other selection type){
+    //     parameters fo be retreived;
+    // }  
+    else throw std::runtime_error("cannot recognize event choice ObjectsForCut " + preselectionCutStrategy);
+
 
     const string objectsForCut = config.readStringOpt("parameters::ObjectsForCut");
     parameterList.emplace("ObjectsForCut",objectsForCut);
@@ -138,11 +155,29 @@ int main(int argc, char** argv)
         parameterList.emplace("MuonMaxDxy"          ,config.readFloatOpt("parameters::MuonMaxDxy"          ));
         parameterList.emplace("MuonMaxDz"           ,config.readFloatOpt("parameters::MuonMaxDz"           ));
     }
+    else if(objectsForCut == "None"){
+    }  
     // else if(other selection type){
     //     parameters fo be retreived;
     // }  
     else throw std::runtime_error("cannot recognize event choice ObjectsForCut " + objectsForCut);
 
+
+    if(!is_data){
+        const string weightsMethod = config.readStringOpt("parameters::WeightsMethod");
+        parameterList.emplace("WeightsMethod",weightsMethod);
+        if(weightsMethod == "FourBtag_EventReweighting"){
+            parameterList.emplace("BJetScaleFactorsFile"   ,config.readStringOpt("parameters::BJetScaleFactorsFile"  ));
+            parameterList.emplace("BTagEfficiencyFile"     ,config.readStringOpt("parameters::BTagEfficiencyFile"    ));
+            parameterList.emplace("BTagEfficiencyHistName" ,config.readStringOpt("parameters::BTagEfficiencyHistName"));
+        }
+        else if(weightsMethod == "None"){
+        }  
+        // else if(other selection type){
+        //     parameters fo be retreived;
+        // }  
+        else throw std::runtime_error("cannot recognize event choice WeightsMethod " + weightsMethod);
+    }
 
     oph::setParameterList(&parameterList);
 
@@ -189,7 +224,9 @@ int main(int argc, char** argv)
 
     SkimEffCounter ec;
 
-    oph::initializeUserDefinedBranches(ot);
+    oph::initializeObjectsForCuts(ot);
+
+    if(!is_data) oph::initializeObjectsForWeights(ot);
 
     jsonLumiFilter jlf;
     if (is_data)
@@ -218,34 +255,29 @@ int main(int argc, char** argv)
 
         ot.clear();
         EventInfo ei;
-
-        double weight = 1.;
-        if(!is_data){
-            // !!!!!!!!!!!  -------  FIXME: compute the weights -------  !!!!!!!!!!!
-            weight=0.75;
-        }
-        ec.updateProcessed(weight);
         
         if( !nat.getTrgOr() ) continue;
 
+        double weight = 1.;
         ec.updateTriggered(weight);
 
-        if (!oph::select_bbbb_jets(nat, ei)) continue;
+        if (!oph::select_bbbb_jets(nat, ei, ot)) continue;
 
         if (is_signal){
             oph::select_gen_HH(nat, ei);
             if (!oph::select_gen_bb_bb(nat, ei))
-                return 1;
-            
+                continue; 
         }
 
         if (is_VBF_sig){
             bool got_gen_VBF = oph::select_gen_VBF_partons(nat, ei);
             if (!got_gen_VBF){
                 cout << "Failed on iEv = " << iEv << " evt num = " << *(nat.event) << " run = " << *(nat.run) << endl;
-                return 1;
+                continue;
             }
         }
+
+        ec.updateProcessed(weight);
 
         oph::save_objects_for_cut(nat, ot);
 

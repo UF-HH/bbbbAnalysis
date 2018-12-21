@@ -1,4 +1,5 @@
 #include "CompositeCandidate.h"
+#include "Jet.h"
 
 void CompositeCandidate::setComponents(const Candidate& c1, const Candidate& c2)
 {
@@ -14,6 +15,18 @@ void CompositeCandidate::setComponents(const Candidate& c1, const Candidate& c2)
     
     return;
 }
+
+void CompositeCandidate::rebuildP4UsingRegressedPt(bool usePtRegressedCandidate1, bool usePtRegressedCandidate2){
+
+    TLorentzVector p4Candidate1 = usePtRegressedCandidate1 ? (dynamic_cast<Jet*>(cand1_.get()))->P4Regressed() : cand1_->P4();
+    TLorentzVector p4Candidate2 = usePtRegressedCandidate2 ? (dynamic_cast<Jet*>(cand2_.get()))->P4Regressed() : cand2_->P4();
+    // std::cout<< (dynamic_cast<Jet*>(cand1_.get()))->P4Regressed().Pt() << " - " <<cand1_->P4().Pt()<<" -> " << p4Candidate1.Pt()<<std::endl;
+    // std::cout<< (dynamic_cast<Jet*>(cand2_.get()))->P4Regressed().Pt() << " - " <<cand2_->P4().Pt()<<" -> " << p4Candidate2.Pt()<<std::endl;
+
+    p4_ = p4Candidate1 + p4Candidate2;
+
+}
+
 
 bool CompositeCandidate::sharesComponentWith(const CompositeCandidate& cc) const
 {

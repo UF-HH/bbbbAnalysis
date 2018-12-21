@@ -178,7 +178,7 @@ class NanoAODTree_SetBranchImpl {
         ReaderArrayPatch<Float_t>     Jet_pt                              {chain_, "Jet_pt", nJet, 100};
         ReaderArrayPatch<Float_t>     Jet_qgl                             {chain_, "Jet_qgl", nJet, 100};
         ReaderArrayPatch<Float_t>     Jet_rawFactor                       {chain_, "Jet_rawFactor", nJet, 100};
-        ReaderArrayPatch<Float_t>     Jet_bRegCorr                        {chain_, "Jet_bRegCorr", nJet, 100};
+        ReaderArrayPatch<Float_t>     Jet_bRegCorr                        {chain_, is_data_ ? "Jet_bRegCorr" : "Jet_bReg", nJet, 100};
         ReaderArrayPatch<Int_t>       Jet_electronIdx1                    {chain_, "Jet_electronIdx1", nJet, 100};
         ReaderArrayPatch<Int_t>       Jet_electronIdx2                    {chain_, "Jet_electronIdx2", nJet, 100};
         ReaderArrayPatch<Int_t>       Jet_jetId                           {chain_, "Jet_jetId", nJet, 100};
@@ -263,7 +263,7 @@ class NanoAODTree_SetBranchImpl {
         ReaderArrayPatch<Bool_t>      Photon_mvaID_WP90                   {chain_, "Photon_mvaID_WP90", nPhoton, 100};
         ReaderArrayPatch<Bool_t>      Photon_pixelSeed                    {chain_, "Photon_pixelSeed", nPhoton, 100};
         ReaderValuePatch<Int_t>       Pileup_nPU                          {chain_, "Pileup_nPU"};
-        ReaderValuePatch<Int_t>       Pileup_nTrueInt                     {chain_, "Pileup_nTrueInt"};
+        ReaderValuePatch<Float_t>     Pileup_nTrueInt                     {chain_, "Pileup_nTrueInt"};
         ReaderValuePatch<Float_t>     PuppiMET_phi                        {chain_, "PuppiMET_phi"};
         ReaderValuePatch<Float_t>     PuppiMET_pt                         {chain_, "PuppiMET_pt"};
         ReaderValuePatch<Float_t>     PuppiMET_sumEt                      {chain_, "PuppiMET_sumEt"};

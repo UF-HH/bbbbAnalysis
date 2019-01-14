@@ -129,13 +129,11 @@ void OfflineProducerHelper::initializeObjectsForWeights(OutputTree &ot){
         //do nothing
     }
     else if(weightsMethod == "FourBtag_EventReweighting"){
-        ot.declareUserFloatBranch("bTagWeight_bJets_central"    , 1.);
+        ot.declareUserFloatBranch("bTagWeight_central"          , 1.);
         ot.declareUserFloatBranch("bTagWeight_bJets_up"         , 1.);
         ot.declareUserFloatBranch("bTagWeight_bJets_down"       , 1.);
-        ot.declareUserFloatBranch("bTagWeight_cJets_central"    , 1.);
         ot.declareUserFloatBranch("bTagWeight_cJets_up"         , 1.);
         ot.declareUserFloatBranch("bTagWeight_cJets_down"       , 1.);
-        ot.declareUserFloatBranch("bTagWeight_lightJets_central", 1.);
         ot.declareUserFloatBranch("bTagWeight_lightJets_up"     , 1.);
         ot.declareUserFloatBranch("bTagWeight_lightJets_down"   , 1.);
 
@@ -157,44 +155,42 @@ void OfflineProducerHelper::initializeObjectsForWeights(OutputTree &ot){
 // reject events with leptons that may come from W and Z decays
 void OfflineProducerHelper::compute_weights_fourBtag_eventReweighting (const std::vector<Jet> &jets, NanoAODTree& nat, OutputTree &ot){
     
-    float bTagWeight_bJets_central     = 1.;
-    float bTagWeight_bJets_up          = 1.;
-    float bTagWeight_bJets_down        = 1.;
-    float bTagWeight_cJets_central     = 1.;
-    float bTagWeight_cJets_up          = 1.;
-    float bTagWeight_cJets_down        = 1.;
-    float bTagWeight_lightJets_central = 1.;
-    float bTagWeight_lightJets_up      = 1.;
-    float bTagWeight_lightJets_down    = 1.;
+    float tmpWeight_bJets_central     = 1.;
+    float tmpWeight_bJets_up          = 1.;
+    float tmpWeight_bJets_down        = 1.;
+    float tmpWeight_cJets_central     = 1.;
+    float tmpWeight_cJets_up          = 1.;
+    float tmpWeight_cJets_down        = 1.;
+    float tmpWeight_lightJets_central = 1.;
+    float tmpWeight_lightJets_up      = 1.;
+    float tmpWeight_lightJets_down    = 1.;
 
     for(const auto &iJet : jets){
         int jetFlavour = abs(get_property(iJet,Jet_partonFlavour));
         if(jetFlavour==5){
-            bTagWeight_bJets_central     *= btagCalibrationReader_bJets_    ->eval_auto_bounds("central", BTagEntry::FLAV_B   , iJet.P4().Eta(), iJet.P4().Pt());
-            bTagWeight_bJets_up          *= btagCalibrationReader_bJets_    ->eval_auto_bounds("up"     , BTagEntry::FLAV_B   , iJet.P4().Eta(), iJet.P4().Pt());
-            bTagWeight_bJets_down        *= btagCalibrationReader_bJets_    ->eval_auto_bounds("down"   , BTagEntry::FLAV_B   , iJet.P4().Eta(), iJet.P4().Pt());
+            tmpWeight_bJets_central     *= btagCalibrationReader_bJets_    ->eval_auto_bounds("central", BTagEntry::FLAV_B   , iJet.P4().Eta(), iJet.P4().Pt());
+            tmpWeight_bJets_up          *= btagCalibrationReader_bJets_    ->eval_auto_bounds("up"     , BTagEntry::FLAV_B   , iJet.P4().Eta(), iJet.P4().Pt());
+            tmpWeight_bJets_down        *= btagCalibrationReader_bJets_    ->eval_auto_bounds("down"   , BTagEntry::FLAV_B   , iJet.P4().Eta(), iJet.P4().Pt());
         }
         else if(jetFlavour==4){
-            bTagWeight_cJets_central     *= btagCalibrationReader_cJets_    ->eval_auto_bounds("central", BTagEntry::FLAV_C   , iJet.P4().Eta(), iJet.P4().Pt());
-            bTagWeight_cJets_up          *= btagCalibrationReader_cJets_    ->eval_auto_bounds("up"     , BTagEntry::FLAV_C   , iJet.P4().Eta(), iJet.P4().Pt());
-            bTagWeight_cJets_down        *= btagCalibrationReader_cJets_    ->eval_auto_bounds("down"   , BTagEntry::FLAV_C   , iJet.P4().Eta(), iJet.P4().Pt());
+            tmpWeight_cJets_central     *= btagCalibrationReader_cJets_    ->eval_auto_bounds("central", BTagEntry::FLAV_C   , iJet.P4().Eta(), iJet.P4().Pt());
+            tmpWeight_cJets_up          *= btagCalibrationReader_cJets_    ->eval_auto_bounds("up"     , BTagEntry::FLAV_C   , iJet.P4().Eta(), iJet.P4().Pt());
+            tmpWeight_cJets_down        *= btagCalibrationReader_cJets_    ->eval_auto_bounds("down"   , BTagEntry::FLAV_C   , iJet.P4().Eta(), iJet.P4().Pt());
         }
         else{
-            bTagWeight_lightJets_central *= btagCalibrationReader_lightJets_->eval_auto_bounds("central", BTagEntry::FLAV_UDSG, iJet.P4().Eta(), iJet.P4().Pt());
-            bTagWeight_lightJets_up      *= btagCalibrationReader_lightJets_->eval_auto_bounds("up"     , BTagEntry::FLAV_UDSG, iJet.P4().Eta(), iJet.P4().Pt());
-            bTagWeight_lightJets_down    *= btagCalibrationReader_lightJets_->eval_auto_bounds("down"   , BTagEntry::FLAV_UDSG, iJet.P4().Eta(), iJet.P4().Pt());
+            tmpWeight_lightJets_central *= btagCalibrationReader_lightJets_->eval_auto_bounds("central", BTagEntry::FLAV_UDSG, iJet.P4().Eta(), iJet.P4().Pt());
+            tmpWeight_lightJets_up      *= btagCalibrationReader_lightJets_->eval_auto_bounds("up"     , BTagEntry::FLAV_UDSG, iJet.P4().Eta(), iJet.P4().Pt());
+            tmpWeight_lightJets_down    *= btagCalibrationReader_lightJets_->eval_auto_bounds("down"   , BTagEntry::FLAV_UDSG, iJet.P4().Eta(), iJet.P4().Pt());
         }   
     }
 
-    ot.userFloat("bTagWeight_bJets_central"    ) = bTagWeight_bJets_central    ;
-    ot.userFloat("bTagWeight_bJets_up"         ) = bTagWeight_bJets_up         ;
-    ot.userFloat("bTagWeight_bJets_down"       ) = bTagWeight_bJets_down       ;
-    ot.userFloat("bTagWeight_cJets_central"    ) = bTagWeight_cJets_central    ;
-    ot.userFloat("bTagWeight_cJets_up"         ) = bTagWeight_cJets_up         ;
-    ot.userFloat("bTagWeight_cJets_down"       ) = bTagWeight_cJets_down       ;
-    ot.userFloat("bTagWeight_lightJets_central") = bTagWeight_lightJets_central;
-    ot.userFloat("bTagWeight_lightJets_up"     ) = bTagWeight_lightJets_up     ;
-    ot.userFloat("bTagWeight_lightJets_down"   ) = bTagWeight_lightJets_down   ;
+    ot.userFloat("bTagWeight_central"          ) = tmpWeight_bJets_central * tmpWeight_cJets_central * tmpWeight_lightJets_central ;
+    ot.userFloat("bTagWeight_bJets_up"         ) = tmpWeight_bJets_up      * tmpWeight_cJets_central * tmpWeight_lightJets_central ;
+    ot.userFloat("bTagWeight_bJets_down"       ) = tmpWeight_bJets_down    * tmpWeight_cJets_central * tmpWeight_lightJets_central ;
+    ot.userFloat("bTagWeight_cJets_up"         ) = tmpWeight_bJets_central * tmpWeight_cJets_up      * tmpWeight_lightJets_central ;
+    ot.userFloat("bTagWeight_cJets_down"       ) = tmpWeight_bJets_central * tmpWeight_cJets_down    * tmpWeight_lightJets_central ;
+    ot.userFloat("bTagWeight_lightJets_up"     ) = tmpWeight_bJets_central * tmpWeight_cJets_central * tmpWeight_lightJets_up      ;
+    ot.userFloat("bTagWeight_lightJets_down"   ) = tmpWeight_bJets_central * tmpWeight_cJets_central * tmpWeight_lightJets_down    ;
 
     return;
 }

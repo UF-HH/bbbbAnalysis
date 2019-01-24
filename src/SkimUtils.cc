@@ -82,6 +82,7 @@ void SkimUtils::fill_output_tree(OutputTree& ot, NanoAODTree& nat, EventInfo& ei
     ot.H2_bb_DeltaR  = *ei.H2_bb_DeltaR;
     COPY_m_pt_eta_phi_p4(HH)
     ot.HH_2DdeltaM  = *ei.HH_2DdeltaM;
+    ot.HH_m_kinFit  = *ei.HH_m_kinFit;
     
     // gen info are not stored for all samples --> set only if initialized (macro checks if object is initialized, else does not set)
     COPY_OPTIONAL_m_pt_eta_phi_p4(gen_H1)

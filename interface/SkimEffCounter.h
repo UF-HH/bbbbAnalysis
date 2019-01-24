@@ -11,6 +11,7 @@
 #include "TH1D.h"
 #include <memory>
 #include <iostream>
+#include <map>
 
 class SkimEffCounter {
     public:
@@ -18,41 +19,21 @@ class SkimEffCounter {
         SkimEffCounter();
         ~SkimEffCounter(){};
 
-        enum BinValue{
-            kNtot_w    = 1,
-            kNtot_uw   = 2,
-            kNtrg_w    = 3,
-            kNtrg_uw   = 4,
-            kNsel_w    = 5,
-            kNsel_uw   = 6,
-        };
-
-        void updateProcessed      (double evtW);
-        void updateTriggered      (double evtW);
-        void updateSelected       (double evtW);
-
-        double   getSumWProcessed()      {return Ntot_w;}
-        long int getNProcessed()         {return Ntot_uw;}
-        double   getSumWTriggered()      {return Ntrg_w;}
-        long int getNTriggered()         {return Ntrg_uw;}
-        double   getSumWSelected()       {return Nsel_w;}
-        long int getNSelected()          {return Nsel_uw;}
+        // _w  : weighted
+        // _uw : unweighted (plain ev count)
+        std::map<std::string,int>   binMap_;
+        std::map<std::string,float> binEntries_;
         
+        void updateProcessed      (double evtW);
+        void updateTriggered      ();
+        void updateSelected       ();
+
         void createHisto();
         int  write();
 
     private:
         std::unique_ptr<TH1D>  eff_histo_;
 
-        // _w  : weighted
-        // _uw : unweighted (plain ev count)
-        
-        double   Ntot_w;
-        long int Ntot_uw;
-        double   Ntrg_w;
-        long int Ntrg_uw;
-        double   Nsel_w;
-        long int Nsel_uw;
 
 };
 

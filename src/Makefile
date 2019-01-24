@@ -49,8 +49,8 @@ SONAME	 =  libbbbbAnalysis.so
 SONAME2  =  bbbbAnalysis
 SOFLAGS  =  -Wl,-soname,$(SONAME)
 
-GLIBS   =  $(ROOTGLIBS) -lm -ldl -rdynamic -lboost_program_options -lGenVector -lFoam -lMinuit -lTMVA -lMLP -lXMLIO -lGpad  -lTreePlayer -lRooFit -lRooFitCore -lRooStats
-
+CMSLIBS =  -L$(CMSSW_BASE)/lib/slc6_amd64_gcc700/ -lPhysicsToolsKinFitter 
+GLIBS   =  $(ROOTGLIBS) -lm -ldl -rdynamic -lboost_program_options -lGenVector -lFoam -lMinuit -lTMVA -lMLP -lXMLIO -lGpad  -lTreePlayer -lRooFit -lRooFitCore -lRooStats  $(CMSLIBS)
 
 #################################################
 #if mac 64

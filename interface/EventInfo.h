@@ -49,6 +49,7 @@ struct EventInfo{
     boost::optional<float> H2_bb_DeltaR;
     boost::optional<CompositeCandidate> HH;
     boost::optional<float> HH_2DdeltaM;
+    boost::optional<float> HH_m_kinFit;
 
     boost::optional<Jet> H1_b1;
     boost::optional<Jet> H1_b2;

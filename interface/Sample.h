@@ -20,6 +20,7 @@
 #include "TH1F.h"
 #include "TH2F.h"
 #include "Selection.h"
+#include "SkimEffCounter.h"
 
 
 class Sample
@@ -43,7 +44,7 @@ class Sample
 
         // standard ctor/dtor
         // Sample(std::string name, std::string treename="HTauTauTree");
-        Sample(std::string name, std::string filelistname, std::string treename="HTauTauTree", std::string histoname="h_eff", int binEffDen = 1);
+        Sample(std::string name, std::string filelistname, std::string treename="HTauTauTree", std::string histoname="h_eff", std::string binEffDen = "Ntot_w");
         
         // build from a list of other samples, histos are added together
         // NOTE: efficiency, ttree, and the other methods used for filling are not updated,
@@ -91,7 +92,7 @@ class Sample
         std::unique_ptr<TChain> tree_;
         std::string name_;
         
-        int    bin_eff_den_;
+        std::string bin_eff_den_;
         double eff_;
         double evt_num_;
         double evt_den_;

@@ -71,6 +71,7 @@ class OutputTree {
         float H2_bb_DeltaR;
         DECLARE_m_pt_eta_phi_p4(HH)
         float HH_2DdeltaM;
+        float HH_m_kinFit;
 
         //////////////////----- reco bs
         DECLARE_m_pt_ptRegressed_eta_phi_p4(H1_b1)

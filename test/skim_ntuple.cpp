@@ -164,19 +164,32 @@ int main(int argc, char** argv)
 
 
     if(!is_data){
-        const string weightsMethod = config.readStringOpt("parameters::WeightsMethod");
-        parameterList.emplace("WeightsMethod",weightsMethod);
-        if(weightsMethod == "FourBtag_EventReweighting"){
+        const string scaleFactorMethod = config.readStringOpt("parameters::ScaleFactorMethod");
+        parameterList.emplace("ScaleFactorMethod",scaleFactorMethod);
+        if(scaleFactorMethod == "FourBtag_ScaleFactor"){
             parameterList.emplace("BJetScaleFactorsFile"   ,config.readStringOpt("parameters::BJetScaleFactorsFile"  ));
             parameterList.emplace("BTagEfficiencyFile"     ,config.readStringOpt("parameters::BTagEfficiencyFile"    ));
             parameterList.emplace("BTagEfficiencyHistName" ,config.readStringOpt("parameters::BTagEfficiencyHistName"));
         }
-        else if(weightsMethod == "None"){
+        else if(scaleFactorMethod == "None"){
         }  
         // else if(other selection type){
         //     parameters fo be retreived;
         // }  
-        else throw std::runtime_error("cannot recognize event choice WeightsMethod " + weightsMethod);
+        else throw std::runtime_error("cannot recognize event choice ScaleFactorMethod " + scaleFactorMethod);
+    }
+
+    if(!is_data){
+        const string weightMethod = config.readStringOpt("parameters::WeightMethod");
+        parameterList.emplace("WeightMethod",weightMethod);
+        if(weightMethod == "StandardWeight"){
+        }
+        else if(weightMethod == "None"){
+        }  
+        // else if(other selection type){
+        //     parameters fo be retreived;
+        // }  
+        else throw std::runtime_error("cannot recognize event choice WeightMethod " + weightMethod);
     }
 
     oph::setParameterList(&parameterList);
@@ -226,7 +239,11 @@ int main(int argc, char** argv)
 
     oph::initializeObjectsForCuts(ot);
 
-    if(!is_data) oph::initializeObjectsForWeights(ot);
+    if(!is_data)
+    {
+        oph::initializeObjectsForScaleFactors(ot);
+        oph::initializeObjectsForEventWeight(ot,ec);
+    }
 
     jsonLumiFilter jlf;
     if (is_data)
@@ -251,15 +268,19 @@ int main(int argc, char** argv)
         if (is_data && !jlf.isValid(*nat.run, *nat.luminosityBlock)){
             continue; // not a valid lumi
         }
-        
+              
 
         ot.clear();
         EventInfo ei;
         
+        double weight = 1.;
+        if(!is_data) weight = oph::calculateEventWeight(nat, ot, ec);
+
+        ec.updateProcessed(weight);
+
         if( !nat.getTrgOr() ) continue;
 
-        double weight = 1.;
-        ec.updateTriggered(weight);
+        ec.updateTriggered();
 
         if (!oph::select_bbbb_jets(nat, ei, ot)) continue;
 
@@ -277,14 +298,15 @@ int main(int argc, char** argv)
             }
         }
 
-        ec.updateProcessed(weight);
 
         oph::save_objects_for_cut(nat, ot);
 
-        ec.updateSelected(weight);
+        ec.updateSelected();
         su::fill_output_tree(ot, nat, ei);
 
     }
+
+    oph::clean();
 
     outputFile.cd();
     ot.write();

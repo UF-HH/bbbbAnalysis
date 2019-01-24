@@ -19,6 +19,7 @@
 #include "OutputTree.h"
 #include "BTagCalibrationStandalone.h"
 #include "Jet.h"
+#include "SkimEffCounter.h"
 
 #include <array>
 #include <utility>
@@ -37,6 +38,11 @@ namespace OfflineProducerHelper {
     ///static bacause if not I got a glibc detected when the execution is completed
 
     const std::map<std::string,any> *parameterList_;
+    //  weights are stored together with their corrections:
+    //  map < weightName,     pair < nominal ,  map < corrName  , corrValue > > >  
+    std::map<std::string, std::pair< float, std::map<std::string, float> > > weightMap_;
+    void clean() {weightMap_.clear();}
+
     void setParameterList(const std::map<std::string,any> *parameterList) {parameterList_=parameterList;}
 
     void initializeObjectsForCuts(OutputTree &ot);
@@ -46,9 +52,16 @@ namespace OfflineProducerHelper {
     void save_WandZleptondecays (NanoAODTree& nat, OutputTree &ot);
 
 
-    void initializeObjectsForWeights(OutputTree &ot);
-    // compute events weight for four be 0- event reweighting
-    void compute_weights_fourBtag_eventReweighting (const std::vector<Jet> &jets, NanoAODTree& nat, OutputTree &ot);
+    void initializeObjectsForEventWeight(OutputTree &ot, SkimEffCounter &ec);
+    // functions to select events based on non-jet particles:
+    float (*calculateEventWeight)(NanoAODTree&, OutputTree&, SkimEffCounter &ec);
+    // reject events with leptons that may come from W and Z decays
+    float calculateEventWeight_AllWeights(NanoAODTree& nat, OutputTree &ot, SkimEffCounter &ec);
+    
+    
+    void initializeObjectsForScaleFactors(OutputTree &ot);
+    // compute events weight for four b
+    void compute_scaleFactors_fourBtag_eventScaleFactor (const std::vector<Jet> &jets, NanoAODTree& nat, OutputTree &ot);
 
 
     BTagCalibrationReader *btagCalibrationReader_lightJets_;

@@ -16,7 +16,7 @@ using namespace std;
 //     nentries_ = 0.;
 // }
 
-Sample::Sample (string name, string filelistname, string treename, string histoname, std::string binEffDen)
+Sample::Sample (string name, string filelistname, string treename, string histoname)
 // Sample (name, treename)
 {
     name_ = name;
@@ -25,9 +25,7 @@ Sample::Sample (string name, string filelistname, string treename, string histon
     filelistname_ = filelistname;
     eff_         = 0.;
     evt_num_     = 0.;
-    evt_den_     = 0.;
     nentries_    = 0.;
-    bin_eff_den_ = binEffDen;
     treename_    = treename;
     histoname_   = histoname;
 }
@@ -99,11 +97,20 @@ bool Sample::openFileAndTree(TH1F *hCutInSkim, const std::vector<Selection> &sel
             ++counter;
             tree_->Add(line.c_str());
             
-            TFile* f = new TFile (line.c_str());
+            TFile* f = TFile::Open (line.c_str());
             TH1F* hCutTmp = (TH1F*) f->Get(histoname_.c_str());
             evt_num_  += hCutTmp->GetBinContent ( hCutTmp->GetXaxis()->FindBin("Ntot_uw"          ) ) ;
-            evt_den_  += hCutTmp->GetBinContent ( hCutTmp->GetXaxis()->FindBin(bin_eff_den_.data()) ) ;
+            // evt_den_  += hCutTmp->GetBinContent ( hCutTmp->GetXaxis()->FindBin(bin_eff_den_.data()) ) ;
             nentries_ += hCutTmp->GetBinContent ( hCutTmp->GetXaxis()->FindBin("Nsel_uw"          ) ) ; // NB! rounding errors could make this different from the actual entries in the tree --> better to use TH1D
+            for(int iBin = hCutTmp->GetXaxis()->FindBin("Ntot_w"); iBin<=hCutTmp->GetNbinsX(); ++iBin)
+            {
+                std::string binLabel = hCutTmp->GetXaxis()->GetBinLabel(iBin);
+                if(evt_den_map_.find(binLabel)==evt_den_map_.end())
+                {
+                    evt_den_map_[binLabel] = 0.;
+                }
+                evt_den_map_[binLabel] += hCutTmp->GetBinContent (iBin);
+            }
             if (!cutHistogramSet){
                 cutHistogramSet=true;
                 skimNBins = 3;
@@ -125,9 +132,9 @@ bool Sample::openFileAndTree(TH1F *hCutInSkim, const std::vector<Selection> &sel
             delete f;
         }
     }
-    eff_ = evt_num_ / evt_den_ ;
+    eff_ = evt_num_ / evt_den_map_["Ntot_w"] ;
     cout << "  ---> read " << counter << " files, " << nentries_ << " events" << endl;
-    cout << "  ---> efficiency is " << eff_ << "(" << evt_num_ << "/" << evt_den_ << ")" << endl;
+    cout << "  ---> efficiency is " << eff_ << "(" << evt_num_ << "/" << evt_den_map_["Ntot_w"] << ")" << endl;
 
     return true;
     // fIn_ = TFile::Open(filename.c_str());
@@ -148,7 +155,7 @@ bool Sample::openFileAndTree(TH1F *hCutInSkim, const std::vector<Selection> &sel
     // cout << "  ---> success, tree contains " << nentries_ << " entries" << endl;
 }
 
-void Sample::scaleAll(double scale)
+void Sample::scaleAll(double luminosity)
 {
     // 1D
     for (uint isel = 0; isel < plots_.size(); ++isel)
@@ -161,6 +168,16 @@ void Sample::scaleAll(double scale)
             {
                 // cout << "isyst " << isyst << "/" << plots_.at(isel).at(ivar).size() << endl;
                 // cout << " >>>>> : >>>>> scaling histo " << plots_.at(isel).at(ivar).at(isyst)->GetName() << " integral = " << plots_.at(isel).at(ivar).at(isyst)->Integral() << " by " << scale << endl;
+                double_t scale;
+                if(evt_den_map_.find(plots_.at(isel).at(ivar).key(isyst))!=evt_den_map_.end())
+                {
+                    scale = luminosity/evt_den_map_[plots_.at(isel).at(ivar).key(isyst)];
+                }
+                else
+                {
+                    scale = luminosity/evt_den_map_["Ntot_w"];
+                }
+
                 plots_.at(isel).at(ivar).at(isyst)->Scale(scale);
                 // cout << "DONE" << endl;
             }
@@ -177,6 +194,15 @@ void Sample::scaleAll(double scale)
             for (uint isyst = 0; isyst < plots2D_.at(isel).at(ivar).size(); ++isyst)
             {
                 // cout << "isyst " << isyst << "/" << plots_.at(isel).at(ivar).size() << endl;
+                double_t scale;
+                if(evt_den_map_.find(plots_.at(isel).at(ivar).key(isyst))!=evt_den_map_.end())
+                {
+                    scale = luminosity/evt_den_map_[plots_.at(isel).at(ivar).key(isyst)];
+                }
+                else
+                {
+                    scale = luminosity/evt_den_map_["Ntot_w"];
+                }
                 plots2D_.at(isel).at(ivar).at(isyst)->Scale(scale);
                 // cout << "DONE" << endl;
             }

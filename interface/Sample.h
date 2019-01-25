@@ -44,7 +44,7 @@ class Sample
 
         // standard ctor/dtor
         // Sample(std::string name, std::string treename="HTauTauTree");
-        Sample(std::string name, std::string filelistname, std::string treename="HTauTauTree", std::string histoname="h_eff", std::string binEffDen = "Ntot_w");
+        Sample(std::string name, std::string filelistname, std::string treename="HTauTauTree", std::string histoname="h_eff");
         
         // build from a list of other samples, histos are added together
         // NOTE: efficiency, ttree, and the other methods used for filling are not updated,
@@ -61,16 +61,16 @@ class Sample
         bool openFileAndTree(TH1F *hCutInSkim, const std::vector<Selection> &selections);
         // void getEfficiency(std::string histoname="h_eff");
         long long int getEntries(){return nentries_;}
-        void setEffBin(int ibin){
-            std::cout << "  ---> INFO: setting eff. bin " << ibin << " for sample " << name_ << std::endl;
-            bin_eff_den_ = ibin;
-        }
-        double getEffDenom(){return evt_den_;}
+        // void setEffBin(int ibin){
+        //     std::cout << "  ---> INFO: setting eff. bin " << ibin << " for sample " << name_ << std::endl;
+        //     bin_eff_den_ = ibin;
+        // }
+        // double getEffDenom(){return evt_den_;}
 
         // plot handling
         selColl& plots (){return plots_;}
         selColl2D& plots2D (){return plots2D_;}
-        void scaleAll(double scale);
+        void scaleAll(double luminosity);
 
         // specific weights for a certain sample
         void setWeights (std::vector<Weight> weights) {weights_ = weights;}
@@ -92,10 +92,9 @@ class Sample
         std::unique_ptr<TChain> tree_;
         std::string name_;
         
-        std::string bin_eff_den_;
         double eff_;
         double evt_num_;
-        double evt_den_;
+        std::map<std::string,double> evt_den_map_;
         sType  sampleType_; // used in general to label the type of sample
 
         long long int nentries_;

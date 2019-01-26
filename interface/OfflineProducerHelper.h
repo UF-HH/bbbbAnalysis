@@ -41,8 +41,12 @@ namespace OfflineProducerHelper {
     //  weights are stored together with their corrections:
     //  map < weightName,     pair < nominal ,  map < corrName  , corrValue > > >  
     std::map<std::string, std::pair< float, std::map<std::string, float> > > weightMap_;
-    std::map<std::string, TH1D*> PUWeightHistogramMap_;
-    void clean() {weightMap_.clear();}
+    // std::map<std::string, TH1D*> PUWeightHistogramMap_;
+    std::map<std::string, std::map<std::pair<float,float>,float> > PUWeightMap_;
+    void clean() {
+        weightMap_.clear();
+        PUWeightMap_.clear();
+    }
 
     void setParameterList(const std::map<std::string,any> *parameterList) {parameterList_=parameterList;}
 

@@ -223,12 +223,13 @@ void OfflineProducerHelper::initializeObjectsForEventWeight(OutputTree &ot, Skim
         weightMap_[branchName].first = 1.;
         std::vector<std::string> puWeightVariation = {"_up","_down"};
         TFile *PUWeightFile = TFile::Open(PUWeightFileName.data());
+        std::map<std::string, TH1D*> PUWeightHistogramMap;
         if(PUWeightFile == NULL){
             cerr << "**  Pileup weight file " << PUWeightFileName << " not found, aborting" << endl;
             abort();
         }
-        PUWeightHistogramMap_[branchName] = (TH1D*) PUWeightFile->Get("PUweights");
-        PUWeightHistogramMap_[branchName]->SetDirectory(0);
+        PUWeightHistogramMap[branchName] = (TH1D*) PUWeightFile->Get("PUweights");
+        // PUWeightHistogramMap[branchName]->SetDirectory(0);
 
         for(unsigned int var = 0; var<puWeightVariation.size(); ++var)
         {
@@ -237,9 +238,18 @@ void OfflineProducerHelper::initializeObjectsForEventWeight(OutputTree &ot, Skim
             weightMap_[branchName].second[variationBranch] = 1.;           
             ec.binMap_[variationBranch] = ++weightBin;
             ec.binEntries_[variationBranch] = 1.;
-            PUWeightHistogramMap_[variationBranch] = (TH1D*) PUWeightFile->Get(("PUweights"+puWeightVariation[var]).data());
-            PUWeightHistogramMap_[variationBranch]->SetDirectory(0);
+            PUWeightHistogramMap[variationBranch] = (TH1D*) PUWeightFile->Get(("PUweights"+puWeightVariation[var]).data());
+            // PUWeightHistogramMap[variationBranch]->SetDirectory(0);
         }
+
+        for(const auto & histogram : PUWeightHistogramMap)
+        {
+            for(int iBin=1; iBin<=histogram.second->GetNbinsX(); ++iBin)
+            {
+                PUWeightMap_[histogram.first][std::pair<float,float>(histogram.second->GetBinLowEdge(iBin),histogram.second->GetBinLowEdge(iBin+1))] = histogram.second->GetBinContent(iBin);
+            }
+        }
+
         PUWeightFile->Close();
 
         //genWeight (no weight variations)
@@ -312,13 +322,20 @@ float OfflineProducerHelper::calculateEventWeight_AllWeights(NanoAODTree& nat, O
     }
 
     float eventWeight = 1.;
-    float tmpWeight;
+    float tmpWeight = 1.;
     std::string branchName;
 
     // PUWeight need get pu from histograms
     branchName = "PUWeight";
     float eventPU = *(nat.Pileup_nTrueInt);
-    tmpWeight = PUWeightHistogramMap_[branchName]->GetBinContent(PUWeightHistogramMap_[branchName]->FindBin(eventPU));
+    for(const auto & weightBin : PUWeightMap_[branchName])
+    {
+        if(eventPU >= weightBin.first.first && eventPU < weightBin.first.second)
+        {
+            tmpWeight = weightBin.second;
+            break;
+        }
+    }
     tmpWeight = tmpWeight==0 ? 1 : tmpWeight; //set to 1 if weight is 0
     ot.userFloat(branchName) = tmpWeight;
     weightMap_[branchName].first = tmpWeight;
@@ -327,7 +344,14 @@ float OfflineProducerHelper::calculateEventWeight_AllWeights(NanoAODTree& nat, O
     for(unsigned int var = 0; var<puWeightVariation.size(); ++var)
     {
         std::string variationBranch = branchName + puWeightVariation[var];
-        tmpWeight = PUWeightHistogramMap_[variationBranch]->GetBinContent(PUWeightHistogramMap_[variationBranch]->FindBin(eventPU));
+        for(const auto & weightBin : PUWeightMap_[variationBranch])
+        {
+            if(eventPU >= weightBin.first.first && eventPU < weightBin.first.second)
+            {
+                tmpWeight = weightBin.second;
+                break;
+            }
+        }
         tmpWeight = tmpWeight==0 ? 1 : tmpWeight; //set to 1 if weight is 0
         ot.userFloat(variationBranch) = tmpWeight;
         weightMap_[branchName].second[variationBranch] = tmpWeight;           

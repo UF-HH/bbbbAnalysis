@@ -54,6 +54,7 @@ int main(int argc, char** argv)
         // optional
         ("xs"       , po::value<float>(), "cross section [pb]")
         ("maxEvts"  , po::value<int>()->default_value(-1), "max number of events to process")
+        ("puWeight" , po::value<string>()->default_value(""), "PU weight file name")
         // flags
         ("is-data",    po::value<bool>()->zero_tokens()->implicit_value(true)->default_value(false), "mark as a data sample (default is false)")
         ("is-signal",  po::value<bool>()->zero_tokens()->implicit_value(true)->default_value(false), "mark as a HH signal sample (default is false)")
@@ -183,6 +184,10 @@ int main(int argc, char** argv)
         const string weightMethod = config.readStringOpt("parameters::WeightMethod");
         parameterList.emplace("WeightMethod",weightMethod);
         if(weightMethod == "StandardWeight"){
+            if(opts["puWeight"].as<string>()==""){
+                cerr << "** [ERROR] please provide PU weight file needed for WeightMethod " << weightMethod  << endl;
+                return 1;
+            }
         }
         else if(weightMethod == "None"){
         }  
@@ -242,7 +247,7 @@ int main(int argc, char** argv)
     if(!is_data)
     {
         oph::initializeObjectsForScaleFactors(ot);
-        oph::initializeObjectsForEventWeight(ot,ec);
+        oph::initializeObjectsForEventWeight(ot,ec,opts["puWeight"].as<string>());
     }
 
     jsonLumiFilter jlf;

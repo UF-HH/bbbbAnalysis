@@ -2,6 +2,7 @@
 #include <iostream>
 #include <iomanip>
 #include <cmath>
+#include <stdlib.h>    
 
 #include "CompositeCandidate.h"
 #include "Jet.h"
@@ -138,7 +139,7 @@ void OfflineProducerHelper::initializeObjectsForScaleFactors(OutputTree &ot){
         ot.declareUserFloatBranch("bTagScaleFactor_lightJets_up"     , 1.);
         ot.declareUserFloatBranch("bTagScaleFactor_lightJets_down"   , 1.);
 
-        BTagCalibration btagCalibration("DeepCSV","scaleFactors/DeepCSV_Moriond17_B_H.csv");    
+        BTagCalibration btagCalibration("DeepCSV",any_cast<string>(parameterList_->at("BJetScaleFactorsFile")));    
         btagCalibrationReader_lightJets_ = new BTagCalibrationReader(BTagEntry::OP_MEDIUM,"central",{"up", "down"});      
         btagCalibrationReader_cJets_     = new BTagCalibrationReader(BTagEntry::OP_MEDIUM,"central",{"up", "down"});      
         btagCalibrationReader_bJets_     = new BTagCalibrationReader(BTagEntry::OP_MEDIUM,"central",{"up", "down"}); 
@@ -199,7 +200,7 @@ void OfflineProducerHelper::compute_scaleFactors_fourBtag_eventScaleFactor (cons
 
 // ----------------- Compute weights - BEGIN ----------------- //
 
-void OfflineProducerHelper::initializeObjectsForEventWeight(OutputTree &ot, SkimEffCounter &ec)
+void OfflineProducerHelper::initializeObjectsForEventWeight(OutputTree &ot, SkimEffCounter &ec, std::string PUWeightFileName)
 {
 
     string weightsMethod = any_cast<string>(parameterList_->at("WeightMethod"));
@@ -214,6 +215,32 @@ void OfflineProducerHelper::initializeObjectsForEventWeight(OutputTree &ot, Skim
         std::string branchName;
 
         int weightBin = ec.binMap_.size();
+
+        // PUWeight need to store histograms from pu files
+        branchName = "PUWeight";
+        ot.declareUserFloatBranch(branchName, 1.);
+        weightMap_[branchName] = std::pair< float, std::map<std::string, float> >();
+        weightMap_[branchName].first = 1.;
+        std::vector<std::string> puWeightVariation = {"_up","_down"};
+        TFile *PUWeightFile = TFile::Open(PUWeightFileName.data());
+        if(PUWeightFile == NULL){
+            cerr << "**  Pileup weight file " << PUWeightFileName << " not found, aborting" << endl;
+            abort();
+        }
+        PUWeightHistogramMap_[branchName] = (TH1D*) PUWeightFile->Get("PUweights");
+        PUWeightHistogramMap_[branchName]->SetDirectory(0);
+
+        for(unsigned int var = 0; var<puWeightVariation.size(); ++var)
+        {
+            std::string variationBranch = branchName + puWeightVariation[var];
+            ot.declareUserFloatBranch(variationBranch, 1.);
+            weightMap_[branchName].second[variationBranch] = 1.;           
+            ec.binMap_[variationBranch] = ++weightBin;
+            ec.binEntries_[variationBranch] = 1.;
+            PUWeightHistogramMap_[variationBranch] = (TH1D*) PUWeightFile->Get(("PUweights"+puWeightVariation[var]).data());
+            PUWeightHistogramMap_[variationBranch]->SetDirectory(0);
+        }
+        PUWeightFile->Close();
 
         //genWeight (no weight variations)
         branchName = "genWeight";
@@ -275,22 +302,6 @@ void OfflineProducerHelper::initializeObjectsForEventWeight(OutputTree &ot, Skim
 float OfflineProducerHelper::calculateEventWeight_AllWeights(NanoAODTree& nat, OutputTree &ot, SkimEffCounter &ec)
 {
 
-    // NanoReaderValue<Float_t>   genWeight                            {fReader, "genWeight"};
-    // NanoReaderValue<Float_t>   LHEWeight_originalXWGTUP             {fReader, "LHEWeight_originalXWGTUP"};
-    // NanoReaderValue<UInt_t>    nLHEPdfWeight                        {fReader, "nLHEPdfWeight"};
-    // NanoReaderArray<Float_t>   LHEPdfWeight                         {fReader, "LHEPdfWeight"};
-    // NanoReaderValue<UInt_t>    nLHEScaleWeight                      {fReader, "nLHEScaleWeight"};
-    // NanoReaderArray<Float_t>   LHEScaleWeight                       {fReader, "LHEScaleWeight"};
-
-
-    //genWeight (no weight variations)
-    // std::string branchName = "genWeight";
-    // ot.declareUserFloatBranch(branchName, 1.);
-    // weightMap_[branchName] = std::pair< float, std::map<std::string, float> >();
-    // weightMap_[branchName].first = 1.;
-
-    //reset weight map:
-    // std::map<std::string, std::pair< float, std::map<std::string, float> > > weightMap_;
     for(auto & weight : weightMap_)
     {
         weight.second.first = 1.;
@@ -303,6 +314,24 @@ float OfflineProducerHelper::calculateEventWeight_AllWeights(NanoAODTree& nat, O
     float eventWeight = 1.;
     float tmpWeight;
     std::string branchName;
+
+    // PUWeight need get pu from histograms
+    branchName = "PUWeight";
+    float eventPU = *(nat.Pileup_nTrueInt);
+    tmpWeight = PUWeightHistogramMap_[branchName]->GetBinContent(PUWeightHistogramMap_[branchName]->FindBin(eventPU));
+    tmpWeight = tmpWeight==0 ? 1 : tmpWeight; //set to 1 if weight is 0
+    ot.userFloat(branchName) = tmpWeight;
+    weightMap_[branchName].first = tmpWeight;
+    eventWeight *= tmpWeight;
+    std::vector<std::string> puWeightVariation = {"_up","_down"};
+    for(unsigned int var = 0; var<puWeightVariation.size(); ++var)
+    {
+        std::string variationBranch = branchName + puWeightVariation[var];
+        tmpWeight = PUWeightHistogramMap_[variationBranch]->GetBinContent(PUWeightHistogramMap_[variationBranch]->FindBin(eventPU));
+        tmpWeight = tmpWeight==0 ? 1 : tmpWeight; //set to 1 if weight is 0
+        ot.userFloat(variationBranch) = tmpWeight;
+        weightMap_[branchName].second[variationBranch] = tmpWeight;           
+    }
 
     //genWeight (no weight variations)
     branchName = "genWeight";

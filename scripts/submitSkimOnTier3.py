@@ -197,7 +197,7 @@ if args.tar:
         'lib/',
         'config/',
         'data/',
-        'scaleFactors/'
+        'weights/'
     ]
 
     command = 'tar -zcf {0} '.format(tarLFN)

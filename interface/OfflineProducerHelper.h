@@ -41,6 +41,7 @@ namespace OfflineProducerHelper {
     //  weights are stored together with their corrections:
     //  map < weightName,     pair < nominal ,  map < corrName  , corrValue > > >  
     std::map<std::string, std::pair< float, std::map<std::string, float> > > weightMap_;
+    std::map<std::string, TH1D*> PUWeightHistogramMap_;
     void clean() {weightMap_.clear();}
 
     void setParameterList(const std::map<std::string,any> *parameterList) {parameterList_=parameterList;}
@@ -52,7 +53,7 @@ namespace OfflineProducerHelper {
     void save_WandZleptondecays (NanoAODTree& nat, OutputTree &ot);
 
 
-    void initializeObjectsForEventWeight(OutputTree &ot, SkimEffCounter &ec);
+    void initializeObjectsForEventWeight(OutputTree &ot, SkimEffCounter &ec, std::string PUWeightFileName);
     // functions to select events based on non-jet particles:
     float (*calculateEventWeight)(NanoAODTree&, OutputTree&, SkimEffCounter &ec);
     // reject events with leptons that may come from W and Z decays

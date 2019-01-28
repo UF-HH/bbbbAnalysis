@@ -4,6 +4,7 @@
 ** date   : 25/01/2019
 ** brief  : Obtaing PU weights from brilcalc PU and MC sample
 */
+// example: ./bin/get_sample_PU_weights.exe --realPU weights/Collision16PileupHistogram.root --realPU_up weights/Collision16PileupHistogramUp.root --realPU_down weights/Collision16PileupHistogramDown.root --input inputFiles/2016ResonantDiHiggs4BDataSets/MCSignal_BulkGravTohhTohbbhbb_narrow_M-1000_13TeV-madgraph.txt
 
 #include <iostream>
 #include <string>

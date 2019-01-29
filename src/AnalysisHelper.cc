@@ -193,6 +193,7 @@ void AnalysisHelper::saveOutputsToFile()
                     {
                         // cout << "isyst " << isyst << "/" << plotSet.at(isel).at(ivar).size() << endl;
                         plotSet.at(isel).at(ivar).at(isyst)->Write();
+                        plotSet.at(isel).at(ivar).at(isyst)->Delete();
                         // cout << "DONE" << endl;
                     }
                 }

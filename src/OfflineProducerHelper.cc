@@ -264,7 +264,7 @@ void OfflineProducerHelper::initializeObjectsForEventWeight(OutputTree &ot, Skim
         weightMap_[branchName] = std::pair< float, std::map<std::string, float> >();
         weightMap_[branchName].first = 1.;
         // LHEPdfWeight weight variations
-        for(unsigned int var = 1; var<=100; ++var)
+        for(unsigned int var = 0; var<=100; ++var)
         {
             std::string variationBranch = branchName + "_var" + std::to_string(var);
             ot.declareUserFloatBranch(variationBranch, 1.);
@@ -367,13 +367,13 @@ float OfflineProducerHelper::calculateEventWeight_AllWeights(NanoAODTree& nat, O
 
     // LHEPdfWeight
     branchName = "LHEPdfWeight";
-    tmpWeight = nat.LHEPdfWeight.At(0);
+    tmpWeight = 1.;
     tmpWeight = tmpWeight==0 ? 1 : tmpWeight; //set to 1 if weight is 0
     ot.userFloat(branchName) = tmpWeight;
     weightMap_[branchName].first = tmpWeight;
     eventWeight *= tmpWeight;
     // LHEPdfWeight weight variations
-    for(unsigned int var = 1; var<=100; ++var)
+    for(unsigned int var = 0; var<=100; ++var)
     {
         tmpWeight = nat.LHEPdfWeight.At(var);
         tmpWeight = tmpWeight==0 ? 1 : tmpWeight; //set to 1 if weight is 0

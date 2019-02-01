@@ -193,6 +193,7 @@ void AnalysisHelper::saveOutputsToFile()
                     {
                         // cout << "isyst " << isyst << "/" << plotSet.at(isel).at(ivar).size() << endl;
                         plotSet.at(isel).at(ivar).at(isyst)->Write();
+                        plotSet.at(isel).at(ivar).at(isyst)->Delete();
                         // cout << "DONE" << endl;
                     }
                 }
@@ -266,11 +267,11 @@ shared_ptr<Sample> AnalysisHelper::openSample(string sampleName)
     else if (DEBUG) cout << "..........DEBUG: " << filename << " is a file" << endl;
 
     shared_ptr<Sample> sample (new Sample(sampleName, filename, sample_tree_name_, sample_heff_name_));
-    if (sampleCfg_->hasOpt(Form("userEffBin::%s",sampleName.c_str())))
-    {
-        int ubin = sampleCfg_->readIntOpt(Form("userEffBin::%s",sampleName.c_str()));
-        sample->setEffBin(ubin);
-    }
+    // if (sampleCfg_->hasOpt(Form("userEffBin::%s",sampleName.c_str())))
+    // {
+    //     int ubin = sampleCfg_->readIntOpt(Form("userEffBin::%s",sampleName.c_str()));
+    //     sample->setEffBin(ubin);
+    // }
 
     hCutInSkim_ = new TH1F();
     bool success = sample->openFileAndTree(hCutInSkim_,selections_);
@@ -693,6 +694,7 @@ vector<pair<string, string> > AnalysisHelper::readWeightSysts(std::string name, 
             elem.erase(0, pos + delimiter.length());
         }
         tokens.push_back(elem); // last part splitted
+        if(tokens.size() == 1) tokens.push_back(elem); //to handle better weights from samples
         if (tokens.size() != 2)
         {
             cerr << "** AnalysisHelper : readWeightSyst : error : could not parse entry " << elem << " of " << section << "::" << name << " , skipping..." << endl;
@@ -1177,7 +1179,7 @@ void AnalysisHelper::fillHistosSample(Sample& sample)
 
     // filling is finished, scale to the sample denominator evt sum to include acceptance
     if (sample.getType() != Sample::kData)
-        sample.scaleAll(lumi_/sample.getEffDenom());
+        sample.scaleAll(lumi_);
 }
 
 void AnalysisHelper::activateBranches(Sample& sample)

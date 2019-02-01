@@ -54,6 +54,7 @@ int main(int argc, char** argv)
         // optional
         ("xs"       , po::value<float>(), "cross section [pb]")
         ("maxEvts"  , po::value<int>()->default_value(-1), "max number of events to process")
+        ("puWeight" , po::value<string>()->default_value(""), "PU weight file name")
         // flags
         ("is-data",    po::value<bool>()->zero_tokens()->implicit_value(true)->default_value(false), "mark as a data sample (default is false)")
         ("is-signal",  po::value<bool>()->zero_tokens()->implicit_value(true)->default_value(false), "mark as a HH signal sample (default is false)")
@@ -164,19 +165,36 @@ int main(int argc, char** argv)
 
 
     if(!is_data){
-        const string weightsMethod = config.readStringOpt("parameters::WeightsMethod");
-        parameterList.emplace("WeightsMethod",weightsMethod);
-        if(weightsMethod == "FourBtag_EventReweighting"){
+        const string scaleFactorMethod = config.readStringOpt("parameters::ScaleFactorMethod");
+        parameterList.emplace("ScaleFactorMethod",scaleFactorMethod);
+        if(scaleFactorMethod == "FourBtag_ScaleFactor"){
             parameterList.emplace("BJetScaleFactorsFile"   ,config.readStringOpt("parameters::BJetScaleFactorsFile"  ));
             parameterList.emplace("BTagEfficiencyFile"     ,config.readStringOpt("parameters::BTagEfficiencyFile"    ));
             parameterList.emplace("BTagEfficiencyHistName" ,config.readStringOpt("parameters::BTagEfficiencyHistName"));
         }
-        else if(weightsMethod == "None"){
+        else if(scaleFactorMethod == "None"){
         }  
         // else if(other selection type){
         //     parameters fo be retreived;
         // }  
-        else throw std::runtime_error("cannot recognize event choice WeightsMethod " + weightsMethod);
+        else throw std::runtime_error("cannot recognize event choice ScaleFactorMethod " + scaleFactorMethod);
+    }
+
+    if(!is_data){
+        const string weightMethod = config.readStringOpt("parameters::WeightMethod");
+        parameterList.emplace("WeightMethod",weightMethod);
+        if(weightMethod == "StandardWeight"){
+            if(opts["puWeight"].as<string>()==""){
+                cerr << "** [ERROR] please provide PU weight file needed for WeightMethod " << weightMethod  << endl;
+                return 1;
+            }
+        }
+        else if(weightMethod == "None"){
+        }  
+        // else if(other selection type){
+        //     parameters fo be retreived;
+        // }  
+        else throw std::runtime_error("cannot recognize event choice WeightMethod " + weightMethod);
     }
 
     oph::setParameterList(&parameterList);
@@ -226,7 +244,11 @@ int main(int argc, char** argv)
 
     oph::initializeObjectsForCuts(ot);
 
-    if(!is_data) oph::initializeObjectsForWeights(ot);
+    if(!is_data)
+    {
+        oph::initializeObjectsForScaleFactors(ot);
+        oph::initializeObjectsForEventWeight(ot,ec,opts["puWeight"].as<string>());
+    }
 
     jsonLumiFilter jlf;
     if (is_data)
@@ -251,15 +273,19 @@ int main(int argc, char** argv)
         if (is_data && !jlf.isValid(*nat.run, *nat.luminosityBlock)){
             continue; // not a valid lumi
         }
-        
+              
 
         ot.clear();
         EventInfo ei;
         
+        double weight = 1.;
+        if(!is_data) weight = oph::calculateEventWeight(nat, ot, ec);
+
+        ec.updateProcessed(weight);
+
         if( !nat.getTrgOr() ) continue;
 
-        double weight = 1.;
-        ec.updateTriggered(weight);
+        ec.updateTriggered();
 
         if (!oph::select_bbbb_jets(nat, ei, ot)) continue;
 
@@ -277,14 +303,15 @@ int main(int argc, char** argv)
             }
         }
 
-        ec.updateProcessed(weight);
 
         oph::save_objects_for_cut(nat, ot);
 
-        ec.updateSelected(weight);
+        ec.updateSelected();
         su::fill_output_tree(ot, nat, ei);
 
     }
+
+    oph::clean();
 
     outputFile.cd();
     ot.write();

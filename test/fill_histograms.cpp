@@ -45,4 +45,5 @@ int main(int argc, char** argv)
     ah.mergeSamples(); // do it just at the end
     ah.saveOutputsToFile();
     cout << "... exiting" << endl;    
+    exit(1);
 }

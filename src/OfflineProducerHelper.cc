@@ -2,12 +2,14 @@
 #include <iostream>
 #include <iomanip>
 #include <cmath>
+#include <stdlib.h>    
 
 #include "CompositeCandidate.h"
 #include "Jet.h"
 #include "Electron.h"
 #include "Muon.h"
 #include "GenPart.h"
+#include "HH4b_kinFit.h"
 #include <experimental/any>
  
 using namespace std::experimental;
@@ -119,27 +121,25 @@ void OfflineProducerHelper::save_WandZleptondecays (NanoAODTree& nat, OutputTree
 
 
 
-// ----------------- Compute weights - BEGIN ----------------- //
+// ----------------- Compute scaleFactors - BEGIN ----------------- //
 
-void OfflineProducerHelper::initializeObjectsForWeights(OutputTree &ot){
+void OfflineProducerHelper::initializeObjectsForScaleFactors(OutputTree &ot){
 
-    string weightsMethod = any_cast<string>(parameterList_->at("WeightsMethod"));
+    string scaleFactorsMethod = any_cast<string>(parameterList_->at("ScaleFactorMethod"));
 
-    if(weightsMethod == "None"){
+    if(scaleFactorsMethod == "None"){
         //do nothing
     }
-    else if(weightsMethod == "FourBtag_EventReweighting"){
-        ot.declareUserFloatBranch("bTagWeight_bJets_central"    , 1.);
-        ot.declareUserFloatBranch("bTagWeight_bJets_up"         , 1.);
-        ot.declareUserFloatBranch("bTagWeight_bJets_down"       , 1.);
-        ot.declareUserFloatBranch("bTagWeight_cJets_central"    , 1.);
-        ot.declareUserFloatBranch("bTagWeight_cJets_up"         , 1.);
-        ot.declareUserFloatBranch("bTagWeight_cJets_down"       , 1.);
-        ot.declareUserFloatBranch("bTagWeight_lightJets_central", 1.);
-        ot.declareUserFloatBranch("bTagWeight_lightJets_up"     , 1.);
-        ot.declareUserFloatBranch("bTagWeight_lightJets_down"   , 1.);
+    else if(scaleFactorsMethod == "FourBtag_ScaleFactor"){
+        ot.declareUserFloatBranch("bTagScaleFactor_central"          , 1.);
+        ot.declareUserFloatBranch("bTagScaleFactor_bJets_up"         , 1.);
+        ot.declareUserFloatBranch("bTagScaleFactor_bJets_down"       , 1.);
+        ot.declareUserFloatBranch("bTagScaleFactor_cJets_up"         , 1.);
+        ot.declareUserFloatBranch("bTagScaleFactor_cJets_down"       , 1.);
+        ot.declareUserFloatBranch("bTagScaleFactor_lightJets_up"     , 1.);
+        ot.declareUserFloatBranch("bTagScaleFactor_lightJets_down"   , 1.);
 
-        BTagCalibration btagCalibration("DeepCSV","weights/DeepCSV_Moriond17_B_H.csv");    
+        BTagCalibration btagCalibration("DeepCSV",any_cast<string>(parameterList_->at("BJetScaleFactorsFile")));    
         btagCalibrationReader_lightJets_ = new BTagCalibrationReader(BTagEntry::OP_MEDIUM,"central",{"up", "down"});      
         btagCalibrationReader_cJets_     = new BTagCalibrationReader(BTagEntry::OP_MEDIUM,"central",{"up", "down"});      
         btagCalibrationReader_bJets_     = new BTagCalibrationReader(BTagEntry::OP_MEDIUM,"central",{"up", "down"}); 
@@ -153,50 +153,282 @@ void OfflineProducerHelper::initializeObjectsForWeights(OutputTree &ot){
 
 }
 
-
-// reject events with leptons that may come from W and Z decays
-void OfflineProducerHelper::compute_weights_fourBtag_eventReweighting (const std::vector<Jet> &jets, NanoAODTree& nat, OutputTree &ot){
+void OfflineProducerHelper::compute_scaleFactors_fourBtag_eventScaleFactor (const std::vector<Jet> &jets, NanoAODTree& nat, OutputTree &ot){
     
-    float bTagWeight_bJets_central     = 1.;
-    float bTagWeight_bJets_up          = 1.;
-    float bTagWeight_bJets_down        = 1.;
-    float bTagWeight_cJets_central     = 1.;
-    float bTagWeight_cJets_up          = 1.;
-    float bTagWeight_cJets_down        = 1.;
-    float bTagWeight_lightJets_central = 1.;
-    float bTagWeight_lightJets_up      = 1.;
-    float bTagWeight_lightJets_down    = 1.;
+    float tmpScaleFactor_bJets_central     = 1.;
+    float tmpScaleFactor_bJets_up          = 1.;
+    float tmpScaleFactor_bJets_down        = 1.;
+    float tmpScaleFactor_cJets_central     = 1.;
+    float tmpScaleFactor_cJets_up          = 1.;
+    float tmpScaleFactor_cJets_down        = 1.;
+    float tmpScaleFactor_lightJets_central = 1.;
+    float tmpScaleFactor_lightJets_up      = 1.;
+    float tmpScaleFactor_lightJets_down    = 1.;
 
     for(const auto &iJet : jets){
         int jetFlavour = abs(get_property(iJet,Jet_partonFlavour));
         if(jetFlavour==5){
-            bTagWeight_bJets_central     *= btagCalibrationReader_bJets_    ->eval_auto_bounds("central", BTagEntry::FLAV_B   , iJet.P4().Eta(), iJet.P4().Pt());
-            bTagWeight_bJets_up          *= btagCalibrationReader_bJets_    ->eval_auto_bounds("up"     , BTagEntry::FLAV_B   , iJet.P4().Eta(), iJet.P4().Pt());
-            bTagWeight_bJets_down        *= btagCalibrationReader_bJets_    ->eval_auto_bounds("down"   , BTagEntry::FLAV_B   , iJet.P4().Eta(), iJet.P4().Pt());
+            tmpScaleFactor_bJets_central     *= btagCalibrationReader_bJets_    ->eval_auto_bounds("central", BTagEntry::FLAV_B   , iJet.P4().Eta(), iJet.P4().Pt());
+            tmpScaleFactor_bJets_up          *= btagCalibrationReader_bJets_    ->eval_auto_bounds("up"     , BTagEntry::FLAV_B   , iJet.P4().Eta(), iJet.P4().Pt());
+            tmpScaleFactor_bJets_down        *= btagCalibrationReader_bJets_    ->eval_auto_bounds("down"   , BTagEntry::FLAV_B   , iJet.P4().Eta(), iJet.P4().Pt());
         }
         else if(jetFlavour==4){
-            bTagWeight_cJets_central     *= btagCalibrationReader_cJets_    ->eval_auto_bounds("central", BTagEntry::FLAV_C   , iJet.P4().Eta(), iJet.P4().Pt());
-            bTagWeight_cJets_up          *= btagCalibrationReader_cJets_    ->eval_auto_bounds("up"     , BTagEntry::FLAV_C   , iJet.P4().Eta(), iJet.P4().Pt());
-            bTagWeight_cJets_down        *= btagCalibrationReader_cJets_    ->eval_auto_bounds("down"   , BTagEntry::FLAV_C   , iJet.P4().Eta(), iJet.P4().Pt());
+            tmpScaleFactor_cJets_central     *= btagCalibrationReader_cJets_    ->eval_auto_bounds("central", BTagEntry::FLAV_C   , iJet.P4().Eta(), iJet.P4().Pt());
+            tmpScaleFactor_cJets_up          *= btagCalibrationReader_cJets_    ->eval_auto_bounds("up"     , BTagEntry::FLAV_C   , iJet.P4().Eta(), iJet.P4().Pt());
+            tmpScaleFactor_cJets_down        *= btagCalibrationReader_cJets_    ->eval_auto_bounds("down"   , BTagEntry::FLAV_C   , iJet.P4().Eta(), iJet.P4().Pt());
         }
         else{
-            bTagWeight_lightJets_central *= btagCalibrationReader_lightJets_->eval_auto_bounds("central", BTagEntry::FLAV_UDSG, iJet.P4().Eta(), iJet.P4().Pt());
-            bTagWeight_lightJets_up      *= btagCalibrationReader_lightJets_->eval_auto_bounds("up"     , BTagEntry::FLAV_UDSG, iJet.P4().Eta(), iJet.P4().Pt());
-            bTagWeight_lightJets_down    *= btagCalibrationReader_lightJets_->eval_auto_bounds("down"   , BTagEntry::FLAV_UDSG, iJet.P4().Eta(), iJet.P4().Pt());
+            tmpScaleFactor_lightJets_central *= btagCalibrationReader_lightJets_->eval_auto_bounds("central", BTagEntry::FLAV_UDSG, iJet.P4().Eta(), iJet.P4().Pt());
+            tmpScaleFactor_lightJets_up      *= btagCalibrationReader_lightJets_->eval_auto_bounds("up"     , BTagEntry::FLAV_UDSG, iJet.P4().Eta(), iJet.P4().Pt());
+            tmpScaleFactor_lightJets_down    *= btagCalibrationReader_lightJets_->eval_auto_bounds("down"   , BTagEntry::FLAV_UDSG, iJet.P4().Eta(), iJet.P4().Pt());
         }   
     }
 
-    ot.userFloat("bTagWeight_bJets_central"    ) = bTagWeight_bJets_central    ;
-    ot.userFloat("bTagWeight_bJets_up"         ) = bTagWeight_bJets_up         ;
-    ot.userFloat("bTagWeight_bJets_down"       ) = bTagWeight_bJets_down       ;
-    ot.userFloat("bTagWeight_cJets_central"    ) = bTagWeight_cJets_central    ;
-    ot.userFloat("bTagWeight_cJets_up"         ) = bTagWeight_cJets_up         ;
-    ot.userFloat("bTagWeight_cJets_down"       ) = bTagWeight_cJets_down       ;
-    ot.userFloat("bTagWeight_lightJets_central") = bTagWeight_lightJets_central;
-    ot.userFloat("bTagWeight_lightJets_up"     ) = bTagWeight_lightJets_up     ;
-    ot.userFloat("bTagWeight_lightJets_down"   ) = bTagWeight_lightJets_down   ;
+    ot.userFloat("bTagScaleFactor_central"          ) = tmpScaleFactor_bJets_central * tmpScaleFactor_cJets_central * tmpScaleFactor_lightJets_central ;
+    ot.userFloat("bTagScaleFactor_bJets_up"         ) = tmpScaleFactor_bJets_up      * tmpScaleFactor_cJets_central * tmpScaleFactor_lightJets_central ;
+    ot.userFloat("bTagScaleFactor_bJets_down"       ) = tmpScaleFactor_bJets_down    * tmpScaleFactor_cJets_central * tmpScaleFactor_lightJets_central ;
+    ot.userFloat("bTagScaleFactor_cJets_up"         ) = tmpScaleFactor_bJets_central * tmpScaleFactor_cJets_up      * tmpScaleFactor_lightJets_central ;
+    ot.userFloat("bTagScaleFactor_cJets_down"       ) = tmpScaleFactor_bJets_central * tmpScaleFactor_cJets_down    * tmpScaleFactor_lightJets_central ;
+    ot.userFloat("bTagScaleFactor_lightJets_up"     ) = tmpScaleFactor_bJets_central * tmpScaleFactor_cJets_central * tmpScaleFactor_lightJets_up      ;
+    ot.userFloat("bTagScaleFactor_lightJets_down"   ) = tmpScaleFactor_bJets_central * tmpScaleFactor_cJets_central * tmpScaleFactor_lightJets_down    ;
 
     return;
+}
+
+// ----------------- Compute scaleFactors - END ----------------- //
+
+
+// ----------------- Compute weights - BEGIN ----------------- //
+
+void OfflineProducerHelper::initializeObjectsForEventWeight(OutputTree &ot, SkimEffCounter &ec, std::string PUWeightFileName)
+{
+
+    string weightsMethod = any_cast<string>(parameterList_->at("WeightMethod"));
+
+    if(weightsMethod == "None")
+    {
+        calculateEventWeight = [](NanoAODTree& nat, OutputTree &ot, SkimEffCounter &ec) -> float {return 1.;};
+    }
+    else if(weightsMethod == "StandardWeight")
+    {
+        calculateEventWeight = &calculateEventWeight_AllWeights;
+        std::string branchName;
+
+        int weightBin = ec.binMap_.size();
+
+        // PUWeight need to store histograms from pu files
+        branchName = "PUWeight";
+        ot.declareUserFloatBranch(branchName, 1.);
+        weightMap_[branchName] = std::pair< float, std::map<std::string, float> >();
+        weightMap_[branchName].first = 1.;
+        std::vector<std::string> puWeightVariation = {"_up","_down"};
+        TFile *PUWeightFile = TFile::Open(PUWeightFileName.data());
+        std::map<std::string, TH1D*> PUWeightHistogramMap;
+        if(PUWeightFile == NULL){
+            cerr << "**  Pileup weight file " << PUWeightFileName << " not found, aborting" << endl;
+            abort();
+        }
+        PUWeightHistogramMap[branchName] = (TH1D*) PUWeightFile->Get("PUweights");
+        // PUWeightHistogramMap[branchName]->SetDirectory(0);
+
+        for(unsigned int var = 0; var<puWeightVariation.size(); ++var)
+        {
+            std::string variationBranch = branchName + puWeightVariation[var];
+            ot.declareUserFloatBranch(variationBranch, 1.);
+            weightMap_[branchName].second[variationBranch] = 1.;           
+            ec.binMap_[variationBranch] = ++weightBin;
+            ec.binEntries_[variationBranch] = 1.;
+            PUWeightHistogramMap[variationBranch] = (TH1D*) PUWeightFile->Get(("PUweights"+puWeightVariation[var]).data());
+            // PUWeightHistogramMap[variationBranch]->SetDirectory(0);
+        }
+
+        for(const auto & histogram : PUWeightHistogramMap)
+        {
+            for(int iBin=1; iBin<=histogram.second->GetNbinsX(); ++iBin)
+            {
+                PUWeightMap_[histogram.first][std::pair<float,float>(histogram.second->GetBinLowEdge(iBin),histogram.second->GetBinLowEdge(iBin+1))] = histogram.second->GetBinContent(iBin);
+            }
+        }
+
+        PUWeightFile->Close();
+
+        //genWeight (no weight variations)
+        branchName = "genWeight";
+        ot.declareUserFloatBranch(branchName, 1.);
+        weightMap_[branchName] = std::pair< float, std::map<std::string, float> >();
+        weightMap_[branchName].first = 1.;
+
+        // LHEPdfWeight
+        branchName = "LHEPdfWeight";
+        ot.declareUserFloatBranch(branchName, 1.);
+        weightMap_[branchName] = std::pair< float, std::map<std::string, float> >();
+        weightMap_[branchName].first = 1.;
+        // LHEPdfWeight weight variations
+        for(unsigned int var = 0; var<=100; ++var)
+        {
+            std::string variationBranch = branchName + "_var" + std::to_string(var);
+            ot.declareUserFloatBranch(variationBranch, 1.);
+            weightMap_[branchName].second[variationBranch] = 1.;           
+            ec.binMap_[variationBranch] = ++weightBin;
+            ec.binEntries_[variationBranch] = 1.;
+        }
+
+        // LHEScaleWeight
+        branchName = "LHEScaleWeight";
+        ot.declareUserFloatBranch(branchName, 1.);
+        weightMap_[branchName] = std::pair< float, std::map<std::string, float> >();
+        weightMap_[branchName].first = 1.;
+        // LHEScaleWeight weight variations
+        for(unsigned int var = 0; var<9; ++var)
+        {
+            if(var == 4) continue; //Yep... the nominal seems to be in the middle...
+            std::string variationBranch = branchName + "_var" + std::to_string(var);
+            ot.declareUserFloatBranch(variationBranch, 1.);
+            weightMap_[branchName].second[variationBranch] = 1.;           
+            ec.binMap_[variationBranch] = ++weightBin;
+            ec.binEntries_[variationBranch] = 1.;
+        }
+
+        //PSWeight are empty, skypping
+        // branchName = "PSWeight";
+        // ot.declareUserFloatBranch(branchName, 1.);
+        // weightMap_[branchName] = std::pair< float, std::map<std::string, float> >();
+        // weightMap_[branchName].first = 1.;
+        // // PSWeight weight variations
+        // for(unsigned int var = 0; var<4; ++var)
+        // {
+        //     std::string variationBranch = branchName + "_var" + std::to_string(var);
+        //     ot.declareUserFloatBranch(variationBranch, 1.);
+        //     weightMap_[branchName].second[variationBranch] = 1.;           
+        //     ec.binMap_[variationBranch] = weightBin++;
+        //     ec.binEntries_[variationBranch] = 1.;
+        // }
+    }
+
+    return;
+
+}
+
+float OfflineProducerHelper::calculateEventWeight_AllWeights(NanoAODTree& nat, OutputTree &ot, SkimEffCounter &ec)
+{
+
+    for(auto & weight : weightMap_)
+    {
+        weight.second.first = 1.;
+        for(auto & correction : weight.second.second)
+        {
+            correction.second = 1.;
+        }
+    }
+
+    float eventWeight = 1.;
+    float tmpWeight = 1.;
+    std::string branchName;
+
+    // PUWeight need get pu from histograms
+    branchName = "PUWeight";
+    float eventPU = *(nat.Pileup_nTrueInt);
+    for(const auto & weightBin : PUWeightMap_[branchName])
+    {
+        if(eventPU >= weightBin.first.first && eventPU < weightBin.first.second)
+        {
+            tmpWeight = weightBin.second;
+            break;
+        }
+    }
+    tmpWeight = tmpWeight==0 ? 1 : tmpWeight; //set to 1 if weight is 0
+    ot.userFloat(branchName) = tmpWeight;
+    weightMap_[branchName].first = tmpWeight;
+    eventWeight *= tmpWeight;
+    std::vector<std::string> puWeightVariation = {"_up","_down"};
+    for(unsigned int var = 0; var<puWeightVariation.size(); ++var)
+    {
+        std::string variationBranch = branchName + puWeightVariation[var];
+        for(const auto & weightBin : PUWeightMap_[variationBranch])
+        {
+            if(eventPU >= weightBin.first.first && eventPU < weightBin.first.second)
+            {
+                tmpWeight = weightBin.second;
+                break;
+            }
+        }
+        tmpWeight = tmpWeight==0 ? 1 : tmpWeight; //set to 1 if weight is 0
+        ot.userFloat(variationBranch) = tmpWeight;
+        weightMap_[branchName].second[variationBranch] = tmpWeight;           
+    }
+
+    //genWeight (no weight variations)
+    branchName = "genWeight";
+    tmpWeight = *(nat.genWeight);
+    tmpWeight = tmpWeight==0 ? 1 : tmpWeight; //set to 1 if weight is 0
+    ot.userFloat(branchName) = tmpWeight;
+    weightMap_[branchName].first = tmpWeight;
+    eventWeight *= tmpWeight;
+
+    // LHEPdfWeight
+    branchName = "LHEPdfWeight";
+    tmpWeight = 1.;
+    tmpWeight = tmpWeight==0 ? 1 : tmpWeight; //set to 1 if weight is 0
+    ot.userFloat(branchName) = tmpWeight;
+    weightMap_[branchName].first = tmpWeight;
+    eventWeight *= tmpWeight;
+    // LHEPdfWeight weight variations
+    for(unsigned int var = 0; var<=100; ++var)
+    {
+        tmpWeight = nat.LHEPdfWeight.At(var);
+        tmpWeight = tmpWeight==0 ? 1 : tmpWeight; //set to 1 if weight is 0
+        std::string variationBranch = branchName + "_var" + std::to_string(var);
+        ot.userFloat(variationBranch) = tmpWeight;
+        weightMap_[branchName].second[variationBranch] = tmpWeight;           
+    }
+
+    // LHEScaleWeight
+    branchName = "LHEScaleWeight";
+    tmpWeight = nat.LHEScaleWeight.At(4);
+    tmpWeight = tmpWeight==0 ? 1 : tmpWeight; //set to 1 if weight is 0
+    ot.userFloat(branchName) = tmpWeight;
+    weightMap_[branchName].first = tmpWeight;
+    eventWeight *= tmpWeight;
+    // LHEScaleWeight weight variations
+    for(unsigned int var = 0; var<9; ++var)
+        {
+        if(var == 4) continue; //Yep... the nominal seems to be in the middle...
+        tmpWeight = nat.LHEScaleWeight.At(var);
+        tmpWeight = tmpWeight==0 ? 1 : tmpWeight; //set to 1 if weight is 0
+        std::string variationBranch = branchName + "_var" + std::to_string(var);
+        ot.userFloat(variationBranch) = tmpWeight;
+        weightMap_[branchName].second[variationBranch] = tmpWeight;           
+    }
+    
+    // PSWeight are empty, skypping
+    // branchName = "PSWeight";
+    // tmpWeight = nat.PSWeight.At(0);
+    // tmpWeight = tmpWeight==0 ? 1 : tmpWeight; //set to 1 if weight is 0
+    // ot.userFloat(branchName) = tmpWeight;
+    // weightMap_[branchName].first = tmpWeight;
+    // eventWeight *= tmpWeight;
+    // // PSWeight weight variations
+    // for(unsigned int var = 0; var<4; ++var)
+    // {
+    //     tmpWeight = nat.PSWeight.At(var);
+    //     tmpWeight = tmpWeight==0 ? 1 : tmpWeight; //set to 1 if weight is 0
+    //     std::string variationBranch = branchName + "_var" + std::to_string(var);
+    //     ot.userFloat(variationBranch) = tmpWeight;
+    //     weightMap_[branchName].second[variationBranch] = tmpWeight;           
+    // }
+
+    //calculate bins for weights variations
+
+    for(auto & weight : weightMap_)
+    {
+        for(auto & correction : weight.second.second)
+        {
+            ec.binEntries_[correction.first] += (eventWeight/weight.second.first*correction.second);
+        }
+    }
+
+    return eventWeight;
+
 }
 
 // ----------------- Compute weights - END ----------------- //
@@ -230,12 +462,12 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
     //at least 4 jets required
     if(jets.size()<4) return false;
 
-    // calculate weights after preselection cuts
-    if(parameterList_->find("WeightsMethod") != parameterList_->end()){ //is it a MC event
-        const string weightsMethod = any_cast<string>(parameterList_->at("WeightsMethod"));
+    // calculate scaleFactors after preselection cuts
+    if(parameterList_->find("ScaleFactorMethod") != parameterList_->end()){ //is it a MC event
+        const string scaleFactorsMethod = any_cast<string>(parameterList_->at("ScaleFactorMethod"));
 
-        if(weightsMethod == "FourBtag_EventReweighting"){
-            compute_weights_fourBtag_eventReweighting(jets,nat,ot);
+        if(scaleFactorsMethod == "FourBtag_ScaleFactor"){
+            compute_scaleFactors_fourBtag_eventScaleFactor(jets,nat,ot);
         }
     }
 
@@ -303,6 +535,7 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
     ei.H1_bb_DeltaR = sqrt(pow(ei.H1_b1->P4Regressed().Eta() - ei.H1_b2->P4Regressed().Eta(),2) + pow(ei.H1_b1->P4Regressed().Phi() - ei.H1_b2->P4Regressed().Phi(),2));
     ei.H2_bb_DeltaR = sqrt(pow(ei.H2_b1->P4Regressed().Eta() - ei.H2_b2->P4Regressed().Eta(),2) + pow(ei.H2_b1->P4Regressed().Phi() - ei.H2_b2->P4Regressed().Phi(),2));
 
+    
     ei.HH = CompositeCandidate(ei.H1.get(), ei.H2.get());
  
     float targetHiggsMass;
@@ -318,10 +551,24 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
     }
 
     ei.HH_2DdeltaM = pow(ei.H1->P4().M() - targetHiggsMass,2) + pow(ei.H2->P4().M() - targetHiggsMass,2);
+    
 
     ei.Run = *(nat.run);
     ei.LumiSec = *(nat.luminosityBlock);
     ei.Event = *(nat.event);
+
+    bool applyKineamticFit=true;
+    if(applyKineamticFit)
+    {
+        HH4b_kinFit::constrainHH_signalMeasurement(&ordered_jets.at(0).p4Regressed_, &ordered_jets.at(1).p4Regressed_, &ordered_jets.at(2).p4Regressed_, &ordered_jets.at(3).p4Regressed_);
+        CompositeCandidate H1kf = CompositeCandidate(ordered_jets.at(0), ordered_jets.at(1));
+        H1kf.rebuildP4UsingRegressedPt(true,true);
+        
+        CompositeCandidate H2kf = CompositeCandidate(ordered_jets.at(2), ordered_jets.at(3));
+        H2kf.rebuildP4UsingRegressedPt(true,true);
+
+        ei.HH_m_kinFit = CompositeCandidate(H1kf, H2kf).P4().M();
+    }
 
     return true;
 }

@@ -21,11 +21,11 @@ class Jet : public Candidate
         TLorentzVector P4Regressed() const      {return p4Regressed_;}
         void setP4Regressed( TLorentzVector p4Regressed) {p4Regressed_ = p4Regressed;}
         
+        TLorentzVector p4Regressed_;
 
     private:
         void buildP4Regressed(); 
         void buildP4(); 
-        TLorentzVector p4Regressed_;
 
 };
 

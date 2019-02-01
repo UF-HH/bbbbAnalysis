@@ -70,6 +70,7 @@ void OutputTree::init_branches()
     tree_->Branch("H2_bb_DeltaR", &H2_bb_DeltaR);
     BRANCH_m_pt_eta_phi_p4(HH)
     tree_->Branch("HH_2DdeltaM", &HH_2DdeltaM);
+    tree_->Branch("HH_m_kinFit", &HH_m_kinFit);
 
 
     tree_->Branch("gen_mHH", &gen_mHH);
@@ -111,6 +112,7 @@ void OutputTree::clear()
     H2_bb_DeltaR = 0.;
     CLEAR_m_pt_eta_phi_p4(HH)
     HH_2DdeltaM = 0.;
+    HH_m_kinFit = 0.;
 
     gen_mHH = 0;    
 

@@ -2,9 +2,11 @@
 
 ## Install instructions
 ```
-cmsrel CMSSW_9_4_1
-cd CMSSW_9_4_1/src
+cmsrel CMSSW_10_2_5
+cd CMSSW_10_2_5/src
 cmsenv
+git cms-addpkg PhysicsTools/KinFitter
+scram b -j 8
 git clone https://github.com/UF-HH/bbbbAnalysis
 ```
 

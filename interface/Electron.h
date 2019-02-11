@@ -14,6 +14,7 @@ class Electron : public Candidate
         	clonedElectron->setP4(this->P4());
         	return std::unique_ptr<Electron> (clonedElectron);
         }
+
     private:
         void buildP4(); 
 };

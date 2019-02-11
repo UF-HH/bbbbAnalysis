@@ -129,7 +129,7 @@ void AnalysisHelper::saveOutputsToFile()
             // cout << "isample " << isample << "/" << allToSave.at(itype)->size() << endl;
             Sample::selColl& plotSet = allToSave.at(itype)->at(isample)->plots();
             // TH1F *selections = new TH1F((sampleDir + "_selections",plotSet.size(),0,plotSet.size());
-            TH1F *hCutInSkimTmp = (TH1F*)hCutInSkim_->Clone(("hCut_" + sampleDir).data());
+            TH1F *hCutInSkimTmp = allToSave.at(itype)->at(isample)->getCutHistogram();
 
             for (uint isel = 0; isel < plotSet.size(); ++isel)
             {
@@ -273,8 +273,7 @@ shared_ptr<Sample> AnalysisHelper::openSample(string sampleName)
     //     sample->setEffBin(ubin);
     // }
 
-    hCutInSkim_ = new TH1F();
-    bool success = sample->openFileAndTree(hCutInSkim_,selections_);
+    bool success = sample->openFileAndTree(selections_);
     if (!success)
     {
         throw std::runtime_error("cannot open input file for sample " + sampleName);

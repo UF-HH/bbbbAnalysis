@@ -197,7 +197,9 @@ if args.tar:
         'lib/',
         'config/',
         'data/',
-        'weights/'
+        'weights/',
+        'JECfiles/',
+        'JERfiles/'
     ]
 
     command = 'tar -zcf {0} '.format(tarLFN)

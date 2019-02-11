@@ -35,11 +35,11 @@ class NanoAODTree_ReaderImpl {
     public:
     
         // methods
-        NanoAODTree_ReaderImpl(TChain* chain, bool isData = false) :
+        NanoAODTree_ReaderImpl(TChain* chain, bool isMC2016 = false) :
             fReader(chain)        ,
             trg_reader_(&fReader) ,
             old_tree_nr_(-1)      ,
-            is_data_ (isData)     ,
+            is_2016_MC_ (isMC2016)     ,
             proc_first_ev_(false)
         {};
         
@@ -59,7 +59,7 @@ class NanoAODTree_ReaderImpl {
 
         // the count of the current ttree number, to verify at Next()
         int old_tree_nr_;
-        const bool is_data_;
+        const bool is_2016_MC_;
         bool proc_first_ev_;
 
         // tree readers
@@ -199,7 +199,8 @@ class NanoAODTree_ReaderImpl {
         NanoReaderArray<Float_t>   Jet_pt                               {fReader, "Jet_pt"};
         NanoReaderArray<Float_t>   Jet_qgl                              {fReader, "Jet_qgl"};
         NanoReaderArray<Float_t>   Jet_rawFactor                        {fReader, "Jet_rawFactor"};
-        NanoReaderArray<Float_t>   Jet_bRegCorr                         {fReader, is_data_ ? "Jet_bRegCorr" : "Jet_bReg"};
+        // NanoReaderArray<Float_t>   Jet_bRegCorr                         {fReader, "Jet_bRegCorr"};
+        NanoReaderArray<Float_t>   Jet_bRegCorr                         {fReader, is_2016_MC_ ? "Jet_bReg" :"Jet_bRegCorr"};
         NanoReaderArray<Int_t>     Jet_electronIdx1                     {fReader, "Jet_electronIdx1"};
         NanoReaderArray<Int_t>     Jet_electronIdx2                     {fReader, "Jet_electronIdx2"};
         NanoReaderArray<Int_t>     Jet_jetId                            {fReader, "Jet_jetId"};

@@ -28,6 +28,8 @@ Sample::Sample (string name, string filelistname, string treename, string histon
     nentries_    = 0.;
     treename_    = treename;
     histoname_   = histoname;
+    hCutInSkim_ = new TH1F();
+    hCutInSkim_->SetNameTitle(name_.data(), name_.data());
 }
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -68,7 +70,7 @@ Sample::~Sample ()
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-bool Sample::openFileAndTree(TH1F *hCutInSkim, const std::vector<Selection> &selections)
+bool Sample::openFileAndTree(const std::vector<Selection> &selections)
 {
     cout << "@ Opening sample: " << name_ << endl;
     cout << "  ---> " << filelistname_ << endl;
@@ -102,7 +104,7 @@ bool Sample::openFileAndTree(TH1F *hCutInSkim, const std::vector<Selection> &sel
             evt_num_  += hCutTmp->GetBinContent ( hCutTmp->GetXaxis()->FindBin("Ntot_uw"          ) ) ;
             // evt_den_  += hCutTmp->GetBinContent ( hCutTmp->GetXaxis()->FindBin(bin_eff_den_.data()) ) ;
             nentries_ += hCutTmp->GetBinContent ( hCutTmp->GetXaxis()->FindBin("Nsel_uw"          ) ) ; // NB! rounding errors could make this different from the actual entries in the tree --> better to use TH1D
-            for(int iBin = hCutTmp->GetXaxis()->FindBin("Ntot_w"); iBin<=hCutTmp->GetNbinsX(); ++iBin)
+            for(int iBin = 1; iBin<=hCutTmp->GetNbinsX(); ++iBin)
             {
                 std::string binLabel = hCutTmp->GetXaxis()->GetBinLabel(iBin);
                 if(evt_den_map_.find(binLabel)==evt_den_map_.end())
@@ -116,25 +118,25 @@ bool Sample::openFileAndTree(TH1F *hCutInSkim, const std::vector<Selection> &sel
                 skimNBins = 3;
                 int selNBins = selections.size();
                 int nBins = skimNBins + selNBins;
-                hCutInSkim->SetBins(nBins, 0, nBins);
-                for(int xBin=1; xBin<=skimNBins; ++xBin){
-                    hCutInSkim->GetXaxis()->SetBinLabel(xBin, hCutTmp->GetXaxis()->GetBinLabel(xBin) );
-                }
+                hCutInSkim_->SetBins(nBins, 0, nBins);
+                hCutInSkim_->GetXaxis()->SetBinLabel(1, "Ntot_w" );
+                hCutInSkim_->GetXaxis()->SetBinLabel(2, "Ntrg_w" );
+                hCutInSkim_->GetXaxis()->SetBinLabel(3, "Nsel_w" );
                 for(int xBin=1; xBin<=selNBins; ++ xBin){
-                    hCutInSkim->GetXaxis()->SetBinLabel(xBin+skimNBins, selections.at(xBin-1).getName().data() );
+                    hCutInSkim_->GetXaxis()->SetBinLabel(xBin+skimNBins, selections.at(xBin-1).getName().data() );
                 }
             }
 
-            for(int xBin=1; xBin<=skimNBins; ++xBin){
-                hCutInSkim->Fill(xBin-1, hCutTmp->GetBinContent(xBin) );
-            }
+            hCutInSkim_->Fill(hCutInSkim_->GetBinCenter(hCutInSkim_->GetXaxis()->FindBin("Ntot_w")), hCutTmp->GetBinContent(hCutTmp->GetXaxis()->FindBin("Ntot_w")) );
+            hCutInSkim_->Fill(hCutInSkim_->GetBinCenter(hCutInSkim_->GetXaxis()->FindBin("Ntrg_w")), hCutTmp->GetBinContent(hCutTmp->GetXaxis()->FindBin("Ntrg_w")) );
+            hCutInSkim_->Fill(hCutInSkim_->GetBinCenter(hCutInSkim_->GetXaxis()->FindBin("Nsel_w")), hCutTmp->GetBinContent(hCutTmp->GetXaxis()->FindBin("Nsel_w")) );
 
             delete f;
         }
     }
-    eff_ = evt_num_ / evt_den_map_["Ntot_w"] ;
+    eff_ = evt_den_map_["Ntot_sel"] / evt_den_map_["Ntot_w"] ;
     cout << "  ---> read " << counter << " files, " << nentries_ << " events" << endl;
-    cout << "  ---> efficiency is " << eff_ << "(" << evt_num_ << "/" << evt_den_map_["Ntot_w"] << ")" << endl;
+    cout << "  ---> efficiency is " << eff_ << "(" << evt_den_map_["Ntot_sel"] << "/" << evt_den_map_["Ntot_w"] << ")" << endl;
 
     return true;
     // fIn_ = TFile::Open(filename.c_str());
@@ -157,6 +159,9 @@ bool Sample::openFileAndTree(TH1F *hCutInSkim, const std::vector<Selection> &sel
 
 void Sample::scaleAll(double luminosity)
 {
+    
+    hCutInSkim_->Scale(luminosity/evt_den_map_["Ntot_w"]);
+
     // 1D
     for (uint isel = 0; isel < plots_.size(); ++isel)
     {

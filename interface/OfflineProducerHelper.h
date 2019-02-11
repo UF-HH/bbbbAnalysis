@@ -18,6 +18,8 @@
 #include "CompositeCandidate.h"
 #include "OutputTree.h"
 #include "BTagCalibrationStandalone.h"
+#include "JetMETCorrections/Modules/interface/JetResolution.h"
+#include "CondFormats/JetMETObjects/interface/JetCorrectionUncertainty.h"
 #include "Jet.h"
 #include "SkimEffCounter.h"
 
@@ -43,9 +45,12 @@ namespace OfflineProducerHelper {
     std::map<std::string, std::pair< float, std::map<std::string, float> > > weightMap_;
     // std::map<std::string, TH1D*> PUWeightHistogramMap_;
     std::map<std::string, std::map<std::pair<float,float>,float> > PUWeightMap_;
+    std::map<std::string, JetCorrectionUncertainty*> mapForJECuncertanties_;
+    
     void clean() {
         weightMap_.clear();
         PUWeightMap_.clear();
+        mapForJECuncertanties_.clear();
     }
 
     void setParameterList(const std::map<std::string,any> *parameterList) {parameterList_=parameterList;}
@@ -63,8 +68,36 @@ namespace OfflineProducerHelper {
     // reject events with leptons that may come from W and Z decays
     float calculateEventWeight_AllWeights(NanoAODTree& nat, OutputTree &ot, SkimEffCounter &ec);
     
+
+    void initializeObjectsBJetForScaleFactors(OutputTree &ot);
+    // compute events weight for four b
+    void compute_scaleFactors_fourBtag_eventScaleFactor (const std::vector<Jet> &jets, NanoAODTree& nat, OutputTree &ot);
+
+
+    JME::JetResolutionScaleFactor *jetResolutionScaleFactor_;
+    JME::JetResolution *jetResolution_;
+    void initializeJERsmearingAndVariations(OutputTree &ot);
+    // function pointer to MC jet pt smearing
+    std::vector<Jet> (*JERsmearing)(NanoAODTree& nat, std::vector<Jet> &jets);
+    // function to smear the jet pt as indicated in https://twiki.cern.ch/twiki/bin/view/CMS/JetResolution#Smearing_procedures
+    std::vector<Jet> standardJERsmearing(NanoAODTree& nat, std::vector<Jet> &jets);
+    // function pointer for JER variations
+    void (*JERvariations)(NanoAODTree& nat, std::vector<Jet> &jets, std::vector< std::pair<std::string, std::vector<Jet> > > &jetEnergyVariationsMap);
+    // function to apply JER variation
+    void standardJERVariations(NanoAODTree& nat, std::vector<Jet> &jets, std::vector< std::pair<std::string, std::vector<Jet> > > &jetEnergyVariationsMap);
+    //function to apply JER
+    std::vector<Jet> applyJERsmearing(NanoAODTree& nat, std::vector<Jet> jets, Variation variation = Variation::NOMINAL);
+
+
+    void initializeJECVariations(OutputTree &ot);
+    // function pointer for JEC variations
+    void (*JECvariations)(NanoAODTree& nat, std::vector<Jet> &jets, std::vector< std::pair<std::string, std::vector<Jet> > > &jetEnergyVariationsMap);
+    // function to apply all JEC variations
+    void standardJECVariations(NanoAODTree& nat, std::vector<Jet> &jets, std::vector< std::pair<std::string, std::vector<Jet> > > &jetEnergyVariationsMap);
+    //function to apply JEC variation
+    std::vector<Jet> applyJECVariation(NanoAODTree& nat, std::vector<Jet> jets, std::string variationName, bool direction);
     
-    void initializeObjectsForScaleFactors(OutputTree &ot);
+
     // compute events weight for four b
     void compute_scaleFactors_fourBtag_eventScaleFactor (const std::vector<Jet> &jets, NanoAODTree& nat, OutputTree &ot);
 

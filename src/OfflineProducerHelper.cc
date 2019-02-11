@@ -3,14 +3,16 @@
 #include <iomanip>
 #include <cmath>
 #include <stdlib.h>    
+#include <experimental/any>
 
+#include "CondFormats/JetMETObjects/interface/JetCorrectorParameters.h"
 #include "CompositeCandidate.h"
 #include "Jet.h"
 #include "Electron.h"
 #include "Muon.h"
 #include "GenPart.h"
 #include "HH4b_kinFit.h"
-#include <experimental/any>
+#include "TRandom.h"
  
 using namespace std::experimental;
 
@@ -120,17 +122,18 @@ void OfflineProducerHelper::save_WandZleptondecays (NanoAODTree& nat, OutputTree
 // ----------------- Objects for cut - END ----------------- //
 
 
-
 // ----------------- Compute scaleFactors - BEGIN ----------------- //
 
-void OfflineProducerHelper::initializeObjectsForScaleFactors(OutputTree &ot){
+void OfflineProducerHelper::initializeObjectsBJetForScaleFactors(OutputTree &ot){
 
-    string scaleFactorsMethod = any_cast<string>(parameterList_->at("ScaleFactorMethod"));
+    string scaleFactorsMethod = any_cast<string>(parameterList_->at("BTagScaleFactorMethod"));
 
     if(scaleFactorsMethod == "None"){
         //do nothing
     }
     else if(scaleFactorsMethod == "FourBtag_ScaleFactor"){
+
+        // b-tag scale factors
         ot.declareUserFloatBranch("bTagScaleFactor_central"          , 1.);
         ot.declareUserFloatBranch("bTagScaleFactor_bJets_up"         , 1.);
         ot.declareUserFloatBranch("bTagScaleFactor_bJets_down"       , 1.);
@@ -147,6 +150,7 @@ void OfflineProducerHelper::initializeObjectsForScaleFactors(OutputTree &ot){
         btagCalibrationReader_lightJets_->load(btagCalibration, BTagEntry::FLAV_UDSG, "incl"  );
         btagCalibrationReader_cJets_    ->load(btagCalibration, BTagEntry::FLAV_C   , "mujets");
         btagCalibrationReader_bJets_    ->load(btagCalibration, BTagEntry::FLAV_B   , "mujets");
+
     }
 
     return;
@@ -181,7 +185,7 @@ void OfflineProducerHelper::compute_scaleFactors_fourBtag_eventScaleFactor (cons
             tmpScaleFactor_lightJets_central *= btagCalibrationReader_lightJets_->eval_auto_bounds("central", BTagEntry::FLAV_UDSG, iJet.P4().Eta(), iJet.P4().Pt());
             tmpScaleFactor_lightJets_up      *= btagCalibrationReader_lightJets_->eval_auto_bounds("up"     , BTagEntry::FLAV_UDSG, iJet.P4().Eta(), iJet.P4().Pt());
             tmpScaleFactor_lightJets_down    *= btagCalibrationReader_lightJets_->eval_auto_bounds("down"   , BTagEntry::FLAV_UDSG, iJet.P4().Eta(), iJet.P4().Pt());
-        }   
+        }
     }
 
     ot.userFloat("bTagScaleFactor_central"          ) = tmpScaleFactor_bJets_central * tmpScaleFactor_cJets_central * tmpScaleFactor_lightJets_central ;
@@ -191,7 +195,7 @@ void OfflineProducerHelper::compute_scaleFactors_fourBtag_eventScaleFactor (cons
     ot.userFloat("bTagScaleFactor_cJets_down"       ) = tmpScaleFactor_bJets_central * tmpScaleFactor_cJets_down    * tmpScaleFactor_lightJets_central ;
     ot.userFloat("bTagScaleFactor_lightJets_up"     ) = tmpScaleFactor_bJets_central * tmpScaleFactor_cJets_central * tmpScaleFactor_lightJets_up      ;
     ot.userFloat("bTagScaleFactor_lightJets_down"   ) = tmpScaleFactor_bJets_central * tmpScaleFactor_cJets_central * tmpScaleFactor_lightJets_down    ;
-
+    
     return;
 }
 
@@ -434,17 +438,192 @@ float OfflineProducerHelper::calculateEventWeight_AllWeights(NanoAODTree& nat, O
 // ----------------- Compute weights - END ----------------- //
 
 
+// ----------------- Compute JER - BEGIN ------------------- //
+
+void OfflineProducerHelper::initializeJERsmearingAndVariations(OutputTree &ot)
+{
+
+    string JERmethod = any_cast<string>(parameterList_->at("JetEnergyResolution"));
+
+    if (JERmethod == "None")
+    {
+        JERsmearing = [](NanoAODTree& nat, std::vector<Jet> &jets) -> std::vector<Jet>  {return jets;};
+        JERvariations = [](NanoAODTree& nat, std::vector<Jet> &jets, std::vector< std::pair<std::string, std::vector<Jet> > > &jetEnergyVariationsMap) -> void {return;};
+    }
+    else if (JERmethod == "StandardJER")
+    {
+        JERsmearing = &standardJERsmearing;
+        jetResolutionScaleFactor_ = new JME::JetResolutionScaleFactor(any_cast<string>(parameterList_->at("JERScaleFactorFile")));
+        jetResolution_            = new JME::JetResolution           (any_cast<string>(parameterList_->at("JERResolutionFile" )));
+        gRandom->SetSeed(any_cast<int>(parameterList_->at("RandomGeneratorSeed")));
+
+        //set up variations
+        if(any_cast<bool>(parameterList_->at("JERComputeVariations")))
+        {
+            JERvariations = &standardJERVariations;
+        }
+        else
+        {
+            JERvariations = [](NanoAODTree& nat, std::vector<Jet> &jets, std::vector< std::pair<std::string, std::vector<Jet> > > &jetEnergyVariationsMap) -> void {return;};
+        }
+
+    }
+
+    return;
+}
+
+std::vector<Jet> OfflineProducerHelper::standardJERsmearing(NanoAODTree& nat, std::vector<Jet> &jets)
+{
+    return applyJERsmearing(nat, jets);
+}
+
+void OfflineProducerHelper::standardJERVariations(NanoAODTree& nat, std::vector<Jet> &jets, std::vector< std::pair<std::string, std::vector<Jet> > > &jetEnergyVariationsMap)
+{
+    std::map<std::string, Variation> mapNamesAndVariation;
+    mapNamesAndVariation["JER_up"] = Variation::UP;
+    mapNamesAndVariation["JER_down"] = Variation::DOWN;
+
+    for (auto const & variation : mapNamesAndVariation)
+    {
+        jetEnergyVariationsMap.push_back (std::pair<std::string, std::vector<Jet> >(variation.first, applyJERsmearing(nat, jets, variation.second)));
+    }
+
+    return;
+}
+
+
+std::vector<Jet> OfflineProducerHelper::applyJERsmearing(NanoAODTree& nat, std::vector<Jet> jets, Variation variation)
+{
+
+    JME::JetParameters jetParameters;
+    jetParameters.setRho(*(nat.fixedGridRhoFastjetAll));
+
+    
+    for(auto &iJet : jets){
+        //same method of https://github.com/cms-sw/cmssw/blob/CMSSW_8_0_25/PhysicsTools/PatUtils/interface/SmearedJetProducerT.h
+        jetParameters.setJetEta(iJet.P4().Eta());
+        jetParameters.setJetPt(iJet.P4().Pt());
+
+        float tmpJER_ScaleFactor = jetResolutionScaleFactor_->getScaleFactor(jetParameters, variation  );
+        float tmpJER_Resolution  = jetResolution_->getResolution(jetParameters);
+    
+        int genJetId = abs(get_property(iJet,Jet_genJetIdx));
+
+        float smearFactor;
+        if(genJetId>=0) //generated jet was found
+        {
+            smearFactor = 1. + (tmpJER_ScaleFactor - 1.) * (iJet.P4().Pt() - nat.GenJet_pt.At(genJetId))/iJet.P4().Pt();
+        }
+        else if(tmpJER_ScaleFactor>1.)
+        {
+            float sigma = tmpJER_Resolution * std::sqrt(tmpJER_ScaleFactor * tmpJER_ScaleFactor - 1);
+            smearFactor = 1. + gRandom->Gaus(0., sigma);
+        }
+        else
+        {
+            smearFactor = 1.;
+        }
+ 
+        float MIN_JET_ENERGY = 1e-2;
+
+        if (iJet.P4().Energy() * smearFactor < MIN_JET_ENERGY)
+        {
+            smearFactor = MIN_JET_ENERGY / iJet.P4().Energy();
+        }
+
+        iJet.setP4(iJet.P4()*smearFactor);
+        iJet.buildP4Regressed();
+
+    }
+
+
+    return jets;
+}
+
+// ----------------- Compute JER - END --------------------- //
+
+
+// ----------------- Compute JER - BEGIN ------------------- //
+
+void OfflineProducerHelper::initializeJECVariations(OutputTree &ot)
+{
+
+    string JECmethod = any_cast<string>(parameterList_->at("JetEnergyCorrection"));
+
+    if (JECmethod == "None")
+    {
+        JECvariations = [](NanoAODTree& nat, std::vector<Jet> &jets, std::vector< std::pair<std::string, std::vector<Jet> > > &jetEnergyVariationsMap) -> void {return;};
+    }
+    else if (JECmethod == "StandardJEC")
+    {
+        JECvariations = &standardJECVariations;
+        string JECFileName = any_cast<string>(parameterList_->at("JECFileName"));
+        for( const auto & JECVariationName : any_cast<std::vector<std::string> >(parameterList_->at("JECListOfCorrections")))
+        {
+            // JetCorrectorParameters *parameter = new JetCorrectorParameters(JECFileName, JECVariationName);
+            // mapForJECuncertanties_[JECVariationName] = new JetCorrectionUncertainty(*parameter);
+            mapForJECuncertanties_[JECVariationName] = new JetCorrectionUncertainty(*(new JetCorrectorParameters(JECFileName, JECVariationName)));
+        }
+    }
+
+    return;
+}
+
+void OfflineProducerHelper::standardJECVariations(NanoAODTree& nat, std::vector<Jet> &jets, std::vector< std::pair<std::string, std::vector<Jet> > > &jetEnergyVariationsMap)
+{
+    
+    //Uncertanties are calculated according to https://twiki.cern.ch/twiki/bin/view/CMS/JECUncertaintySources#Code_example
+    std::map<std::string, bool> mapNamesAndDirection;
+    mapNamesAndDirection["_up"]   = true  ;
+    mapNamesAndDirection["_down"] = false ;
+
+    for (auto const & variation : mapForJECuncertanties_)
+    {
+        for (auto const & direction : mapNamesAndDirection)
+        {
+            std::string variationName = variation.first + direction.first;
+            jetEnergyVariationsMap.push_back (std::pair<std::string, std::vector<Jet> >(variationName, applyJECVariation(nat, jets, variation.first, direction.second)));
+        }
+    }
+
+    return;
+}
+
+
+std::vector<Jet> OfflineProducerHelper::applyJECVariation(NanoAODTree& nat, std::vector<Jet> jets, std::string variationName, bool direction)
+{
+
+    for(auto &iJet : jets)
+    {
+        mapForJECuncertanties_[variationName]->setJetPt(iJet.P4().Pt());
+        mapForJECuncertanties_[variationName]->setJetEta(iJet.P4().Eta());
+        double correctorFactor = mapForJECuncertanties_[variationName]->getUncertainty(direction); // up variation
+        
+        iJet.setP4(iJet.P4()*correctorFactor);
+        iJet.buildP4Regressed();
+    }  
+
+    return jets;
+}
+
+
+// ----------------- Compute JEC - END --------------------- //
+
+
 bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, OutputTree &ot)
 {
+// std::cout<<"culo1\n";
+    
     if (*(nat.nJet) < 4)
         return false;
-
-    std::vector<Jet> jets;
-    jets.reserve(*(nat.nJet));
+    std::vector<Jet> unsmearedJets;
+    unsmearedJets.reserve(*(nat.nJet));
+// std::cout<<"culo2\n";
 
     for (uint ij = 0; ij < *(nat.nJet); ++ij){
-        jets.emplace_back(Jet(ij, &nat));
+        unsmearedJets.emplace_back(Jet(ij, &nat));
     }
+// std::cout<<"culo3\n";
     
     //if some montecarlo weight are applied via a reshaping of the jets variables, they must be applied here
 
@@ -452,122 +631,238 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
     const string preselectionCutStrategy = any_cast<string>(parameterList_->at("PreselectionCut"));
     
     if(preselectionCutStrategy=="bJetCut"){
-        bJets_PreselectionCut(jets);
+        bJets_PreselectionCut(unsmearedJets);
     }
     else if(preselectionCutStrategy=="None"){
         //do nothing
     }
     else throw std::runtime_error("cannot recognize cut strategy " + preselectionCutStrategy);
 
+// std::cout<<"culo4\n";
     //at least 4 jets required
-    if(jets.size()<4) return false;
-
-    // calculate scaleFactors after preselection cuts
-    if(parameterList_->find("ScaleFactorMethod") != parameterList_->end()){ //is it a MC event
-        const string scaleFactorsMethod = any_cast<string>(parameterList_->at("ScaleFactorMethod"));
-
-        if(scaleFactorsMethod == "FourBtag_ScaleFactor"){
-            compute_scaleFactors_fourBtag_eventScaleFactor(jets,nat,ot);
-        }
-    }
-
+    if(unsmearedJets.size()<4) return false;
 
     // sort by deepCSV (highest to lowest)
-    stable_sort(jets.begin(), jets.end(), [](const Jet & a, const Jet & b) -> bool
+    stable_sort(unsmearedJets.begin(), unsmearedJets.end(), [](const Jet & a, const Jet & b) -> bool
     {
         return ( get_property(a, Jet_btagDeepB) > get_property(b, Jet_btagDeepB) );
     });
 
-    // now need to pair the jets
-    std::vector<Jet> presel_jets = {{
-        *(jets.rbegin()+0),
-        *(jets.rbegin()+1),
-        *(jets.rbegin()+2),
-        *(jets.rbegin()+3)
-    }};
-
-    std::vector<Jet> ordered_jets;
-    string strategy = any_cast<string>(parameterList_->at("bbbbChoice"));
-
-    //Select the fouf b jets 
-    if(strategy == "OneClosestToMh")
-        ordered_jets = bbbb_jets_idxs_OneClosestToMh(&presel_jets);
-    else if(strategy == "BothClosestToMh")
-        ordered_jets = bbbb_jets_idxs_BothClosestToMh(&presel_jets);
-    else if(strategy == "MostBackToBack")
-        ordered_jets = bbbb_jets_idxs_MostBackToBack(&presel_jets);
-    else if(strategy == "HighestCSVandClosestToMh"){
-        ordered_jets = bbbb_jets_idxs_HighestCSVandClosestToMh(&jets);
-    }
-    else throw std::runtime_error("cannot recognize bbbb choice strategy " + strategy);
-
-    if(ordered_jets.size()!=4) return false;
-
-    // order H1, H2 by pT: pT(H1) > pT (H2)
-    CompositeCandidate H1 = CompositeCandidate(ordered_jets.at(0), ordered_jets.at(1));
-    H1.rebuildP4UsingRegressedPt(true,true);
+// std::cout<<"culo5\n";
+    std::vector<Jet> jetsOriginal;
+    std::vector< std::pair<std::string, std::vector<Jet> > > jetEnergyVariationsMap;
+    std::string originalSampleName = "NominalObjects";
     
-    CompositeCandidate H2 = CompositeCandidate(ordered_jets.at(2), ordered_jets.at(3));
-    H2.rebuildP4UsingRegressedPt(true,true);
-    
-    //Do a random swap to be sure that the m1 and m2 are simmetric
-    bool swapped = (int(H1.P4().Pt()*100.) % 2 == 1);
- 
-    if (!swapped)
-    {
-        ei.H1 = H1;
-        ei.H2 = H2;
-        ei.H1_b1 = ordered_jets.at(0);
-        ei.H1_b2 = ordered_jets.at(1);
-        ei.H2_b1 = ordered_jets.at(2);
-        ei.H2_b2 = ordered_jets.at(3);
+// std::cout<<"culo6\n";
+    // Apply JER corrections and variations
+    if(parameterList_->find("JetEnergyResolution") != parameterList_->end())
+    { //is it a MC event
+        jetsOriginal = JERsmearing(nat,unsmearedJets);
+        JERvariations(nat,unsmearedJets,jetEnergyVariationsMap);
     }
     else
     {
-        ei.H1 = H2;
-        ei.H2 = H1;
-        ei.H1_b1 = ordered_jets.at(2);
-        ei.H1_b2 = ordered_jets.at(3);
-        ei.H2_b1 = ordered_jets.at(0);
-        ei.H2_b2 = ordered_jets.at(1);
+        jetsOriginal = unsmearedJets;
+    }
+    //need to be done before all the variations
+    jetEnergyVariationsMap.insert(jetEnergyVariationsMap.begin(),std::pair<std::string, std::vector<Jet> >(originalSampleName,jetsOriginal));
+
+    if(parameterList_->find("JetEnergyCorrection") != parameterList_->end())
+    { //is it a MC event
+        JECvariations(nat,unsmearedJets,jetEnergyVariationsMap);
     }
 
-    ei.H1_bb_DeltaR = sqrt(pow(ei.H1_b1->P4Regressed().Eta() - ei.H1_b2->P4Regressed().Eta(),2) + pow(ei.H1_b1->P4Regressed().Phi() - ei.H1_b2->P4Regressed().Phi(),2));
-    ei.H2_bb_DeltaR = sqrt(pow(ei.H2_b1->P4Regressed().Eta() - ei.H2_b2->P4Regressed().Eta(),2) + pow(ei.H2_b1->P4Regressed().Phi() - ei.H2_b2->P4Regressed().Phi(),2));
 
-    
-    ei.HH = CompositeCandidate(ei.H1.get(), ei.H2.get());
- 
-    float targetHiggsMass;
-    if(strategy == "HighestCSVandClosestToMh")
+// std::cout<<"culo7\n";
+    int H1b1_idx(-1), H1b2_idx(-1), H2b1_idx(-1), H2b2_idx(-1); //Jet indexes for variations
+
+    for(auto & jets : jetEnergyVariationsMap)
     {
-        targetHiggsMass = any_cast<float>(parameterList_->at("HiggsMassLMR"));
-        if(any_cast<float>(parameterList_->at("LMRToMMRTransition"))>=0. && ei.HH->P4().M() > any_cast<float>(parameterList_->at("LMRToMMRTransition"))) targetHiggsMass = any_cast<float>(parameterList_->at("HiggsMassMMR"));
-                   
-    }
-    else
-    {
-        targetHiggsMass = any_cast<float>(parameterList_->at("HiggsMass"));
-    }
+        // std::cout<<jets.first<<" size = "<<jets.second.size()<<std::endl;
+        if(jets.first == originalSampleName) //Original sample without variations
+        {
+// std::cout<<"culo8\n";
+            // calculate scaleFactors after preselection cuts
+            if(parameterList_->find("BTagScaleFactorMethod") != parameterList_->end()){ //is it a MC event
+                const string BJetcaleFactorsMethod = any_cast<string>(parameterList_->at("BTagScaleFactorMethod"));
 
-    ei.HH_2DdeltaM = pow(ei.H1->P4().M() - targetHiggsMass,2) + pow(ei.H2->P4().M() - targetHiggsMass,2);
-    
+                if(BJetcaleFactorsMethod == "FourBtag_ScaleFactor"){
+                    compute_scaleFactors_fourBtag_eventScaleFactor(jets.second,nat,ot);
+                }
+            }
+// std::cout<<"culo9\n";
 
-    ei.Run = *(nat.run);
-    ei.LumiSec = *(nat.luminosityBlock);
-    ei.Event = *(nat.event);
+            // now need to pair the jets
+            std::vector<Jet> presel_jets = {{
+                (jets.second[0]),
+                (jets.second[1]),
+                (jets.second[2]),
+                (jets.second[3])
+            }};
+// std::cout<<"culo10\n";
 
-    bool applyKineamticFit=true;
-    if(applyKineamticFit)
-    {
-        HH4b_kinFit::constrainHH_signalMeasurement(&ordered_jets.at(0).p4Regressed_, &ordered_jets.at(1).p4Regressed_, &ordered_jets.at(2).p4Regressed_, &ordered_jets.at(3).p4Regressed_);
-        CompositeCandidate H1kf = CompositeCandidate(ordered_jets.at(0), ordered_jets.at(1));
-        H1kf.rebuildP4UsingRegressedPt(true,true);
-        
-        CompositeCandidate H2kf = CompositeCandidate(ordered_jets.at(2), ordered_jets.at(3));
-        H2kf.rebuildP4UsingRegressedPt(true,true);
+            std::vector<Jet> ordered_jets;
+            string strategy = any_cast<string>(parameterList_->at("bbbbChoice"));
 
-        ei.HH_m_kinFit = CompositeCandidate(H1kf, H2kf).P4().M();
+            //Select the fouf b jets 
+            if(strategy == "OneClosestToMh")
+                ordered_jets = bbbb_jets_idxs_OneClosestToMh(&presel_jets);
+            else if(strategy == "BothClosestToMh")
+                ordered_jets = bbbb_jets_idxs_BothClosestToMh(&presel_jets);
+            else if(strategy == "MostBackToBack")
+                ordered_jets = bbbb_jets_idxs_MostBackToBack(&presel_jets);
+            else if(strategy == "HighestCSVandClosestToMh"){
+                ordered_jets = bbbb_jets_idxs_HighestCSVandClosestToMh(&jets.second);
+            }
+            else throw std::runtime_error("cannot recognize bbbb choice strategy " + strategy);
+// std::cout<<"culo11\n";
+
+            if(ordered_jets.size()!=4)
+            {
+                if(!any_cast<bool>(parameterList_->at("UseAntiTagOnOneBjet")) && strategy == "HighestCSVandClosestToMh")
+                {
+                    throw std::runtime_error("OfflineProducerHelper::select_bbbb_jets -> candidates not found -> this should never happen to use jet energy variations");
+                }
+                return false;
+            }
+
+            // order H1, H2 by pT: pT(H1) > pT (H2)
+            CompositeCandidate H1 = CompositeCandidate(ordered_jets.at(0), ordered_jets.at(1));
+            H1.rebuildP4UsingRegressedPt(true,true);
+            
+            CompositeCandidate H2 = CompositeCandidate(ordered_jets.at(2), ordered_jets.at(3));
+            H2.rebuildP4UsingRegressedPt(true,true);
+            
+            //Do a random swap to be sure that the m1 and m2 are simmetric
+            bool swapped = (int(H1.P4().Pt()*100.) % 2 == 1);
+         
+            if (!swapped)
+            {
+                ei.H1 = H1;
+                ei.H2 = H2;
+                ei.H1_b1 = ordered_jets.at(0);
+                ei.H1_b2 = ordered_jets.at(1);
+                ei.H2_b1 = ordered_jets.at(2);
+                ei.H2_b2 = ordered_jets.at(3);
+            }
+            else
+            {
+                ei.H1 = H2;
+                ei.H2 = H1;
+                ei.H1_b1 = ordered_jets.at(2);
+                ei.H1_b2 = ordered_jets.at(3);
+                ei.H2_b1 = ordered_jets.at(0);
+                ei.H2_b2 = ordered_jets.at(1);
+            }
+
+            H1b1_idx = ei.H1_b1->getIdx();
+            H1b2_idx = ei.H1_b2->getIdx();
+            H2b1_idx = ei.H2_b1->getIdx();
+            H2b2_idx = ei.H2_b2->getIdx();
+
+            ei.H1_bb_DeltaR = sqrt(pow(ei.H1_b1->P4Regressed().Eta() - ei.H1_b2->P4Regressed().Eta(),2) + pow(ei.H1_b1->P4Regressed().Phi() - ei.H1_b2->P4Regressed().Phi(),2));
+            ei.H2_bb_DeltaR = sqrt(pow(ei.H2_b1->P4Regressed().Eta() - ei.H2_b2->P4Regressed().Eta(),2) + pow(ei.H2_b1->P4Regressed().Phi() - ei.H2_b2->P4Regressed().Phi(),2));
+
+            
+            ei.HH = CompositeCandidate(ei.H1.get(), ei.H2.get());
+         
+            float targetHiggsMass;
+            if(strategy == "HighestCSVandClosestToMh")
+            {
+                targetHiggsMass = any_cast<float>(parameterList_->at("HiggsMassLMR"));
+                if(any_cast<float>(parameterList_->at("LMRToMMRTransition"))>=0. && ei.HH->P4().M() > any_cast<float>(parameterList_->at("LMRToMMRTransition"))) targetHiggsMass = any_cast<float>(parameterList_->at("HiggsMassMMR"));
+                           
+            }
+            else
+            {
+                targetHiggsMass = any_cast<float>(parameterList_->at("HiggsMass"));
+            }
+
+            ei.HH_2DdeltaM = pow(ei.H1->P4().M() - targetHiggsMass,2) + pow(ei.H2->P4().M() - targetHiggsMass,2);
+
+            bool applyKineamticFit=true;
+            if(applyKineamticFit)
+            {
+                HH4b_kinFit::constrainHH_signalMeasurement(&ordered_jets.at(0).p4Regressed_, &ordered_jets.at(1).p4Regressed_, &ordered_jets.at(2).p4Regressed_, &ordered_jets.at(3).p4Regressed_);
+                CompositeCandidate H1kf = CompositeCandidate(ordered_jets.at(0), ordered_jets.at(1));
+                H1kf.rebuildP4UsingRegressedPt(true,true);
+                
+                CompositeCandidate H2kf = CompositeCandidate(ordered_jets.at(2), ordered_jets.at(3));
+                H2kf.rebuildP4UsingRegressedPt(true,true);
+
+                ei.HH_m_kinFit = CompositeCandidate(H1kf, H2kf).P4().M();
+            }
+            
+            ei.Run = *(nat.run);
+            ei.LumiSec = *(nat.luminosityBlock);
+            ei.Event = *(nat.event);
+
+        }
+        else //Variations
+        {
+// std::cout<<"culo1\n";
+// std::cout<<"culo1.1\n";
+// std::cout<<jets.second[0].getIdx()<<std::endl;
+// std::cout<<"culo1.2\n";
+// std::cout<<H1b1_idx<<" "<<H1b2_idx<<" "<<H2b1_idx<<" "<<H2b2_idx<<" "<<std::endl;
+
+            int H1b1(-1), H1b2(-1), H2b1(-1), H2b2(-1); 
+            for(size_t iJet=0; iJet<jets.second.size(); ++iJet){
+                // std::cout<<"Index = "<<iJet<<std::endl;
+                int currentJetId = jets.second[iJet].getIdx();
+                // std::cout<<"Id = "<<currentJetId<<std::endl;
+                if(H1b1_idx == currentJetId) H1b1 = iJet;
+                if(H1b2_idx == currentJetId) H1b2 = iJet;
+                if(H2b1_idx == currentJetId) H2b1 = iJet;
+                if(H2b2_idx == currentJetId) H2b2 = iJet;
+            }
+// std::cout<<H1b1<<" "<<H1b2<<" "<<H2b1<<" "<<H2b2<<" "<<std::endl;
+// std::cout<<"culo2\n";
+            
+            // order H1, H2 by pT: pT(H1) > pT (H2)
+            CompositeCandidate H1 = CompositeCandidate(jets.second[H1b1], jets.second[H1b2]);
+            H1.rebuildP4UsingRegressedPt(true,true);
+// std::cout<<"culo3\n";
+            
+            CompositeCandidate H2 = CompositeCandidate(jets.second[H2b1], jets.second[H2b2]);
+            H2.rebuildP4UsingRegressedPt(true,true);
+// std::cout<<"culo4\n";
+            
+            float H1_bb_DeltaR = sqrt(pow(jets.second[H1b1].P4Regressed().Eta() - jets.second[H1b2].P4Regressed().Eta(),2) + pow(jets.second[H1b1].P4Regressed().Phi() - jets.second[H1b2].P4Regressed().Phi(),2));
+            float H2_bb_DeltaR = sqrt(pow(jets.second[H2b1].P4Regressed().Eta() - jets.second[H2b2].P4Regressed().Eta(),2) + pow(jets.second[H2b1].P4Regressed().Phi() - jets.second[H2b2].P4Regressed().Phi(),2));
+
+// std::cout<<"culo5\n";
+            CompositeCandidate HH = CompositeCandidate(H1, H2);
+         
+            string strategy = any_cast<string>(parameterList_->at("bbbbChoice"));
+            float targetHiggsMass;
+            if(strategy == "HighestCSVandClosestToMh")
+            {
+                targetHiggsMass = any_cast<float>(parameterList_->at("HiggsMassLMR"));
+                if(any_cast<float>(parameterList_->at("LMRToMMRTransition"))>=0. && ei.HH->P4().M() > any_cast<float>(parameterList_->at("LMRToMMRTransition"))) targetHiggsMass = any_cast<float>(parameterList_->at("HiggsMassMMR"));
+                           
+            }
+            else
+            {
+                targetHiggsMass = any_cast<float>(parameterList_->at("HiggsMass"));
+            }
+
+            float HH_2DdeltaM = pow(H1.P4().M() - targetHiggsMass,2) + pow(H2.P4().M() - targetHiggsMass,2);
+
+            bool applyKineamticFit=true;
+            if(applyKineamticFit)
+            {
+                HH4b_kinFit::constrainHH_signalMeasurement(&jets.second[H1b1].p4Regressed_, &jets.second[H1b2].p4Regressed_, &jets.second[H2b1].p4Regressed_, &jets.second[H2b2].p4Regressed_);
+                CompositeCandidate H1kf = CompositeCandidate(jets.second[H1b1], jets.second[H1b2]);
+                H1kf.rebuildP4UsingRegressedPt(true,true);
+                
+                CompositeCandidate H2kf = CompositeCandidate(jets.second[H2b1], jets.second[H2b2]);
+                H2kf.rebuildP4UsingRegressedPt(true,true);
+
+                float HH_m_kinFit = CompositeCandidate(H1kf, H2kf).P4().M();
+            }
+
+        }
     }
 
     return true;
@@ -581,7 +876,13 @@ void OfflineProducerHelper::bJets_PreselectionCut(std::vector<Jet> &jets)
     float minimumDeepCSVaccepted            = any_cast<float>(parameterList_->at("MinDeepCSV"          ));
     float maximumPtAccepted                 = any_cast<float>(parameterList_->at("MinPt"               ));
     float maximumAbsEtaCSVaccepted          = any_cast<float>(parameterList_->at("MaxAbsEta"           ));
-
+    if(any_cast<bool>(parameterList_->at("UseAntiTagOnOneBjet")))
+    {
+        minimumDeepCSVaccepted = -1;
+    }
+        
+    if(minimumDeepCSVaccepted<=0. && maximumPtAccepted<=0. && maximumAbsEtaCSVaccepted<=0.) return;
+    
     auto it = jets.begin();
     while (it != jets.end()){
         if(minimumDeepCSVaccepted>=0.){
@@ -590,13 +891,13 @@ void OfflineProducerHelper::bJets_PreselectionCut(std::vector<Jet> &jets)
                 continue;
             }
         }
-        if(maximumPtAccepted>0.){
+        if(maximumPtAccepted>=0.){
             if(it->P4().Pt()<maximumPtAccepted){
                 it=jets.erase(it);
                 continue;                
             }
         }
-        if(maximumAbsEtaCSVaccepted>0.){
+        if(maximumAbsEtaCSVaccepted>=0.){
             if(abs(it->P4().Eta())>maximumAbsEtaCSVaccepted){
                 it=jets.erase(it);
                 continue;                
@@ -727,15 +1028,31 @@ std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_HighestCSVandClosestToMh(
  
     std::vector<Jet> output_jets;
     unsigned int numberOfJets = jets->size();
-    if(numberOfJets  < 4) return output_jets;
+    if(numberOfJets  < 4) 
+    {
+        throw std::runtime_error("OfflineProducerHelper::bbbb_jets_idxs_HighestCSVandClosestToMh -> numberOfJets  < 4 -> this should never happen to use jet energy variations, please check the number of Jets provived to this functions");
+    }
 
     std::map< const std::array<unsigned int,4>, float> candidateMap;
     for(unsigned int h1b1it = 0; h1b1it< numberOfJets-1; ++h1b1it){
-        for(unsigned int h1b2it = h1b1it+1; h1b2it< numberOfJets; ++h1b2it){
-            for(unsigned int h2b1it = h1b1it+1; h2b1it< numberOfJets-1; ++h2b1it){
+        for(unsigned int h1b2it = h1b1it+1; h1b2it< numberOfJets; ++h1b2it)
+        {
+            for(unsigned int h2b1it = h1b1it+1; h2b1it< numberOfJets-1; ++h2b1it)
+            {
                 if(h2b1it == h1b2it) continue;
-                for(unsigned int h2b2it = h2b1it+1; h2b2it< numberOfJets; ++h2b2it){
+                for(unsigned int h2b2it = h2b1it+1; h2b2it< numberOfJets; ++h2b2it)
+                {
                     if(h2b2it == h1b2it) continue;
+                    if(any_cast<bool>(parameterList_->at("UseAntiTagOnOneBjet")))
+                    {
+                        int numberOfBJets = 0;
+                        float minimumDeepCSVaccepted = any_cast<float>(parameterList_->at("MinDeepCSV"));
+                        if(get_property(jets->at(h1b1it),Jet_btagDeepB)>=minimumDeepCSVaccepted) ++numberOfBJets;
+                        if(get_property(jets->at(h1b2it),Jet_btagDeepB)>=minimumDeepCSVaccepted) ++numberOfBJets;
+                        if(get_property(jets->at(h2b1it),Jet_btagDeepB)>=minimumDeepCSVaccepted) ++numberOfBJets;
+                        if(get_property(jets->at(h2b2it),Jet_btagDeepB)>=minimumDeepCSVaccepted) ++numberOfBJets;
+                        if(numberOfBJets != 3) continue; //antiTag requires that 1 of the jets has deepCSV < MdeepCSV
+                    }
                     float candidateMass = (jets->at(h1b1it).P4Regressed() + jets->at(h1b2it).P4Regressed() + jets->at(h2b1it).P4Regressed() + jets->at(h2b2it).P4Regressed()).M();
                     float targetHiggsMass = targetHiggsMassLMR;
                     if(LMRToMMRTransition>=0. && candidateMass > LMRToMMRTransition) targetHiggsMass = targetHiggsMassMMR; //use different range for mass
@@ -747,7 +1064,14 @@ std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_HighestCSVandClosestToMh(
         }
     }
 
-    if(candidateMap.size()==0) return output_jets;
+    if(candidateMap.size()==0)
+    {
+        if(!any_cast<bool>(parameterList_->at("UseAntiTagOnOneBjet")))
+        {
+            throw std::runtime_error("OfflineProducerHelper::bbbb_jets_idxs_HighestCSVandClosestToMh -> number of candidates=0 -> this should never happen to use jet energy variations");
+        }
+        return output_jets;
+    } 
 
     const std::pair< const std::array<unsigned int,4>, float> *itCandidateMap=NULL;
     //find candidate with both Higgs candidates cloasest to the true Higgs mass

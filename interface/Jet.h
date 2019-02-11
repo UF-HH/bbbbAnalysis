@@ -22,9 +22,9 @@ class Jet : public Candidate
         void setP4Regressed( TLorentzVector p4Regressed) {p4Regressed_ = p4Regressed;}
         
         TLorentzVector p4Regressed_;
+        void buildP4Regressed(); 
 
     private:
-        void buildP4Regressed(); 
         void buildP4(); 
 
 };

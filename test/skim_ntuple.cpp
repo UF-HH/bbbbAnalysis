@@ -240,7 +240,7 @@ int main(int argc, char** argv)
 
     }
 
-    oph::setParameterList(&parameterList);
+    oph::initializeOfflineProducerHelper(&parameterList);
 
     ////////////////////////////////////////////////////////////////////////
     // Prepare event loop

@@ -46,14 +46,46 @@ namespace OfflineProducerHelper {
     // std::map<std::string, TH1D*> PUWeightHistogramMap_;
     std::map<std::string, std::map<std::pair<float,float>,float> > PUWeightMap_;
     std::map<std::string, JetCorrectionUncertainty*> mapForJECuncertanties_;
-    
+    std::map<std::string, Variation> mapJERNamesAndVariation_;
+    std::map<std::string, bool> mapJECNamesAndVariation_;
+
+    // branch Name, default value
+    std::map<std::string, float> branchesAffectedByJetEnergyVariations_;
+
+    // All maps need to be cleared otherwise we have a glibc detected
     void clean() {
         weightMap_.clear();
         PUWeightMap_.clear();
         mapForJECuncertanties_.clear();
+        mapJERNamesAndVariation_.clear();
+        mapJECNamesAndVariation_.clear();
+        branchesAffectedByJetEnergyVariations_.clear();
     }
 
-    void setParameterList(const std::map<std::string,any> *parameterList) {parameterList_=parameterList;}
+    void initializeOfflineProducerHelper(const std::map<std::string,any> *parameterList) {
+        parameterList_=parameterList;
+        //standard branches present in the EventInfo, other branches should de added when declaring the standard ones (see bTagScaleFactor_central)
+        branchesAffectedByJetEnergyVariations_["H1_b1_pt"] = -1.;
+        branchesAffectedByJetEnergyVariations_["H1_b2_pt"] = -1.;
+        branchesAffectedByJetEnergyVariations_["H2_b1_pt"] = -1.;
+        branchesAffectedByJetEnergyVariations_["H2_b2_pt"] = -1.;
+        // branchesAffectedByJetEnergyVariations_["H1_b1_m"] = -1.;
+        // branchesAffectedByJetEnergyVariations_["H1_b2_m"] = -1.;
+        // branchesAffectedByJetEnergyVariations_["H2_b1_m"] = -1.;
+        // branchesAffectedByJetEnergyVariations_["H2_b2_m"] = -1.;
+        branchesAffectedByJetEnergyVariations_["H1_b1_ptRegressed"] = -1.;
+        branchesAffectedByJetEnergyVariations_["H1_b2_ptRegressed"] = -1.;
+        branchesAffectedByJetEnergyVariations_["H2_b1_ptRegressed"] = -1.;
+        branchesAffectedByJetEnergyVariations_["H2_b2_ptRegressed"] = -1.;
+        branchesAffectedByJetEnergyVariations_["H1_m"] = -1.;
+        branchesAffectedByJetEnergyVariations_["H2_m"] = -1.;
+        // branchesAffectedByJetEnergyVariations_["H1_pt"] = -1.;
+        // branchesAffectedByJetEnergyVariations_["H2_pt"] = -1.;
+        branchesAffectedByJetEnergyVariations_["HH_m"] = -1.;
+        // branchesAffectedByJetEnergyVariations_["HH_pt"] = -1.;
+        branchesAffectedByJetEnergyVariations_["HH_m_kinFit"] = -1.;
+        branchesAffectedByJetEnergyVariations_["HH_2DdeltaM"] = 999.;
+    }
 
     void initializeObjectsForCuts(OutputTree &ot);
     // functions to select events based on non-jet particles:
@@ -93,10 +125,12 @@ namespace OfflineProducerHelper {
     // function pointer for JEC variations
     void (*JECvariations)(NanoAODTree& nat, std::vector<Jet> &jets, std::vector< std::pair<std::string, std::vector<Jet> > > &jetEnergyVariationsMap);
     // function to apply all JEC variations
-    void standardJECVariations(NanoAODTree& nat, std::vector<Jet> &jets, std::vector< std::pair<std::string, std::vector<Jet> > > &jetEnergyVariationsMap);
+    void standardJECVariations(NanoAODTree& nat, std::vector<Jet> &jetsUnsmeared, std::vector< std::pair<std::string, std::vector<Jet> > > &jetEnergyVariationsMap);
     //function to apply JEC variation
-    std::vector<Jet> applyJECVariation(NanoAODTree& nat, std::vector<Jet> jets, std::string variationName, bool direction);
-    
+    std::vector<Jet> applyJECVariation(NanoAODTree& nat, std::vector<Jet> jetsUnsmeared, std::vector<Jet> jetsSmeared, std::string variationName, bool direction);
+
+    //function to fill branches for JEC and JER variations
+    void fillJetEnergyVariationBranch(OutputTree &ot, std::string branchName, std::string variation, float value);
 
     // compute events weight for four b
     void compute_scaleFactors_fourBtag_eventScaleFactor (const std::vector<Jet> &jets, NanoAODTree& nat, OutputTree &ot);

@@ -142,6 +142,8 @@ void OfflineProducerHelper::initializeObjectsBJetForScaleFactors(OutputTree &ot)
         ot.declareUserFloatBranch("bTagScaleFactor_lightJets_up"     , 1.);
         ot.declareUserFloatBranch("bTagScaleFactor_lightJets_down"   , 1.);
 
+        // branchesAffectedByJetEnergyVariations_["bTagScaleFactor_central"] = 1.;
+
         BTagCalibration btagCalibration("DeepCSV",any_cast<string>(parameterList_->at("BJetScaleFactorsFile")));    
         btagCalibrationReader_lightJets_ = new BTagCalibrationReader(BTagEntry::OP_MEDIUM,"central",{"up", "down"});      
         btagCalibrationReader_cJets_     = new BTagCalibrationReader(BTagEntry::OP_MEDIUM,"central",{"up", "down"});      
@@ -460,7 +462,16 @@ void OfflineProducerHelper::initializeJERsmearingAndVariations(OutputTree &ot)
         //set up variations
         if(any_cast<bool>(parameterList_->at("JERComputeVariations")))
         {
+            mapJERNamesAndVariation_["JER_up"  ] = Variation::UP  ;
+            mapJERNamesAndVariation_["JER_down"] = Variation::DOWN;
             JERvariations = &standardJERVariations;
+            for(const auto & branch : branchesAffectedByJetEnergyVariations_)
+            {
+                for(const auto & variation : mapJERNamesAndVariation_)
+                {
+                    ot.declareUserFloatBranch(branch.first + "_" + variation.first, branch.second);
+                }
+            }
         }
         else
         {
@@ -479,11 +490,8 @@ std::vector<Jet> OfflineProducerHelper::standardJERsmearing(NanoAODTree& nat, st
 
 void OfflineProducerHelper::standardJERVariations(NanoAODTree& nat, std::vector<Jet> &jets, std::vector< std::pair<std::string, std::vector<Jet> > > &jetEnergyVariationsMap)
 {
-    std::map<std::string, Variation> mapNamesAndVariation;
-    mapNamesAndVariation["JER_up"] = Variation::UP;
-    mapNamesAndVariation["JER_down"] = Variation::DOWN;
 
-    for (auto const & variation : mapNamesAndVariation)
+    for (auto const & variation : mapJERNamesAndVariation_)
     {
         jetEnergyVariationsMap.push_back (std::pair<std::string, std::vector<Jet> >(variation.first, applyJERsmearing(nat, jets, variation.second)));
     }
@@ -557,32 +565,40 @@ void OfflineProducerHelper::initializeJECVariations(OutputTree &ot)
     else if (JECmethod == "StandardJEC")
     {
         JECvariations = &standardJECVariations;
+        mapJECNamesAndVariation_["_up"]   = true  ;
+        mapJECNamesAndVariation_["_down"] = false ;
+
         string JECFileName = any_cast<string>(parameterList_->at("JECFileName"));
         for( const auto & JECVariationName : any_cast<std::vector<std::string> >(parameterList_->at("JECListOfCorrections")))
         {
             // JetCorrectorParameters *parameter = new JetCorrectorParameters(JECFileName, JECVariationName);
             // mapForJECuncertanties_[JECVariationName] = new JetCorrectionUncertainty(*parameter);
             mapForJECuncertanties_[JECVariationName] = new JetCorrectionUncertainty(*(new JetCorrectorParameters(JECFileName, JECVariationName)));
+
+            for(const auto & branch : branchesAffectedByJetEnergyVariations_)
+            {
+                for(const auto & variation : mapJECNamesAndVariation_)
+                {
+                    ot.declareUserFloatBranch(branch.first + "_" + JECVariationName + variation.first, branch.second);
+                }
+            }
         }
     }
 
     return;
 }
 
-void OfflineProducerHelper::standardJECVariations(NanoAODTree& nat, std::vector<Jet> &jets, std::vector< std::pair<std::string, std::vector<Jet> > > &jetEnergyVariationsMap)
+void OfflineProducerHelper::standardJECVariations(NanoAODTree& nat, std::vector<Jet> &jetsUnsmeared, std::vector< std::pair<std::string, std::vector<Jet> > > &jetEnergyVariationsMap)
 {
     
     //Uncertanties are calculated according to https://twiki.cern.ch/twiki/bin/view/CMS/JECUncertaintySources#Code_example
-    std::map<std::string, bool> mapNamesAndDirection;
-    mapNamesAndDirection["_up"]   = true  ;
-    mapNamesAndDirection["_down"] = false ;
 
     for (auto const & variation : mapForJECuncertanties_)
     {
-        for (auto const & direction : mapNamesAndDirection)
+        for (auto const & direction : mapJECNamesAndVariation_)
         {
             std::string variationName = variation.first + direction.first;
-            jetEnergyVariationsMap.push_back (std::pair<std::string, std::vector<Jet> >(variationName, applyJECVariation(nat, jets, variation.first, direction.second)));
+            jetEnergyVariationsMap.push_back (std::pair<std::string, std::vector<Jet> >(variationName, applyJECVariation(nat, jetsUnsmeared, jetEnergyVariationsMap[0].second, variation.first, direction.second)));
         }
     }
 
@@ -590,40 +606,55 @@ void OfflineProducerHelper::standardJECVariations(NanoAODTree& nat, std::vector<
 }
 
 
-std::vector<Jet> OfflineProducerHelper::applyJECVariation(NanoAODTree& nat, std::vector<Jet> jets, std::string variationName, bool direction)
+std::vector<Jet> OfflineProducerHelper::applyJECVariation(NanoAODTree& nat, std::vector<Jet> jetsUnsmeared, std::vector<Jet> jetsSmeared, std::string variationName, bool direction)
 {
 
-    for(auto &iJet : jets)
+    // calculation derived from the following twikis:
+    // https://twiki.cern.ch/twiki/bin/view/CMS/JECUncertaintySources#Example_implementation
+    // https://twiki.cern.ch/twiki/bin/view/CMSPublic/WorkBookJetEnergyCorrections#JetCorUncertainties
+
+    double shift = direction ? 1. : -1. ;
+    for(size_t iJet=0; iJet<jetsUnsmeared.size(); ++iJet)
     {
-        mapForJECuncertanties_[variationName]->setJetPt(iJet.P4().Pt());
-        mapForJECuncertanties_[variationName]->setJetEta(iJet.P4().Eta());
-        double correctorFactor = mapForJECuncertanties_[variationName]->getUncertainty(direction); // up variation
+        mapForJECuncertanties_[variationName]->setJetPt(jetsUnsmeared[iJet].P4().Pt());
+        mapForJECuncertanties_[variationName]->setJetEta(jetsUnsmeared[iJet].P4().Eta());
+        double correctionFactor = mapForJECuncertanties_[variationName]->getUncertainty(direction);
         
-        iJet.setP4(iJet.P4()*correctorFactor);
-        iJet.buildP4Regressed();
+        jetsSmeared[iJet].setP4(jetsSmeared[iJet].P4()*(1+shift*correctionFactor));
+        jetsSmeared[iJet].buildP4Regressed();
     }  
 
-    return jets;
+    return jetsSmeared;
 }
-
 
 // ----------------- Compute JEC - END --------------------- //
 
 
+void OfflineProducerHelper::fillJetEnergyVariationBranch(OutputTree &ot, std::string branchName, std::string variation, float value)
+{
+
+    if(branchesAffectedByJetEnergyVariations_.find(branchName) == branchesAffectedByJetEnergyVariations_.end())
+    {
+        throw std::runtime_error("OfflineProducerHelper::select_bbbb_jets -> branch " + branchName + " doesn't exist, impossible to calculate the variations");
+    }
+    
+    ot.userFloat(branchName + "_" + variation) = value;
+
+    return;
+}
+
+
 bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, OutputTree &ot)
 {
-// std::cout<<"culo1\n";
     
     if (*(nat.nJet) < 4)
         return false;
     std::vector<Jet> unsmearedJets;
     unsmearedJets.reserve(*(nat.nJet));
-// std::cout<<"culo2\n";
 
     for (uint ij = 0; ij < *(nat.nJet); ++ij){
         unsmearedJets.emplace_back(Jet(ij, &nat));
     }
-// std::cout<<"culo3\n";
     
     //if some montecarlo weight are applied via a reshaping of the jets variables, they must be applied here
 
@@ -638,7 +669,6 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
     }
     else throw std::runtime_error("cannot recognize cut strategy " + preselectionCutStrategy);
 
-// std::cout<<"culo4\n";
     //at least 4 jets required
     if(unsmearedJets.size()<4) return false;
 
@@ -648,12 +678,10 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
         return ( get_property(a, Jet_btagDeepB) > get_property(b, Jet_btagDeepB) );
     });
 
-// std::cout<<"culo5\n";
     std::vector<Jet> jetsOriginal;
     std::vector< std::pair<std::string, std::vector<Jet> > > jetEnergyVariationsMap;
     std::string originalSampleName = "NominalObjects";
     
-// std::cout<<"culo6\n";
     // Apply JER corrections and variations
     if(parameterList_->find("JetEnergyResolution") != parameterList_->end())
     { //is it a MC event
@@ -673,7 +701,6 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
     }
 
 
-// std::cout<<"culo7\n";
     int H1b1_idx(-1), H1b2_idx(-1), H2b1_idx(-1), H2b2_idx(-1); //Jet indexes for variations
 
     for(auto & jets : jetEnergyVariationsMap)
@@ -681,7 +708,6 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
         // std::cout<<jets.first<<" size = "<<jets.second.size()<<std::endl;
         if(jets.first == originalSampleName) //Original sample without variations
         {
-// std::cout<<"culo8\n";
             // calculate scaleFactors after preselection cuts
             if(parameterList_->find("BTagScaleFactorMethod") != parameterList_->end()){ //is it a MC event
                 const string BJetcaleFactorsMethod = any_cast<string>(parameterList_->at("BTagScaleFactorMethod"));
@@ -690,7 +716,6 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
                     compute_scaleFactors_fourBtag_eventScaleFactor(jets.second,nat,ot);
                 }
             }
-// std::cout<<"culo9\n";
 
             // now need to pair the jets
             std::vector<Jet> presel_jets = {{
@@ -699,7 +724,6 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
                 (jets.second[2]),
                 (jets.second[3])
             }};
-// std::cout<<"culo10\n";
 
             std::vector<Jet> ordered_jets;
             string strategy = any_cast<string>(parameterList_->at("bbbbChoice"));
@@ -715,7 +739,6 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
                 ordered_jets = bbbb_jets_idxs_HighestCSVandClosestToMh(&jets.second);
             }
             else throw std::runtime_error("cannot recognize bbbb choice strategy " + strategy);
-// std::cout<<"culo11\n";
 
             if(ordered_jets.size()!=4)
             {
@@ -800,11 +823,6 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
         }
         else //Variations
         {
-// std::cout<<"culo1\n";
-// std::cout<<"culo1.1\n";
-// std::cout<<jets.second[0].getIdx()<<std::endl;
-// std::cout<<"culo1.2\n";
-// std::cout<<H1b1_idx<<" "<<H1b2_idx<<" "<<H2b1_idx<<" "<<H2b2_idx<<" "<<std::endl;
 
             int H1b1(-1), H1b2(-1), H2b1(-1), H2b2(-1); 
             for(size_t iJet=0; iJet<jets.second.size(); ++iJet){
@@ -816,22 +834,17 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
                 if(H2b1_idx == currentJetId) H2b1 = iJet;
                 if(H2b2_idx == currentJetId) H2b2 = iJet;
             }
-// std::cout<<H1b1<<" "<<H1b2<<" "<<H2b1<<" "<<H2b2<<" "<<std::endl;
-// std::cout<<"culo2\n";
-            
+
             // order H1, H2 by pT: pT(H1) > pT (H2)
             CompositeCandidate H1 = CompositeCandidate(jets.second[H1b1], jets.second[H1b2]);
             H1.rebuildP4UsingRegressedPt(true,true);
-// std::cout<<"culo3\n";
             
             CompositeCandidate H2 = CompositeCandidate(jets.second[H2b1], jets.second[H2b2]);
             H2.rebuildP4UsingRegressedPt(true,true);
-// std::cout<<"culo4\n";
             
             float H1_bb_DeltaR = sqrt(pow(jets.second[H1b1].P4Regressed().Eta() - jets.second[H1b2].P4Regressed().Eta(),2) + pow(jets.second[H1b1].P4Regressed().Phi() - jets.second[H1b2].P4Regressed().Phi(),2));
             float H2_bb_DeltaR = sqrt(pow(jets.second[H2b1].P4Regressed().Eta() - jets.second[H2b2].P4Regressed().Eta(),2) + pow(jets.second[H2b1].P4Regressed().Phi() - jets.second[H2b2].P4Regressed().Phi(),2));
 
-// std::cout<<"culo5\n";
             CompositeCandidate HH = CompositeCandidate(H1, H2);
          
             string strategy = any_cast<string>(parameterList_->at("bbbbChoice"));
@@ -850,6 +863,7 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
             float HH_2DdeltaM = pow(H1.P4().M() - targetHiggsMass,2) + pow(H2.P4().M() - targetHiggsMass,2);
 
             bool applyKineamticFit=true;
+            float HH_m_kinFit=-1;
             if(applyKineamticFit)
             {
                 HH4b_kinFit::constrainHH_signalMeasurement(&jets.second[H1b1].p4Regressed_, &jets.second[H1b2].p4Regressed_, &jets.second[H2b1].p4Regressed_, &jets.second[H2b2].p4Regressed_);
@@ -859,11 +873,26 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
                 CompositeCandidate H2kf = CompositeCandidate(jets.second[H2b1], jets.second[H2b2]);
                 H2kf.rebuildP4UsingRegressedPt(true,true);
 
-                float HH_m_kinFit = CompositeCandidate(H1kf, H2kf).P4().M();
+                HH_m_kinFit = CompositeCandidate(H1kf, H2kf).P4().M();
             }
+
+            fillJetEnergyVariationBranch(ot, "H1_b1_pt", jets.first, jets.second[H1b1].P4().Pt());
+            fillJetEnergyVariationBranch(ot, "H1_b2_pt", jets.first, jets.second[H1b2].P4().Pt());
+            fillJetEnergyVariationBranch(ot, "H2_b1_pt", jets.first, jets.second[H2b1].P4().Pt());
+            fillJetEnergyVariationBranch(ot, "H2_b2_pt", jets.first, jets.second[H2b2].P4().Pt());
+            fillJetEnergyVariationBranch(ot, "H1_b1_ptRegressed", jets.first, jets.second[H1b1].P4Regressed().Pt());
+            fillJetEnergyVariationBranch(ot, "H1_b2_ptRegressed", jets.first, jets.second[H1b2].P4Regressed().Pt());
+            fillJetEnergyVariationBranch(ot, "H2_b1_ptRegressed", jets.first, jets.second[H2b1].P4Regressed().Pt());
+            fillJetEnergyVariationBranch(ot, "H2_b2_ptRegressed", jets.first, jets.second[H2b2].P4Regressed().Pt());
+            fillJetEnergyVariationBranch(ot, "H1_m", jets.first, H1.P4().M());
+            fillJetEnergyVariationBranch(ot, "H2_m", jets.first, H2.P4().M());
+            fillJetEnergyVariationBranch(ot, "HH_m", jets.first, HH.P4().M());
+            fillJetEnergyVariationBranch(ot, "HH_m_kinFit", jets.first, HH_m_kinFit);
+            fillJetEnergyVariationBranch(ot, "HH_2DdeltaM", jets.first, HH_2DdeltaM);
 
         }
     }
+
 
     return true;
 }

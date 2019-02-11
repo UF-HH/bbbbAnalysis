@@ -74,10 +74,15 @@ namespace OfflineProducerHelper {
     BTagCalibrationReader *btagCalibrationReader_bJets_;
     //functions fo apply preselection cuts:
     void bJets_PreselectionCut(std::vector<Jet> &jets);
-
+    std::vector<std::tuple<Jet,int,int>> bjJets_PreselectionCut(std::vector<std::tuple<Jet,int,int>> jetsinfo);
+    std::vector<std::tuple<Jet,int,int>> bbbbBothClosestToMh(const std::vector<std::tuple<Jet,int,int>> presel_jets);
+    std::vector<std::tuple<Jet,int,int>> bbbbOneClosestToMh(std::vector<std::tuple<Jet,int,int>> presel_jets);
+    std::vector<std::tuple<int,int,int>> QuarkToJetMatcher(const std::vector<GenPart> quarks, std::vector<Jet> jets);
+    std::vector<std::tuple<Jet,int,int>> AddGenMatchingInfo(NanoAODTree& nat, EventInfo& ei, std::vector<Jet> jets);
+    std::vector<std::tuple<Jet,int,int>> OppositeEtaJetPair(std::vector<std::tuple<Jet,int,int>> jjets);
     // functions that act on the EventInfo
     bool select_bbbb_jets (NanoAODTree& nat, EventInfo& ei, OutputTree &ot);
-
+    bool select_bbbbjj_jets (NanoAODTree& nat, EventInfo& ei, OutputTree &ot);
     // bbbbSelectionStrategy strategy_;
     // functions to pair a preselected set of four jets. They all shuffle the input set of jets and return them as (H1_b1, H1_b2, H2_b1, H2_b2)
     //

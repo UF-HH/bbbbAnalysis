@@ -1,0 +1,16 @@
+root://cmsxrootd.fnal.gov//store/user/guerrero/HHNanoAOD/VBFHH4b2017/00FD496F-9AAB-E811-A2DC-001E67F99BE6.root
+root://cmsxrootd.fnal.gov//store/user/guerrero/HHNanoAOD/VBFHH4b2017/2870DF48-9AAB-E811-9F07-24BE05CE3EA1.root
+root://cmsxrootd.fnal.gov//store/user/guerrero/HHNanoAOD/VBFHH4b2017/30FDD07B-9AAB-E811-9BF4-0CC47A4D7692.root
+root://cmsxrootd.fnal.gov//store/user/guerrero/HHNanoAOD/VBFHH4b2017/32ECB14E-9BAB-E811-9BE3-0026B9278637.root
+root://cmsxrootd.fnal.gov//store/user/guerrero/HHNanoAOD/VBFHH4b2017/44931276-9BAB-E811-819D-6C3BE5B59060.root
+root://cmsxrootd.fnal.gov//store/user/guerrero/HHNanoAOD/VBFHH4b2017/5A604D72-9AAB-E811-96F3-A0369FD0B29E.root
+root://cmsxrootd.fnal.gov//store/user/guerrero/HHNanoAOD/VBFHH4b2017/5A7CE353-DFAA-E811-AE1C-0242AC130002.root
+root://cmsxrootd.fnal.gov//store/user/guerrero/HHNanoAOD/VBFHH4b2017/6666BE43-9BAB-E811-B527-D4AE526A0488.root
+root://cmsxrootd.fnal.gov//store/user/guerrero/HHNanoAOD/VBFHH4b2017/68EB414D-9BAB-E811-91A5-A0369F6369D2.root
+root://cmsxrootd.fnal.gov//store/user/guerrero/HHNanoAOD/VBFHH4b2017/8EC36B76-9AAB-E811-905E-0025905C53B2.root
+root://cmsxrootd.fnal.gov//store/user/guerrero/HHNanoAOD/VBFHH4b2017/A2E6B44B-9AAB-E811-AFC5-0002C9A0C4C1.root
+root://cmsxrootd.fnal.gov//store/user/guerrero/HHNanoAOD/VBFHH4b2017/E237AD76-9AAB-E811-B9E9-A4BF0112BC5C.root
+root://cmsxrootd.fnal.gov//store/user/guerrero/HHNanoAOD/VBFHH4b2017/EC5D21BC-A1AB-E811-A05F-801844DEF4E0.root
+root://cmsxrootd.fnal.gov//store/user/guerrero/HHNanoAOD/VBFHH4b2017/EE0BFA48-9BAB-E811-AC24-20CF3027A580.root
+root://cmsxrootd.fnal.gov//store/user/guerrero/HHNanoAOD/VBFHH4b2017/F0E1F43E-9BAB-E811-9170-008CFAF71768.root
+root://cmsxrootd.fnal.gov//store/user/guerrero/HHNanoAOD/VBFHH4b2017/FAB8D928-9BAB-E811-B7D7-003048F5975C.root

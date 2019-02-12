@@ -128,7 +128,7 @@ namespace OfflineProducerHelper {
     // function to apply all JEC variations
     void standardJECVariations(NanoAODTree& nat, std::vector<Jet> &jetsUnsmeared, std::vector< std::pair<std::string, std::vector<Jet> > > &jetEnergyVariationsMap);
     //function to apply JEC variation
-    std::vector<Jet> applyJECVariation(NanoAODTree& nat, std::vector<Jet> jetsUnsmeared, std::vector<Jet> jetsSmeared, std::string variationName, bool direction);
+    std::vector<Jet> applyJECVariation(NanoAODTree& nat, std::vector<Jet> jetsUnsmeared, std::string variationName, bool direction);
 
     //function to fill branches for JEC and JER variations
     void fillJetEnergyVariationBranch(OutputTree &ot, std::string branchName, std::string variation, float value);

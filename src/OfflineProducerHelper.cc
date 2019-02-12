@@ -599,7 +599,7 @@ void OfflineProducerHelper::standardJECVariations(NanoAODTree& nat, std::vector<
         for (auto const & direction : mapJECNamesAndVariation_)
         {
             std::string variationName = variation.first + direction.first;
-            jetEnergyVariationsMap.push_back (std::pair<std::string, std::vector<Jet> >(variationName, applyJECVariation(nat, jetsUnsmeared, jetEnergyVariationsMap[0].second, variation.first, direction.second)));
+            jetEnergyVariationsMap.push_back (std::pair<std::string, std::vector<Jet> >(variationName, applyJECVariation(nat, jetsUnsmeared, variation.first, direction.second)));
         }
     }
 
@@ -607,7 +607,7 @@ void OfflineProducerHelper::standardJECVariations(NanoAODTree& nat, std::vector<
 }
 
 
-std::vector<Jet> OfflineProducerHelper::applyJECVariation(NanoAODTree& nat, std::vector<Jet> jetsUnsmeared, std::vector<Jet> jetsSmeared, std::string variationName, bool direction)
+std::vector<Jet> OfflineProducerHelper::applyJECVariation(NanoAODTree& nat, std::vector<Jet> jetsUnsmeared, std::string variationName, bool direction)
 {
 
     // calculation derived from the following twikis:
@@ -621,11 +621,13 @@ std::vector<Jet> OfflineProducerHelper::applyJECVariation(NanoAODTree& nat, std:
         mapForJECuncertanties_[variationName]->setJetEta(jetsUnsmeared[iJet].P4().Eta());
         double correctionFactor = mapForJECuncertanties_[variationName]->getUncertainty(direction);
         
-        jetsSmeared[iJet].setP4(jetsSmeared[iJet].P4()*(1+shift*correctionFactor));
-        jetsSmeared[iJet].buildP4Regressed();
+        jetsUnsmeared[iJet].setP4(jetsUnsmeared[iJet].P4()*(1+shift*correctionFactor));
+        jetsUnsmeared[iJet].buildP4Regressed();  //I have to recompute it in case JERsmearing is not doing anything 
     }  
 
-    return jetsSmeared;
+    // JER smearing has to be applied after JEC:
+    // https://hypernews.cern.ch/HyperNews/CMS/get/jes/439/1.html
+    return JERsmearing(nat,jetsUnsmeared);;
 }
 
 // ----------------- Compute JEC - END --------------------- //
@@ -841,10 +843,7 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
             
             CompositeCandidate H2 = CompositeCandidate(jets.second[H2b1], jets.second[H2b2]);
             H2.rebuildP4UsingRegressedPt(true,true);
-            
-            float H1_bb_DeltaR = sqrt(pow(jets.second[H1b1].P4Regressed().Eta() - jets.second[H1b2].P4Regressed().Eta(),2) + pow(jets.second[H1b1].P4Regressed().Phi() - jets.second[H1b2].P4Regressed().Phi(),2));
-            float H2_bb_DeltaR = sqrt(pow(jets.second[H2b1].P4Regressed().Eta() - jets.second[H2b2].P4Regressed().Eta(),2) + pow(jets.second[H2b1].P4Regressed().Phi() - jets.second[H2b2].P4Regressed().Phi(),2));
-
+       
             CompositeCandidate HH = CompositeCandidate(H1, H2);
          
             string strategy = any_cast<string>(parameterList_->at("bbbbChoice"));

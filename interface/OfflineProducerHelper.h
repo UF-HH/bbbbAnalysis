@@ -51,6 +51,7 @@ namespace OfflineProducerHelper {
 
     // branch Name, default value
     std::map<std::string, float> branchesAffectedByJetEnergyVariations_;
+    float sampleCrossSection_;
 
     // All maps need to be cleared otherwise we have a glibc detected
     void clean() {
@@ -94,7 +95,7 @@ namespace OfflineProducerHelper {
     void save_WandZleptondecays (NanoAODTree& nat, OutputTree &ot);
 
 
-    void initializeObjectsForEventWeight(OutputTree &ot, SkimEffCounter &ec, std::string PUWeightFileName);
+    void initializeObjectsForEventWeight(OutputTree &ot, SkimEffCounter &ec, std::string PUWeightFileName, float crossSection);
     // functions to select events based on non-jet particles:
     float (*calculateEventWeight)(NanoAODTree&, OutputTree&, SkimEffCounter &ec);
     // reject events with leptons that may come from W and Z decays
@@ -141,10 +142,15 @@ namespace OfflineProducerHelper {
     BTagCalibrationReader *btagCalibrationReader_bJets_;
     //functions fo apply preselection cuts:
     void bJets_PreselectionCut(std::vector<Jet> &jets);
-
+    std::vector<std::tuple<Jet,int,int>> bjJets_PreselectionCut(std::vector<std::tuple<Jet,int,int>> jetsinfo);
+    std::vector<std::tuple<Jet,int,int>> bbbbBothClosestToMh(const std::vector<std::tuple<Jet,int,int>> presel_jets);
+    std::vector<std::tuple<Jet,int,int>> bbbbOneClosestToMh(std::vector<std::tuple<Jet,int,int>> presel_jets);
+    std::vector<std::tuple<int,int,int>> QuarkToJetMatcher(const std::vector<GenPart> quarks, std::vector<Jet> jets);
+    std::vector<std::tuple<Jet,int,int>> AddGenMatchingInfo(NanoAODTree& nat, EventInfo& ei, std::vector<Jet> jets);
+    std::vector<std::tuple<Jet,int,int>> OppositeEtaJetPair(std::vector<std::tuple<Jet,int,int>> jjets);
     // functions that act on the EventInfo
     bool select_bbbb_jets (NanoAODTree& nat, EventInfo& ei, OutputTree &ot);
-
+    bool select_bbbbjj_jets (NanoAODTree& nat, EventInfo& ei, OutputTree &ot);
     // bbbbSelectionStrategy strategy_;
     // functions to pair a preselected set of four jets. They all shuffle the input set of jets and return them as (H1_b1, H1_b2, H2_b1, H2_b2)
     //

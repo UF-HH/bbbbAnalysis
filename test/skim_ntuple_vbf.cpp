@@ -107,7 +107,8 @@ int main(int argc, char** argv)
     std::map<std::string,any> parameterList;
 
     const string bbbbChoice = config.readStringOpt("parameters::bbbbChoice");
-    
+    parameterList.emplace("is_VBF_sig",is_VBF_sig);
+
     parameterList.emplace("bbbbChoice",bbbbChoice);
     if(bbbbChoice == "OneClosestToMh"){
         parameterList.emplace("bbbbChoice""HiggsMass",config.readFloatOpt("parameters::HiggsMass"));
@@ -122,15 +123,6 @@ int main(int argc, char** argv)
         parameterList.emplace("HiggsMassLMR"        ,config.readFloatOpt("parameters::HiggsMassLMR"        ));
         parameterList.emplace("HiggsMassMMR"        ,config.readFloatOpt("parameters::HiggsMassMMR"        ));
         parameterList.emplace("LMRToMMRTransition"  ,config.readFloatOpt("parameters::LMRToMMRTransition"  ));
-        parameterList.emplace("UseAntiTagOnOneBjet" ,config.readBoolOpt("parameters::UseAntiTagOnOneBjet"  ));
-        if(!is_data && any_cast<bool>(parameterList.at("UseAntiTagOnOneBjet")))
-        {
-            throw std::runtime_error("UseAntiTagOnOneBjet can be done only on data");
-        }
-        if(any_cast<bool>(parameterList.at("UseAntiTagOnOneBjet")) && config.readStringOpt("parameters::PreselectionCut") != "bJetCut")
-        {
-            throw std::runtime_error("UseAntiTagOnOneBjet can be done only using PreselectionCut = bJetCut");
-        }
     }
     // else if(other selection type){
     //     parameters fo be retreived;
@@ -147,13 +139,19 @@ int main(int argc, char** argv)
         parameterList.emplace("MinPt"               ,config.readFloatOpt("parameters::MinPt"               ));
         parameterList.emplace("MaxAbsEta"           ,config.readFloatOpt("parameters::MaxAbsEta"           ));
     }
+    else if(preselectionCutStrategy == "VBFJetCut"){
+        parameterList.emplace("bMinDeepCSV"          ,config.readFloatOpt("parameters::bMinDeepCSV"          ));
+        parameterList.emplace("bMinPt"               ,config.readFloatOpt("parameters::bMinPt"               ));
+        parameterList.emplace("bMaxAbsEta"           ,config.readFloatOpt("parameters::bMaxAbsEta"           ));
+        parameterList.emplace("jMinPt"               ,config.readFloatOpt("parameters::jMinPt"               ));
+        parameterList.emplace("jMaxAbsEta"           ,config.readFloatOpt("parameters::jMaxAbsEta"           ));
+    }
     else if(preselectionCutStrategy == "None"){
     }  
     // else if(other selection type){
     //     parameters fo be retreived;
     // }  
     else throw std::runtime_error("cannot recognize event choice ObjectsForCut " + preselectionCutStrategy);
-
 
 
     const string objectsForCut = config.readStringOpt("parameters::ObjectsForCut");
@@ -173,24 +171,24 @@ int main(int argc, char** argv)
     // }  
     else throw std::runtime_error("cannot recognize event choice ObjectsForCut " + objectsForCut);
 
-    // MC only procedures
-    if(!is_data){
 
-        //Btag Scale factors
-        const string bTagscaleFactorMethod = config.readStringOpt("parameters::BTagScaleFactorMethod");
-        parameterList.emplace("BTagScaleFactorMethod",bTagscaleFactorMethod);
-        if(bTagscaleFactorMethod == "FourBtag_ScaleFactor"){
-            parameterList.emplace("BJetScaleFactorsFile"    ,config.readStringOpt("parameters::BJetScaleFactorsFile"    ));
+    if(!is_data){
+        const string scaleFactorMethod = config.readStringOpt("parameters::ScaleFactorMethod");
+        parameterList.emplace("ScaleFactorMethod",scaleFactorMethod);
+        if(scaleFactorMethod == "FourBtag_ScaleFactor"){
+            parameterList.emplace("BJetScaleFactorsFile"   ,config.readStringOpt("parameters::BJetScaleFactorsFile"  ));
+            parameterList.emplace("BTagEfficiencyFile"     ,config.readStringOpt("parameters::BTagEfficiencyFile"    ));
+            parameterList.emplace("BTagEfficiencyHistName" ,config.readStringOpt("parameters::BTagEfficiencyHistName"));
         }
-        else if(bTagscaleFactorMethod == "None"){
+        else if(scaleFactorMethod == "None"){
         }  
         // else if(other selection type){
         //     parameters fo be retreived;
         // }  
-        else throw std::runtime_error("cannot recognize event choice bTagScaleFactorMethod " + bTagscaleFactorMethod);
+        else throw std::runtime_error("cannot recognize event choice ScaleFactorMethod " + scaleFactorMethod);
+    }
 
-
-        //Generator weights
+    if(!is_data){
         const string weightMethod = config.readStringOpt("parameters::WeightMethod");
         parameterList.emplace("WeightMethod",weightMethod);
         if(weightMethod == "StandardWeight"){
@@ -205,39 +203,6 @@ int main(int argc, char** argv)
         //     parameters fo be retreived;
         // }  
         else throw std::runtime_error("cannot recognize event choice WeightMethod " + weightMethod);
-
-
-        //JER 
-        const string JERstrategy = config.readStringOpt("parameters::JetEnergyResolution");
-        parameterList.emplace("JetEnergyResolution",JERstrategy);
-        if(JERstrategy == "StandardJER"){
-            parameterList.emplace("JERComputeVariations" ,config.readBoolOpt  ("parameters::JERComputeVariations" ));
-            parameterList.emplace("RandomGeneratorSeed"  ,config.readIntOpt   ("parameters::RandomGeneratorSeed"  ));
-            parameterList.emplace("JERResolutionFile"    ,config.readStringOpt("parameters::JERResolutionFile"    ));
-            parameterList.emplace("JERScaleFactorFile"   ,config.readStringOpt("parameters::JERScaleFactorFile"    ));
-        }
-        else if(JERstrategy == "None"){
-        }  
-        // else if(other selection type){
-        //     parameters fo be retreived;
-        // }  
-        else throw std::runtime_error("cannot recognize event choice ObjectsForCut " + JERstrategy);
-
-
-        //JEC 
-        const string JECstrategy = config.readStringOpt("parameters::JetEnergyCorrection");
-        parameterList.emplace("JetEnergyCorrection",JECstrategy);
-        if(JECstrategy == "StandardJEC"){
-            parameterList.emplace("JECFileName"          ,config.readStringOpt    ("parameters::JECFileName"          ));
-            parameterList.emplace("JECListOfCorrections" ,config.readStringListOpt("parameters::JECListOfCorrections" ));
-        }
-        else if(JECstrategy == "None"){
-        }  
-        // else if(other selection type){
-        //     parameters fo be retreived;
-        // }  
-        else throw std::runtime_error("cannot recognize event choice ObjectsForCut " + JECstrategy);
-
     }
 
     oph::initializeOfflineProducerHelper(&parameterList);
@@ -265,7 +230,7 @@ int main(int argc, char** argv)
     cout << "[INFO] ... creating tree reader" << endl;
 
     // The TChain is passed to the NanoAODTree_SetBranchImpl to parse all the brances
-    NanoAODTree nat (&ch, (!is_data && config.readBoolOpt("parameters::is2016Sample")));
+    NanoAODTree nat (&ch, is_data);
 
     cout << "[INFO] ... loading the following triggers" << endl;
     for (auto trg : config.readStringListOpt("triggers::makeORof"))
@@ -289,16 +254,23 @@ int main(int argc, char** argv)
 
     if(!is_data)
     {
-        oph::initializeJERsmearingAndVariations(ot);
-        oph::initializeJECVariations(ot);
-        oph::initializeObjectsForEventWeight(ot,ec,opts["puWeight"].as<string>(),xs);
         oph::initializeObjectsBJetForScaleFactors(ot);
+        oph::initializeObjectsForEventWeight(ot,ec,opts["puWeight"].as<string>(),xs);
     }
 
     jsonLumiFilter jlf;
     if (is_data)
         jlf.loadJSON(config.readStringOpt("data::lumimask")); // just read the info for data, so if I just skim MC I'm not forced to parse a JSON
 
+    //DeclareUser Branches for TriggerInformation
+    ot.declareUserIntBranch("nJetPT25", -1);
+    ot.declareUserIntBranch("nJetPT30", -1);
+    ot.declareUserIntBranch("nJetPT35", -1);        
+    ot.declareUserIntBranch("nJetPT40", -1);
+    vector <string> triggers;
+    for (auto trg : config.readStringListOpt("triggers::makeORof"))
+       triggers.push_back(trg);
+    for (unsigned p=0; p<triggers.size(); p++){ot.declareUserIntBranch(triggers[p], -1);}
     ////////////////////////////////////////////////////////////////////////
     // Execute event loop
     ////////////////////////////////////////////////////////////////////////
@@ -319,7 +291,6 @@ int main(int argc, char** argv)
             continue; // not a valid lumi
         }
               
-
         ot.clear();
         EventInfo ei;
         
@@ -332,15 +303,9 @@ int main(int argc, char** argv)
 
         ec.updateTriggered(weight);
 
-        if (!oph::select_bbbb_jets(nat, ei, ot)) continue;
-
-        if (is_signal){
-            oph::select_gen_HH(nat, ei);
-            if (!oph::select_gen_bb_bb(nat, ei))
-                continue; 
-        }
-
         if (is_VBF_sig){
+            oph::select_gen_HH(nat, ei);
+            oph::select_gen_bb_bb(nat, ei);            
             bool got_gen_VBF = oph::select_gen_VBF_partons(nat, ei);
             if (!got_gen_VBF){
                 cout << "Failed on iEv = " << iEv << " evt num = " << *(nat.event) << " run = " << *(nat.run) << endl;
@@ -348,7 +313,12 @@ int main(int argc, char** argv)
             }
         }
 
-
+        
+        if (!oph::select_bbbbjj_jets(nat, ei, ot)) continue; 
+        for (unsigned p=0; p<triggers.size(); p++){
+           if (nat.triggerReader().getTrgResult(triggers[p])){ ot.userInt(triggers[p]) = 1;}
+           else{ot.userInt(triggers[p]) = 0;}
+        }
         oph::save_objects_for_cut(nat, ot);
 
         ec.updateSelected(weight);

@@ -313,7 +313,7 @@ int main(int argc, char** argv)
             break;
 
         if (!nat.Next()) break;
-        if (iEv % 100 == 0) cout << "... processing event " << iEv << endl;
+        if (iEv % 10000 == 0) cout << "... processing event " << iEv << endl;
 
         if (is_data && !jlf.isValid(*nat.run, *nat.luminosityBlock)){
             continue; // not a valid lumi

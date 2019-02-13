@@ -51,7 +51,6 @@ void OutputTree::init_branches()
     tree_->Branch("Run", &Run);
     tree_->Branch("LumiSec", &LumiSec);
     tree_->Branch("Event", &Event);
-
     // reco b jets
     BRANCH_m_pt_ptRegressed_eta_phi_p4(H1_b1)
     tree_->Branch("H1_b1_deepCSV", &H1_b1_deepCSV);
@@ -72,9 +71,46 @@ void OutputTree::init_branches()
     tree_->Branch("HH_2DdeltaM", &HH_2DdeltaM);
     tree_->Branch("HH_m_kinFit", &HH_m_kinFit);
 
-
+    // Non-resonant analysis and studies
+    BRANCH_m_pt_ptRegressed_eta_phi_p4(HH_b1)
+    tree_->Branch("HH_b1_deepCSV", &HH_b1_deepCSV);
+    tree_->Branch("HH_b1_qgl", &HH_b1_qgl);
+    tree_->Branch("HH_b1_quarkflag", &HH_b1_quarkflag);
+    tree_->Branch("HH_b1_matchedflag", &HH_b1_matchedflag);    
+    BRANCH_m_pt_ptRegressed_eta_phi_p4(HH_b2)
+    tree_->Branch("HH_b2_deepCSV", &HH_b2_deepCSV);
+    tree_->Branch("HH_b2_qgl", &HH_b2_qgl);    
+    tree_->Branch("HH_b2_quarkflag", &HH_b2_quarkflag);
+    tree_->Branch("HH_b2_matchedflag", &HH_b2_matchedflag);  
+    BRANCH_m_pt_ptRegressed_eta_phi_p4(HH_b3)
+    tree_->Branch("HH_b3_deepCSV", &HH_b3_deepCSV);
+    tree_->Branch("HH_b3_qgl", &HH_b3_qgl);
+    tree_->Branch("HH_b3_quarkflag", &HH_b3_quarkflag);
+    tree_->Branch("HH_b3_matchedflag", &HH_b3_matchedflag);
+    BRANCH_m_pt_ptRegressed_eta_phi_p4(HH_b4)
+    tree_->Branch("HH_b4_deepCSV", &HH_b4_deepCSV);
+    tree_->Branch("HH_b4_qgl", &HH_b4_qgl);
+    tree_->Branch("HH_b4_quarkflag", &HH_b4_quarkflag);
+    tree_->Branch("HH_b4_matchedflag", &HH_b4_matchedflag);     
+    BRANCH_m_pt_eta_phi_p4(JJ_j1)
+    tree_->Branch("JJ_j1_deepCSV", &JJ_j1_deepCSV);
+    tree_->Branch("JJ_j1_qgl", &JJ_j1_qgl);    
+    tree_->Branch("JJ_j1_quarkflag", &JJ_j1_quarkflag);    
+    tree_->Branch("JJ_j1_matchedflag", &JJ_j1_matchedflag); 
+    BRANCH_m_pt_eta_phi_p4(JJ_j2)
+    tree_->Branch("JJ_j2_deepCSV", &JJ_j2_deepCSV);
+    tree_->Branch("JJ_j2_qgl", &JJ_j2_qgl);     
+    tree_->Branch("JJ_j2_quarkflag", &JJ_j2_quarkflag);    
+    tree_->Branch("JJ_j2_matchedflag", &JJ_j2_matchedflag); 
+    BRANCH_m_pt_eta_phi_p4(JJ)
+    tree_->Branch("JJ_deltaEta", &JJ_deltaEta); 
+    tree_->Branch("b1j1_deltaPhi", &b1j1_deltaPhi);
+    tree_->Branch("b1b2_deltaPhi", &b1b2_deltaPhi);
+    tree_->Branch("VBFEvent", &VBFEvent);              
+    //generator level information
+    tree_->Branch("gen_mJJ", &gen_mJJ);
+    tree_->Branch("gen_deltaEtaJJ", &gen_deltaEtaJJ);
     tree_->Branch("gen_mHH", &gen_mHH);
-
     BRANCH_m_pt_eta_phi_p4(gen_H1)
     BRANCH_m_pt_eta_phi_p4(gen_H2)
     BRANCH_m_pt_eta_phi_p4(gen_H1_last)
@@ -89,6 +125,7 @@ void OutputTree::init_branches()
     BRANCH_m_pt_eta_phi_p4(gen_q2_out)
 
     // note that the initialization of the user branches is made separately when calling declareUser*Branch
+
 }
 
 void OutputTree::clear()
@@ -114,8 +151,47 @@ void OutputTree::clear()
     HH_2DdeltaM = 0.;
     HH_m_kinFit = 0.;
 
-    gen_mHH = 0;    
+    //Non-resonant analysis and studies
+    CLEAR_m_pt_ptRegressed_eta_phi_p4(HH_b1)
+    HH_b1_deepCSV = 0;
+    HH_b1_qgl = -1;
+    HH_b1_matchedflag = -1;
+    HH_b1_quarkflag = -1;    
+    CLEAR_m_pt_ptRegressed_eta_phi_p4(HH_b2)
+    HH_b2_deepCSV = 0;
+    HH_b2_qgl = -1;   
+    HH_b2_matchedflag = -1;
+    HH_b2_quarkflag = -1; 
+    CLEAR_m_pt_ptRegressed_eta_phi_p4(HH_b3)
+    HH_b3_deepCSV = 0;
+    HH_b3_qgl = -1;
+    HH_b3_matchedflag = -1;
+    HH_b3_quarkflag = -1; 
+    CLEAR_m_pt_ptRegressed_eta_phi_p4(HH_b4)
+    HH_b4_deepCSV = 0;
+    HH_b4_qgl = -1;
+    HH_b4_matchedflag = -1;
+    HH_b4_quarkflag = -1;   
+    CLEAR_m_pt_eta_phi_p4(JJ_j1)
+    JJ_j1_deepCSV = 0.;
+    JJ_j1_qgl = -1;
+    JJ_j1_matchedflag = -1;  
+    JJ_j1_quarkflag = -1;
+    CLEAR_m_pt_eta_phi_p4(JJ_j2)
+    JJ_j2_deepCSV = 0.;    
+    JJ_j2_qgl = -1;
+    JJ_j2_matchedflag = -1;  
+    JJ_j2_quarkflag = -1;
+    CLEAR_m_pt_eta_phi_p4(JJ)
+    JJ_deltaEta = 0.;
+    b1j1_deltaPhi = 0.;
+    b1b2_deltaPhi = 0.;
+    VBFEvent =0.;
 
+    //generator level information
+    gen_mHH = 0.;    
+    gen_mJJ = 0.;    
+    gen_deltaEtaJJ = 0.;
     CLEAR_m_pt_eta_phi_p4(gen_H1)
     CLEAR_m_pt_eta_phi_p4(gen_H2)
     CLEAR_m_pt_eta_phi_p4(gen_H1_last)

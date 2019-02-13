@@ -26,12 +26,12 @@
 
 class NanoAODTree_SetBranchImpl {
     public:
-        NanoAODTree_SetBranchImpl  (TChain* chain, bool isData = false):
+        NanoAODTree_SetBranchImpl  (TChain* chain, bool isMC2016 = false):
             chain_(chain),
             trg_reader_(chain),
             old_tree_nr_(-1),
             nEv_(-1),
-            is_data_ (isData)
+            is_2016_MC_ (isMC2016)
         {}
         ~NanoAODTree_SetBranchImpl (){};
 
@@ -49,7 +49,7 @@ class NanoAODTree_SetBranchImpl {
 
         int old_tree_nr_; // the current tree
         Long64_t nEv_; // the current event
-        bool is_data_;
+        bool is_2016_MC_;
 
         // declare readers
         // you can get the following list with the script generate_NanoAODTree_SetBranchImpl_vars.py
@@ -178,7 +178,8 @@ class NanoAODTree_SetBranchImpl {
         ReaderArrayPatch<Float_t>     Jet_pt                              {chain_, "Jet_pt", nJet, 100};
         ReaderArrayPatch<Float_t>     Jet_qgl                             {chain_, "Jet_qgl", nJet, 100};
         ReaderArrayPatch<Float_t>     Jet_rawFactor                       {chain_, "Jet_rawFactor", nJet, 100};
-        ReaderArrayPatch<Float_t>     Jet_bRegCorr                        {chain_, is_data_ ? "Jet_bRegCorr" : "Jet_bReg", nJet, 100};
+        // ReaderArrayPatch<Float_t>     Jet_bRegCorr                        {chain_, "Jet_bRegCorr", nJet, 100};
+        ReaderArrayPatch<Float_t>     Jet_bRegCorr                        {chain_, is_2016_MC_ ? "Jet_bReg" : "Jet_bRegCorr", nJet, 100};
         ReaderArrayPatch<Int_t>       Jet_electronIdx1                    {chain_, "Jet_electronIdx1", nJet, 100};
         ReaderArrayPatch<Int_t>       Jet_electronIdx2                    {chain_, "Jet_electronIdx2", nJet, 100};
         ReaderArrayPatch<Int_t>       Jet_jetId                           {chain_, "Jet_jetId", nJet, 100};

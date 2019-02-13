@@ -18,6 +18,8 @@
 #include "CompositeCandidate.h"
 #include "OutputTree.h"
 #include "BTagCalibrationStandalone.h"
+#include "JetMETCorrections/Modules/interface/JetResolution.h"
+#include "CondFormats/JetMETObjects/interface/JetCorrectionUncertainty.h"
 #include "Jet.h"
 #include "SkimEffCounter.h"
 
@@ -43,12 +45,48 @@ namespace OfflineProducerHelper {
     std::map<std::string, std::pair< float, std::map<std::string, float> > > weightMap_;
     // std::map<std::string, TH1D*> PUWeightHistogramMap_;
     std::map<std::string, std::map<std::pair<float,float>,float> > PUWeightMap_;
+    std::map<std::string, JetCorrectionUncertainty*> mapForJECuncertanties_;
+    std::map<std::string, Variation> mapJERNamesAndVariation_;
+    std::map<std::string, bool> mapJECNamesAndVariation_;
+
+    // branch Name, default value
+    std::map<std::string, float> branchesAffectedByJetEnergyVariations_;
+    float sampleCrossSection_;
+
+    // All maps need to be cleared otherwise we have a glibc detected
     void clean() {
         weightMap_.clear();
         PUWeightMap_.clear();
+        mapForJECuncertanties_.clear();
+        mapJERNamesAndVariation_.clear();
+        mapJECNamesAndVariation_.clear();
+        branchesAffectedByJetEnergyVariations_.clear();
     }
 
-    void setParameterList(const std::map<std::string,any> *parameterList) {parameterList_=parameterList;}
+    void initializeOfflineProducerHelper(const std::map<std::string,any> *parameterList) {
+        parameterList_=parameterList;
+        //standard branches present in the EventInfo, other branches should de added when declaring the standard ones (see bTagScaleFactor_central)
+        branchesAffectedByJetEnergyVariations_["H1_b1_pt"] = -1.;
+        branchesAffectedByJetEnergyVariations_["H1_b2_pt"] = -1.;
+        branchesAffectedByJetEnergyVariations_["H2_b1_pt"] = -1.;
+        branchesAffectedByJetEnergyVariations_["H2_b2_pt"] = -1.;
+        // branchesAffectedByJetEnergyVariations_["H1_b1_m"] = -1.;
+        // branchesAffectedByJetEnergyVariations_["H1_b2_m"] = -1.;
+        // branchesAffectedByJetEnergyVariations_["H2_b1_m"] = -1.;
+        // branchesAffectedByJetEnergyVariations_["H2_b2_m"] = -1.;
+        branchesAffectedByJetEnergyVariations_["H1_b1_ptRegressed"] = -1.;
+        branchesAffectedByJetEnergyVariations_["H1_b2_ptRegressed"] = -1.;
+        branchesAffectedByJetEnergyVariations_["H2_b1_ptRegressed"] = -1.;
+        branchesAffectedByJetEnergyVariations_["H2_b2_ptRegressed"] = -1.;
+        branchesAffectedByJetEnergyVariations_["H1_m"] = -1.;
+        branchesAffectedByJetEnergyVariations_["H2_m"] = -1.;
+        // branchesAffectedByJetEnergyVariations_["H1_pt"] = -1.;
+        // branchesAffectedByJetEnergyVariations_["H2_pt"] = -1.;
+        branchesAffectedByJetEnergyVariations_["HH_m"] = -1.;
+        // branchesAffectedByJetEnergyVariations_["HH_pt"] = -1.;
+        branchesAffectedByJetEnergyVariations_["HH_m_kinFit"] = -1.;
+        branchesAffectedByJetEnergyVariations_["HH_2DdeltaM"] = 999.;
+    }
 
     void initializeObjectsForCuts(OutputTree &ot);
     // functions to select events based on non-jet particles:
@@ -57,14 +95,44 @@ namespace OfflineProducerHelper {
     void save_WandZleptondecays (NanoAODTree& nat, OutputTree &ot);
 
 
-    void initializeObjectsForEventWeight(OutputTree &ot, SkimEffCounter &ec, std::string PUWeightFileName);
+    void initializeObjectsForEventWeight(OutputTree &ot, SkimEffCounter &ec, std::string PUWeightFileName, float crossSection);
     // functions to select events based on non-jet particles:
     float (*calculateEventWeight)(NanoAODTree&, OutputTree&, SkimEffCounter &ec);
     // reject events with leptons that may come from W and Z decays
     float calculateEventWeight_AllWeights(NanoAODTree& nat, OutputTree &ot, SkimEffCounter &ec);
     
-    
-    void initializeObjectsForScaleFactors(OutputTree &ot);
+
+    void initializeObjectsBJetForScaleFactors(OutputTree &ot);
+    // compute events weight for four b
+    void compute_scaleFactors_fourBtag_eventScaleFactor (const std::vector<Jet> &jets, NanoAODTree& nat, OutputTree &ot);
+
+
+    JME::JetResolutionScaleFactor *jetResolutionScaleFactor_;
+    JME::JetResolution *jetResolution_;
+    void initializeJERsmearingAndVariations(OutputTree &ot);
+    // function pointer to MC jet pt smearing
+    std::vector<Jet> (*JERsmearing)(NanoAODTree& nat, std::vector<Jet> &jets);
+    // function to smear the jet pt as indicated in https://twiki.cern.ch/twiki/bin/view/CMS/JetResolution#Smearing_procedures
+    std::vector<Jet> standardJERsmearing(NanoAODTree& nat, std::vector<Jet> &jets);
+    // function pointer for JER variations
+    void (*JERvariations)(NanoAODTree& nat, std::vector<Jet> &jets, std::vector< std::pair<std::string, std::vector<Jet> > > &jetEnergyVariationsMap);
+    // function to apply JER variation
+    void standardJERVariations(NanoAODTree& nat, std::vector<Jet> &jets, std::vector< std::pair<std::string, std::vector<Jet> > > &jetEnergyVariationsMap);
+    //function to apply JER
+    std::vector<Jet> applyJERsmearing(NanoAODTree& nat, std::vector<Jet> jets, Variation variation = Variation::NOMINAL);
+
+
+    void initializeJECVariations(OutputTree &ot);
+    // function pointer for JEC variations
+    void (*JECvariations)(NanoAODTree& nat, std::vector<Jet> &jets, std::vector< std::pair<std::string, std::vector<Jet> > > &jetEnergyVariationsMap);
+    // function to apply all JEC variations
+    void standardJECVariations(NanoAODTree& nat, std::vector<Jet> &jetsUnsmeared, std::vector< std::pair<std::string, std::vector<Jet> > > &jetEnergyVariationsMap);
+    //function to apply JEC variation
+    std::vector<Jet> applyJECVariation(NanoAODTree& nat, std::vector<Jet> jetsUnsmeared, std::string variationName, bool direction);
+
+    //function to fill branches for JEC and JER variations
+    void fillJetEnergyVariationBranch(OutputTree &ot, std::string branchName, std::string variation, float value);
+
     // compute events weight for four b
     void compute_scaleFactors_fourBtag_eventScaleFactor (const std::vector<Jet> &jets, NanoAODTree& nat, OutputTree &ot);
 
@@ -74,10 +142,15 @@ namespace OfflineProducerHelper {
     BTagCalibrationReader *btagCalibrationReader_bJets_;
     //functions fo apply preselection cuts:
     void bJets_PreselectionCut(std::vector<Jet> &jets);
-
+    std::vector<std::tuple<Jet,int,int>> bjJets_PreselectionCut(std::vector<std::tuple<Jet,int,int>> jetsinfo);
+    std::vector<std::tuple<Jet,int,int>> bbbbBothClosestToMh(const std::vector<std::tuple<Jet,int,int>> presel_jets);
+    std::vector<std::tuple<Jet,int,int>> bbbbOneClosestToMh(std::vector<std::tuple<Jet,int,int>> presel_jets);
+    std::vector<std::tuple<int,int,int>> QuarkToJetMatcher(const std::vector<GenPart> quarks, std::vector<Jet> jets);
+    std::vector<std::tuple<Jet,int,int>> AddGenMatchingInfo(NanoAODTree& nat, EventInfo& ei, std::vector<Jet> jets);
+    std::vector<std::tuple<Jet,int,int>> OppositeEtaJetPair(std::vector<std::tuple<Jet,int,int>> jjets);
     // functions that act on the EventInfo
     bool select_bbbb_jets (NanoAODTree& nat, EventInfo& ei, OutputTree &ot);
-
+    bool select_bbbbjj_jets (NanoAODTree& nat, EventInfo& ei, OutputTree &ot);
     // bbbbSelectionStrategy strategy_;
     // functions to pair a preselected set of four jets. They all shuffle the input set of jets and return them as (H1_b1, H1_b2, H2_b1, H2_b2)
     //

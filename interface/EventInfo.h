@@ -56,6 +56,30 @@ struct EventInfo{
     boost::optional<Jet> H2_b1;
     boost::optional<Jet> H2_b2;
 
+    //Non-resonant analysis and studies
+    boost::optional<Jet> JJ_j1;
+    boost::optional<int> JJ_j1_quarkflag;    
+    boost::optional<int> JJ_j1_matchedflag;
+    boost::optional<Jet> JJ_j2;   
+    boost::optional<int> JJ_j2_quarkflag;
+    boost::optional<int> JJ_j2_matchedflag;
+    boost::optional<Jet> HH_b1;
+    boost::optional<int> HH_b1_quarkflag;
+    boost::optional<int> HH_b1_matchedflag;    
+    boost::optional<Jet> HH_b2;   
+    boost::optional<int> HH_b2_quarkflag;
+    boost::optional<int> HH_b2_matchedflag;    
+    boost::optional<Jet> HH_b3;
+    boost::optional<int> HH_b3_quarkflag; 
+    boost::optional<int> HH_b3_matchedflag;       
+    boost::optional<Jet> HH_b4;
+    boost::optional<int> HH_b4_quarkflag;
+    boost::optional<int> HH_b4_matchedflag;  
+    boost::optional<CompositeCandidate> JJ;
+    boost::optional<float> JJ_deltaEta;
+    boost::optional<float> b1j1_deltaPhi;
+    boost::optional<float> b1b2_deltaPhi;    
+    boost::optional<int> VBFEvent;    
 };
 
 #endif

@@ -58,7 +58,7 @@ class Sample
         sType getType () {return sampleType_;}
 
         // file handling and preparation
-        bool openFileAndTree(TH1F *hCutInSkim, const std::vector<Selection> &selections);
+        bool openFileAndTree(const std::vector<Selection> &selections);
         // void getEfficiency(std::string histoname="h_eff");
         long long int getEntries(){return nentries_;}
         // void setEffBin(int ibin){
@@ -78,6 +78,7 @@ class Sample
         void clearWeights() {weights_.clear();}
 
         TChain* getTree() {return tree_.get();}
+        TH1F* getCutHistogram() {return hCutInSkim_;}
 
         const std::vector<Weight>& getWeights() const {return weights_;}
         std::vector<Weight>& getWeights() {return weights_;}
@@ -102,6 +103,7 @@ class Sample
         selColl2D plots2D_;
 
         std::vector<Weight> weights_;
+        TH1F *hCutInSkim_;
 };
 
 #endif

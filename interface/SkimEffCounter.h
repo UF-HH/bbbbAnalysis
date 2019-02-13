@@ -25,8 +25,8 @@ class SkimEffCounter {
         std::map<std::string,float> binEntries_;
         
         void updateProcessed      (double evtW);
-        void updateTriggered      ();
-        void updateSelected       ();
+        void updateTriggered      (double evtW);
+        void updateSelected       (double evtW);
 
         void createHisto();
         int  write();

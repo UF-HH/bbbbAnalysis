@@ -244,7 +244,7 @@ void OfflineProducerHelper::initializeObjectsForEventWeight(OutputTree &ot, Skim
             ot.declareUserFloatBranch(variationBranch, 1.);
             weightMap_[branchName].second[variationBranch] = 1.;           
             ec.binMap_[variationBranch] = ++weightBin;
-            ec.binEntries_[variationBranch] = 1.;
+            ec.binEntries_[variationBranch] = 0.;
             PUWeightHistogramMap[variationBranch] = (TH1D*) PUWeightFile->Get(("PUweights"+puWeightVariation[var]).data());
             // PUWeightHistogramMap[variationBranch]->SetDirectory(0);
         }
@@ -270,46 +270,21 @@ void OfflineProducerHelper::initializeObjectsForEventWeight(OutputTree &ot, Skim
         ot.declareUserFloatBranch(branchName, 1.);
         weightMap_[branchName] = std::pair< float, std::map<std::string, float> >();
         weightMap_[branchName].first = 1.;
-        // LHEPdfWeight weight variations
-        for(unsigned int var = 0; var<=100; ++var)
-        {
-            std::string variationBranch = branchName + "_var" + std::to_string(var);
-            ot.declareUserFloatBranch(variationBranch, 1.);
-            weightMap_[branchName].second[variationBranch] = 1.;           
-            ec.binMap_[variationBranch] = ++weightBin;
-            ec.binEntries_[variationBranch] = 1.;
-        }
+        // LHEPdfWeight weight variations branches are created during the event loop (number of variation varies between samples)
 
         // LHEScaleWeight
         branchName = "LHEScaleWeight";
         ot.declareUserFloatBranch(branchName, 1.);
         weightMap_[branchName] = std::pair< float, std::map<std::string, float> >();
         weightMap_[branchName].first = 1.;
-        // LHEScaleWeight weight variations
-        for(unsigned int var = 0; var<9; ++var)
-        {
-            if(var == 4) continue; //Yep... the nominal seems to be in the middle...
-            std::string variationBranch = branchName + "_var" + std::to_string(var);
-            ot.declareUserFloatBranch(variationBranch, 1.);
-            weightMap_[branchName].second[variationBranch] = 1.;           
-            ec.binMap_[variationBranch] = ++weightBin;
-            ec.binEntries_[variationBranch] = 1.;
-        }
+        // LHEScaleWeight weight variations branches are created during the event loop (number of variation varies between samples)
 
-        //PSWeight are empty, skypping
-        // branchName = "PSWeight";
-        // ot.declareUserFloatBranch(branchName, 1.);
-        // weightMap_[branchName] = std::pair< float, std::map<std::string, float> >();
-        // weightMap_[branchName].first = 1.;
-        // // PSWeight weight variations
-        // for(unsigned int var = 0; var<4; ++var)
-        // {
-        //     std::string variationBranch = branchName + "_var" + std::to_string(var);
-        //     ot.declareUserFloatBranch(variationBranch, 1.);
-        //     weightMap_[branchName].second[variationBranch] = 1.;           
-        //     ec.binMap_[variationBranch] = weightBin++;
-        //     ec.binEntries_[variationBranch] = 1.;
-        // }
+        // PSWeight
+        branchName = "PSWeight";
+        ot.declareUserFloatBranch(branchName, 1.);
+        weightMap_[branchName] = std::pair< float, std::map<std::string, float> >();
+        weightMap_[branchName].first = 1.;
+        // PSWeight weight variations branches are created during the event loop (number of variation varies between samples)
     }
 
     return;
@@ -328,6 +303,8 @@ float OfflineProducerHelper::calculateEventWeight_AllWeights(NanoAODTree& nat, O
         }
     }
 
+    int weightBin = ec.binMap_.size();
+
     float eventWeight = sampleCrossSection_;
     float tmpWeight = 1.;
     std::string branchName;
@@ -335,11 +312,11 @@ float OfflineProducerHelper::calculateEventWeight_AllWeights(NanoAODTree& nat, O
     // PUWeight need get pu from histograms
     branchName = "PUWeight";
     float eventPU = *(nat.Pileup_nTrueInt);
-    for(const auto & weightBin : PUWeightMap_[branchName])
+    for(const auto & puWeightBin : PUWeightMap_[branchName])
     {
-        if(eventPU >= weightBin.first.first && eventPU < weightBin.first.second)
+        if(eventPU >= puWeightBin.first.first && eventPU < puWeightBin.first.second)
         {
-            tmpWeight = weightBin.second;
+            tmpWeight = puWeightBin.second;
             break;
         }
     }
@@ -351,11 +328,11 @@ float OfflineProducerHelper::calculateEventWeight_AllWeights(NanoAODTree& nat, O
     for(unsigned int var = 0; var<puWeightVariation.size(); ++var)
     {
         std::string variationBranch = branchName + puWeightVariation[var];
-        for(const auto & weightBin : PUWeightMap_[variationBranch])
+        for(const auto & puWeightBin : PUWeightMap_[variationBranch])
         {
-            if(eventPU >= weightBin.first.first && eventPU < weightBin.first.second)
+            if(eventPU >= puWeightBin.first.first && eventPU < puWeightBin.first.second)
             {
-                tmpWeight = weightBin.second;
+                tmpWeight = puWeightBin.second;
                 break;
             }
         }
@@ -366,11 +343,15 @@ float OfflineProducerHelper::calculateEventWeight_AllWeights(NanoAODTree& nat, O
 
     //genWeight (no weight variations)
     branchName = "genWeight";
-    tmpWeight = *(nat.genWeight);
+    float genWeight = *(nat.genWeight);
+    float originalXWGTUP = *(nat.LHEWeight_originalXWGTUP);
+    if (originalXWGTUP != genWeight) genWeight *= originalXWGTUP; //Mail from Roberto Covarelli
+    tmpWeight = genWeight;
     tmpWeight = tmpWeight==0 ? 1 : tmpWeight; //set to 1 if weight is 0
     ot.userFloat(branchName) = tmpWeight;
     weightMap_[branchName].first = tmpWeight;
     eventWeight *= tmpWeight;
+
 
     // LHEPdfWeight
     branchName = "LHEPdfWeight";
@@ -380,49 +361,66 @@ float OfflineProducerHelper::calculateEventWeight_AllWeights(NanoAODTree& nat, O
     weightMap_[branchName].first = tmpWeight;
     eventWeight *= tmpWeight;
     // LHEPdfWeight weight variations
-    for(unsigned int var = 0; var<=100; ++var)
+    for(unsigned int var = 0; var<=*(nat.nLHEPdfWeight); ++var)
     {
         tmpWeight = nat.LHEPdfWeight.At(var);
         tmpWeight = tmpWeight==0 ? 1 : tmpWeight; //set to 1 if weight is 0
         std::string variationBranch = branchName + "_var" + std::to_string(var);
+        if(weightMap_[branchName].second.find(variationBranch) == weightMap_[branchName].second.end()) //branch does not exist, creating:
+        {
+            ot.declareUserFloatBranch(variationBranch, 1.);
+            ec.binMap_[variationBranch] = ++weightBin;
+            ec.binEntries_[variationBranch] = 0.;
+        }
         ot.userFloat(variationBranch) = tmpWeight;
         weightMap_[branchName].second[variationBranch] = tmpWeight;           
     }
 
     // LHEScaleWeight
     branchName = "LHEScaleWeight";
-    tmpWeight = nat.LHEScaleWeight.At(4);
+    tmpWeight = 1;
     tmpWeight = tmpWeight==0 ? 1 : tmpWeight; //set to 1 if weight is 0
     ot.userFloat(branchName) = tmpWeight;
     weightMap_[branchName].first = tmpWeight;
     eventWeight *= tmpWeight;
     // LHEScaleWeight weight variations
-    for(unsigned int var = 0; var<9; ++var)
+    for(unsigned int var = 0; var<*(nat.nLHEScaleWeight); ++var)
         {
-        if(var == 4) continue; //Yep... the nominal seems to be in the middle...
         tmpWeight = nat.LHEScaleWeight.At(var);
         tmpWeight = tmpWeight==0 ? 1 : tmpWeight; //set to 1 if weight is 0
         std::string variationBranch = branchName + "_var" + std::to_string(var);
+        if(weightMap_[branchName].second.find(variationBranch) == weightMap_[branchName].second.end()) //branch does not exist, creating:
+        {
+            ot.declareUserFloatBranch(variationBranch, 1.);
+            ec.binMap_[variationBranch] = ++weightBin;
+            ec.binEntries_[variationBranch] = 0.;
+        }
+        ot.userFloat(variationBranch) = tmpWeight;
+        weightMap_[branchName].second[variationBranch] = tmpWeight;        
+    }
+    
+    // PSWeight
+    branchName = "PSWeight";
+    tmpWeight = 1;
+    tmpWeight = tmpWeight==0 ? 1 : tmpWeight; //set to 1 if weight is 0
+    ot.userFloat(branchName) = tmpWeight;
+    weightMap_[branchName].first = tmpWeight;
+    eventWeight *= tmpWeight;
+    // PSWeight weight variations 
+    for(unsigned int var = 0; var<*(nat.nPSWeight); ++var)
+    {
+        tmpWeight = nat.PSWeight.At(var);
+        tmpWeight = tmpWeight==0 ? 1 : tmpWeight; //set to 1 if weight is 0
+        std::string variationBranch = branchName + "_var" + std::to_string(var);
+        if(weightMap_[branchName].second.find(variationBranch) == weightMap_[branchName].second.end()) //branch does not exist, creating:
+        {
+            ot.declareUserFloatBranch(variationBranch, 1.);
+            ec.binMap_[variationBranch] = ++weightBin;
+            ec.binEntries_[variationBranch] = 0.;
+        }
         ot.userFloat(variationBranch) = tmpWeight;
         weightMap_[branchName].second[variationBranch] = tmpWeight;           
     }
-    
-    // PSWeight are empty, skypping
-    // branchName = "PSWeight";
-    // tmpWeight = nat.PSWeight.At(0);
-    // tmpWeight = tmpWeight==0 ? 1 : tmpWeight; //set to 1 if weight is 0
-    // ot.userFloat(branchName) = tmpWeight;
-    // weightMap_[branchName].first = tmpWeight;
-    // eventWeight *= tmpWeight;
-    // // PSWeight weight variations
-    // for(unsigned int var = 0; var<4; ++var)
-    // {
-    //     tmpWeight = nat.PSWeight.At(var);
-    //     tmpWeight = tmpWeight==0 ? 1 : tmpWeight; //set to 1 if weight is 0
-    //     std::string variationBranch = branchName + "_var" + std::to_string(var);
-    //     ot.userFloat(variationBranch) = tmpWeight;
-    //     weightMap_[branchName].second[variationBranch] = tmpWeight;           
-    // }
 
     //calculate bins for weights variations
 

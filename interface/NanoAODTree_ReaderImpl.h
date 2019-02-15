@@ -182,6 +182,8 @@ class NanoAODTree_ReaderImpl {
         NanoReaderArray<Float_t>   LHEPdfWeight                         {fReader, "LHEPdfWeight"};
         NanoReaderValue<UInt_t>    nLHEScaleWeight                      {fReader, "nLHEScaleWeight"};
         NanoReaderArray<Float_t>   LHEScaleWeight                       {fReader, "LHEScaleWeight"};
+        NanoReaderValue<UInt_t>    nPSWeight                            {fReader, "nPSWeight"};
+        NanoReaderArray<Float_t>   PSWeight                             {fReader, "PSWeight"};
         
         NanoReaderValue<UInt_t>    nJet                                 {fReader, "nJet"};
         NanoReaderArray<Float_t>   Jet_area                             {fReader, "Jet_area"};

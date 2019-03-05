@@ -299,7 +299,8 @@ class SampleHistColl:
         self.ytitle = None
 
     def addHisto(self, histo, name, htype, title='histoTitle'):
-        print "@@ adding histo: " , name , '( type:', htype ,')'
+        # print "@@ adding histo", histo.GetName(), "to", name , '( type:', htype ,')'
+        print "@@ adding histo {:80} to {:15} ( type: {:4})".format(histo.GetName(), name, htype)
         mycoll = None
         if   htype == 'sig':
             mycoll = self.sigs

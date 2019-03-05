@@ -196,7 +196,7 @@ if args.postfit:
 scales = {
     'VBF_HH'                :  0.00055169,
     'VBF_HH_BSM'            :  0.0127212361335*0.58*0.58,
-    'GG_HH'                 :  0.01125258,
+    'GGF_HH'                 :  0.01125258,
     'QCD_HT_100_200'        :  27990000,
     'QCD_HT_200_300'        :  1547000,
     'QCD_HT_300_500'        :  322600,
@@ -216,6 +216,12 @@ for hbg in hBkgs.keys():
     if hbg in scales:
         print  " >>> Scaling {:30} by   {}".format(hbg, scales[hbg])
         hBkgs[hbg].Scale(scales[hbg])
+
+for hbg in hSigs.keys():
+    if hbg in scales:
+        print  " >>> Scaling {:30} by   {}".format(hbg, scales[hbg])
+        hSigs[hbg].Scale(scales[hbg])
+
 
 ###########################################
 ########  retrieve/compute errors  ########

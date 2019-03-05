@@ -27,3 +27,12 @@ make exe -j # compiles and makes everything under test/ executable
 ```
 fill_histograms.exe config/<config_name>.cfg
 ````
+
+## Make plots
+Use the ``plotter/plotter.py`` script. Styles (line colors, etc.) for the processes are defined in ``plotter/styles/plotStyles.py``
+Inside the script, the subset of processes to run on is defined through ``bkgToPlot`` and  ``sigToPlot``.
+Several cmd line options available to configure the plot, it's practical to make a script that produces all the plots.
+Example:
+```
+source do_all_plots.sh
+````

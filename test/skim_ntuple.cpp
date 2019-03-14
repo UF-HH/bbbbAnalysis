@@ -166,6 +166,37 @@ int main(int argc, char** argv)
         parameterList.emplace("MuonMaxDxy"          ,config.readFloatOpt("parameters::MuonMaxDxy"          ));
         parameterList.emplace("MuonMaxDz"           ,config.readFloatOpt("parameters::MuonMaxDz"           ));
     }
+    else if(objectsForCut == "TriggerObjects"){
+
+        parameterList.emplace("MaxDeltaR"           ,config.readFloatOpt("parameters::MaxDeltaR"           ));
+        std::map<std::pair<int,int>, std::string > triggerObjectsForStudies;   
+
+        std::vector<std::string> triggerObjectMatchingVector = config.readStringListOpt("parameters::ListOfTriggerObjectsAndBit");
+        
+        std::string delimiter = ":";
+        size_t pos = 0;
+        
+        for (auto & triggerObject : triggerObjectMatchingVector)
+        {
+
+            std::vector<std::string> triggerObjectTokens;
+            while ((pos = triggerObject.find(delimiter)) != std::string::npos)
+            {
+                triggerObjectTokens.push_back(triggerObject.substr(0, pos));
+                triggerObject.erase(0, pos + delimiter.length());
+            }
+            triggerObjectTokens.push_back(triggerObject); // last part splitted
+            if (triggerObjectTokens.size() != 3)
+            {
+                throw std::runtime_error("** skim_ntuple : could not parse triggerObject for Cuts entry " + triggerObject + " , aborting");
+            }
+
+            triggerObjectsForStudies[std::pair<int,int>(atoi(triggerObjectTokens[0].data()),atoi(triggerObjectTokens[1].data()))] = triggerObjectTokens[2];
+        }
+
+        parameterList.emplace("TriggerObjectsForStudies", triggerObjectsForStudies);
+
+    } 
     else if(objectsForCut == "None"){
     }  
     // else if(other selection type){
@@ -195,8 +226,7 @@ int main(int argc, char** argv)
         parameterList.emplace("WeightMethod",weightMethod);
         if(weightMethod == "StandardWeight"){
             if(opts["puWeight"].as<string>()==""){
-                cerr << "** [ERROR] please provide PU weight file needed for WeightMethod " << weightMethod  << endl;
-                return 1;
+                throw std::runtime_error( "** [ERROR] please provide PU weight file needed for WeightMethod " + weightMethod );
             }
         }
         else if(weightMethod == "None"){
@@ -247,18 +277,18 @@ int main(int argc, char** argv)
     ////////////////////////////////////////////////////////////////////////
 
     cout << "[INFO] ... opening file list : " << opts["input"].as<string>().c_str() << endl;
-    if ( access( opts["input"].as<string>().c_str(), F_OK ) == -1 ){
-        cerr << "** [ERROR] The input file list does not exist, aborting" << endl;
-        return 1;        
+    if ( access( opts["input"].as<string>().c_str(), F_OK ) == -1 )
+    {
+        throw std::runtime_error("** [ERROR] The input file list does not exist, aborting");
     }
 
     // Joining all the NANOAD input file in a TChain in order to be used like an unique three
     TChain ch("Events");
     int nfiles = su::appendFromFileList(&ch, opts["input"].as<string>());
     
-    if (nfiles == 0){
-        cerr << "** [ERROR] The input file list contains no files, aborting" << endl;
-        return 1;
+    if (nfiles == 0)
+    {
+        throw std::runtime_error("** [ERROR] The input file list contains no files, aborting");
     }
     cout << "[INFO] ... file list contains " << nfiles << " files" << endl;
 
@@ -268,9 +298,75 @@ int main(int argc, char** argv)
     NanoAODTree nat (&ch, (!is_data && config.readBoolOpt("parameters::is2016Sample")));
 
     cout << "[INFO] ... loading the following triggers" << endl;
-    for (auto trg : config.readStringListOpt("triggers::makeORof"))
-        cout << "   - " << trg << endl;
-    nat.triggerReader().setTriggers(config.readStringListOpt("triggers::makeORof"));
+
+    std::vector<std::string> triggerAndNameVector = config.readStringListOpt("triggers::makeORof");
+    std::vector<std::string> triggerVector;
+    // <triggerName , < objectBit, minNumber> >
+    std::map<std::string, std::map< std::pair<int,int>, int > > triggerObjectAndMinNumberMap;
+    
+    bool matchTriggerObjects = config.readBoolOpt("triggers::matchTriggerObjects");
+
+    for (auto & trigger : triggerAndNameVector)
+    {
+        if(trigger=="") continue;
+
+        std::string delimiter = ":";
+        size_t pos = 0;
+        std::vector<std::string> triggerTokens;
+        while ((pos = trigger.find(delimiter)) != std::string::npos)
+        {
+            triggerTokens.push_back(trigger.substr(0, pos));
+            trigger.erase(0, pos + delimiter.length());
+        }
+        triggerTokens.push_back(trigger); // last part splitted
+        if (triggerTokens.size() != 2)
+        {
+            throw std::runtime_error("** skim_ntuple : could not parse trigger entry " + trigger + " , aborting");
+        }
+
+        triggerVector.push_back(triggerTokens[1]);
+        cout << "   - " << triggerTokens[1] << endl;
+
+        if(!matchTriggerObjects) continue;
+
+        if(!config.hasOpt( Form("triggers::%s_ObjectRequirements",triggerTokens[0].data()) ))
+        {
+            cout<<Form("triggers::%s_ObjectRequirements",triggerTokens[0].data())<<std::endl;
+            cout<<"Trigger "<< triggerTokens[1] <<" does not have ObjectRequirements are not defined";
+            continue;
+        }
+
+        triggerObjectAndMinNumberMap[triggerTokens[1]] = std::map< std::pair<int,int>, int>();   
+
+        std::vector<std::string> triggerObjectMatchingVector = config.readStringListOpt(Form("triggers::%s_ObjectRequirements",triggerTokens[0].data()));
+
+        for (auto & triggerObject : triggerObjectMatchingVector)
+        {
+
+            std::vector<std::string> triggerObjectTokens;
+            while ((pos = triggerObject.find(delimiter)) != std::string::npos)
+            {
+                triggerObjectTokens.push_back(triggerObject.substr(0, pos));
+                triggerObject.erase(0, pos + delimiter.length());
+            }
+            triggerObjectTokens.push_back(triggerObject); // last part splitted
+            if (triggerObjectTokens.size() != 3)
+            {
+                throw std::runtime_error("** skim_ntuple : could not parse trigger entry " + triggerObject + " , aborting");
+            }
+
+            triggerObjectAndMinNumberMap[triggerTokens[1]][std::pair<int,int>(atoi(triggerObjectTokens[0].data()),atoi(triggerObjectTokens[1].data()))] = atoi(triggerObjectTokens[2].data());
+        }
+
+    }
+
+    parameterList.emplace("MatchTriggerObjects", matchTriggerObjects);
+    if(matchTriggerObjects)
+    {
+        parameterList.emplace("MaxDeltaR"           ,config.readFloatOpt("triggers::MaxDeltaR"           ));        
+    }
+    parameterList.emplace("TriggerObjectAndMinNumberMap", triggerObjectAndMinNumberMap);
+    nat.triggerReader().setTriggers(triggerVector);
 
     ////////////////////////////////////////////////////////////////////////
     // Prepare the output
@@ -286,6 +382,7 @@ int main(int argc, char** argv)
     SkimEffCounter ec;
 
     oph::initializeObjectsForCuts(ot);
+    if(matchTriggerObjects) oph::initializeTriggerMatching();
 
     if(!is_data)
     {
@@ -325,14 +422,21 @@ int main(int argc, char** argv)
         
         double weight = 1.;
         if(!is_data) weight = oph::calculateEventWeight(nat, ot, ec);
-
+// std::cout<<"pirla1\n";
         ec.updateProcessed(weight);
+// std::cout<<"pirla2\n";
 
-        if( !nat.getTrgOr() ) continue;
+        std::vector<std::string> listOfPassedTriggers = nat.getTrgPassed();
+// std::cout<<"pirla3\n";
+
+        if( listOfPassedTriggers.size() == 0  && triggerVector.size()>0 ) continue;
+// std::cout<<"pirla4\n";
 
         ec.updateTriggered(weight);
+// std::cout<<"pirla5\n";
 
-        if (!oph::select_bbbb_jets(nat, ei, ot)) continue;
+        if (!oph::select_bbbb_jets(nat, ei, ot, listOfPassedTriggers)) continue;
+// std::cout<<"pirla6\n";
 
         if (is_signal){
             oph::select_gen_HH(nat, ei);
@@ -351,8 +455,11 @@ int main(int argc, char** argv)
 
         oph::save_objects_for_cut(nat, ot);
 
+// std::cout<<"pirla7\n";
         ec.updateSelected(weight);
+// std::cout<<"pirla8\n";
         su::fill_output_tree(ot, nat, ei);
+// std::cout<<"pirla9\n";
 
     }
 

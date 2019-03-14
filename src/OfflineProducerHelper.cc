@@ -27,11 +27,27 @@ void OfflineProducerHelper::initializeObjectsForCuts(OutputTree &ot){
     if(objectsForCut == "None")
         save_objects_for_cut = [](NanoAODTree& nat, OutputTree &ot) -> void {return;};
     else if(objectsForCut == "WandZleptonDecays"){
-        save_objects_for_cut = &save_WandZleptondecays;
+        save_objects_for_cut = &save_WAndZLeptonDecays;
         ot.declareUserFloatBranch("LeadingIsolatedZElectron_pt", -1.);
         ot.declareUserFloatBranch("LeadingIsolatedZMuon_pt", -1.);
         ot.declareUserFloatBranch("LeadingIsolatedWElectron_pt", -1.);
         ot.declareUserFloatBranch("LeadingIsolatedWMuon_pt", -1.);
+    }
+    else if(objectsForCut == "TriggerObjects"){
+        save_objects_for_cut = &save_TriggerObjects;
+        if(mapTriggerObjectIdAndFilter_.size()!=0)
+        {
+            throw std::runtime_error("List of triggers objects and filter must be defined once: or in trigger or in ObjectsForCut, not in both. Check configuration file");
+        }
+        for(const auto & triggerObject : any_cast< std::map< std::pair<int,int>, std::string > >(parameterList_->at("TriggerObjectsForStudies")))
+        {
+            if(mapTriggerObjectIdAndFilter_.find(triggerObject.first.first) == mapTriggerObjectIdAndFilter_.end())
+            {
+                mapTriggerObjectIdAndFilter_[triggerObject.first.first] = vector<int>();
+            }
+            mapTriggerObjectIdAndFilter_[triggerObject.first.first].emplace_back(triggerObject.first.second);
+            ot.declareUserIntBranch(triggerObject.second, 0);
+        }
     }
 
     return;
@@ -39,7 +55,7 @@ void OfflineProducerHelper::initializeObjectsForCuts(OutputTree &ot){
 }
 
 // reject events with leptons that may come from W and Z decays
-void OfflineProducerHelper::save_WandZleptondecays (NanoAODTree& nat, OutputTree &ot){
+void OfflineProducerHelper::save_WAndZLeptonDecays (NanoAODTree& nat, OutputTree &ot){
 
     std::vector<Electron> electronFromW;
     electronFromW.reserve(*(nat.nElectron));
@@ -117,6 +133,19 @@ void OfflineProducerHelper::save_WandZleptondecays (NanoAODTree& nat, OutputTree
         ot.userFloat("LeadingIsolatedWMuon_pt") = muonFromW.at(0).P4().Pt();
     }
 
+}
+
+void OfflineProducerHelper::save_TriggerObjects (NanoAODTree& nat, OutputTree &ot)
+{
+
+
+    for( const auto & triggerAndBranch : any_cast<std::map<std::pair<int,int>, std::string > >(parameterList_->at("TriggerObjectsForStudies")) )
+    {
+        ot.userInt(triggerAndBranch.second) = mapTriggerMatching_[triggerAndBranch.first];
+
+    }
+
+    return;
 }
 
 // ----------------- Objects for cut - END ----------------- //
@@ -644,7 +673,7 @@ void OfflineProducerHelper::fillJetEnergyVariationBranch(OutputTree &ot, std::st
     return;
 }
 
-bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, OutputTree &ot)
+bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, OutputTree &ot, std::vector<std::string> listOfPassedTriggers)
 {
     
     if (*(nat.nJet) < 4)
@@ -655,6 +684,7 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
     for (uint ij = 0; ij < *(nat.nJet); ++ij){
         unsmearedJets.emplace_back(Jet(ij, &nat));
     }
+// std::cout<<"culo1\n";
     
     //if some montecarlo weight are applied via a reshaping of the jets variables, they must be applied here
 
@@ -668,6 +698,7 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
         //do nothing
     }
     else throw std::runtime_error("cannot recognize cut strategy --" + preselectionCutStrategy + "--");
+// std::cout<<"culo2\n";
 
     //at least 4 jets required
     if(unsmearedJets.size()<4) return false;
@@ -701,6 +732,7 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
     }
 
 
+// std::cout<<"culo3\n";
     int H1b1_idx(-1), H1b2_idx(-1), H2b1_idx(-1), H2b2_idx(-1); //Jet indexes for variations
 
     for(auto & jets : jetEnergyVariationsMap)
@@ -717,6 +749,7 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
                 }
             }
 
+// std::cout<<"culo4\n";
             // now need to pair the jets
             std::vector<Jet> presel_jets = {{
                 (jets.second[0]),
@@ -740,6 +773,7 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
             }
             else throw std::runtime_error("cannot recognize bbbb choice strategy " + strategy);
 
+// std::cout<<"culo5\n";
             if(ordered_jets.size()!=4)
             {
                 if(!any_cast<bool>(parameterList_->at("UseAntiTagOnOneBjet")) && strategy == "HighestCSVandClosestToMh")
@@ -749,6 +783,32 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
                 return false;
             }
 
+// std::cout<<"culo6\n";
+            if(( any_cast<bool>(parameterList_->at("MatchTriggerObjects"))
+                || (any_cast<std::string>(parameterList_->at("ObjectsForCut")) == "TriggerObjects") ) 
+                && jets.first == originalSampleName)
+            {
+                std::vector<Jet> selectedCandidates;
+// std::cout<<"culo6.1\n";
+                for(auto jet : ordered_jets)
+                {
+                    selectedCandidates.emplace_back(jet);
+                }
+                
+                calculateTriggerMatching(selectedCandidates,nat);
+// std::cout<<"culo6.2\n";
+            }
+                
+            if(any_cast<bool>(parameterList_->at("MatchTriggerObjects")) 
+                && jets.first == originalSampleName)
+            {
+// std::cout<<"culo6.3\n";
+                if(!checkTriggerObjectMatching(listOfPassedTriggers)) return false;
+// std::cout<<"culo6.4\n";
+            }
+
+// std::cout<<"culo7\n";
+
             // order H1, H2 by pT: pT(H1) > pT (H2)
             CompositeCandidate H1 = CompositeCandidate(ordered_jets.at(0), ordered_jets.at(1));
             H1.rebuildP4UsingRegressedPt(true,true);
@@ -756,6 +816,7 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
             CompositeCandidate H2 = CompositeCandidate(ordered_jets.at(2), ordered_jets.at(3));
             H2.rebuildP4UsingRegressedPt(true,true);
             
+// std::cout<<"culo8\n";
             //Do a random swap to be sure that the m1 and m2 are simmetric
             bool swapped = (int(H1.P4().Pt()*100.) % 2 == 1);
          
@@ -820,9 +881,12 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
             ei.LumiSec = *(nat.luminosityBlock);
             ei.Event = *(nat.event);
 
+// std::cout<<"culo9\n";
+
         }
         else //Variations
         {
+// std::cout<<"culo10\n";
 
             int H1b1(-1), H1b2(-1), H2b1(-1), H2b2(-1); 
             for(size_t iJet=0; iJet<jets.second.size(); ++iJet){
@@ -1467,6 +1531,124 @@ return output;
 }
 
 ////////////-----FUNCTIONS FOR PRESELECTION OF EVENTS FOR NON-RESONANT ANALYSIS - END
+
+void OfflineProducerHelper::initializeTriggerMatching()
+{
+
+     if(mapTriggerObjectIdAndFilter_.size()!=0)
+    {
+        throw std::runtime_error("List of triggers objects and filter must be defined once: or in trigger or in ObjectsForCut, not in both. Check configuration file");
+    }
+    for( const auto & triggerRequirements : any_cast<std::map<std::string, std::map< std::pair<int,int>, int > > >(parameterList_->at("TriggerObjectAndMinNumberMap")) )
+    {
+        for(const auto & triggerObject : triggerRequirements.second)
+        {
+            if(mapTriggerObjectIdAndFilter_.find(triggerObject.first.first) == mapTriggerObjectIdAndFilter_.end())
+            {
+                mapTriggerObjectIdAndFilter_[triggerObject.first.first] = vector<int>();
+            }
+            mapTriggerObjectIdAndFilter_[triggerObject.first.first].emplace_back(triggerObject.first.second);
+        }
+    }
+}
+
+
+bool OfflineProducerHelper::checkTriggerObjectMatching(std::vector<std::string> listOfPassedTriggers)
+{
+
+    std::map<std::string, std::map< std::pair<int,int>, int > > triggerObjectAndMinNumberMap;
+    std::map<std::string, bool> triggerResult;
+
+    for( const auto & triggerRequirements : any_cast<std::map<std::string, std::map< std::pair<int,int>, int > > >(parameterList_->at("TriggerObjectAndMinNumberMap")) )
+    {
+        triggerResult[triggerRequirements.first] = true;
+        if(std::find(listOfPassedTriggers.begin(),listOfPassedTriggers.end(),triggerRequirements.first) == listOfPassedTriggers.end()) // triggers not fired
+        {
+            triggerResult[triggerRequirements.first] = false;
+            continue; 
+        }
+
+        for ( const auto & requiredNumberOfObjects : triggerRequirements.second) // triggers fired
+        {
+            if(mapTriggerMatching_.find(requiredNumberOfObjects.first)==mapTriggerMatching_.end()) triggerResult[triggerRequirements.first] = false;   // Object not found
+            if(mapTriggerMatching_[requiredNumberOfObjects.first] < requiredNumberOfObjects.second) triggerResult[triggerRequirements.first]  = false; // Number of object not enought
+        }
+
+        for(const auto & triggerChecked : triggerResult) //If at least one of the trigger was found return true
+        {
+            if(triggerChecked.second) return true;
+        }
+    }
+
+    return false; // no mathiong trigger found among the fired ones
+}
+
+void OfflineProducerHelper::calculateTriggerMatching(const std::vector<Jet> candidateList, NanoAODTree& nat)
+{
+    //mapTriggerMatching_
+    mapTriggerMatching_.clear();
+//std::cout<<"culo6.1.1\n";
+
+    for (uint trigObjIt = 0; trigObjIt < *(nat.nTrigObj); ++trigObjIt) //for over all trigger objects
+    {
+        int triggerObjectId = nat.TrigObj_id.At(trigObjIt);
+//std::cout<<"culo6.1.2\n";
+//std::cout<<triggerObjectId<<std::endl;
+
+        if(mapTriggerObjectIdAndFilter_.find(triggerObjectId) != mapTriggerObjectIdAndFilter_.end()) //check if the object particle id is needed
+        {
+//std::cout<<"culo6.1.3\n";
+       
+            int triggerFilterBitSum = nat.TrigObj_filterBits.At(trigObjIt);
+            float triggerObjectEta  = nat.TrigObj_eta.At(trigObjIt       );
+            float triggerObjectPhi  = nat.TrigObj_phi.At(trigObjIt       );
+
+            for(const auto & filterBit : mapTriggerObjectIdAndFilter_[triggerObjectId]) //loop over all the needed filters
+            {
+//std::cout<<"culo6.1.4\n";
+                //std::cout<<"!!! - "<<filterBit<<std::endl;
+                if( (triggerFilterBitSum >> filterBit) & 0x1 ) //check object passes the filter
+                {
+//std::cout<<"culo6.1.5\n";
+                    //std::cout<<"!!!~~ - "<<filterBit<<std::endl;
+                    float deltaR = 1024; //easy to do square root
+                    float deltaPt = 999;
+                    for(const auto & candidate : candidateList) //loop to find best Candidate matching DeltaR
+                    {
+                        if(candidate.getCandidateTypeId() != triggerObjectId) continue; // Skip different particles
+                        //std::cout<<"!!!~~~~ - "<<filterBit<<std::endl;
+
+                        float candidateEta    = candidate.P4().Eta ();
+                        float candidatePhi    = candidate.P4().Phi ();
+                        float tmpdeltaR       = (candidateEta - triggerObjectEta)*(candidateEta - triggerObjectEta) + (candidatePhi - triggerObjectPhi)*(candidatePhi - triggerObjectPhi);
+                        //std::cout<<"!!!~~~~candidateEta - "<<candidateEta<<std::endl;
+
+                        if(tmpdeltaR < deltaR)
+                        {
+                            deltaR = tmpdeltaR;
+                            deltaPt = candidate.P4().Pt() - nat.TrigObj_pt.At(trigObjIt       );
+                        }
+                        //std::cout<<"!!!~~~~DeltaR - "<<deltaR<<std::endl;
+
+                    }
+
+                    if(sqrt(deltaR) < any_cast<float>(parameterList_->at("MaxDeltaR"))) // check if a matching was found
+                    {
+                        std::pair<int,int> particleAndFilter(triggerObjectId,filterBit);
+                        if(mapTriggerMatching_.find(particleAndFilter) == mapTriggerMatching_.end())
+                        {
+                            mapTriggerMatching_[particleAndFilter] = 0;
+                        }
+                        ++mapTriggerMatching_[particleAndFilter];
+                        //std::cout<<triggerObjectId<<" "<<filterBit<<" "<<mapTriggerMatching_[particleAndFilter]<<std::endl;
+                    }
+                }
+            }
+        }
+    }
+
+    return;
+}
 
 
 bool OfflineProducerHelper::select_gen_HH (NanoAODTree& nat, EventInfo& ei)

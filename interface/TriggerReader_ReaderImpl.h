@@ -28,6 +28,7 @@ class TriggerReader_ReaderImpl{
         std::vector<std::unique_ptr<NanoReaderValue<bool>>>& getRefToReadersPtrVector(){return readers_;}
         bool getTrgOr();
         bool getTrgResult(std::string trgName);
+        std::vector<std::string> getTrgPassed();
 
     private:
         NanoReaderValue<bool>& getRefToReader(int idx) {return *(readers_.at(idx));}

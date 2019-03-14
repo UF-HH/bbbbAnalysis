@@ -20,8 +20,8 @@
 class CompositeCandidate : public Candidate
 {
     public:
-        CompositeCandidate() : Candidate(),cand1_(), cand2_() {p4_.SetPxPyPzE(0,0,0,0); isComposite_=true;}
-        CompositeCandidate(const Candidate& c1, const Candidate& c2) : Candidate() {setComponents(c1,c2); isComposite_=true;}
+        CompositeCandidate() : Candidate(),cand1_(), cand2_() {typeId_=-1; p4_.SetPxPyPzE(0,0,0,0); isComposite_=true;}
+        CompositeCandidate(const Candidate& c1, const Candidate& c2) : Candidate() {typeId_=-1; setComponents(c1,c2); isComposite_=true;}
 
         ~CompositeCandidate(){};
         CompositeCandidate(const CompositeCandidate& rhs); // copy ctor
@@ -38,7 +38,7 @@ class CompositeCandidate : public Candidate
 
         bool sharesComponentWith (const CompositeCandidate& cc) const;
         bool isValid() {return (cand1_ && cand2_);}
-        std::unique_ptr<Candidate> clone() const {
+        std::unique_ptr<Candidate> clone() const override{
             std::unique_ptr<CompositeCandidate> CompositeCandidateClone(new CompositeCandidate(this->getComponent1 (), this->getComponent2 ()));
             CompositeCandidateClone->setP4(this->P4()); //In case the P4 had been re-evaluated
             return CompositeCandidateClone;
@@ -46,7 +46,7 @@ class CompositeCandidate : public Candidate
         void rebuildP4UsingRegressedPt(bool usePtRegressedCandidate1, bool usePtRegressedCandidate2);
 
     protected:
-        void buildP4() {p4_ = cand1_->P4() + cand2_->P4();}; 
+        void buildP4() override {p4_ = cand1_->P4() + cand2_->P4();}; 
         std::unique_ptr<Candidate> cand1_;
         std::unique_ptr<Candidate> cand2_;
 };

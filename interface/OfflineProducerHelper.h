@@ -36,6 +36,7 @@ using namespace std::experimental;
 
 namespace OfflineProducerHelper {
 
+    bool debug = false;
     // Load configurations to match the b jets
     // bool loadConfiguration(CfgParser config);
     ///static bacause if not I got a glibc detected when the execution is completed
@@ -97,18 +98,18 @@ namespace OfflineProducerHelper {
 
     void initializeObjectsForCuts(OutputTree &ot);
     // functions to select events based on non-jet particles:
-    void (*save_objects_for_cut)(NanoAODTree&, OutputTree&);
+    void (*save_objects_for_cut)(NanoAODTree&, OutputTree&, EventInfo& ei);
     // Object to reject events with leptons that may come from W and Z decays
-    void save_WAndZLeptonDecays (NanoAODTree& nat, OutputTree &ot);
+    void save_WAndZLeptonDecays (NanoAODTree& nat, OutputTree &ot, EventInfo& ei);
     // save trigger Objects for trigger studies
-    void save_TriggerObjects (NanoAODTree& nat, OutputTree &ot);
+    void save_TriggerObjects (NanoAODTree& nat, OutputTree &ot, EventInfo& ei);
     // Calculate trigger map
     void calculateTriggerMatching(const std::vector<Jet> candidateList, NanoAODTree& nat);
 
     //Initialize trigger Matching variables
-    void initializeTriggerMatching();
+    void initializeTriggerMatching(OutputTree &ot);
     //Function to check that the selected objects are the one that fired at list one of the triggers
-    bool checkTriggerObjectMatching(std::vector<std::string>);
+    bool checkTriggerObjectMatching(std::vector<std::string>, OutputTree &ot);
 
 
     void initializeObjectsForEventWeight(OutputTree &ot, SkimEffCounter &ec, std::string PUWeightFileName, float crossSection);
@@ -356,6 +357,12 @@ bool OfflineProducerHelper::order_by_pT(T& val1, T& val2, bool max_first)
         return false;
     std::swap(val1, val2);
     return true;
+}
+
+float deltaPhi(float phi1, float phi2)
+{
+    float delphi = TMath::Abs(TMath::Abs(TMath::Abs(phi1 - phi2) - TMath::Pi())-TMath::Pi());
+    return delphi;
 }
 
 #endif

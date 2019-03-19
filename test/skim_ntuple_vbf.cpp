@@ -319,7 +319,7 @@ int main(int argc, char** argv)
            if (nat.triggerReader().getTrgResult(triggers[p])){ ot.userInt(triggers[p]) = 1;}
            else{ot.userInt(triggers[p]) = 0;}
         }
-        oph::save_objects_for_cut(nat, ot);
+        oph::save_objects_for_cut(nat, ot, ei);
 
         ec.updateSelected(weight);
         su::fill_output_tree(ot, nat, ei);

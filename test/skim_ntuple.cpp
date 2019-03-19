@@ -295,7 +295,8 @@ int main(int argc, char** argv)
     cout << "[INFO] ... creating tree reader" << endl;
 
     // The TChain is passed to the NanoAODTree_SetBranchImpl to parse all the brances
-    NanoAODTree nat (&ch, (!is_data && config.readBoolOpt("parameters::is2016Sample")));
+    NanoAODTree nat (&ch);
+    // NanoAODTree nat (&ch, (!is_data && config.readBoolOpt("parameters::is2016Sample")));
 
     cout << "[INFO] ... loading the following triggers" << endl;
 
@@ -304,8 +305,6 @@ int main(int argc, char** argv)
     // <triggerName , < objectBit, minNumber> >
     std::map<std::string, std::map< std::pair<int,int>, int > > triggerObjectAndMinNumberMap;
     
-    bool matchTriggerObjects = config.readBoolOpt("triggers::matchTriggerObjects");
-
     for (auto & trigger : triggerAndNameVector)
     {
         if(trigger=="") continue;
@@ -326,8 +325,6 @@ int main(int argc, char** argv)
 
         triggerVector.push_back(triggerTokens[1]);
         cout << "   - " << triggerTokens[1] << endl;
-
-        if(!matchTriggerObjects) continue;
 
         if(!config.hasOpt( Form("triggers::%s_ObjectRequirements",triggerTokens[0].data()) ))
         {
@@ -360,11 +357,7 @@ int main(int argc, char** argv)
 
     }
 
-    parameterList.emplace("MatchTriggerObjects", matchTriggerObjects);
-    if(matchTriggerObjects)
-    {
-        parameterList.emplace("MaxDeltaR"           ,config.readFloatOpt("triggers::MaxDeltaR"           ));        
-    }
+    parameterList.emplace("MaxDeltaR",config.readFloatOpt("triggers::MaxDeltaR"));        
     parameterList.emplace("TriggerObjectAndMinNumberMap", triggerObjectAndMinNumberMap);
     nat.triggerReader().setTriggers(triggerVector);
 
@@ -382,7 +375,7 @@ int main(int argc, char** argv)
     SkimEffCounter ec;
 
     oph::initializeObjectsForCuts(ot);
-    if(matchTriggerObjects) oph::initializeTriggerMatching();
+    oph::initializeTriggerMatching(ot);
 
     if(!is_data)
     {
@@ -453,7 +446,7 @@ int main(int argc, char** argv)
         }
 
 
-        oph::save_objects_for_cut(nat, ot);
+        oph::save_objects_for_cut(nat, ot, ei);
 
 // std::cout<<"pirla7\n";
         ec.updateSelected(weight);

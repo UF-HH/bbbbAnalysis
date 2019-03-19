@@ -28,9 +28,13 @@ struct EventInfo{
     boost::optional<GenPart> gen_H2_last;
 
     boost::optional<GenPart> gen_H1_b1;
+    boost::optional<int>     gen_H1_b1_matchedflag;
     boost::optional<GenPart> gen_H1_b2;
+    boost::optional<int>     gen_H1_b2_matchedflag;
     boost::optional<GenPart> gen_H2_b1;
+    boost::optional<int>     gen_H2_b1_matchedflag;
     boost::optional<GenPart> gen_H2_b2;
+    boost::optional<int>     gen_H2_b2_matchedflag;
 
 
     // VBF incoming and outcoming partons

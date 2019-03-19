@@ -1,0 +1,1 @@
+/uscms/home/fravera/nobackup/NanoAOD/CMSSW_10_4_0/src/RECO_NANO_100kevt.root

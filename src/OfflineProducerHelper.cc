@@ -13,6 +13,13 @@
 #include "GenPart.h"
 #include "HH4b_kinFit.h"
 #include "TRandom.h"
+
+#include "TMVA/GeneticAlgorithm.h"
+#include "TMVA/GeneticFitter.h"
+#include "TMVA/IFitterTarget.h"
+#include "TMVA/Factory.h"
+#include "TMVA/DataLoader.h"
+#include "TMVA/Reader.h"
  
 using namespace std::experimental;
 
@@ -143,12 +150,10 @@ void OfflineProducerHelper::initializeObjectsBJetForScaleFactors(OutputTree &ot)
         ot.declareUserFloatBranch("bTagScaleFactor_lightJets_down"   , 1.);
 
         // branchesAffectedByJetEnergyVariations_["bTagScaleFactor_central"] = 1.;
-
-        BTagCalibration btagCalibration("DeepCSV",any_cast<string>(parameterList_->at("BJetScaleFactorsFile")));    
+        BTagCalibration btagCalibration("DeepCSV",any_cast<string>(parameterList_->at("BJetScaleFactorsFile")));   
         btagCalibrationReader_lightJets_ = new BTagCalibrationReader(BTagEntry::OP_MEDIUM,"central",{"up", "down"});      
         btagCalibrationReader_cJets_     = new BTagCalibrationReader(BTagEntry::OP_MEDIUM,"central",{"up", "down"});      
         btagCalibrationReader_bJets_     = new BTagCalibrationReader(BTagEntry::OP_MEDIUM,"central",{"up", "down"}); 
-
         btagCalibrationReader_lightJets_->load(btagCalibration, BTagEntry::FLAV_UDSG, "incl"  );
         btagCalibrationReader_cJets_    ->load(btagCalibration, BTagEntry::FLAV_C   , "mujets");
         btagCalibrationReader_bJets_    ->load(btagCalibration, BTagEntry::FLAV_B   , "mujets");
@@ -208,7 +213,7 @@ void OfflineProducerHelper::compute_scaleFactors_fourBtag_eventScaleFactor (cons
 
 void OfflineProducerHelper::initializeObjectsForEventWeight(OutputTree &ot, SkimEffCounter &ec, std::string PUWeightFileName, float crossSection)
 {
-    sampleCrossSection_ = crossSection;
+    sampleCrossSection_ = 1;//crossSection;
 
     string weightsMethod = any_cast<string>(parameterList_->at("WeightMethod"));
 
@@ -305,7 +310,7 @@ float OfflineProducerHelper::calculateEventWeight_AllWeights(NanoAODTree& nat, O
 
     int weightBin = ec.binMap_.size();
 
-    float eventWeight = sampleCrossSection_;
+    float eventWeight = 1.; //sampleCrossSection_;
     float tmpWeight = 1.;
     std::string branchName;
 
@@ -985,7 +990,7 @@ std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_BothClosestToMh(const std
     for (uint i = 0; i < presel_jets->size(); ++i)
         for (uint j = i+1; j < presel_jets->size(); ++j)
         {
-            TLorentzVector p4sum = (presel_jets->at(i).P4Regressed() + presel_jets->at(j).P4Regressed());
+            TLorentzVector p4sum = (presel_jets->at(i).P4() + presel_jets->at(j).P4());
             mHs.emplace_back(p4sum.Mag());
         }
 
@@ -1113,7 +1118,47 @@ std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_HighestCSVandClosestToMh(
     return output_jets;
 }
 
-////////////-----FUNCTIONS FOR PRESELECTION OF EVENTS FOR NON-RESONANT ANALYSIS - START
+////////////-----FUNCTIONS FOR NON-RESONANT ANALYSIS - START
+void OfflineProducerHelper::VBFCandidatesStudies(NanoAODTree& nat, EventInfo& ei, std::vector<Jet> vbfjets)
+{
+    ei.NVBFCandidates=vbfjets.size();
+    //Do the matching again to the jet collection
+    std::vector<Jet> jets;
+    std::vector<int> quarkID;
+    jets.reserve(*(nat.nJet));
+    for (uint ij = 0; ij < *(nat.nJet); ++ij){
+        jets.emplace_back(Jet(ij, &nat));
+    }
+    quarkID = AddGenMatchingInfo(nat,ei,jets);
+    // Check if the VBF candidates are matched to the VBF quarks
+    int nmatches=0; float eta1=0,eta2=0;
+    for (uint x=0; x < vbfjets.size(); x++ )
+    {
+          if(quarkID.at(vbfjets.at(x).getIdx())==5){nmatches++; eta1=vbfjets.at(x).P4().Eta(); }
+          if(quarkID.at(vbfjets.at(x).getIdx())==6){nmatches++; eta2=vbfjets.at(x).P4().Eta(); }
+    }
+    ei.NVBFCandidateswithVBFMatch=nmatches;
+    if(nmatches==2){ei.VBFMatchedCandidatesEtaSign=(eta1*eta2)/abs(eta1*eta2);ei.VBFMatchedCandidatesDeltaEta=abs(eta1-eta2);}
+
+}
+
+void OfflineProducerHelper::VBFCandidatesStudies2(NanoAODTree& nat, EventInfo& ei, std::vector<Jet> vbfjets, std::vector<Jet> vbfjets2)
+{
+    float pt2=vbfjets2.at(1).P4().Pt();
+    float eta2=vbfjets2.at(1).P4().Eta();
+    if(vbfjets.at(1).getIdx() != vbfjets2.at(1).getIdx()){
+        ei.ExtraVBFJetDecision=1;
+        ei.ExtraVBFJetPt=pt2;
+        ei.ExtraVBFJetEta=eta2;
+    }
+    else{
+        ei.ExtraVBFJetDecision=0;
+        ei.ExtraVBFJetPt=-10;
+        ei.ExtraVBFJetEta=-10;        
+    }
+}
+
+
 bool OfflineProducerHelper::select_bbbbjj_jets(NanoAODTree& nat, EventInfo& ei, OutputTree &ot)
 {
     //Event variables
@@ -1121,90 +1166,488 @@ bool OfflineProducerHelper::select_bbbbjj_jets(NanoAODTree& nat, EventInfo& ei, 
     ei.LumiSec = *(nat.luminosityBlock);
     ei.Event = *(nat.event);
     //Get the jets in the event and fill the jet multiplicity
-    std::vector<Jet> jets; int njpt25=0,njpt30=0,njpt35=0,njpt40=0;
-    std::vector<std::tuple<Jet,int,int>> jetsinfo;
+    std::vector<Jet> jets;
     jets.reserve(*(nat.nJet));
-    for (uint ij = 0; ij < *(nat.nJet); ++ij){
-        if(get_property(Jet(ij, &nat), Jet_pt) > 25) njpt25++;
-        if(get_property(Jet(ij, &nat), Jet_pt) > 30) njpt30++;
-        if(get_property(Jet(ij, &nat), Jet_pt) > 35) njpt35++;
-        if(get_property(Jet(ij, &nat), Jet_pt) > 40) njpt40++;
-        jets.emplace_back(Jet(ij, &nat));
-        jetsinfo.emplace_back(make_tuple(Jet(ij, &nat),-1,-1));
-    }
-    ot.userInt("nJetPT25") = njpt25; ot.userInt("nJetPT30") = njpt30;
-    ot.userInt("nJetPT35") = njpt35; ot.userInt("nJetPT40") = njpt40;
-    //Add gen-level matching information to the jets, and make a tuple = (Jet, MatchingFlag, QuarkId )
-    bool is_VBF_sig = any_cast<bool>(parameterList_->at("is_VBF_sig"));
-    if( is_VBF_sig )
-    {
-        jetsinfo = AddGenMatchingInfo(nat,ei,jets);
-    }
-    else
-    {
-    //Do Nothing 
-    }
+    for (uint ij = 0; ij < *(nat.nJet); ++ij){jets.emplace_back(Jet(ij, &nat));}
     //----------------------------EVENT SELECTION ALGORITHM STUDY HERE------------------------------------------------
     //---Preselect four 'b-jets' (pt, eta, btagging) & 'two vbfjets'(pt,eta,deltaEta) 
-    //---prejets is a vector of tuples (tuple = [Jet, MatchingFlag, QuarkID] )
-    std::vector<std::tuple<Jet,int,int>> prejetsinfo = bjJets_PreselectionCut(jetsinfo);
-    if(prejetsinfo.size()<4) return false;
-    //Organize data of preselected jets
-    std::vector<std::tuple<Jet,int,int>> prebjetsinfo, prejjetsinfo;
-    uint m=0; while(m<4){prebjetsinfo.push_back(make_tuple(get<0>(prejetsinfo[m]),get<1>(prejetsinfo[m]),get<2>(prejetsinfo[m])) ); m++;} 
-    stable_sort(prebjetsinfo.begin(), prebjetsinfo.end(), [](const tuple<Jet,int,int> & a, const tuple<Jet,int,int> & b) -> bool
-    { return ( get_property(get<0>(a), Jet_pt) > get_property(get<0>(b), Jet_pt) );});
-    ei.HH_b1 = get<0>(prebjetsinfo[0]); ei.HH_b1_matchedflag= get<1>(prebjetsinfo[0]); ei.HH_b1_quarkflag= get<2>(prebjetsinfo[0]);  
-    ei.HH_b2 = get<0>(prebjetsinfo[1]); ei.HH_b2_matchedflag= get<1>(prebjetsinfo[1]); ei.HH_b2_quarkflag= get<2>(prebjetsinfo[1]);  
-    ei.HH_b3 = get<0>(prebjetsinfo[2]); ei.HH_b3_matchedflag= get<1>(prebjetsinfo[2]); ei.HH_b3_quarkflag= get<2>(prebjetsinfo[2]);     
-    ei.HH_b4 = get<0>(prebjetsinfo[3]); ei.HH_b4_matchedflag= get<1>(prebjetsinfo[3]); ei.HH_b4_quarkflag= get<2>(prebjetsinfo[3]);  
+    std::vector<Jet> bestjets = bjJets_PreselectionCut(nat,ei,jets);
+    if(bestjets.size()<4) return false;
+    //Order preselected the four b-jets
+    std::vector<Jet> presel_jets;
+    uint m=0; while(m<4){presel_jets.push_back(bestjets.at(m)); m++;} 
+    // calculate scaleFactors after preselection cuts
+    if(parameterList_->find("BTagScaleFactorMethod") != parameterList_->end()){ //is it a MC event
+        const string BJetcaleFactorsMethod = any_cast<string>(parameterList_->at("BTagScaleFactorMethod"));
+        if(BJetcaleFactorsMethod == "FourBtag_ScaleFactor"){
+            compute_scaleFactors_fourBtag_eventScaleFactor(presel_jets,nat,ot);
+        }
+    }
     //Pair the four 'bjets' according the defined choice in the config file
-    std::vector<std::tuple<Jet,int,int>> ordered_bjets = bbbbBothClosestToMh(prebjetsinfo);
-    // order H1, H2 by pT: pT(H1) > pT (H2)   
-    CompositeCandidate H1 = CompositeCandidate( get<0>(ordered_bjets[0]), get<0>(ordered_bjets[1]) );
-    CompositeCandidate H2 = CompositeCandidate( get<0>(ordered_bjets[2]), get<0>(ordered_bjets[3]) );
+    std::vector<Jet> ordered_jets = bbbb_jets_idxs_BothClosestToMh(&presel_jets);
+    // order H1, H2 by pT: pT(H1) > pT (H2)
+    order_by_pT(ordered_jets.at(0), ordered_jets.at(1));   
+    order_by_pT(ordered_jets.at(2), ordered_jets.at(3));
+    CompositeCandidate H1 = CompositeCandidate(ordered_jets.at(0), ordered_jets.at(1) );
+    CompositeCandidate H2 = CompositeCandidate(ordered_jets.at(2), ordered_jets.at(3) );
     ei.H1=H1;
     ei.H2=H2;
     bool swapped = order_by_pT(ei.H1.get(), ei.H2.get());      
     if (!swapped)
     {
-        ei.H1_b1 = get<0>(ordered_bjets[0]);
-        ei.H1_b2 = get<0>(ordered_bjets[1]);
-        ei.H2_b1 = get<0>(ordered_bjets[2]);
-        ei.H2_b2 = get<0>(ordered_bjets[3]);      
+        ei.H1_b1 = ordered_jets.at(0);
+        ei.H1_b2 = ordered_jets.at(1);
+        ei.H2_b1 = ordered_jets.at(2);
+        ei.H2_b2 = ordered_jets.at(3);      
     }
     else
     {
-        ei.H1_b1 = get<0>(ordered_bjets[2]);
-        ei.H1_b2 = get<0>(ordered_bjets[3]);
-        ei.H2_b1 = get<0>(ordered_bjets[0]);
-        ei.H2_b2 = get<0>(ordered_bjets[1]);
+        ei.H1_b1 = ordered_jets.at(2);
+        ei.H1_b2 = ordered_jets.at(3);
+        ei.H2_b1 = ordered_jets.at(0);
+        ei.H2_b2 = ordered_jets.at(1);
     }       
     //HH variables
     ei.HH = CompositeCandidate(ei.H1.get(), ei.H2.get());
-    //Add VBF jets information if existing
-    if(prejetsinfo.size()==6)
-    {
-       uint n=4; while(n<6){prejjetsinfo.push_back(make_tuple(get<0>(prejetsinfo[n]),get<1>(prejetsinfo[n]),get<2>(prejetsinfo[n])) ); n++;} 
-       stable_sort(prejjetsinfo.begin(), prejjetsinfo.end(), [](const tuple<Jet,int,int> & a, const tuple<Jet,int,int> & b) -> bool
-       { return ( get_property(get<0>(a), Jet_pt) > get_property(get<0>(b), Jet_pt) );}); 
-       ei.JJ_j1 = get<0>(prejjetsinfo[0]); ei.JJ_j1_matchedflag= get<1>(prejjetsinfo[0]); ei.JJ_j1_quarkflag= get<2>(prejjetsinfo[0]);  
-       ei.JJ_j2 = get<0>(prejjetsinfo[1]); ei.JJ_j2_matchedflag= get<1>(prejjetsinfo[1]); ei.JJ_j2_quarkflag= get<2>(prejjetsinfo[1]); 
-       ei.JJ = CompositeCandidate(ei.JJ_j1.get(), ei.JJ_j2.get());  
-       ei.JJ_deltaEta = abs( ei.JJ_j1->P4().Eta() - ei.JJ_j2->P4().Eta());
-       ei.b1j1_deltaPhi = ei.HH_b1->P4().DeltaPhi(ei.JJ_j1->P4());
-       ei.b1b2_deltaPhi = ei.HH_b1->P4().DeltaPhi(ei.HH_b2->P4());
+    //If VBF jets exist, then add branches information
+    if(bestjets.size()==6)
+    { 
+       uint m=4; while(m<6){ordered_jets.push_back(bestjets.at(m)); m++;} 
+       ei.JJ_j1 = ordered_jets.at(4);  
+       ei.JJ_j2 = ordered_jets.at(5); 
+       ei.JJ = CompositeCandidate(ei.JJ_j1.get(), ei.JJ_j2.get()); 
        ei.VBFEvent = 1;
+       AddVBFCategoryVariables(nat,ei,ordered_jets);
+       ei.BDT = GetBDTScore(ei);
+       ei.DNN = 1;//GetDNNScore(ei);
+       //If VBF Signal MC, then fill branches with information for gen-level studies
+       bool is_VBF_sig = any_cast<bool>(parameterList_->at("is_VBF_sig"));
+       if(is_VBF_sig) AddVBFGenMatchVariables(nat, ei);
     }
     else
     {
+       AddGGFCategoryVariables(nat,ei,ordered_jets);
        ei.VBFEvent = 0 ;       
     }
 
     return true;
 }
 
-std::vector<std::tuple<Jet,int,int>> OfflineProducerHelper::bjJets_PreselectionCut(std::vector<std::tuple<Jet,int,int>> jetsinfo)
+
+float OfflineProducerHelper::MindRToAJet(const GenPart quark,const std::vector<Jet> jets)
+{
+float dR=999999,dRmin=0;
+for (uint x=0; x < jets.size(); x++ )
+{
+      dRmin = jets.at(x).P4().DeltaR(quark.P4());
+      if(dRmin < dR){dR=dRmin;}   
+} 
+
+return dR;
+}
+
+float OfflineProducerHelper::MindRToAGenJet(const GenPart quark,const std::vector<GenJet> jets)
+{
+float dR=999999,dRmin=0;
+for (uint x=0; x < jets.size(); x++ )
+{
+      dRmin = jets.at(x).P4().DeltaR(quark.P4());
+      if(dRmin < dR){dR=dRmin;}   
+} 
+
+return dR;
+}
+
+float OfflineProducerHelper::GenJetToPartonPt(const GenPart quark,const std::vector<GenJet> jets)
+{
+float dR=999999,dRmin=0,ptratio=0;
+for (uint x=0; x < jets.size(); x++ )
+{
+      dRmin = jets.at(x).P4().DeltaR(quark.P4());
+      if(dRmin < dR){dR=dRmin; ptratio = jets.at(x).P4().Pt() / quark.P4().Pt();}   
+} 
+
+return ptratio;
+}
+
+void OfflineProducerHelper::AddVBFGenMatchVariables(NanoAODTree& nat, EventInfo& ei)
+{
+std::vector<Jet> jets;
+std::vector<int> quarkID;
+jets.reserve(*(nat.nJet));
+for (uint ij = 0; ij < *(nat.nJet); ++ij){
+    jets.emplace_back(Jet(ij, &nat));
+}
+quarkID = AddGenMatchingInfo(nat,ei,jets);    
+ei.gen_H1_b1_mindRjet  = MindRToAJet(ei.gen_H1_b1.get() ,jets);
+ei.gen_H1_b2_mindRjet  = MindRToAJet(ei.gen_H1_b2.get() ,jets);
+ei.gen_H2_b1_mindRjet  = MindRToAJet(ei.gen_H2_b1.get() ,jets);
+ei.gen_H2_b2_mindRjet  = MindRToAJet(ei.gen_H2_b2.get() ,jets);
+ei.gen_q1_out_mindRjet = MindRToAJet(ei.gen_q1_out.get(),jets);
+ei.gen_q2_out_mindRjet = MindRToAJet(ei.gen_q2_out.get(),jets);
+ei.VBFGeneratedEtaSign = (ei.gen_q1_out.get().P4().Eta()*ei.gen_q2_out.get().P4().Eta() )/ abs(ei.gen_q1_out.get().P4().Eta()*ei.gen_q2_out.get().P4().Eta());
+ei.VBFGeneratedDeltaEta= abs(  ei.gen_q1_out.get().P4().Eta()-ei.gen_q2_out.get().P4().Eta() );
+//GenJet variables
+std::vector<GenJet> genjets;
+genjets.reserve(*(nat.nGenJet));
+for (uint ij = 0; ij < *(nat.nGenJet); ++ij){
+    genjets.emplace_back(GenJet(ij, &nat));
+}
+ei.gen_H1_b1_mindRgenjet  = MindRToAGenJet(ei.gen_H1_b1.get() ,genjets);
+ei.gen_H1_b2_mindRgenjet  = MindRToAGenJet(ei.gen_H1_b2.get() ,genjets);
+ei.gen_H2_b1_mindRgenjet  = MindRToAGenJet(ei.gen_H2_b1.get() ,genjets);
+ei.gen_H2_b2_mindRgenjet  = MindRToAGenJet(ei.gen_H2_b2.get() ,genjets);
+ei.gen_q1_out_mindRgenjet = MindRToAGenJet(ei.gen_q1_out.get(),genjets);
+ei.gen_q2_out_mindRgenjet = MindRToAGenJet(ei.gen_q2_out.get(),genjets);
+ei.gen_H1_b1_ptratio  = GenJetToPartonPt(ei.gen_H1_b1.get() ,genjets);
+ei.gen_H1_b2_ptratio  = GenJetToPartonPt(ei.gen_H1_b2.get() ,genjets);
+ei.gen_H2_b1_ptratio  = GenJetToPartonPt(ei.gen_H2_b1.get() ,genjets);
+ei.gen_H2_b2_ptratio  = GenJetToPartonPt(ei.gen_H2_b2.get() ,genjets);
+ei.gen_q1_out_ptratio = GenJetToPartonPt(ei.gen_q1_out.get(),genjets);
+ei.gen_q2_out_ptratio = GenJetToPartonPt(ei.gen_q2_out.get(),genjets);
+ei.gen_H1_b1_pz  = ei.gen_H1_b1.get().P4().Pz();
+ei.gen_H1_b2_pz  = ei.gen_H1_b2.get().P4().Pz();
+ei.gen_H2_b1_pz  = ei.gen_H2_b1.get().P4().Pz();
+ei.gen_H2_b2_pz  = ei.gen_H2_b2.get().P4().Pz();
+ei.gen_q1_out_pz = ei.gen_q1_out.get().P4().Pz();
+ei.gen_q2_out_pz = ei.gen_q2_out.get().P4().Pz();
+//Fill quarkID flag
+ei.H1_b1_quarkID = quarkID.at(ei.H1_b1.get().getIdx());       
+ei.H1_b2_quarkID = quarkID.at(ei.H1_b2.get().getIdx());
+ei.H2_b1_quarkID = quarkID.at(ei.H2_b1.get().getIdx());
+ei.H2_b2_quarkID = quarkID.at(ei.H2_b2.get().getIdx());    
+ei.JJ_j1_quarkID = quarkID.at(ei.JJ_j1.get().getIdx());
+ei.JJ_j2_quarkID = quarkID.at(ei.JJ_j2.get().getIdx()); 
+//Fill genJetIdx flag
+ei.H1_b1_genJetIdx = get_property(ei.H1_b1.get(),Jet_genJetIdx);       
+ei.H1_b2_genJetIdx = get_property(ei.H1_b2.get(),Jet_genJetIdx);
+ei.H2_b1_genJetIdx = get_property(ei.H2_b1.get(),Jet_genJetIdx);
+ei.H2_b2_genJetIdx = get_property(ei.H2_b2.get(),Jet_genJetIdx);    
+ei.JJ_j1_genJetIdx = get_property(ei.JJ_j1.get(),Jet_genJetIdx);
+ei.JJ_j2_genJetIdx = get_property(ei.JJ_j2.get(),Jet_genJetIdx);
+//Fill partonFlavour flag
+ei.H1_b1_partonFlavour = get_property(ei.H1_b1.get(),Jet_partonFlavour);       
+ei.H1_b2_partonFlavour = get_property(ei.H1_b2.get(),Jet_partonFlavour);
+ei.H2_b1_partonFlavour = get_property(ei.H2_b1.get(),Jet_partonFlavour);
+ei.H2_b2_partonFlavour = get_property(ei.H2_b2.get(),Jet_partonFlavour);    
+ei.JJ_j1_partonFlavour = get_property(ei.JJ_j1.get(),Jet_partonFlavour);
+ei.JJ_j2_partonFlavour = get_property(ei.JJ_j2.get(),Jet_partonFlavour);
+//Fill hadronFlavour flag
+ei.H1_b1_hadronFlavour = get_property(ei.H1_b1.get(),Jet_hadronFlavour);       
+ei.H1_b2_hadronFlavour = get_property(ei.H1_b2.get(),Jet_hadronFlavour);
+ei.H2_b1_hadronFlavour = get_property(ei.H2_b1.get(),Jet_hadronFlavour);
+ei.H2_b2_hadronFlavour = get_property(ei.H2_b2.get(),Jet_hadronFlavour);    
+ei.JJ_j1_hadronFlavour = get_property(ei.JJ_j1.get(),Jet_hadronFlavour);
+ei.JJ_j2_hadronFlavour = get_property(ei.JJ_j2.get(),Jet_hadronFlavour);  
+//Fill branches with selected b-jets ordered by pt and also their quarkID flag
+std::vector<Jet> presel_bjets={{*(ei.H1_b1),*(ei.H1_b2),*(ei.H2_b1),*(ei.H2_b2)}};
+stable_sort(presel_bjets.begin(), presel_bjets.end(), [](const Jet & a, const Jet & b) -> bool
+{return ( get_property(a, Jet_pt) > get_property(b, Jet_pt) );});
+ei.HH_b1_quarkID = quarkID.at(presel_bjets.at(0).getIdx());       
+ei.HH_b2_quarkID = quarkID.at(presel_bjets.at(1).getIdx());
+ei.HH_b3_quarkID = quarkID.at(presel_bjets.at(2).getIdx());
+ei.HH_b4_quarkID = quarkID.at(presel_bjets.at(3).getIdx());
+ei.HH_b1_genJetIdx = get_property(ei.HH_b1.get(),Jet_genJetIdx);       
+ei.HH_b2_genJetIdx = get_property(ei.HH_b2.get(),Jet_genJetIdx);
+ei.HH_b3_genJetIdx = get_property(ei.HH_b3.get(),Jet_genJetIdx);
+ei.HH_b4_genJetIdx = get_property(ei.HH_b4.get(),Jet_genJetIdx); 
+ei.HH_b1_partonFlavour = get_property(ei.HH_b1.get(),Jet_partonFlavour);       
+ei.HH_b2_partonFlavour = get_property(ei.HH_b2.get(),Jet_partonFlavour);
+ei.HH_b3_partonFlavour = get_property(ei.HH_b3.get(),Jet_partonFlavour);
+ei.HH_b4_partonFlavour = get_property(ei.HH_b4.get(),Jet_partonFlavour);
+ei.HH_b1_hadronFlavour = get_property(ei.HH_b1.get(),Jet_hadronFlavour);       
+ei.HH_b2_hadronFlavour = get_property(ei.HH_b2.get(),Jet_hadronFlavour);
+ei.HH_b3_hadronFlavour = get_property(ei.HH_b3.get(),Jet_hadronFlavour);
+ei.HH_b4_hadronFlavour = get_property(ei.HH_b4.get(),Jet_hadronFlavour);
+//Fill number of jets with a match at gen level in the event
+int Nmatches=0,Nq1=0,Nq2=0,Nh1b1=0,Nh1b2=0,Nh2b1=0,Nh2b2=0; 
+for (uint x=0;x < quarkID.size();x++ )
+{
+    if(quarkID.at(x)>0) Nmatches++;
+    if(quarkID.at(x)==1) Nh1b1++;
+    if(quarkID.at(x)==2) Nh1b2++;
+    if(quarkID.at(x)==3) Nh2b1++;    
+    if(quarkID.at(x)==4) Nh2b2++; 
+    if(quarkID.at(x)==5) Nq1++;
+    if(quarkID.at(x)==6) Nq2++;
+}
+ei.NPartonsMatchedToJets = Nmatches;
+ei.gen_H1_b1_matched  = Nh1b1;
+ei.gen_H1_b2_matched  = Nh1b2;
+ei.gen_H2_b1_matched  = Nh2b1;
+ei.gen_H2_b2_matched  = Nh2b2;
+ei.gen_q1_out_matched = Nq1;
+ei.gen_q2_out_matched = Nq2;
+//Fill the flavor of the quark
+ei.gen_H1_b1_pdgId  = get_property(ei.gen_H1_b1.get(), GenPart_pdgId);
+ei.gen_H1_b2_pdgId  = get_property(ei.gen_H1_b2.get(), GenPart_pdgId);
+ei.gen_H2_b1_pdgId  = get_property(ei.gen_H2_b1.get(), GenPart_pdgId);
+ei.gen_H2_b2_pdgId  = get_property(ei.gen_H2_b2.get(), GenPart_pdgId);
+ei.gen_q1_out_pdgId = get_property(ei.gen_q1_out.get(), GenPart_pdgId);
+ei.gen_q2_out_pdgId = get_property(ei.gen_q2_out.get(), GenPart_pdgId);
+//Fill gen-level information
+int h1_flag,h1_wpflag,h1_ukflag,h2_flag,h2_wpflag,h2_ukflag,hh_flag,hh_1wflag,hh_2wflag,hh_3wflag,hh_4wflag,jj_flag,jj_1wflag,jj_2wflag, hhjj_flag;    
+int h1b1 = quarkID.at(ei.H1_b1.get().getIdx());
+int h1b2 = quarkID.at(ei.H1_b2.get().getIdx());
+int h2b1 = quarkID.at(ei.H2_b1.get().getIdx());
+int h2b2 = quarkID.at(ei.H2_b2.get().getIdx());
+int jjj1 = quarkID.at(ei.JJ_j1.get().getIdx());
+int jjj2 = quarkID.at(ei.JJ_j2.get().getIdx());
+int h1bs=0; int h2bs=0; int js=0;
+if(h1b1>0 && h1b1<5){h1bs++;} if(h2b1>0 && h2b1<5){h2bs++;}
+if(h1b2>0 && h1b2<5){h1bs++;} if(h2b2>0 && h2b2<5){h2bs++;}
+if(jjj1>4){js++;} if(jjj2>4){js++;}
+//Check if H1 originates from a Higgs boson
+if( (h1b1==1 && h1b2==2) || (h1b1==2 && h1b2==1) || (h1b1==3 && h1b2==4) || (h1b1==4 && h1b2==3)){h1_flag=1;h1_ukflag=0;h1_wpflag=0;}
+else
+{
+    h1_flag=0;
+    if(h1bs==2){h1_wpflag=1;h1_ukflag=0;}
+    else{h1_wpflag=0;h1_ukflag=1;}
+}
+//Check if H2 originates from a Higgs boson
+if( (h2b1==1 && h2b2==2) || (h2b1==2 && h2b2==1) || (h2b1==3 && h2b2==4) || (h2b1==4 && h2b2==3)){h2_flag=1;h2_ukflag=0;h2_wpflag=0;}
+else
+{
+    h2_flag=0;
+    if(h2bs==2){h2_wpflag=1;h2_ukflag=0;}
+    else{h2_wpflag=0;h2_ukflag=1;}
+}
+//Check if VBF-jets originate from VBF-partons
+if(js==2){jj_flag=1; jj_1wflag=0;jj_2wflag=0;}
+else
+{
+    jj_flag=0;
+    if(js==1){jj_1wflag=1;jj_2wflag=0;}
+    if(js==0){jj_1wflag=0;jj_2wflag=1;}
+}
+//Check if HH originate from both Higgs bosons
+//if( h1_flag==1 && h2_flag==1){hh_flag=1;}
+if( (h1bs + h2bs) == 4){hh_flag=1;hh_1wflag=0;hh_2wflag=0;hh_3wflag=0;hh_4wflag=0;}
+else
+{
+    hh_flag=0;
+    if((h1bs + h2bs) == 3){hh_1wflag=1;hh_2wflag=0;hh_3wflag=0;hh_4wflag=0;}
+    if((h1bs + h2bs) == 2){hh_1wflag=0;hh_2wflag=1;hh_3wflag=0;hh_4wflag=0;}
+    if((h1bs + h2bs) == 1){hh_1wflag=0;hh_2wflag=0;hh_3wflag=1;hh_4wflag=0;}
+    if((h1bs + h2bs) == 0){hh_1wflag=0;hh_2wflag=0;hh_3wflag=0;hh_4wflag=1;}
+}
+//Check if HH and JJ originate from the partons
+if(hh_flag==1 && jj_flag==1){hhjj_flag=1;}
+else{hhjj_flag=0;}
+
+//Fill how good (quality) H1,H2, JJ ad HH are selected    
+ei.H1_quality =  h1_flag;
+ei.H2_quality =  h2_flag;
+ei.H1_wpflag  =  h1_wpflag;
+ei.H2_wpflag  =  h2_wpflag;
+ei.H1_ukflag  =  h1_ukflag;
+ei.H2_ukflag  =  h2_ukflag;
+ei.HH_quality =  hh_flag;
+ei.HH_1wflag  =  hh_1wflag;
+ei.HH_2wflag  =  hh_2wflag;
+ei.HH_3wflag  =  hh_3wflag;
+ei.HH_4wflag  =  hh_4wflag;
+ei.JJ_quality =  jj_flag;
+ei.JJ_1wflag  =  jj_1wflag;
+ei.JJ_2wflag  =  jj_2wflag;
+ei.HHJJ_quality = hhjj_flag;
+
+return;
+} 
+
+void OfflineProducerHelper::AddGGFCategoryVariables(NanoAODTree& nat, EventInfo& ei,std::vector<Jet> ordered_jets){
+       //Fill branches with selected b-jets ordered by pt 
+       std::vector<Jet> presel_bjets;
+       uint m=0; while(m<4){presel_bjets.push_back(ordered_jets.at(m)); m++;} 
+       stable_sort(presel_bjets.begin(), presel_bjets.end(), [](const Jet & a, const Jet & b) -> bool
+       {return ( get_property(a, Jet_pt) > get_property(b, Jet_pt) );});
+       ei.HH_b1 = presel_bjets.at(0);
+       ei.HH_b2 = presel_bjets.at(1);
+       ei.HH_b3 = presel_bjets.at(2);
+       ei.HH_b4 = presel_bjets.at(3); 
+       //Mass cut variables with a random swap to be sure that the m1 and m2 are simmetric when selecting the signal region
+       bool swapped = (int(ei.H1->P4().Pt()*100.) % 2 == 1);
+       if (!swapped){ei.H1rand = ei.H1.get();ei.H2rand = ei.H2.get();}
+       else{ei.H1rand = ei.H2.get();ei.H2rand = ei.H1.get();}
+       //dR,dPhi and dEta between pair b's
+       ei.H1_bb_deltaR = ei.H1_b1->P4().DeltaR(ei.H1_b2->P4());
+       ei.H1_bb_deltaPhi = ei.H1_b1->P4().DeltaPhi(ei.H1_b2->P4());
+       ei.H1_bb_deltaEta = abs(ei.H1_b1->P4().Eta() - ei.H1_b2->P4().Eta() );       
+       ei.H2_bb_deltaR = ei.H2_b1->P4().DeltaR(ei.H2_b2->P4());
+       ei.H2_bb_deltaPhi = ei.H2_b1->P4().DeltaPhi(ei.H2_b2->P4());
+       ei.H2_bb_deltaEta = abs(ei.H2_b1->P4().Eta() - ei.H2_b2->P4().Eta() );  
+
+} 
+
+void OfflineProducerHelper::AddVBFCategoryVariables(NanoAODTree& nat, EventInfo& ei,std::vector<Jet> ordered_jets)
+{
+       //Fill branches with selected b-jets ordered by pt 
+       std::vector<Jet> presel_bjets;
+       uint m=0; while(m<4){presel_bjets.push_back(ordered_jets.at(m)); m++;} 
+       stable_sort(presel_bjets.begin(), presel_bjets.end(), [](const Jet & a, const Jet & b) -> bool
+       {return ( get_property(a, Jet_pt) > get_property(b, Jet_pt) );});
+       ei.HH_b1 = presel_bjets.at(0);
+       ei.HH_b2 = presel_bjets.at(1);
+       ei.HH_b3 = presel_bjets.at(2);
+       ei.HH_b4 = presel_bjets.at(3);
+       //Mass cut variables with a random swap to be sure that the m1 and m2 are simmetric when selecting the signal region
+       bool swapped = (int(ei.H1->P4().Pt()*100.) % 2 == 1);
+       if (!swapped){ei.H1rand = ei.H1.get();ei.H2rand = ei.H2.get();}
+       else{ei.H1rand = ei.H2.get();ei.H2rand = ei.H1.get();}
+       //dR,dPhi and dEta between pair b's
+       ei.H1_bb_deltaR = ei.H1_b1->P4().DeltaR(ei.H1_b2->P4());
+       ei.H1_bb_deltaPhi = ei.H1_b1->P4().DeltaPhi(ei.H1_b2->P4());
+       ei.H1_bb_deltaEta = abs(ei.H1_b1->P4().Eta() - ei.H1_b2->P4().Eta() );       
+       ei.H2_bb_deltaR = ei.H2_b1->P4().DeltaR(ei.H2_b2->P4());
+       ei.H2_bb_deltaPhi = ei.H2_b1->P4().DeltaPhi(ei.H2_b2->P4());
+       ei.H2_bb_deltaEta = abs(ei.H2_b1->P4().Eta() - ei.H2_b2->P4().Eta() );        
+       //Special variables:deltaR between jets
+       ei.b1b2_deltaR = ei.HH_b1->P4().DeltaR(ei.HH_b2->P4());
+       ei.b1b3_deltaR = ei.HH_b1->P4().DeltaR(ei.HH_b3->P4());
+       ei.b1b4_deltaR = ei.HH_b1->P4().DeltaR(ei.HH_b4->P4());
+       ei.b1j1_deltaR = ei.HH_b1->P4().DeltaR(ei.JJ_j1->P4());
+       ei.b1j2_deltaR = ei.HH_b1->P4().DeltaR(ei.JJ_j2->P4());
+       ei.b2b3_deltaR = ei.HH_b2->P4().DeltaR(ei.HH_b3->P4());
+       ei.b2b4_deltaR = ei.HH_b2->P4().DeltaR(ei.HH_b4->P4());
+       ei.b2j1_deltaR = ei.HH_b2->P4().DeltaR(ei.JJ_j1->P4());        
+       ei.b2j2_deltaR = ei.HH_b2->P4().DeltaR(ei.JJ_j2->P4());
+       ei.b3b4_deltaR = ei.HH_b3->P4().DeltaR(ei.HH_b4->P4());
+       ei.b3j1_deltaR = ei.HH_b3->P4().DeltaR(ei.JJ_j1->P4());       
+       ei.b3j2_deltaR = ei.HH_b3->P4().DeltaR(ei.JJ_j2->P4());
+       ei.b4j1_deltaR = ei.HH_b4->P4().DeltaR(ei.JJ_j1->P4());       
+       ei.b4j2_deltaR = ei.HH_b4->P4().DeltaR(ei.JJ_j2->P4());
+       ei.j1j2_deltaR = ei.JJ_j1->P4().DeltaR(ei.JJ_j2->P4());
+       //Special variables:deltaPhi between jets
+       ei.b1b2_deltaPhi = ei.HH_b1->P4().DeltaPhi(ei.HH_b2->P4());
+       ei.b1b3_deltaPhi = ei.HH_b1->P4().DeltaPhi(ei.HH_b3->P4());
+       ei.b1b4_deltaPhi = ei.HH_b1->P4().DeltaPhi(ei.HH_b4->P4());
+       ei.b1j1_deltaPhi = ei.HH_b1->P4().DeltaPhi(ei.JJ_j1->P4());
+       ei.b1j2_deltaPhi = ei.HH_b1->P4().DeltaPhi(ei.JJ_j2->P4());
+       ei.b2b3_deltaPhi = ei.HH_b2->P4().DeltaPhi(ei.HH_b3->P4());
+       ei.b2b4_deltaPhi = ei.HH_b2->P4().DeltaPhi(ei.HH_b4->P4());
+       ei.b2j1_deltaPhi = ei.HH_b2->P4().DeltaPhi(ei.JJ_j1->P4());        
+       ei.b2j2_deltaPhi = ei.HH_b2->P4().DeltaPhi(ei.JJ_j2->P4());
+       ei.b3b4_deltaPhi = ei.HH_b3->P4().DeltaPhi(ei.HH_b4->P4());
+       ei.b3j1_deltaPhi = ei.HH_b3->P4().DeltaPhi(ei.JJ_j1->P4());       
+       ei.b3j2_deltaPhi = ei.HH_b3->P4().DeltaPhi(ei.JJ_j2->P4());
+       ei.b4j1_deltaPhi = ei.HH_b4->P4().DeltaPhi(ei.JJ_j1->P4());       
+       ei.b4j2_deltaPhi = ei.HH_b4->P4().DeltaPhi(ei.JJ_j2->P4());
+       ei.j1j2_deltaPhi = ei.JJ_j1->P4().DeltaPhi(ei.JJ_j2->P4());
+       //Special variables:deltaEta between jets
+       ei.b1b2_deltaEta = abs(ei.HH_b1->P4().Eta() - ei.HH_b2->P4().Eta() );
+       ei.b1b3_deltaEta = abs(ei.HH_b1->P4().Eta() - ei.HH_b3->P4().Eta() );
+       ei.b1b4_deltaEta = abs(ei.HH_b1->P4().Eta() - ei.HH_b4->P4().Eta() );
+       ei.b1j1_deltaEta = abs(ei.HH_b1->P4().Eta() - ei.JJ_j1->P4().Eta() );
+       ei.b1j2_deltaEta = abs(ei.HH_b1->P4().Eta() - ei.JJ_j2->P4().Eta() );
+       ei.b2b3_deltaEta = abs(ei.HH_b2->P4().Eta() - ei.HH_b3->P4().Eta() );
+       ei.b2b4_deltaEta = abs(ei.HH_b2->P4().Eta() - ei.HH_b4->P4().Eta() );
+       ei.b2j1_deltaEta = abs(ei.HH_b2->P4().Eta() - ei.JJ_j1->P4().Eta() );        
+       ei.b2j2_deltaEta = abs(ei.HH_b2->P4().Eta() - ei.JJ_j2->P4().Eta() );
+       ei.b3b4_deltaEta = abs(ei.HH_b3->P4().Eta() - ei.HH_b4->P4().Eta() );
+       ei.b3j1_deltaEta = abs(ei.HH_b3->P4().Eta() - ei.JJ_j1->P4().Eta() );       
+       ei.b3j2_deltaEta = abs(ei.HH_b3->P4().Eta() - ei.JJ_j2->P4().Eta() );
+       ei.b4j1_deltaEta = abs(ei.HH_b4->P4().Eta() - ei.JJ_j1->P4().Eta() );       
+       ei.b4j2_deltaEta = abs(ei.HH_b4->P4().Eta() - ei.JJ_j2->P4().Eta() );
+       ei.j1j2_deltaEta = abs(ei.JJ_j1->P4().Eta() - ei.JJ_j2->P4().Eta() );
+       ei.VBFSelectedDeltaEta = abs(ei.JJ_j1->P4().Eta() - ei.JJ_j2->P4().Eta()) ;
+       ei.VBFSelectedEtaSign = (ei.JJ_j1->P4().Eta() * ei.JJ_j2->P4().Eta())/ abs( ei.JJ_j1->P4().Eta() * ei.JJ_j2->P4().Eta()  ) ;
+       //Special variables: deltaR between h1,h2,j1,j2,HH,JJ
+       ei.h1h2_deltaR = ei.H1->P4().DeltaR(ei.H2->P4());
+       ei.h1j1_deltaR = ei.H1->P4().DeltaR(ei.JJ_j1->P4());
+       ei.h1j2_deltaR = ei.H1->P4().DeltaR(ei.JJ_j2->P4());
+       ei.h2j1_deltaR = ei.H2->P4().DeltaR(ei.JJ_j1->P4());
+       ei.h2j2_deltaR = ei.H2->P4().DeltaR(ei.JJ_j2->P4());
+       ei.h1jj_deltaR = ei.H1->P4().DeltaR(ei.JJ->P4());
+       ei.h2jj_deltaR = ei.H2->P4().DeltaR(ei.JJ->P4());
+       ei.hhj1_deltaR = ei.HH->P4().DeltaR(ei.JJ_j1->P4());
+       ei.hhj2_deltaR = ei.HH->P4().DeltaR(ei.JJ_j2->P4());
+       ei.hhjj_deltaR = ei.HH->P4().DeltaR(ei.JJ->P4());
+       //Special variables: deltaPhi between h1,h2,j1,j2,HH,JJ
+       ei.h1h2_deltaPhi = ei.H1->P4().DeltaPhi(ei.H2->P4());
+       ei.h1j1_deltaPhi = ei.H1->P4().DeltaPhi(ei.JJ_j1->P4());
+       ei.h1j2_deltaPhi = ei.H1->P4().DeltaPhi(ei.JJ_j2->P4());
+       ei.h2j1_deltaPhi = ei.H2->P4().DeltaPhi(ei.JJ_j1->P4());
+       ei.h2j2_deltaPhi = ei.H2->P4().DeltaPhi(ei.JJ_j2->P4());
+       ei.h1jj_deltaPhi = ei.H1->P4().DeltaPhi(ei.JJ->P4());
+       ei.h2jj_deltaPhi = ei.H2->P4().DeltaPhi(ei.JJ->P4());
+       ei.hhj1_deltaPhi = ei.HH->P4().DeltaPhi(ei.JJ_j1->P4());
+       ei.hhj2_deltaPhi = ei.HH->P4().DeltaPhi(ei.JJ_j2->P4());
+       ei.hhjj_deltaPhi = ei.HH->P4().DeltaPhi(ei.JJ->P4());
+       //Special variables: deltaEta between h1,h2,j1,j2,HH,JJ
+       ei.h1h2_deltaEta = abs( ei.H1->P4().Eta() - ei.H2->P4().Eta());
+       ei.h1j1_deltaEta = abs( ei.H1->P4().Eta() - ei.JJ_j1->P4().Eta());
+       ei.h1j2_deltaEta = abs( ei.H1->P4().Eta() - ei.JJ_j2->P4().Eta());
+       ei.h2j1_deltaEta = abs( ei.H2->P4().Eta() - ei.JJ_j1->P4().Eta());
+       ei.h2j2_deltaEta = abs( ei.H2->P4().Eta() - ei.JJ_j2->P4().Eta());
+       ei.h1jj_deltaEta = abs( ei.H1->P4().Eta() - ei.JJ->P4().Eta());
+       ei.h2jj_deltaEta = abs( ei.H2->P4().Eta() - ei.JJ->P4().Eta());
+       ei.hhj1_deltaEta = abs( ei.HH->P4().Eta() - ei.JJ_j1->P4().Eta());
+       ei.hhj2_deltaEta = abs( ei.HH->P4().Eta() - ei.JJ_j2->P4().Eta());
+       ei.hhjj_deltaEta = abs( ei.HH->P4().Eta() - ei.JJ->P4().Eta());
+       //Extra and special variables
+       ei.j1etaj2eta = ei.JJ_j1->P4().Eta()*ei.JJ_j2->P4().Eta();
+       ei.maxj1etaj2eta = max( abs(ei.JJ_j1->P4().Eta() ), abs(ei.JJ_j2->P4().Eta() ) );
+       ei.ptbalance = abs((ei.HH->P4() + ei.JJ->P4() ).Pt()) / (ei.HH->P4().Pt() + ei.JJ->P4().Pt());
+       float ptcalc = sqrt (pow((ei.HH->P4().Px() - (((ei.JJ_j1->P4()+ei.JJ_j2->P4()).Px())/ 2)),2) + pow((ei.HH->P4().Py() - (((ei.JJ_j1->P4()+ei.JJ_j2->P4()).Py())/ 2)),2));
+       if( (ei.JJ_j1->P4()-ei.JJ_j2->P4()).Pt() != 0){ei.ptcentrality  = ptcalc / (ei.JJ_j1->P4()-ei.JJ_j2->P4()).Pt();}
+       else{ei.ptcentrality  = -1;} 
+       if(ei.JJ_j1->P4().Eta() != ei.JJ_j2->P4().Eta()){ei.etacentrality = abs( ei.HH->P4().Eta() - ((ei.JJ_j1->P4().Eta()+ei.JJ_j2->P4().Eta())/2)) / abs(ei.JJ_j1->P4().Eta() - ei.JJ_j2->P4().Eta());}
+       else{ei.etacentrality = -1;} 
+       int nextra=0,nextrabarrel=0,nextraendcap=0;
+       for (uint ij = 0; ij < *(nat.nJet); ++ij)
+       {
+        if ( abs(get_property(Jet(ij, &nat), Jet_pt)) < 25) continue;
+        if ( abs(get_property(Jet(ij, &nat), Jet_eta)) < 5){nextra++;}
+        if ( abs(get_property(Jet(ij, &nat), Jet_eta)) < 2.4){nextrabarrel++;}
+        if ( abs(get_property(Jet(ij, &nat), Jet_eta)) > 2.4 && abs(get_property(Jet(ij, &nat), Jet_eta)) < 5){nextraendcap++;}
+       }
+       ei.nExtraJet = nextra;
+       ei.nExtraJetbarrel = nextrabarrel;
+       ei.nExtraJetendcap = nextraendcap;
+       return;
+}
+
+float OfflineProducerHelper::GetBDTScore(EventInfo& ei){
+       TMVA::Reader *reader0 = new TMVA::Reader( "!Color:Silent" );
+       float H1_eta_bdt=ei.H1->P4().Eta();
+       float H2_eta_bdt=ei.H2->P4().Eta();
+       float H1_pt_bdt=ei.H1->P4().Pt();
+       float H2_pt_bdt=ei.H2->P4().Pt();
+       float JJ_j1_pt_bdt=ei.JJ_j1->P4().Pt();
+       float JJ_j2_pt_bdt=ei.JJ_j2->P4().Pt();
+       float JJ_j1_qgl_bdt = get_property(ei.JJ_j1.get(), Jet_qgl);
+       float JJ_j2_qgl_bdt = get_property(ei.JJ_j2.get(), Jet_qgl);
+       float JJ_eta_bdt =ei.JJ->P4().Eta();
+       float h1h2_deltaEta_bdt = ei.h1h2_deltaEta.get();
+       float h1j1_deltaR_bdt = ei.h1j1_deltaR.get();
+       float h1j2_deltaR_bdt = ei.h1j2_deltaR.get();
+       float h2j1_deltaR_bdt = ei.h2j1_deltaR.get();
+       float h2j2_deltaR_bdt = ei.h2j2_deltaR.get();
+       float j1etaj2eta_bdt = ei.j1etaj2eta.get();
+       reader0->AddVariable("H1_eta", &(H1_eta_bdt) );
+       reader0->AddVariable("H2_eta", &(H2_eta_bdt) );
+       reader0->AddVariable("H1_pt", &(H1_pt_bdt) );
+       reader0->AddVariable("H2_pt", &(H2_pt_bdt) );
+       reader0->AddVariable("JJ_j1_pt", &(JJ_j1_pt_bdt) );
+       reader0->AddVariable("JJ_j1_qgl", &(JJ_j1_qgl_bdt));
+       reader0->AddVariable("JJ_j2_pt", &(JJ_j2_pt_bdt) );
+       reader0->AddVariable("JJ_j2_qgl", &(JJ_j2_qgl_bdt));  
+       reader0->AddVariable("JJ_eta", &(JJ_eta_bdt)); 
+       reader0->AddVariable("h1h2_deltaEta", &(h1h2_deltaEta_bdt));        
+       reader0->AddVariable("h1j1_deltaR", &(h1j1_deltaR_bdt));
+       reader0->AddVariable("h1j2_deltaR", &(h1j2_deltaR_bdt));     
+       reader0->AddVariable("h2j1_deltaR", &(h2j1_deltaR_bdt));
+       reader0->AddVariable("h2j2_deltaR", &(h2j2_deltaR_bdt));    
+       reader0->AddVariable("j1etaj2eta", &(j1etaj2eta_bdt));
+       TString method =  "BDT method";
+       reader0->BookMVA( "BDT method", "weights/TMVAClassification_BDT_GGFKiller.weights.xml");
+       float BDT = reader0->EvaluateMVA(method);
+       delete reader0;
+       return BDT;
+}
+
+std::vector<Jet> OfflineProducerHelper::bjJets_PreselectionCut(NanoAODTree& nat, EventInfo& ei,std::vector<Jet> jets)
 
 {
     float bminimumDeepCSVAccepted           = any_cast<float>(parameterList_->at("bMinDeepCSV"          ));
@@ -1213,189 +1656,113 @@ std::vector<std::tuple<Jet,int,int>> OfflineProducerHelper::bjJets_PreselectionC
     float jminimumPtAccepted                = any_cast<float>(parameterList_->at("jMinPt"               ));
     float jmaximumAbsEtaAccepted            = any_cast<float>(parameterList_->at("jMaxAbsEta"           ));
 
-    std::vector<std::tuple<Jet,int,int>> nobjetsinfo,outputJets;
+    std::vector<Jet> nobjets,outputJets;
     /////////////--------Select four b-jet candidates 
-    /////////////--------b-tagging requirements    
-    auto it = jetsinfo.begin();
-    while (it != jetsinfo.end()){
-        Jet itjet = get<0>(*it);
+    /////////////--------Filter 
+    auto it = jets.begin();
+    while (it != jets.end()){
         if(bminimumDeepCSVAccepted>=0.){
-            if(get_property(itjet,Jet_btagDeepB) < bminimumDeepCSVAccepted){
-                nobjetsinfo.emplace_back(*it); 
-                it=jetsinfo.erase(it);    
+            if(get_property( (*it),Jet_btagDeepB) < bminimumDeepCSVAccepted){
+                nobjets.emplace_back(*it); 
+                it=jets.erase(it);    
                 continue;
             }
         }    
         if(bminimumPtAccepted>0.){
-            if(itjet.P4().Pt()<bminimumPtAccepted){
-                nobjetsinfo.emplace_back(*it);
-                it=jetsinfo.erase(it);
+            if(get_property( (*it),Jet_pt)<bminimumPtAccepted){
+                nobjets.emplace_back(*it);
+                it=jets.erase(it);
                 continue;                
             }
         }
         if(bmaximumAbsEtaAccepted>0.){
-            if(abs(itjet.P4().Eta())>bmaximumAbsEtaAccepted){
-                nobjetsinfo.emplace_back(*it);
-                it=jetsinfo.erase(it);
+            if(abs(get_property( (*it),Jet_eta))>bmaximumAbsEtaAccepted){
+                nobjets.emplace_back(*it);
+                it=jets.erase(it);
                 continue;                
             }
         }
         ++it;
     }
-
     /////////////--------Check that there is at least 4 bjet candidates
-    if(jetsinfo.size() < 4) return outputJets;
-    //cout<<jetsinfo.size()<<endl;
-    stable_sort(jetsinfo.begin(), jetsinfo.end(), [](const tuple<Jet,int,int> & a, const tuple<Jet,int,int> & b) -> bool
-    { return ( get_property(get<0>(a), Jet_btagDeepB) > get_property(get<0>(b), Jet_btagDeepB) );});
-    /////////////--------Pick up the four b-jets 
-    outputJets = {{*(jetsinfo.begin()+0),*(jetsinfo.begin()+1),*(jetsinfo.begin()+2),*(jetsinfo.begin()+3)}};
-    int c=0; while (c<4){jetsinfo.erase(jetsinfo.begin());c++;}
-    /////////////--------Select two VBF-jet candidates based on PT and ETA1*ETA2s
-    jetsinfo.insert(jetsinfo.end(), nobjetsinfo.begin(), nobjetsinfo.end());
-    
-    auto jt = jetsinfo.begin();
-    while (jt != jetsinfo.end()){
-        Jet jtjet = get<0>(*jt);        
+    if(jets.size() < 4) return outputJets;
+    stable_sort(jets.begin(), jets.end(), [](const Jet & a, const Jet & b) -> bool
+    { return ( get_property(a, Jet_btagDeepB) > get_property(b, Jet_btagDeepB) );});
+    /////////////--------Pick up the four b-jets with highest pt 
+    outputJets = {{*(jets.begin()+0),*(jets.begin()+1),*(jets.begin()+2),*(jets.begin()+3)}};
+    int c=0; while (c<4){jets.erase(jets.begin());c++;}
+    /////////////--------Select two VBF-jet candidates based on PT and ETA1*ETA2<0
+    /////////////--------Filter 
+    jets.insert(jets.end(), nobjets.begin(), nobjets.end());
+    auto jt = jets.begin();
+    while (jt != jets.end()){       
         if(jminimumPtAccepted>0.){
-            if(jtjet.P4().Pt()<jminimumPtAccepted){
-                jt=jetsinfo.erase(jt);
+            if(get_property( (*jt),Jet_pt)<jminimumPtAccepted){
+                jt=jets.erase(jt);
                 continue;                
             }
         }
         if(jmaximumAbsEtaAccepted>0.){
-            if(abs(jtjet.P4().Eta())>jmaximumAbsEtaAccepted){
-                jt=jetsinfo.erase(jt);
+            if(abs(get_property( (*jt),Jet_eta))>jmaximumAbsEtaAccepted){
+                jt=jets.erase(jt);
                 continue;                
             }
         }
         ++jt;
     }
-    if(jetsinfo.size() < 2) return outputJets;
-    stable_sort(jetsinfo.begin(), jetsinfo.end(), [](const tuple<Jet,int,int> & a, const tuple<Jet,int,int> & b) -> bool
-    { return ( get_property(get<0>(a), Jet_pt ) >  get_property(get<0>(b), Jet_pt)  );});
-    std::vector<std::tuple<Jet,int,int>> VBFjets = OppositeEtaJetPair(jetsinfo);
-    if(VBFjets.size() < 2) return outputJets;
-    /////////////--------Load information of preselected jets: outputJets = (4 b-jets, 2 VBF jets, rest) and return      
+    //Check if event has at least two VBF-jet candidates, otherwise returns only b-jets candidates
+    if(jets.size() < 2) return outputJets;
+    //Information for studies of the VBF candidate pair
+    bool is_VBF_sig = any_cast<bool>(parameterList_->at("is_VBF_sig"));
+    if(is_VBF_sig) VBFCandidatesStudies(nat,ei,jets); 
+    //select the VBF candidate pair with highest PT
+    std::vector<Jet> VBFjetsHighestPT = HighestPtJetPair(jets);
+    //select the VBF candidate pair with bbbb between the VBF-jets (Petra Suggestion)
+    std::vector<Jet> VBFjetsExternalEta = ExternalEtaJetPair(jets,outputJets);
+    //Select the VBF candidate pair opposite sgin
+    std::vector<Jet> VBFjets = OppositeEtaJetPair(jets);
+    //std::vector<Jet> VBFjets = HighestPtJetPair(jets);
+    //std::vector<Jet> VBFjets = ExternalEtaJetPair(jets,outputJets);   
+    //Information for studies of the VBF candidate pair
+    //Check if event has two VBF-jet candidates, otherwise returns only b-jet candidates
+    if(VBFjets.size() < 2)return outputJets;
+    VBFCandidatesStudies2(nat,ei,VBFjets,VBFjetsHighestPT);
+    /////////////--------Fill information of preselected jets: outputJets = (4 b-jets, 2 VBF jets) and return it     
     outputJets.insert(outputJets.end(),VBFjets.begin(),VBFjets.end());
     return outputJets;
 }
 
-std::vector<std::tuple<Jet,int,int>> OfflineProducerHelper::bbbbBothClosestToMh(std::vector<std::tuple<Jet,int,int>> presel_jets)
+std::vector<Jet> OfflineProducerHelper::ExternalEtaJetPair(std::vector<Jet> jets, std::vector<Jet> bjets){
+//Check Max abs(Eta) among the b-jets
+std::vector<Jet> outputJets;
+float maxbEta=-1;
+for (uint i=0;i<bjets.size();i++ )
 {
-    float targetHiggsMass = any_cast<float>(parameterList_->at("HiggsMass"));
-    std::vector<float> mHs;
-
-    stable_sort(presel_jets.begin(), presel_jets.end(), [](const tuple<Jet,int,int> & a, const tuple<Jet,int,int> & b) -> bool
-    { return ( get_property(get<0>(a), Jet_pt) > get_property(get<0>(b), Jet_pt) );});
-
-    for (uint i = 0; i < presel_jets.size(); ++i)
-        for (uint j = i+1; j < presel_jets.size(); ++j)
-        {
-            TLorentzVector p4sum = (get<0>(presel_jets[i]).P4() + get<0>(presel_jets[j]).P4());
-            mHs.emplace_back(p4sum.Mag());
+        float Eta = abs(bjets.at(i).P4().Eta());
+        if(Eta>maxbEta){maxbEta=Eta;}
+}
+//Remove VBF-jet candidates with abs(eta) lower than the bjets abs(eta)
+auto jt = jets.begin();
+while (jt != jets.end()){       
+        if(abs(get_property( (*jt),Jet_eta))<maxbEta){
+            jt=jets.erase(jt);
+            continue;                
         }
-
-    std::pair<float, float> m_12_34 = make_pair (mHs.at(0), mHs.at(5));
-    std::pair<float, float> m_13_24 = make_pair (mHs.at(1), mHs.at(4));
-    std::pair<float, float> m_14_23 = make_pair (mHs.at(2), mHs.at(3));
-
-    float r12_34 = sqrt (pow(m_12_34.first - targetHiggsMass, 2) + pow(m_12_34.second - targetHiggsMass, 2) );
-    float r13_24 = sqrt (pow(m_13_24.first - targetHiggsMass, 2) + pow(m_13_24.second - targetHiggsMass, 2) );
-    float r14_23 = sqrt (pow(m_14_23.first - targetHiggsMass, 2) + pow(m_14_23.second - targetHiggsMass, 2) );
-
-    float the_min = std::min({r12_34, r13_24, r14_23});
-
-    std::vector<std::tuple<Jet,int,int>> outputJets = presel_jets;
-
-    if (the_min == r12_34){
-        outputJets.at(0) = presel_jets.at(1 - 1);
-        outputJets.at(1) = presel_jets.at(2 - 1);
-        outputJets.at(2) = presel_jets.at(3 - 1);
-        outputJets.at(3) = presel_jets.at(4 - 1);
-    }
-
-    else if (the_min == r13_24){
-        outputJets.at(0) = presel_jets.at(1 - 1);
-        outputJets.at(1) = presel_jets.at(3 - 1);
-        outputJets.at(2) = presel_jets.at(2 - 1);
-        outputJets.at(3) = presel_jets.at(4 - 1);
-    }
-
-    else if (the_min == r14_23){
-        outputJets.at(0) = presel_jets.at(1 - 1);
-        outputJets.at(1) = presel_jets.at(4 - 1);
-        outputJets.at(2) = presel_jets.at(2 - 1);
-        outputJets.at(3) = presel_jets.at(3 - 1);   
-    }
-
-    else
-        cout << "** [WARNING] : bbbb_jets_idxs_BothClosestToMh : something went wrong with finding the smallest radius" << endl;
-    return outputJets;
+        ++jt;
+}
+//Ordered the VBF candidates by pt. Ff there are not two VBF-candidates, then return empty
+if(jets.size()<2) return outputJets;
+stable_sort(jets.begin(), jets.end(), [](const Jet & a, const Jet & b) -> bool
+{ return ( get_property(a, Jet_pt ) >  get_property(b, Jet_pt)  );});
+outputJets = {{*(jets.begin()+0),*(jets.begin()+1)}}; return outputJets;
 }
 
-std::vector<std::tuple<Jet,int,int>> OfflineProducerHelper::bbbbOneClosestToMh(std::vector<std::tuple<Jet,int,int>> presel_jets)
+std::vector<int> OfflineProducerHelper::AddGenMatchingInfo(NanoAODTree& nat, EventInfo& ei, std::vector<Jet> jets)
 {
-    float targetHiggsMass = any_cast<float>(parameterList_->at("HiggsMass"));
-    std::vector<pair <float, pair<int,int>>> mHs_and_jetIdx; // each entry is the mH and the two idxs of the pair
-    
-    for (uint i = 0; i < presel_jets.size(); ++i)
-        for (uint j = i+1; j < presel_jets.size(); ++j)
-        {
-            TLorentzVector p4sum = (get<0>(presel_jets[i]).P4Regressed() + get<0>(presel_jets[j]).P4Regressed());
-            float dmh = fabs(p4sum.Mag() - targetHiggsMass);
-            mHs_and_jetIdx.emplace_back(make_pair(dmh, make_pair(i,j)));
-        }
-
-    // sort to get the pair closest to mH
-    stable_sort (mHs_and_jetIdx.begin(), mHs_and_jetIdx.end());
-
-    std::vector<std::tuple<Jet,int,int>> outputJets = presel_jets;
-    int ij0 = mHs_and_jetIdx.begin()->second.first;
-    int ij1 = mHs_and_jetIdx.begin()->second.second;
-
-    // get the other two jets. The following creates a vector with idxs 0/1/2/3, and then removes ij1 and ij2
-    std::vector<int> vres;
-    for (uint i = 0; i < presel_jets.size(); ++i) vres.emplace_back(i);
-    vres.erase(std::remove(vres.begin(), vres.end(), ij0), vres.end());
-    vres.erase(std::remove(vres.begin(), vres.end(), ij1), vres.end());
-    
-    int ij2 = vres.at(0);
-    int ij3 = vres.at(1);
-
-    outputJets.at(0) = presel_jets.at(ij0);
-    outputJets.at(1) = presel_jets.at(ij1);
-    outputJets.at(2) = presel_jets.at(ij2);
-    outputJets.at(3) = presel_jets.at(ij3);
-
-    return outputJets;
-}
-
-std::vector<std::tuple<Jet,int,int>> OfflineProducerHelper::OppositeEtaJetPair(std::vector<std::tuple<Jet,int,int>> jjets){
-//Initialize DEta 
-int id;
-float Eta1Eta2= 0; bool foundpair=false;
-std::vector<std::tuple<Jet,int,int>> outputJets;
-for (uint y=1;y<jjets.size();y++ )
-{
-        Eta1Eta2 = get<0>(jjets[0]).P4().Eta() * get<0>(jjets[y]).P4().Eta()  ;
-        if (Eta1Eta2<0)
-        {
-            id = y; foundpair=true;
-        }
-        if(foundpair) break;
-}
-if(!foundpair) return outputJets;
-outputJets = {{*(jjets.begin()+0),*(jjets.begin()+id)}}; return outputJets;
-}
-
-std::vector<std::tuple<Jet,int,int>> OfflineProducerHelper::AddGenMatchingInfo(NanoAODTree& nat, EventInfo& ei, std::vector<Jet> jets)
-{
-
-    //OUTPUT: Vector of tuples ( tuple = [Jet, MatchingFlag, QuarkId] )
-    std::vector<std::tuple<Jet,int,int>> output;
-    //Order the generator level by PT  
-    order_by_pT(ei.gen_H1_b1.get(), ei.gen_H1_b2.get());              
+    //OUTPUT: Vector of quarkIDs for the jets
+    //QuarkId: (0) Others, (1) gen_H1_b1, (2) gen_H1_b2, (3) gen_H2_b1, (4) gen_H2_b2, (5) gen_j1_out, (6) gen_j2_outs
+    //Order the generator level information by specific PT 
+    order_by_pT(ei.gen_H1_b1.get(), ei.gen_H1_b2.get());             
     order_by_pT(ei.gen_H2_b1.get(), ei.gen_H2_b2.get());
     order_by_pT(ei.gen_q1_out.get(), ei.gen_q2_out.get());
     std::vector<GenPart> bs = {{*(ei.gen_H1_b1),*(ei.gen_H1_b2),*(ei.gen_H2_b1),*(ei.gen_H2_b2)}};
@@ -1417,53 +1784,80 @@ std::vector<std::tuple<Jet,int,int>> OfflineProducerHelper::AddGenMatchingInfo(N
     //Define a vector with the six ordered quarks   
     std::vector<GenPart> quarks = {{
         *(ei.gen_H1_b1),*(ei.gen_H1_b2),
-        *(ei.gen_H2_b1),*(ei.gen_H2_b2),
-        *(ei.gen_q1_out),*(ei.gen_q2_out)}};
-    //minfo: Vector of tuples ( tuple = [MatchingFlag, QuarkId, JetId] )     
-    std::vector<std::tuple<int,int,int>> minfo = QuarkToJetMatcher(quarks,jets); 
-    //Fill output vector tuple with the jet information
-    bool found; int foundy;
-    for (uint x=0; x < jets.size(); x++ ){
-          uint jetid=x;
-          found = false;
-          //Check if there is a quark that is linked to this jet
-          for (uint y=0; y < minfo.size(); y++ ){
-          uint m = get<2>(minfo[y]);
-          if(jetid == m ){found = true; foundy=y;}   
-          }
-          //Load jet information to the output: [Jet, MatchingFlag, QuarkId]
-          if(found){output.emplace_back(make_tuple(jets.at(x),1,get<1>(minfo[foundy]) ));}
-          else{output.emplace_back(make_tuple(jets.at(x),0,-1));}   
-    }    
-    return output; 
+        *(ei.gen_H2_b1),*(ei.gen_H2_b2), *(ei.gen_q1_out),*(ei.gen_q2_out)}};    
+    std::vector<int> output = QuarkToJetMatcher(quarks,jets);    
+    return output;
  } 
 
-std::vector<std::tuple<int,int,int>> OfflineProducerHelper::QuarkToJetMatcher(const std::vector<GenPart> quarks, std::vector<Jet> jets){
-// OUTPUT = (MatchingFlag, QuarkIdx, JetIdx)
-//----MatchingFlag: 0 (Unmatched) or 1 (Matched)
-//----QuarkId: (0) gen_H1_b1, (1) gen_H1_b2, (2) gen_H2_b1, (3) gen_H2_b2, (4) gen_j1_out, (5) gen_j2_out, (-1) Nothing  
+std::vector<int> OfflineProducerHelper::QuarkToJetMatcher(const std::vector<GenPart> quarks,const std::vector<Jet> jets){
+// OUTPUT is a vector with nJet entries filled the QuarkId, ordered by jets index
+//----QuarkId: (1) gen_H1_b1, (2) gen_H1_b2, (3) gen_H2_b1, (4) gen_H2_b2, (5) gen_j1_out, (6) gen_j2_out, (0) Others 
 //----JetId: Index of the jets in the input vector 'jets'
 //Define and initialize variables
 std::vector<std::tuple<TLorentzVector,int>> jetsinfo,quarksinfo;
-std::vector<std::tuple<int,int,int>> output; uint id;
-float dR=0.3, maxDeltaR, DeltaR; bool matched = false;
+std::vector<std::tuple<int,int>> quark_jet_link; uint id;
+std::vector<int> output;
+float dR=0.4, maxDeltaR, DeltaR; bool matched = false;
 uint m=0; while(m<quarks.size()){quarksinfo.emplace_back( make_tuple(quarks.at(m).P4(), m)); m++;}
-uint n=0; while(n<jets.size()){jetsinfo.emplace_back( make_tuple(jets.at(n).P4(), n)    ); n++;  }
-//Create all possible combinations and find the jet set that minimize the maximum deltaEta
+uint n=0; while(n<jets.size()  ){jetsinfo.emplace_back( make_tuple(jets.at(n).P4(), n)    ); n++;}
+//Create all possible combinations and find the jet set that minimize the deltaR
 for (uint x=0;x < quarksinfo.size();x++ )
 {
  maxDeltaR = dR;
  for (uint y=0;y < jetsinfo.size(); y++ ){
-
       DeltaR = get<0>(quarksinfo[x]).DeltaR( get<0>(jetsinfo[y]) ); 
       if(DeltaR < maxDeltaR){maxDeltaR=DeltaR; matched=true; id = y ;}
  }
- if(matched) {output.emplace_back( make_tuple(1,x,get<1>(jetsinfo[id])) ); jetsinfo.erase(jetsinfo.begin()+id);}
- else {output.emplace_back( make_tuple(0,x,-1) );}
+ if(matched) {quark_jet_link.emplace_back( make_tuple(x,get<1>(jetsinfo[id]))); jetsinfo.erase(jetsinfo.begin()+id);}
+ else {quark_jet_link.emplace_back( make_tuple(x,-1) );}
  matched = false;
 } 
-
+//Create output with QuarkID
+bool found; int foundy;
+for (uint x=0; x < jets.size(); x++ ){
+      uint jetid=x;
+      found = false;
+      //Check if there is a quark that is linked to this jet
+      for (uint y=0; y < quark_jet_link.size(); y++ ){
+      uint m = get<1>(quark_jet_link[y]);
+      if(jetid == m ){found = true; foundy=y;}   
+      }
+      //Load jet information to the output: QuarkID
+      if(found){output.emplace_back(get<0>(quark_jet_link[foundy])+1);}
+      else{output.emplace_back(0);}   
+}  
 return output;
+}
+
+std::vector<Jet> OfflineProducerHelper::OppositeEtaJetPair(std::vector<Jet> jets){
+//Initialize DEta 
+int id;
+float Eta1Eta2= 0; bool foundpair=false;
+std::vector<Jet> outputJets;
+//Order the jets py pt
+stable_sort(jets.begin(), jets.end(), [](const Jet & a, const Jet & b) -> bool
+{ return ( get_property(a, Jet_pt ) >  get_property(b, Jet_pt)  );});
+//Find the j1 (highest pt jet) and j2 (the jet with highest pt and opposite eta sign)
+for (uint y=1;y<jets.size();y++ )
+{
+        Eta1Eta2 = jets.at(0).P4().Eta()*jets.at(y).P4().Eta();
+        if (Eta1Eta2<0)
+        {
+            id = y; foundpair=true;
+        }
+        if(foundpair) break;
+}
+if(!foundpair) return outputJets;
+outputJets = {{*(jets.begin()+0),*(jets.begin()+id)}}; return outputJets;
+}
+
+std::vector<Jet> OfflineProducerHelper::HighestPtJetPair(std::vector<Jet> jets){
+std::vector<Jet> outputJets;
+//Order the jets py pt
+stable_sort(jets.begin(), jets.end(), [](const Jet & a, const Jet & b) -> bool
+{ return ( get_property(a, Jet_pt ) >  get_property(b, Jet_pt)  );});
+//Find the j1 (highest pt jet) and j2 (the jet with highest pt and opposite eta sign)
+outputJets = {{*(jets.begin()+0),*(jets.begin()+1)}}; return outputJets;
 }
 
 ////////////-----FUNCTIONS FOR PRESELECTION OF EVENTS FOR NON-RESONANT ANALYSIS - END

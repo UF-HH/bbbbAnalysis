@@ -1,0 +1,1 @@
+root://cmsxrootd.fnal.gov//store/user/guerrero/bbbb_ntuples/2016jobs/SKIM_VBFHHTo4B_CV_1_C2V_1_C3_1_13TeV-madgraph/output/bbbbNtuple_0.root

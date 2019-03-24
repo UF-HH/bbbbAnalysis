@@ -123,6 +123,15 @@ int main(int argc, char** argv)
         parameterList.emplace("HiggsMassLMR"        ,config.readFloatOpt("parameters::HiggsMassLMR"        ));
         parameterList.emplace("HiggsMassMMR"        ,config.readFloatOpt("parameters::HiggsMassMMR"        ));
         parameterList.emplace("LMRToMMRTransition"  ,config.readFloatOpt("parameters::LMRToMMRTransition"  ));
+        parameterList.emplace("UseAntiTagOnOneBjet" ,config.readBoolOpt("parameters::UseAntiTagOnOneBjet"  ));
+        if(!is_data && any_cast<bool>(parameterList.at("UseAntiTagOnOneBjet")))
+        {
+            throw std::runtime_error("UseAntiTagOnOneBjet can be done only on data");
+        }
+        if(any_cast<bool>(parameterList.at("UseAntiTagOnOneBjet")) && config.readStringOpt("parameters::PreselectionCut") != "bJetCut")
+        {
+            throw std::runtime_error("UseAntiTagOnOneBjet can be done only using PreselectionCut = bJetCut");
+        }
     }
     // else if(other selection type){
     //     parameters fo be retreived;
@@ -171,24 +180,24 @@ int main(int argc, char** argv)
     // }  
     else throw std::runtime_error("cannot recognize event choice ObjectsForCut " + objectsForCut);
 
-
+    // MC only procedures
     if(!is_data){
-        const string scaleFactorMethod = config.readStringOpt("parameters::ScaleFactorMethod");
-        parameterList.emplace("ScaleFactorMethod",scaleFactorMethod);
-        if(scaleFactorMethod == "FourBtag_ScaleFactor"){
-            parameterList.emplace("BJetScaleFactorsFile"   ,config.readStringOpt("parameters::BJetScaleFactorsFile"  ));
-            parameterList.emplace("BTagEfficiencyFile"     ,config.readStringOpt("parameters::BTagEfficiencyFile"    ));
-            parameterList.emplace("BTagEfficiencyHistName" ,config.readStringOpt("parameters::BTagEfficiencyHistName"));
+
+        //Btag Scale factors
+        const string bTagscaleFactorMethod = config.readStringOpt("parameters::BTagScaleFactorMethod");
+        parameterList.emplace("BTagScaleFactorMethod",bTagscaleFactorMethod);
+        if(bTagscaleFactorMethod == "FourBtag_ScaleFactor"){
+            parameterList.emplace("BJetScaleFactorsFile"    ,config.readStringOpt("parameters::BJetScaleFactorsFile"    ));
         }
-        else if(scaleFactorMethod == "None"){
+        else if(bTagscaleFactorMethod == "None"){
         }  
         // else if(other selection type){
         //     parameters fo be retreived;
         // }  
-        else throw std::runtime_error("cannot recognize event choice ScaleFactorMethod " + scaleFactorMethod);
-    }
+        else throw std::runtime_error("cannot recognize event choice bTagScaleFactorMethod " + bTagscaleFactorMethod);
 
-    if(!is_data){
+
+        //Generator weights
         const string weightMethod = config.readStringOpt("parameters::WeightMethod");
         parameterList.emplace("WeightMethod",weightMethod);
         if(weightMethod == "StandardWeight"){
@@ -203,6 +212,39 @@ int main(int argc, char** argv)
         //     parameters fo be retreived;
         // }  
         else throw std::runtime_error("cannot recognize event choice WeightMethod " + weightMethod);
+
+
+        //JER 
+        const string JERstrategy = config.readStringOpt("parameters::JetEnergyResolution");
+        parameterList.emplace("JetEnergyResolution",JERstrategy);
+        if(JERstrategy == "StandardJER"){
+            parameterList.emplace("JERComputeVariations" ,config.readBoolOpt  ("parameters::JERComputeVariations" ));
+            parameterList.emplace("RandomGeneratorSeed"  ,config.readIntOpt   ("parameters::RandomGeneratorSeed"  ));
+            parameterList.emplace("JERResolutionFile"    ,config.readStringOpt("parameters::JERResolutionFile"    ));
+            parameterList.emplace("JERScaleFactorFile"   ,config.readStringOpt("parameters::JERScaleFactorFile"    ));
+        }
+        else if(JERstrategy == "None"){
+        }  
+        // else if(other selection type){
+        //     parameters fo be retreived;
+        // }  
+        else throw std::runtime_error("cannot recognize event choice ObjectsForCut " + JERstrategy);
+
+
+        //JEC 
+        const string JECstrategy = config.readStringOpt("parameters::JetEnergyCorrection");
+        parameterList.emplace("JetEnergyCorrection",JECstrategy);
+        if(JECstrategy == "StandardJEC"){
+            parameterList.emplace("JECFileName"          ,config.readStringOpt    ("parameters::JECFileName"          ));
+            parameterList.emplace("JECListOfCorrections" ,config.readStringListOpt("parameters::JECListOfCorrections" ));
+        }
+        else if(JECstrategy == "None"){
+        }  
+        // else if(other selection type){
+        //     parameters fo be retreived;
+        // }  
+        else throw std::runtime_error("cannot recognize event choice ObjectsForCut " + JECstrategy);
+
     }
 
     oph::initializeOfflineProducerHelper(&parameterList);
@@ -230,7 +272,7 @@ int main(int argc, char** argv)
     cout << "[INFO] ... creating tree reader" << endl;
 
     // The TChain is passed to the NanoAODTree_SetBranchImpl to parse all the brances
-    NanoAODTree nat (&ch, is_data);
+    NanoAODTree nat (&ch, (!is_data && config.readBoolOpt("parameters::is2016Sample")));
 
     cout << "[INFO] ... loading the following triggers" << endl;
     for (auto trg : config.readStringListOpt("triggers::makeORof"))
@@ -254,8 +296,10 @@ int main(int argc, char** argv)
 
     if(!is_data)
     {
-        oph::initializeObjectsBJetForScaleFactors(ot);
+        oph::initializeJERsmearingAndVariations(ot);
+        oph::initializeJECVariations(ot);
         oph::initializeObjectsForEventWeight(ot,ec,opts["puWeight"].as<string>(),xs);
+        oph::initializeObjectsBJetForScaleFactors(ot);
     }
 
     jsonLumiFilter jlf;
@@ -263,14 +307,11 @@ int main(int argc, char** argv)
         jlf.loadJSON(config.readStringOpt("data::lumimask")); // just read the info for data, so if I just skim MC I'm not forced to parse a JSON
 
     //DeclareUser Branches for TriggerInformation
-    ot.declareUserIntBranch("nJetPT25", -1);
-    ot.declareUserIntBranch("nJetPT30", -1);
-    ot.declareUserIntBranch("nJetPT35", -1);        
-    ot.declareUserIntBranch("nJetPT40", -1);
     vector <string> triggers;
     for (auto trg : config.readStringListOpt("triggers::makeORof"))
        triggers.push_back(trg);
     for (unsigned p=0; p<triggers.size(); p++){ot.declareUserIntBranch(triggers[p], -1);}
+    ot.declareUserFloatBranch("XS",-1);
     ////////////////////////////////////////////////////////////////////////
     // Execute event loop
     ////////////////////////////////////////////////////////////////////////
@@ -319,6 +360,7 @@ int main(int argc, char** argv)
            if (nat.triggerReader().getTrgResult(triggers[p])){ ot.userInt(triggers[p]) = 1;}
            else{ot.userInt(triggers[p]) = 0;}
         }
+        if(!is_data){ot.userFloat("XS")=xs;}
         oph::save_objects_for_cut(nat, ot);
 
         ec.updateSelected(weight);

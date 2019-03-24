@@ -60,7 +60,7 @@ parser.add_argument('--outputDir',  dest='odir',   help='the base EOS output dir
 ## if leaving a {0} argument, odir will be formatted with the current username
 ## otherwise a manual fixed path can also be given
 ##
-parser.add_argument('--no-tar',         dest='tar',        help='do not tar the executable folder',       action='store_false', default=True)
+parser.add_argument('--no-tar',         dest='tar',        help='do not tar the executable folder',  action='store_false', default=True)
 parser.add_argument('--no-xrdcp-tar',   dest='xrdcptar',   help='do not xrdcp the tar to EOS',       action='store_false', default=True)
 parser.add_argument('--no-xrdcp-flist', dest='xrdcpflist', help='do not xrdcp the filelist to EOS',  action='store_false', default=True)
 parser.add_argument('--dry-run',        dest='dryrun',     help='dry run without launching',         action='store_true',  default=False)
@@ -78,7 +78,7 @@ args, unknown = parser.parse_known_args()
 #### root://cmseos.fnal.gov//store/user/lcadamur/bbbb_ntuples/' + TAG + '/' + ONAME
 
 ##################
-executable = 'bin/skim_ntuple.exe'
+executable = 'bin/skim_ntuple_nonresonant.exe' ##If resonant analysis 'bin/skim_ntuple.exe'
 ##################
 
 username = getpass.getuser()

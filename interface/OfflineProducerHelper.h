@@ -36,7 +36,7 @@ using namespace std::experimental;
 
 namespace OfflineProducerHelper {
 
-    bool debug = false;
+    bool debug = true;
     // Load configurations to match the b jets
     // bool loadConfiguration(CfgParser config);
     ///static bacause if not I got a glibc detected when the execution is completed
@@ -104,7 +104,7 @@ namespace OfflineProducerHelper {
     // save trigger Objects for trigger studies
     void save_TriggerObjects (NanoAODTree& nat, OutputTree &ot, EventInfo& ei);
     // Calculate trigger map
-    void calculateTriggerMatching(const std::vector<Jet> candidateList, NanoAODTree& nat);
+    void calculateTriggerMatching(const std::vector< std::unique_ptr<Candidate> > &candidateList, NanoAODTree& nat);
 
     //Initialize trigger Matching variables
     void initializeTriggerMatching(OutputTree &ot);

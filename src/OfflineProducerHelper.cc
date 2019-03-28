@@ -52,6 +52,8 @@ void OfflineProducerHelper::initializeObjectsForCuts(OutputTree &ot){
         ot.declareUserFloatBranch("ForthSelectedJetPt", -1.);
         ot.declareUserFloatBranch("SelectedJetPtSum", -1.);
         ot.declareUserFloatBranch("ThirdSelectedJetDeepCSV", -1.);
+        ot.declareUserFloatBranch("HighestMuonPt", -1.);
+        ot.declareUserFloatBranch("SmallestMuonJetDeltaR", -1.);
 
     }
 
@@ -175,6 +177,16 @@ void OfflineProducerHelper::save_TriggerObjects (NanoAODTree& nat, OutputTree &o
     ot.userFloat("ForthSelectedJetPt")      = candidatePt[3];
     ot.userFloat("SelectedJetPtSum")        = candidatePt[0] + candidatePt[1] + candidatePt[2] + candidatePt[3];
     ot.userFloat("ThirdSelectedJetDeepCSV") = candidateDeepCSV[2];
+    if(*(nat.nMuon)>0){
+        ot.userFloat("HighestMuonPt") = nat.Muon_pt.At(0);
+        std::vector<double> muonJetDeltaR;
+        muonJetDeltaR.emplace_back(sqrt(pow(ei.H1_b1->P4().Eta() - nat.Muon_eta.At(0),2) + pow(deltaPhi(ei.H1_b1->P4().Phi(), nat.Muon_phi.At(0)),2) ) );
+        muonJetDeltaR.emplace_back(sqrt(pow(ei.H1_b2->P4().Eta() - nat.Muon_eta.At(0),2) + pow(deltaPhi(ei.H1_b2->P4().Phi(), nat.Muon_phi.At(0)),2) ) );
+        muonJetDeltaR.emplace_back(sqrt(pow(ei.H2_b1->P4().Eta() - nat.Muon_eta.At(0),2) + pow(deltaPhi(ei.H2_b1->P4().Phi(), nat.Muon_phi.At(0)),2) ) );
+        muonJetDeltaR.emplace_back(sqrt(pow(ei.H2_b2->P4().Eta() - nat.Muon_eta.At(0),2) + pow(deltaPhi(ei.H2_b2->P4().Phi(), nat.Muon_phi.At(0)),2) ) );
+        stable_sort(muonJetDeltaR.begin(), muonJetDeltaR.end()); 
+        ot.userFloat("SmallestMuonJetDeltaR") = muonJetDeltaR.at(0);
+    }
 
 
     return;
@@ -815,25 +827,38 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
                 return false;
             }
 
-            if(debug) std::cout<< "Event " << *(nat.run) << " - " << *(nat.event) << std::endl;
+            if(debug) std::cout<< "Event " << *(nat.run) << " - " << *(nat.luminosityBlock) << " - " << *(nat.event) << std::endl;
 
 // std::cout<<"culo6\n";
             if(jets.first == originalSampleName)
             {
-                std::vector<Jet> selectedCandidates;
+                std::vector< std::unique_ptr<Candidate> > selectedCandidates;
 // std::cout<<"culo6.1\n";
                 for(auto jet : ordered_jets)
                 {
-                    selectedCandidates.emplace_back(jet);
+                    selectedCandidates.emplace_back(std::make_unique<Jet>(jet));
+                    //std::cout<<jet.P4().Eta()<<" "<<selectedCandidates.back()->P4().Eta()<<" "<<selectedCandidates.at(0)->P4().Eta()<<std::endl;
+                }
+
+                if(*(nat.nMuon)>0)
+                {
+                    //Candidate *theHighestPtMuon = new Muon(0, &nat);
+                    selectedCandidates.emplace_back(std::make_unique<Muon>(Muon(0, &nat)));
                 }
                 
                 calculateTriggerMatching(selectedCandidates,nat);
+
 // std::cout<<"culo6.2\n";
             }
                 
             if(jets.first == originalSampleName)
             {
 // std::cout<<"culo6.3\n";
+                for(auto & triggerFired : listOfPassedTriggers)
+                {
+                    ot.userInt(triggerFired+"_Fired") = 1;
+                }
+
                 if(!checkTriggerObjectMatching(listOfPassedTriggers,ot))
                 {
                     if(debug) std::cout<<"TriggerObjects not matched, Printing jets:\n";
@@ -853,6 +878,12 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
                         if(selected) if(debug) std::cout<<"*";
                         if(debug) std::cout<<std::endl;
                     }
+                    if(debug)
+                    {
+                        Muon *theHighestPtMuon = new Muon(0, &nat);
+                        std::cout<< std::fixed << std::setprecision(3) <<theHighestPtMuon->getIdx()<<"\t\t"<<theHighestPtMuon->P4().Pt()<<"\t\t"<<theHighestPtMuon->P4().Eta()<<"\t\t"<<theHighestPtMuon->P4().Phi()<<"\n";
+                    }
+
                 }
 // std::cout<<"culo6.4\n";
             }
@@ -1587,6 +1618,9 @@ void OfflineProducerHelper::initializeTriggerMatching(OutputTree &ot)
 {
     for( const auto & triggerRequirements : any_cast<std::map<std::string, std::map< std::pair<int,int>, int > > >(parameterList_->at("TriggerObjectAndMinNumberMap")) )
     {
+        ot.declareUserIntBranch(triggerRequirements.first+"_ObjectMatched", 0);
+        ot.declareUserIntBranch(triggerRequirements.first+"_Fired", 0);
+
         for(const auto & triggerObject : triggerRequirements.second)
         {
             if(mapTriggerObjectIdAndFilter_.find(triggerObject.first.first) == mapTriggerObjectIdAndFilter_.end())
@@ -1598,7 +1632,6 @@ void OfflineProducerHelper::initializeTriggerMatching(OutputTree &ot)
                 mapTriggerObjectIdAndFilter_[triggerObject.first.first].emplace_back(triggerObject.first.second);
         }
     }
-    ot.declareUserIntBranch("TriggerObjectMatched", 0);
 }
 
 
@@ -1607,6 +1640,7 @@ bool OfflineProducerHelper::checkTriggerObjectMatching(std::vector<std::string> 
 
     std::map<std::string, std::map< std::pair<int,int>, int > > triggerObjectAndMinNumberMap;
     std::map<std::string, bool> triggerResult;
+    bool triggerMatched = false;
 
     for( const auto & triggerRequirements : any_cast<std::map<std::string, std::map< std::pair<int,int>, int > > >(parameterList_->at("TriggerObjectAndMinNumberMap")) )
     {
@@ -1626,18 +1660,16 @@ bool OfflineProducerHelper::checkTriggerObjectMatching(std::vector<std::string> 
         for(const auto & triggerChecked : triggerResult) //If at least one of the trigger was found return true
         {
             if(triggerChecked.second){
-                ot.userInt("TriggerObjectMatched") = 1;
-                return true;
+                ot.userInt(triggerChecked.first+"_ObjectMatched") = 1;
+                triggerMatched = true;
             }
         }
     }
 
-    ot.userInt("TriggerObjectMatched") = 0;
-
-    return false; // no matching trigger found among the fired ones
+    return triggerMatched; // no matching trigger found among the fired ones
 }
 
-void OfflineProducerHelper::calculateTriggerMatching(const std::vector<Jet> candidateList, NanoAODTree& nat)
+void OfflineProducerHelper::calculateTriggerMatching(const std::vector< std::unique_ptr<Candidate> > &candidateList, NanoAODTree& nat)
 {
     if(debug) std::cout<<"Matching triggers, Objects found:\n";
     if(debug) std::cout<<"\t\tPt\t\tEta\t\tPhi\t\tBit\t\tMatchedJetId\n";
@@ -1680,21 +1712,21 @@ void OfflineProducerHelper::calculateTriggerMatching(const std::vector<Jet> cand
 //std::cout<<"culo6.1.5\n";
                     //std::cout<<"!!!~~ - "<<filterBit<<std::endl;
                     float deltaR = 1024; //easy to do square root
-                    int tmpCandidateIdx;
+                    int tmpCandidateIdx=-1;
                     for(const auto & candidate : candidateList) //loop to find best Candidate matching DeltaR
                     {
-                        if(candidate.getCandidateTypeId() != triggerObjectId) continue; // Skip different particles
+                        if(candidate->getCandidateTypeId() != triggerObjectId) continue; // Skip different particles
                         //std::cout<<"!!!~~~~ - "<<filterBit<<std::endl;
 
-                        float candidateEta    = candidate.P4().Eta ();
-                        float candidatePhi    = candidate.P4().Phi ();
+                        float candidateEta    = candidate->P4().Eta ();
+                        float candidatePhi    = candidate->P4().Phi ();
                         float tmpdeltaR       = (candidateEta - triggerObjectEta)*(candidateEta - triggerObjectEta) + deltaPhi(candidatePhi,triggerObjectPhi)*deltaPhi(candidatePhi,triggerObjectPhi);
-                        //std::cout<<"!!!~~~~candidateEta - "<<candidateEta<<std::endl;
+                        //std::cout<<candidate->getIdx()<< "!!!~~~~candidateEta - "<<candidateEta<<std::endl;
 
                         if(tmpdeltaR < deltaR)
                         {
                             deltaR = tmpdeltaR;
-                            tmpCandidateIdx=candidate.getIdx();
+                            tmpCandidateIdx=candidate->getIdx();
 
                         }
                         //std::cout<<"!!!~~~~DeltaR - "<<deltaR<<std::endl;

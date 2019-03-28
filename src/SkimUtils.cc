@@ -94,41 +94,190 @@ void SkimUtils::fill_output_tree(OutputTree& ot, NanoAODTree& nat, EventInfo& ei
     if(ei.HH_m_kinFit) ot.HH_m_kinFit  = *ei.HH_m_kinFit;
  
     //set the variables for non-resonant analysis and studies
+    if(ei.H1_b1_quarkID) ot.H1_b1_quarkID  = *ei.H1_b1_quarkID;
+    if(ei.H1_b2_quarkID) ot.H1_b2_quarkID  = *ei.H1_b2_quarkID;
+    if(ei.H2_b1_quarkID) ot.H2_b1_quarkID  = *ei.H2_b1_quarkID;
+    if(ei.H2_b2_quarkID) ot.H2_b2_quarkID  = *ei.H2_b2_quarkID;
+    if(ei.H1_b1_genJetIdx) ot.H1_b1_genJetIdx  = *ei.H1_b1_genJetIdx;
+    if(ei.H1_b2_genJetIdx) ot.H1_b2_genJetIdx  = *ei.H1_b2_genJetIdx;
+    if(ei.H2_b1_genJetIdx) ot.H2_b1_genJetIdx  = *ei.H2_b1_genJetIdx;
+    if(ei.H2_b2_genJetIdx) ot.H2_b2_genJetIdx  = *ei.H2_b2_genJetIdx;
+    if(ei.H1_b1_partonFlavour) ot.H1_b1_partonFlavour  = *ei.H1_b1_partonFlavour;
+    if(ei.H1_b2_partonFlavour) ot.H1_b2_partonFlavour  = *ei.H1_b2_partonFlavour;
+    if(ei.H2_b1_partonFlavour) ot.H2_b1_partonFlavour  = *ei.H2_b1_partonFlavour;
+    if(ei.H2_b2_partonFlavour) ot.H2_b2_partonFlavour  = *ei.H2_b2_partonFlavour;    
+    if(ei.H1_b1_hadronFlavour) ot.H1_b1_hadronFlavour  = *ei.H1_b1_hadronFlavour;
+    if(ei.H1_b2_hadronFlavour) ot.H1_b2_hadronFlavour  = *ei.H1_b2_hadronFlavour;
+    if(ei.H2_b1_hadronFlavour) ot.H2_b1_hadronFlavour  = *ei.H2_b1_hadronFlavour;
+    if(ei.H2_b2_hadronFlavour) ot.H2_b2_hadronFlavour  = *ei.H2_b2_hadronFlavour;
     COPY_OPTIONAL_m_pt_ptRegressed_eta_phi_p4(HH_b1)
-    if(ei.HH_b1)             ot.HH_b1_deepCSV = get_property(ei.HH_b1.get(),Jet_btagDeepB);
-    if(ei.HH_b1)             ot.HH_b1_qgl = get_property(ei.HH_b1.get(),Jet_qgl);
-    if(ei.HH_b1_quarkflag)   ot.HH_b1_quarkflag = *ei.HH_b1_quarkflag;
-    if(ei.HH_b1_matchedflag) ot.HH_b1_matchedflag  = *ei.HH_b1_matchedflag;
+    if(ei.HH_b1)                ot.HH_b1_deepCSV = get_property(ei.HH_b1.get(),Jet_btagDeepB);
+    if(ei.HH_b1)                ot.HH_b1_qgl = get_property(ei.HH_b1.get(),Jet_qgl);
+    if(ei.HH_b1_quarkID)        ot.HH_b1_quarkID = *ei.HH_b1_quarkID;
+    if(ei.HH_b1_genJetIdx)        ot.HH_b1_genJetIdx = *ei.HH_b1_genJetIdx;
+    if(ei.HH_b1_partonFlavour)        ot.HH_b1_partonFlavour = *ei.HH_b1_partonFlavour;   
+    if(ei.HH_b1_hadronFlavour)        ot.HH_b1_hadronFlavour = *ei.HH_b1_hadronFlavour; 
     COPY_OPTIONAL_m_pt_ptRegressed_eta_phi_p4(HH_b2)
     if(ei.HH_b2)                ot.HH_b2_deepCSV = get_property(ei.HH_b2.get(),Jet_btagDeepB);
     if(ei.HH_b2)                ot.HH_b2_qgl = get_property(ei.HH_b2.get(),Jet_qgl);
-    if(ei.HH_b2_quarkflag)      ot.HH_b2_quarkflag = *ei.HH_b2_quarkflag ;
-    if(ei.HH_b2_matchedflag)    ot.HH_b2_matchedflag  = *ei.HH_b2_matchedflag ;
+    if(ei.HH_b2_quarkID)        ot.HH_b2_quarkID = *ei.HH_b2_quarkID;
+    if(ei.HH_b2_genJetIdx)        ot.HH_b2_genJetIdx = *ei.HH_b2_genJetIdx;
+    if(ei.HH_b2_partonFlavour)        ot.HH_b2_partonFlavour = *ei.HH_b2_partonFlavour; 
+    if(ei.HH_b2_hadronFlavour)        ot.HH_b2_hadronFlavour = *ei.HH_b2_hadronFlavour; 
     COPY_OPTIONAL_m_pt_ptRegressed_eta_phi_p4(HH_b3)
     if(ei.HH_b3)                ot.HH_b3_deepCSV = get_property(ei.HH_b3.get(),Jet_btagDeepB);
     if(ei.HH_b3)                ot.HH_b3_qgl = get_property(ei.HH_b3.get(),Jet_qgl);
-    if(ei.HH_b3_quarkflag)      ot.HH_b3_quarkflag = *ei.HH_b3_quarkflag ;
-    if(ei.HH_b3_matchedflag)    ot.HH_b3_matchedflag  = *ei.HH_b3_matchedflag ;
+    if(ei.HH_b3_quarkID)        ot.HH_b3_quarkID = *ei.HH_b3_quarkID;
+    if(ei.HH_b3_genJetIdx)                ot.HH_b3_genJetIdx = *ei.HH_b3_genJetIdx;
+    if(ei.HH_b3_partonFlavour)        ot.HH_b3_partonFlavour = *ei.HH_b3_partonFlavour;
+    if(ei.HH_b3_hadronFlavour)        ot.HH_b3_hadronFlavour = *ei.HH_b3_hadronFlavour;
     COPY_OPTIONAL_m_pt_ptRegressed_eta_phi_p4(HH_b4)
     if(ei.HH_b4)                ot.HH_b4_deepCSV = get_property(ei.HH_b4.get(),Jet_btagDeepB);
     if(ei.HH_b4)                ot.HH_b4_qgl = get_property(ei.HH_b4.get(),Jet_qgl);
-    if(ei.HH_b4_quarkflag)      ot.HH_b4_quarkflag = *ei.HH_b4_quarkflag ;
-    if(ei.HH_b4_matchedflag)    ot.HH_b4_matchedflag  = *ei.HH_b4_matchedflag ;
+    if(ei.HH_b4_quarkID)        ot.HH_b4_quarkID = *ei.HH_b4_quarkID;
+    if(ei.HH_b4_genJetIdx)                ot.HH_b4_genJetIdx = *ei.HH_b4_genJetIdx;    
+    if(ei.HH_b4_partonFlavour)        ot.HH_b4_partonFlavour = *ei.HH_b4_partonFlavour;
+    if(ei.HH_b4_hadronFlavour)        ot.HH_b4_hadronFlavour = *ei.HH_b4_hadronFlavour;
     COPY_OPTIONAL_m_pt_eta_phi_p4(JJ_j1)
     if(ei.JJ_j1)                ot.JJ_j1_deepCSV = get_property(ei.JJ_j1.get(),Jet_btagDeepB);
     if(ei.JJ_j1)                ot.JJ_j1_qgl = get_property(ei.JJ_j1.get(),Jet_qgl);
-    if(ei.JJ_j1_quarkflag)      ot.JJ_j1_quarkflag  = *ei.JJ_j1_quarkflag;
-    if(ei.JJ_j1_matchedflag)    ot.JJ_j1_matchedflag  = *ei.JJ_j1_matchedflag;
+    if(ei.JJ_j1_quarkID)        ot.JJ_j1_quarkID  = *ei.JJ_j1_quarkID;
+    if(ei.JJ_j1_genJetIdx)                ot.JJ_j1_genJetIdx = *ei.JJ_j1_genJetIdx;
+    if(ei.JJ_j1_partonFlavour)        ot.JJ_j1_partonFlavour = *ei.JJ_j1_partonFlavour;
+    if(ei.JJ_j1_hadronFlavour)        ot.JJ_j1_hadronFlavour = *ei.JJ_j1_hadronFlavour;
     COPY_OPTIONAL_m_pt_eta_phi_p4(JJ_j2)
     if(ei.JJ_j2)                ot.JJ_j2_deepCSV = get_property(ei.JJ_j2.get(),Jet_btagDeepB);
     if(ei.JJ_j2)                ot.JJ_j2_qgl = get_property(ei.JJ_j2.get(),Jet_qgl);
-    if(ei.JJ_j2_quarkflag)      ot.JJ_j2_quarkflag  = *ei.JJ_j2_quarkflag;
-    if(ei.JJ_j2_matchedflag)    ot.JJ_j2_matchedflag  = *ei.JJ_j2_matchedflag;    
+    if(ei.JJ_j2_quarkID)        ot.JJ_j2_quarkID  = *ei.JJ_j2_quarkID;
+    if(ei.JJ_j2_genJetIdx)                ot.JJ_j2_genJetIdx = *ei.JJ_j2_genJetIdx;      
+    if(ei.JJ_j2_partonFlavour)        ot.JJ_j2_partonFlavour = *ei.JJ_j2_partonFlavour;
+    if(ei.JJ_j2_hadronFlavour)        ot.JJ_j2_hadronFlavour = *ei.JJ_j2_hadronFlavour;
     COPY_OPTIONAL_m_pt_eta_phi_p4(JJ)
-    if(ei.JJ_deltaEta) ot.JJ_deltaEta  = *ei.JJ_deltaEta;
-    if(ei.b1j1_deltaPhi) ot.b1j1_deltaPhi  = *ei.b1j1_deltaPhi;
-    if(ei.b1b2_deltaPhi) ot.b1b2_deltaPhi  = *ei.b1b2_deltaPhi;
+    if( ei.b1b2_deltaR) ot.b1b2_deltaR = *ei.b1b2_deltaR; 
+    if( ei.b1b3_deltaR) ot.b1b3_deltaR = *ei.b1b3_deltaR; 
+    if( ei.b1b4_deltaR) ot.b1b4_deltaR = *ei.b1b4_deltaR; 
+    if( ei.b1j1_deltaR) ot.b1j1_deltaR = *ei.b1j1_deltaR; 
+    if( ei.b1j2_deltaR) ot.b1j2_deltaR = *ei.b1j2_deltaR; 
+    if( ei.b2b3_deltaR) ot.b2b3_deltaR = *ei.b2b3_deltaR; 
+    if( ei.b2b4_deltaR) ot.b2b4_deltaR = *ei.b2b4_deltaR; 
+    if( ei.b2j1_deltaR) ot.b2j1_deltaR = *ei.b2j1_deltaR; 
+    if( ei.b2j2_deltaR) ot.b2j2_deltaR = *ei.b2j2_deltaR; 
+    if( ei.b3b4_deltaR) ot.b3b4_deltaR = *ei.b3b4_deltaR; 
+    if( ei.b3j1_deltaR) ot.b3j1_deltaR = *ei.b3j1_deltaR; 
+    if( ei.b3j2_deltaR) ot.b3j2_deltaR = *ei.b3j2_deltaR; 
+    if( ei.b4j1_deltaR) ot.b4j1_deltaR = *ei.b4j1_deltaR; 
+    if( ei.b4j2_deltaR) ot.b4j2_deltaR = *ei.b4j2_deltaR; 
+    if( ei.j1j2_deltaR) ot.j1j2_deltaR = *ei.j1j2_deltaR; 
+    if( ei.h1h2_deltaR) ot.h1h2_deltaR = *ei.h1h2_deltaR; 
+    if( ei.h1j1_deltaR) ot.h1j1_deltaR = *ei.h1j1_deltaR; 
+    if( ei.h1j2_deltaR) ot.h1j2_deltaR = *ei.h1j2_deltaR; 
+    if( ei.h2j1_deltaR) ot.h2j1_deltaR = *ei.h2j1_deltaR; 
+    if( ei.h2j2_deltaR) ot.h2j2_deltaR = *ei.h2j2_deltaR; 
+    if( ei.h1jj_deltaR) ot.h1jj_deltaR = *ei.h1jj_deltaR; 
+    if( ei.h2jj_deltaR) ot.h2jj_deltaR = *ei.h2jj_deltaR; 
+    if( ei.hhj1_deltaR) ot.hhj1_deltaR = *ei.hhj1_deltaR; 
+    if( ei.hhj2_deltaR) ot.hhj2_deltaR = *ei.hhj2_deltaR; 
+    if( ei.hhjj_deltaR) ot.hhjj_deltaR = *ei.hhjj_deltaR;
+    if( ei.b1b2_deltaPhi) ot.b1b2_deltaPhi = *ei.b1b2_deltaPhi; 
+    if( ei.b1b3_deltaPhi) ot.b1b3_deltaPhi = *ei.b1b3_deltaPhi; 
+    if( ei.b1b4_deltaPhi) ot.b1b4_deltaPhi = *ei.b1b4_deltaPhi; 
+    if( ei.b1j1_deltaPhi) ot.b1j1_deltaPhi = *ei.b1j1_deltaPhi; 
+    if( ei.b1j2_deltaPhi) ot.b1j2_deltaPhi = *ei.b1j2_deltaPhi; 
+    if( ei.b2b3_deltaPhi) ot.b2b3_deltaPhi = *ei.b2b3_deltaPhi; 
+    if( ei.b2b4_deltaPhi) ot.b2b4_deltaPhi = *ei.b2b4_deltaPhi; 
+    if( ei.b2j1_deltaPhi) ot.b2j1_deltaPhi = *ei.b2j1_deltaPhi; 
+    if( ei.b2j2_deltaPhi) ot.b2j2_deltaPhi = *ei.b2j2_deltaPhi; 
+    if( ei.b3b4_deltaPhi) ot.b3b4_deltaPhi = *ei.b3b4_deltaPhi; 
+    if( ei.b3j1_deltaPhi) ot.b3j1_deltaPhi = *ei.b3j1_deltaPhi; 
+    if( ei.b3j2_deltaPhi) ot.b3j2_deltaPhi = *ei.b3j2_deltaPhi; 
+    if( ei.b4j1_deltaPhi) ot.b4j1_deltaPhi = *ei.b4j1_deltaPhi; 
+    if( ei.b4j2_deltaPhi) ot.b4j2_deltaPhi = *ei.b4j2_deltaPhi; 
+    if( ei.j1j2_deltaPhi) ot.j1j2_deltaPhi = *ei.j1j2_deltaPhi; 
+    if( ei.b1b2_deltaEta) ot.b1b2_deltaEta = *ei.b1b2_deltaEta; 
+    if( ei.b1b3_deltaEta) ot.b1b3_deltaEta = *ei.b1b3_deltaEta; 
+    if( ei.b1b4_deltaEta) ot.b1b4_deltaEta = *ei.b1b4_deltaEta; 
+    if( ei.b1j1_deltaEta) ot.b1j1_deltaEta = *ei.b1j1_deltaEta; 
+    if( ei.b1j2_deltaEta) ot.b1j2_deltaEta = *ei.b1j2_deltaEta; 
+    if( ei.b2b3_deltaEta) ot.b2b3_deltaEta = *ei.b2b3_deltaEta; 
+    if( ei.b2b4_deltaEta) ot.b2b4_deltaEta = *ei.b2b4_deltaEta; 
+    if( ei.b2j1_deltaEta) ot.b2j1_deltaEta = *ei.b2j1_deltaEta; 
+    if( ei.b2j2_deltaEta) ot.b2j2_deltaEta = *ei.b2j2_deltaEta; 
+    if( ei.b3b4_deltaEta) ot.b3b4_deltaEta = *ei.b3b4_deltaEta; 
+    if( ei.b3j1_deltaEta) ot.b3j1_deltaEta = *ei.b3j1_deltaEta; 
+    if( ei.b3j2_deltaEta) ot.b3j2_deltaEta = *ei.b3j2_deltaEta; 
+    if( ei.b4j1_deltaEta) ot.b4j1_deltaEta = *ei.b4j1_deltaEta; 
+    if( ei.b4j2_deltaEta) ot.b4j2_deltaEta = *ei.b4j2_deltaEta; 
+    if( ei.j1j2_deltaEta) ot.j1j2_deltaEta = *ei.j1j2_deltaEta; 
+    if( ei.h1h2_deltaPhi) ot.h1h2_deltaPhi = *ei.h1h2_deltaPhi; 
+    if( ei.h1j1_deltaPhi) ot.h1j1_deltaPhi = *ei.h1j1_deltaPhi; 
+    if( ei.h1j2_deltaPhi) ot.h1j2_deltaPhi = *ei.h1j2_deltaPhi; 
+    if( ei.h2j1_deltaPhi) ot.h2j1_deltaPhi = *ei.h2j1_deltaPhi; 
+    if( ei.h2j2_deltaPhi) ot.h2j2_deltaPhi = *ei.h2j2_deltaPhi; 
+    if( ei.h1jj_deltaPhi) ot.h1jj_deltaPhi = *ei.h1jj_deltaPhi; 
+    if( ei.h2jj_deltaPhi) ot.h2jj_deltaPhi = *ei.h2jj_deltaPhi; 
+    if( ei.hhj1_deltaPhi) ot.hhj1_deltaPhi = *ei.hhj1_deltaPhi; 
+    if( ei.hhj2_deltaPhi) ot.hhj2_deltaPhi = *ei.hhj2_deltaPhi; 
+    if( ei.hhjj_deltaPhi) ot.hhjj_deltaPhi = *ei.hhjj_deltaPhi; 
+    if( ei.h1h2_deltaEta) ot.h1h2_deltaEta = *ei.h1h2_deltaEta; 
+    if( ei.h1j1_deltaEta) ot.h1j1_deltaEta = *ei.h1j1_deltaEta; 
+    if( ei.h1j2_deltaEta) ot.h1j2_deltaEta = *ei.h1j2_deltaEta; 
+    if( ei.h2j1_deltaEta) ot.h2j1_deltaEta = *ei.h2j1_deltaEta; 
+    if( ei.h2j2_deltaEta) ot.h2j2_deltaEta = *ei.h2j2_deltaEta; 
+    if( ei.h1jj_deltaEta) ot.h1jj_deltaEta = *ei.h1jj_deltaEta; 
+    if( ei.h2jj_deltaEta) ot.h2jj_deltaEta = *ei.h2jj_deltaEta; 
+    if( ei.hhj1_deltaEta) ot.hhj1_deltaEta = *ei.hhj1_deltaEta; 
+    if( ei.hhj2_deltaEta) ot.hhj2_deltaEta = *ei.hhj2_deltaEta; 
+    if( ei.hhjj_deltaEta) ot.hhjj_deltaEta = *ei.hhjj_deltaEta;
     if(ei.VBFEvent) ot.VBFEvent  = *ei.VBFEvent;
+    if(ei.H1_ukflag) ot.H1_ukflag  = *ei.H1_ukflag;
+    if(ei.H2_ukflag) ot.H2_ukflag  = *ei.H2_ukflag;
+    if(ei.H1_wpflag) ot.H1_wpflag  = *ei.H1_wpflag;
+    if(ei.H2_wpflag) ot.H2_wpflag  = *ei.H2_wpflag;    
+    if(ei.H1_quality) ot.H1_quality  = *ei.H1_quality;
+    if(ei.H2_quality) ot.H2_quality  = *ei.H2_quality;
+    if(ei.HH_quality) ot.HH_quality  = *ei.HH_quality;
+    if(ei.HH_1wflag) ot.HH_1wflag  = *ei.HH_1wflag;
+    if(ei.HH_2wflag) ot.HH_2wflag  = *ei.HH_2wflag;
+    if(ei.HH_3wflag) ot.HH_3wflag  = *ei.HH_3wflag;
+    if(ei.HH_4wflag) ot.HH_4wflag  = *ei.HH_4wflag;
+    if(ei.JJ_quality) ot.JJ_quality= *ei.JJ_quality;
+    if(ei.JJ_1wflag) ot.JJ_1wflag  = *ei.JJ_1wflag;
+    if(ei.JJ_2wflag) ot.JJ_2wflag  = *ei.JJ_2wflag;    
+    if(ei.HHJJ_quality) ot.HHJJ_quality  = *ei.HHJJ_quality;
+    if(ei.NPartonsMatchedToJets) ot.NPartonsMatchedToJets  = *ei.NPartonsMatchedToJets;
+    if(ei.NVBFCandidateswithVBFMatch) ot.NVBFCandidateswithVBFMatch  = *ei.NVBFCandidateswithVBFMatch;
+    if(ei.VBFMatchedCandidatesEtaSign) ot.VBFMatchedCandidatesEtaSign  = *ei.VBFMatchedCandidatesEtaSign;
+    if(ei.VBFMatchedCandidatesDeltaEta) ot.VBFMatchedCandidatesDeltaEta  = *ei.VBFMatchedCandidatesDeltaEta;
+    if(ei.VBFSelectedDeltaEta) ot.VBFSelectedDeltaEta  = *ei.VBFSelectedDeltaEta;
+    if(ei.VBFSelectedEtaSign) ot.VBFSelectedEtaSign  = *ei.VBFSelectedEtaSign;
+    if(ei.VBFGeneratedDeltaEta) ot.VBFGeneratedDeltaEta  = *ei.VBFGeneratedDeltaEta;
+    if(ei.VBFGeneratedEtaSign) ot.VBFGeneratedEtaSign  = *ei.VBFGeneratedEtaSign;
+
+    if(ei.nExtraJet) ot.nExtraJet = *ei.nExtraJet;
+    if(ei.NVBFCandidates) ot.NVBFCandidates = *ei.NVBFCandidates;  
+    if(ei.nExtraJetbarrel) ot.nExtraJetbarrel = *ei.nExtraJetbarrel;
+    if(ei.nExtraJetendcap) ot.nExtraJetendcap = *ei.nExtraJetendcap;
+    if(ei.maxj1etaj2eta) ot.maxj1etaj2eta = *ei.maxj1etaj2eta;
+    if(ei.j1etaj2eta) ot.j1etaj2eta = *ei.j1etaj2eta;
+    
+    if(ei.ptbalance) ot.ptbalance = *ei.ptbalance;
+    if(ei.ptcentrality) ot.ptcentrality = *ei.ptcentrality;
+    if(ei.etacentrality) ot.etacentrality = *ei.etacentrality;
+    if(ei.BDT) ot.BDT = *ei.BDT;
+    if(ei.DNN) ot.DNN = *ei.DNN;
+    if(ei.ExtraVBFJetDecision) ot.ExtraVBFJetDecision = *ei.ExtraVBFJetDecision;
+    if(ei.ExtraVBFJetPt) ot.ExtraVBFJetPt = *ei.ExtraVBFJetPt;
+    if(ei.ExtraVBFJetEta) ot.ExtraVBFJetEta = *ei.ExtraVBFJetEta;
+
+    COPY_OPTIONAL_m_pt_eta_phi_p4(H1rand)
+    COPY_OPTIONAL_m_pt_eta_phi_p4(H2rand)
+    if(ei.H1_bb_deltaR) ot.H1_bb_deltaR= *ei.H1_bb_deltaR;
+    if(ei.H2_bb_deltaR) ot.H2_bb_deltaR= *ei.H2_bb_deltaR;
+    if(ei.H1_bb_deltaPhi) ot.H1_bb_deltaPhi= *ei.H1_bb_deltaPhi;
+    if(ei.H2_bb_deltaPhi) ot.H2_bb_deltaPhi= *ei.H2_bb_deltaPhi;
+    if(ei.H1_bb_deltaEta) ot.H1_bb_deltaEta= *ei.H1_bb_deltaEta;
+    if(ei.H2_bb_deltaEta) ot.H2_bb_deltaEta= *ei.H2_bb_deltaEta;
+
     // gen info are not stored for all samples --> set only if initialized (macro checks if object is initialized, else does not set)
     COPY_OPTIONAL_m_pt_eta_phi_p4(gen_H1)
     COPY_OPTIONAL_m_pt_eta_phi_p4(gen_H2)
@@ -148,8 +297,8 @@ void SkimUtils::fill_output_tree(OutputTree& ot, NanoAODTree& nat, EventInfo& ei
     COPY_OPTIONAL_m_pt_eta_phi_p4(gen_q1_in)
     COPY_OPTIONAL_m_pt_eta_phi_p4(gen_q2_in)
     COPY_OPTIONAL_m_pt_eta_phi_p4(gen_q1_out)
-    COPY_OPTIONAL_m_pt_eta_phi_p4(gen_q2_out)
-
+    COPY_OPTIONAL_m_pt_eta_phi_p4(gen_q2_out) 
+  
     if (ei.gen_q1_out && ei.gen_q2_out)
     {
         TLorentzVector p4_JJ = ei.gen_q1_out->P4() + ei.gen_q2_out->P4();
@@ -161,6 +310,43 @@ void SkimUtils::fill_output_tree(OutputTree& ot, NanoAODTree& nat, EventInfo& ei
         ot.gen_deltaEtaJJ = abs( ei.gen_q1_out->P4().Eta() - ei.gen_q2_out->P4().Eta() );
     }    
 
+    if(ei.gen_H1_b1_mindRjet) ot.gen_H1_b1_mindRjet = *ei.gen_H1_b1_mindRjet;
+    if(ei.gen_H1_b2_mindRjet) ot.gen_H1_b2_mindRjet = *ei.gen_H1_b2_mindRjet;
+    if(ei.gen_H2_b1_mindRjet) ot.gen_H2_b1_mindRjet = *ei.gen_H2_b1_mindRjet;
+    if(ei.gen_H2_b2_mindRjet) ot.gen_H2_b2_mindRjet = *ei.gen_H2_b2_mindRjet;
+    if(ei.gen_q1_out_mindRjet) ot.gen_q1_out_mindRjet = *ei.gen_q1_out_mindRjet; 
+    if(ei.gen_q2_out_mindRjet) ot.gen_q2_out_mindRjet = *ei.gen_q2_out_mindRjet;
+     if(ei.gen_H1_b1_matched)  ot.gen_H1_b1_matched =  *ei.gen_H1_b1_matched;
+     if(ei.gen_H1_b2_matched)  ot.gen_H1_b2_matched =  *ei.gen_H1_b2_matched;
+     if(ei.gen_H2_b1_matched)  ot.gen_H2_b1_matched =  *ei.gen_H2_b1_matched;
+     if(ei.gen_H2_b2_matched)  ot.gen_H2_b2_matched =  *ei.gen_H2_b2_matched;
+    if(ei.gen_q1_out_matched) ot.gen_q1_out_matched = *ei.gen_q1_out_matched; 
+    if(ei.gen_q2_out_matched) ot.gen_q2_out_matched = *ei.gen_q2_out_matched;
+     if(ei.gen_H1_b1_pdgId)  ot.gen_H1_b1_pdgId =  *ei.gen_H1_b1_pdgId;
+     if(ei.gen_H1_b2_pdgId)  ot.gen_H1_b2_pdgId =  *ei.gen_H1_b2_pdgId;
+     if(ei.gen_H2_b1_pdgId)  ot.gen_H2_b1_pdgId =  *ei.gen_H2_b1_pdgId;
+     if(ei.gen_H2_b2_pdgId)  ot.gen_H2_b2_pdgId =  *ei.gen_H2_b2_pdgId;
+    if(ei.gen_q1_out_pdgId) ot.gen_q1_out_pdgId = *ei.gen_q1_out_pdgId; 
+    if(ei.gen_q2_out_pdgId) ot.gen_q2_out_pdgId = *ei.gen_q2_out_pdgId;
+     if(ei.gen_H1_b1_ptratio)  ot.gen_H1_b1_ptratio =  *ei.gen_H1_b1_ptratio;
+     if(ei.gen_H1_b2_ptratio)  ot.gen_H1_b2_ptratio =  *ei.gen_H1_b2_ptratio;
+     if(ei.gen_H2_b1_ptratio)  ot.gen_H2_b1_ptratio =  *ei.gen_H2_b1_ptratio;
+     if(ei.gen_H2_b2_ptratio)  ot.gen_H2_b2_ptratio =  *ei.gen_H2_b2_ptratio;
+    if(ei.gen_q1_out_ptratio) ot.gen_q1_out_ptratio = *ei.gen_q1_out_ptratio; 
+    if(ei.gen_q2_out_ptratio) ot.gen_q2_out_ptratio = *ei.gen_q2_out_ptratio;
+     if(ei.gen_H1_b1_pz)  ot.gen_H1_b1_pz =  *ei.gen_H1_b1_pz;
+     if(ei.gen_H1_b2_pz)  ot.gen_H1_b2_pz =  *ei.gen_H1_b2_pz;
+     if(ei.gen_H2_b1_pz)  ot.gen_H2_b1_pz =  *ei.gen_H2_b1_pz;
+     if(ei.gen_H2_b2_pz)  ot.gen_H2_b2_pz =  *ei.gen_H2_b2_pz;
+    if(ei.gen_q1_out_pz) ot.gen_q1_out_pz = *ei.gen_q1_out_pz; 
+    if(ei.gen_q2_out_pz) ot.gen_q2_out_pz = *ei.gen_q2_out_pz;
+    if(ei.gen_H1_b1_mindRgenjet) ot.gen_H1_b1_mindRgenjet = *ei.gen_H1_b1_mindRgenjet;
+    if(ei.gen_H1_b2_mindRgenjet) ot.gen_H1_b2_mindRgenjet = *ei.gen_H1_b2_mindRgenjet;
+    if(ei.gen_H2_b1_mindRgenjet) ot.gen_H2_b1_mindRgenjet = *ei.gen_H2_b1_mindRgenjet;
+    if(ei.gen_H2_b2_mindRgenjet) ot.gen_H2_b2_mindRgenjet = *ei.gen_H2_b2_mindRgenjet;
+    if(ei.gen_q1_out_mindRgenjet) ot.gen_q1_out_mindRgenjet = *ei.gen_q1_out_mindRgenjet; 
+    if(ei.gen_q2_out_mindRgenjet) ot.gen_q2_out_mindRgenjet = *ei.gen_q2_out_mindRgenjet;
     // fill the tree
     ot.fill();
+
 }

@@ -361,7 +361,7 @@ int main(int argc, char** argv)
            else{ot.userInt(triggers[p]) = 0;}
         }
         if(!is_data){ot.userFloat("XS")=xs;}
-        oph::save_objects_for_cut(nat, ot);
+        oph::save_objects_for_cut(nat, ot, ei);
 
         ec.updateSelected(weight);
         su::fill_output_tree(ot, nat, ei);

@@ -43,3 +43,15 @@ bool TriggerReader_SetBranchImpl::getTrgResult(std::string trgName)
     int idx = name_to_idx_[trgName];
     return getTrgResult(idx);
 }
+
+std::vector<std::string> TriggerReader_SetBranchImpl::getTrgPassed()
+{
+    std::vector<std::string> listOfPassedTriggers;
+
+    for(auto & trigger : name_to_idx_)
+    {
+        if(getTrgResult(trigger.first)) listOfPassedTriggers.emplace_back(trigger.first);    
+    }
+
+    return listOfPassedTriggers;
+}

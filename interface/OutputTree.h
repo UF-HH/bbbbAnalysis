@@ -92,9 +92,13 @@ class OutputTree {
         DECLARE_m_pt_eta_phi_p4(gen_H1_last)
         DECLARE_m_pt_eta_phi_p4(gen_H2_last)
         DECLARE_m_pt_eta_phi_p4(gen_H1_b1)
+        float gen_H1_b1_matchedflag;
         DECLARE_m_pt_eta_phi_p4(gen_H1_b2)
+        float gen_H1_b2_matchedflag;
         DECLARE_m_pt_eta_phi_p4(gen_H2_b1)
+        float gen_H2_b1_matchedflag;
         DECLARE_m_pt_eta_phi_p4(gen_H2_b2)
+        float gen_H2_b2_matchedflag;
         DECLARE_m_pt_eta_phi_p4(gen_q1_in)
         DECLARE_m_pt_eta_phi_p4(gen_q2_in)
         DECLARE_m_pt_eta_phi_p4(gen_q1_out)

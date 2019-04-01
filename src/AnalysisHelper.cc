@@ -1083,6 +1083,18 @@ void AnalysisHelper::fillHistosSample(Sample& sample)
     // if (idxsplit_ == nsplit_-1)
     //     nStop = nEvts;
 
+
+    // if copy tree enabled:
+    // TTree *newtree = tree->CloneTree(0)
+
+    // //Create a new file + a clone of old tree header. Do not copy events
+    // TFile *newfile = new TFile("small.root","recreate");
+    // TTree *newtree = oldtree->CloneTree(0);
+    // //Divert branch fH to a separate file and copy all events
+    // newtree->GetBranch("fH")->SetFile("small_fH.root");
+    // newtree->CopyEntries(oldtree);
+
+
     if (DEBUG) cout << " ..........DEBUG: AnalysisHelper : fillHistosSample : going to loop on tree entries... " << endl;
     Sample::selColl& plots = sample.plots();
     Sample::selColl2D& plots2D = sample.plots2D();
@@ -1106,7 +1118,8 @@ void AnalysisHelper::fillHistosSample(Sample& sample)
         {
 
             if (!(vTTF.at(isel)->EvalInstance())) continue;
-
+            // if copy tree enabled and selection = trigger selection
+            // newtree->Fill()
 
             double wEvSel = 1.0;
             const Selection& currSel = selections_.at(isel);
@@ -1175,6 +1188,8 @@ void AnalysisHelper::fillHistosSample(Sample& sample)
             }
         }
     }
+
+    // newtree->AutoSave();
 
     // filling is finished, scale to the sample denominator evt sum to include acceptance
     if (sample.getType() != Sample::kData)

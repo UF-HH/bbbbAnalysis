@@ -7,10 +7,10 @@
 class GenPart : public Candidate
 {
     public:
-        GenPart () : Candidate(){}
-        GenPart (int idx, NanoAODTree* nat) : Candidate(idx, nat){buildP4();}
+        GenPart () : Candidate(){typeId_=-1;}
+        GenPart (int idx, NanoAODTree* nat) : Candidate(idx, nat){typeId_=-1; buildP4();}
         ~GenPart(){};
-        std::unique_ptr<Candidate> clone() const {
+        std::unique_ptr<Candidate> clone() const override{
             GenPart *clonedGenPart = new GenPart(this->getIdx(), this->getNanoAODTree());
             clonedGenPart->setP4(this->P4());
             return std::unique_ptr<GenPart> (clonedGenPart);
@@ -35,7 +35,7 @@ class GenPart : public Candidate
 
     private:
         bool checkBit(int number, int bitpos) {return (number & (1 << bitpos));}
-        void buildP4(); 
+        void buildP4() override; 
         static const std::map<int, float> gen_mass_;
 };
 

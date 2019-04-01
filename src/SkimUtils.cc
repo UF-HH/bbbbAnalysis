@@ -291,9 +291,13 @@ void SkimUtils::fill_output_tree(OutputTree& ot, NanoAODTree& nat, EventInfo& ei
     }
 
     COPY_OPTIONAL_m_pt_eta_phi_p4(gen_H1_b1)
+    if(ei.gen_H1_b1_matchedflag) ot.gen_H1_b1_matchedflag  = *ei.gen_H1_b1_matchedflag;
     COPY_OPTIONAL_m_pt_eta_phi_p4(gen_H1_b2)
+    if(ei.gen_H1_b2_matchedflag) ot.gen_H1_b2_matchedflag  = *ei.gen_H1_b2_matchedflag;
     COPY_OPTIONAL_m_pt_eta_phi_p4(gen_H2_b1)
+    if(ei.gen_H2_b1_matchedflag) ot.gen_H2_b1_matchedflag  = *ei.gen_H2_b1_matchedflag;
     COPY_OPTIONAL_m_pt_eta_phi_p4(gen_H2_b2)
+    if(ei.gen_H2_b2_matchedflag) ot.gen_H2_b2_matchedflag  = *ei.gen_H2_b2_matchedflag;
     COPY_OPTIONAL_m_pt_eta_phi_p4(gen_q1_in)
     COPY_OPTIONAL_m_pt_eta_phi_p4(gen_q2_in)
     COPY_OPTIONAL_m_pt_eta_phi_p4(gen_q1_out)

@@ -6,13 +6,14 @@
 class Jet : public Candidate
 {
     public:
-        Jet () : Candidate(){}
+        Jet () : Candidate(){typeId_=1;}
         Jet (int idx, NanoAODTree* nat) : Candidate(idx, nat){
+            typeId_=1;
             buildP4Regressed();
             buildP4(); 
         }
         ~Jet(){};
-        std::unique_ptr<Candidate> clone() const {
+        std::unique_ptr<Candidate> clone() const override{
         	Jet *clonedJet = new Jet(this->getIdx(), this->getNanoAODTree());
         	clonedJet->setP4Regressed(this->P4Regressed());
             clonedJet->setP4(this->P4());
@@ -25,7 +26,7 @@ class Jet : public Candidate
         void buildP4Regressed(); 
 
     private:
-        void buildP4(); 
+        void buildP4() override; 
 
 };
 

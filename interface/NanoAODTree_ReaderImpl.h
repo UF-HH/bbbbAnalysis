@@ -50,6 +50,7 @@ class NanoAODTree_ReaderImpl {
         // bool Next() {return fReader.Next();}
         bool Next();
         bool getTrgOr() {return trg_reader_.getTrgOr();};
+        std::vector<std::string> getTrgPassed() {return trg_reader_.getTrgPassed();};
 
         // the chain and TTreeReader
         TTreeReader   fReader;

@@ -27,6 +27,7 @@ class TriggerReader_SetBranchImpl {
         std::vector<std::unique_ptr<ReaderValuePatch<bool>>>& getRefToReadersPtrVector(){return readers_;}
         bool getTrgOr();
         bool getTrgResult(std::string trgName);
+        std::vector<std::string> getTrgPassed();
 
     private:
         ReaderValuePatch<bool>& getRefToReader(int idx) {return *(readers_.at(idx));}

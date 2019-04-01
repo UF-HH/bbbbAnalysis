@@ -16,6 +16,7 @@
 #include "NanoAODTree.h"
 #include "EventInfo.h"
 #include "CompositeCandidate.h"
+#include "Candidate.h"
 #include "OutputTree.h"
 #include "BTagCalibrationStandalone.h"
 #include "JetMETCorrections/Modules/interface/JetResolution.h"
@@ -36,6 +37,7 @@ using namespace std::experimental;
 
 namespace OfflineProducerHelper {
 
+    bool debug = true;
     // Load configurations to match the b jets
     // bool loadConfiguration(CfgParser config);
     ///static bacause if not I got a glibc detected when the execution is completed
@@ -49,6 +51,10 @@ namespace OfflineProducerHelper {
     std::map<std::string, JetCorrectionUncertainty*> mapForJECuncertanties_;
     std::map<std::string, Variation> mapJERNamesAndVariation_;
     std::map<std::string, bool> mapJECNamesAndVariation_;
+    // < particleId, <filterId> > 
+    std::map<int, std::vector<int> >  mapTriggerObjectIdAndFilter_;
+    // < <particleId, filterId> numberOfObjects> 
+    std::map<std::pair<int,int>, int> mapTriggerMatching_;
 
     // branch Name, default value
     std::map<std::string, float> branchesAffectedByJetEnergyVariations_;
@@ -62,6 +68,8 @@ namespace OfflineProducerHelper {
         mapJERNamesAndVariation_.clear();
         mapJECNamesAndVariation_.clear();
         branchesAffectedByJetEnergyVariations_.clear();
+        mapTriggerMatching_.clear();
+        mapTriggerObjectIdAndFilter_.clear();
     }
 
     void initializeOfflineProducerHelper(const std::map<std::string,any> *parameterList) {
@@ -91,9 +99,18 @@ namespace OfflineProducerHelper {
 
     void initializeObjectsForCuts(OutputTree &ot);
     // functions to select events based on non-jet particles:
-    void (*save_objects_for_cut)(NanoAODTree&, OutputTree&);
-    // reject events with leptons that may come from W and Z decays
-    void save_WandZleptondecays (NanoAODTree& nat, OutputTree &ot);
+    void (*save_objects_for_cut)(NanoAODTree&, OutputTree&, EventInfo& ei);
+    // Object to reject events with leptons that may come from W and Z decays
+    void save_WAndZLeptonDecays (NanoAODTree& nat, OutputTree &ot, EventInfo& ei);
+    // save trigger Objects for trigger studies
+    void save_TriggerObjects (NanoAODTree& nat, OutputTree &ot, EventInfo& ei);
+    // Calculate trigger map
+    void calculateTriggerMatching(const std::vector< std::unique_ptr<Candidate> > &candidateList, NanoAODTree& nat);
+
+    //Initialize trigger Matching variables
+    void initializeTriggerMatching(OutputTree &ot);
+    //Function to check that the selected objects are the one that fired at list one of the triggers
+    bool checkTriggerObjectMatching(std::vector<std::string>, OutputTree &ot);
 
 
     void initializeObjectsForEventWeight(OutputTree &ot, SkimEffCounter &ec, std::string PUWeightFileName, float crossSection);
@@ -152,7 +169,7 @@ namespace OfflineProducerHelper {
     //functions for gen-level studies
     void AddVBFGenMatchVariables(NanoAODTree& nat, EventInfo& ei);
     // functions that act on the EventInfo
-    bool select_bbbb_jets (NanoAODTree& nat, EventInfo& ei, OutputTree &ot);
+    bool select_bbbb_jets (NanoAODTree& nat, EventInfo& ei, OutputTree &ot, std::vector<std::string> listOfPassedTriggers);
     bool select_bbbbjj_jets (NanoAODTree& nat, EventInfo& ei, OutputTree &ot);
     // bbbbSelectionStrategy strategy_;
     // functions to pair a preselected set of four jets. They all shuffle the input set of jets and return them as (H1_b1, H1_b2, H2_b1, H2_b2)
@@ -165,6 +182,7 @@ namespace OfflineProducerHelper {
     std::vector<Jet> bbbb_jets_idxs_MostBackToBack(const std::vector<Jet> *presel_jets);
     //pair by ordering the jets by CSV and then finding the compination closer to targetmH for both candidates
     std::vector<Jet> bbbb_jets_idxs_HighestCSVandClosestToMh(const std::vector<Jet> *presel_jets);
+
     //Additional kinematic variables
     void AddVBFCategoryVariables(NanoAODTree& nat, EventInfo& ei,std::vector<Jet> ordered_jets);
     void AddGGFCategoryVariables(NanoAODTree& nat, EventInfo& ei,std::vector<Jet> ordered_jets);    
@@ -353,6 +371,12 @@ bool OfflineProducerHelper::order_by_pT(T& val1, T& val2, bool max_first)
         return false;
     std::swap(val1, val2);
     return true;
+}
+
+float deltaPhi(float phi1, float phi2)
+{
+    float delphi = TMath::Abs(TMath::Abs(TMath::Abs(phi1 - phi2) - TMath::Pi())-TMath::Pi());
+    return delphi;
 }
 
 #endif

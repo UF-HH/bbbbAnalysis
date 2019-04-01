@@ -44,6 +44,7 @@ class Candidate
         
         bool isValid() const {return idx_ >= 0;}
         virtual std::unique_ptr<Candidate> clone() const = 0;
+        int getCandidateTypeId() const {return typeId_;};
 
     protected:
         virtual void buildP4() = 0;
@@ -53,6 +54,7 @@ class Candidate
         TLorentzVector p4_;
         NanoAODTree* nat_;
         bool isComposite_;
+        int typeId_; //11 = Electron , 22 = Photon , 13 = Muon, 15 = Tau, 1 = Jet, 6 = FatJet, 2 = MET, -1 = GenParticle, -10 = CompositeCandidate
 
 
 };

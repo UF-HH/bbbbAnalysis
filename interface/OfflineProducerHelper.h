@@ -30,10 +30,7 @@
 #include <functional>
 #include <initializer_list>
 #include <boost/optional.hpp>
-#include <experimental/any>
- 
-using namespace std::experimental;
-
+#include <any>
 
 namespace OfflineProducerHelper {
 
@@ -42,7 +39,7 @@ namespace OfflineProducerHelper {
     // bool loadConfiguration(CfgParser config);
     ///static bacause if not I got a glibc detected when the execution is completed
 
-    const std::map<std::string,any> *parameterList_;
+    const std::map<std::string, std::any> *parameterList_;
     //  weights are stored together with their corrections:
     //  map < weightName,     pair < nominal ,  map < corrName  , corrValue > > >  
     std::map<std::string, std::pair< float, std::map<std::string, float> > > weightMap_;
@@ -72,7 +69,7 @@ namespace OfflineProducerHelper {
         mapTriggerObjectIdAndFilter_.clear();
     }
 
-    void initializeOfflineProducerHelper(const std::map<std::string,any> *parameterList) {
+    void initializeOfflineProducerHelper(const std::map<std::string, std::any> *parameterList) {
         parameterList_=parameterList;
         //standard branches present in the EventInfo, other branches should de added when declaring the standard ones (see bTagScaleFactor_central)
         branchesAffectedByJetEnergyVariations_["H1_b1_pt"] = -1.;

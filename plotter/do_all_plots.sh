@@ -1,0 +1,2 @@
+python plotter.py --dir ../MCPlots --var H1_b1_pt  --sel selectionGGF_GGF --no-sr-namecompl --title ";H_{1} leading jet p_{T} [GeV];Events" --log --lxmin 0.46 --lymin 0.7 --ymin 1. --ymax 1e7 --tab --quit --ratio
+# python plotter.py --dir ../MCPlots --var H1_b2_pt  --sel selectionGGF_GGF --no-sr-namecompl --title ";H_{1} b_{2} p_{T} [GeV];Events" --log --lxmin 0.47 --lymin 0.4 --ymin 1. --ymax 1e7 --tab --quit --ratio

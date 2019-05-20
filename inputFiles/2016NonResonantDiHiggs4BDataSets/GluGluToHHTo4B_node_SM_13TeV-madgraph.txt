@@ -1,0 +1,6 @@
+root://cmsxrootd.fnal.gov//store/user/guerrero/HHNanoAOD/GGFHH4b2016/test80X_NANO_0.root
+root://cmsxrootd.fnal.gov//store/user/guerrero/HHNanoAOD/GGFHH4b2016/test80X_NANO_1.root
+root://cmsxrootd.fnal.gov//store/user/guerrero/HHNanoAOD/GGFHH4b2016/test80X_NANO_2.root
+root://cmsxrootd.fnal.gov//store/user/guerrero/HHNanoAOD/GGFHH4b2016/test80X_NANO_3.root
+root://cmsxrootd.fnal.gov//store/user/guerrero/HHNanoAOD/GGFHH4b2016/test80X_NANO_4.root
+root://cmsxrootd.fnal.gov//store/user/guerrero/HHNanoAOD/GGFHH4b2016/test80X_NANO_5.root

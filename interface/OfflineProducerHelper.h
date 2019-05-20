@@ -22,6 +22,7 @@
 #include "JetMETCorrections/Modules/interface/JetResolution.h"
 #include "CondFormats/JetMETObjects/interface/JetCorrectionUncertainty.h"
 #include "Jet.h"
+#include "GenJet.h"
 #include "SkimEffCounter.h"
 
 #include <array>
@@ -29,10 +30,7 @@
 #include <functional>
 #include <initializer_list>
 #include <boost/optional.hpp>
-#include <experimental/any>
- 
-using namespace std::experimental;
-
+#include <any>
 
 namespace OfflineProducerHelper {
 
@@ -41,7 +39,7 @@ namespace OfflineProducerHelper {
     // bool loadConfiguration(CfgParser config);
     ///static bacause if not I got a glibc detected when the execution is completed
 
-    const std::map<std::string,any> *parameterList_;
+    const std::map<std::string, std::any> *parameterList_;
     //  weights are stored together with their corrections:
     //  map < weightName,     pair < nominal ,  map < corrName  , corrValue > > >  
     std::map<std::string, std::pair< float, std::map<std::string, float> > > weightMap_;
@@ -71,7 +69,7 @@ namespace OfflineProducerHelper {
         mapTriggerObjectIdAndFilter_.clear();
     }
 
-    void initializeOfflineProducerHelper(const std::map<std::string,any> *parameterList) {
+    void initializeOfflineProducerHelper(const std::map<std::string, std::any> *parameterList) {
         parameterList_=parameterList;
         //standard branches present in the EventInfo, other branches should de added when declaring the standard ones (see bTagScaleFactor_central)
         branchesAffectedByJetEnergyVariations_["H1_b1_pt"] = -1.;
@@ -159,12 +157,14 @@ namespace OfflineProducerHelper {
     BTagCalibrationReader *btagCalibrationReader_bJets_;
     //functions fo apply preselection cuts:
     void bJets_PreselectionCut(std::vector<Jet> &jets);
-    std::vector<std::tuple<Jet,int,int>> bjJets_PreselectionCut(std::vector<std::tuple<Jet,int,int>> jetsinfo);
-    std::vector<std::tuple<Jet,int,int>> bbbbBothClosestToMh(const std::vector<std::tuple<Jet,int,int>> presel_jets);
-    std::vector<std::tuple<Jet,int,int>> bbbbOneClosestToMh(std::vector<std::tuple<Jet,int,int>> presel_jets);
-    std::vector<std::tuple<int,int,int>> QuarkToJetMatcher(const std::vector<GenPart> quarks, std::vector<Jet> jets);
-    std::vector<std::tuple<Jet,int,int>> AddGenMatchingInfo(NanoAODTree& nat, EventInfo& ei, std::vector<Jet> jets);
-    std::vector<std::tuple<Jet,int,int>> OppositeEtaJetPair(std::vector<std::tuple<Jet,int,int>> jjets);
+    std::vector<Jet> bjJets_PreselectionCut(NanoAODTree& nat, EventInfo& ei,std::vector<Jet> jets);
+    std::vector<int> QuarkToJetMatcher(const std::vector<GenPart> quarks,const std::vector<Jet> jets);
+    std::vector<int> AddGenMatchingInfo(NanoAODTree& nat, EventInfo& ei, std::vector<Jet> jets);
+    std::vector<Jet> OppositeEtaJetPair(std::vector<Jet> jjets);
+    std::vector<Jet> HighestPtJetPair(std::vector<Jet> jjets); 
+    std::vector<Jet> ExternalEtaJetPair(std::vector<Jet> jjets, std::vector<Jet> bjets);  
+    //functions for gen-level studies
+    void AddVBFGenMatchVariables(NanoAODTree& nat, EventInfo& ei);
     // functions that act on the EventInfo
     bool select_bbbb_jets (NanoAODTree& nat, EventInfo& ei, OutputTree &ot, std::vector<std::string> listOfPassedTriggers);
     bool select_bbbbjj_jets (NanoAODTree& nat, EventInfo& ei, OutputTree &ot);
@@ -179,6 +179,17 @@ namespace OfflineProducerHelper {
     std::vector<Jet> bbbb_jets_idxs_MostBackToBack(const std::vector<Jet> *presel_jets);
     //pair by ordering the jets by CSV and then finding the compination closer to targetmH for both candidates
     std::vector<Jet> bbbb_jets_idxs_HighestCSVandClosestToMh(const std::vector<Jet> *presel_jets);
+
+    //Additional kinematic variables
+    void AddVBFCategoryVariables(NanoAODTree& nat, EventInfo& ei,std::vector<Jet> ordered_jets);
+    void AddGGFCategoryVariables(NanoAODTree& nat, EventInfo& ei,std::vector<Jet> ordered_jets);    
+    void VBFCandidatesStudies(NanoAODTree& nat, EventInfo& ei, std::vector<Jet> vbfjets);
+    void VBFCandidatesStudies2(NanoAODTree& nat, EventInfo& ei,std::vector<Jet> vbfjets,std::vector<Jet> vbfjets2);
+    float MindRToAJet(const GenPart quark,const std::vector<Jet> jets);
+    float MindRToAGenJet(const GenPart quark,const std::vector<GenJet> jets);
+    float GetBDTScore(EventInfo& ei);
+    float GetDNNScore(EventInfo& ei);
+    float GenJetToPartonPt(const GenPart quark,const std::vector<GenJet> jets);
 
     // combines a collection of type C of jets (either std::vector or std::array) into a collection of H H possible combinations
     // (i.e. all possible H1 = (jA, jB) and H2 = (jC, jD) choices)

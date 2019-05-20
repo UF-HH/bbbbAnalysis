@@ -36,7 +36,7 @@ using namespace std::experimental;
 
 namespace OfflineProducerHelper {
 
-    bool debug = true;
+    bool debug = false;
     // Load configurations to match the b jets
     // bool loadConfiguration(CfgParser config);
     ///static bacause if not I got a glibc detected when the execution is completed

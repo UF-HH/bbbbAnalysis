@@ -52,8 +52,7 @@ void OfflineProducerHelper::initializeObjectsForCuts(OutputTree &ot){
         ot.declareUserFloatBranch("ForthSelectedJetPt", -1.);
         ot.declareUserFloatBranch("SelectedJetPtSum", -1.);
         ot.declareUserFloatBranch("ThirdSelectedJetDeepCSV", -1.);
-        ot.declareUserFloatBranch("HighestMuonPt", -1.);
-        ot.declareUserFloatBranch("SmallestMuonJetDeltaR", -1.);
+        ot.declareUserFloatBranch("HighestIsoMuonPt", -1.);
 
     }
 
@@ -177,17 +176,6 @@ void OfflineProducerHelper::save_TriggerObjects (NanoAODTree& nat, OutputTree &o
     ot.userFloat("ForthSelectedJetPt")      = candidatePt[3];
     ot.userFloat("SelectedJetPtSum")        = candidatePt[0] + candidatePt[1] + candidatePt[2] + candidatePt[3];
     ot.userFloat("ThirdSelectedJetDeepCSV") = candidateDeepCSV[2];
-    if(*(nat.nMuon)>0){
-        ot.userFloat("HighestMuonPt") = nat.Muon_pt.At(0);
-        std::vector<double> muonJetDeltaR;
-        muonJetDeltaR.emplace_back(sqrt(pow(ei.H1_b1->P4().Eta() - nat.Muon_eta.At(0),2) + pow(deltaPhi(ei.H1_b1->P4().Phi(), nat.Muon_phi.At(0)),2) ) );
-        muonJetDeltaR.emplace_back(sqrt(pow(ei.H1_b2->P4().Eta() - nat.Muon_eta.At(0),2) + pow(deltaPhi(ei.H1_b2->P4().Phi(), nat.Muon_phi.At(0)),2) ) );
-        muonJetDeltaR.emplace_back(sqrt(pow(ei.H2_b1->P4().Eta() - nat.Muon_eta.At(0),2) + pow(deltaPhi(ei.H2_b1->P4().Phi(), nat.Muon_phi.At(0)),2) ) );
-        muonJetDeltaR.emplace_back(sqrt(pow(ei.H2_b2->P4().Eta() - nat.Muon_eta.At(0),2) + pow(deltaPhi(ei.H2_b2->P4().Phi(), nat.Muon_phi.At(0)),2) ) );
-        stable_sort(muonJetDeltaR.begin(), muonJetDeltaR.end()); 
-        ot.userFloat("SmallestMuonJetDeltaR") = muonJetDeltaR.at(0);
-    }
-
 
     return;
 }
@@ -728,7 +716,6 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
     for (uint ij = 0; ij < *(nat.nJet); ++ij){
         unsmearedJets.emplace_back(Jet(ij, &nat));
     }
-// std::cout<<"culo1\n";
     
     //if some montecarlo weight are applied via a reshaping of the jets variables, they must be applied here
 
@@ -742,7 +729,6 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
         //do nothing
     }
     else throw std::runtime_error("cannot recognize cut strategy --" + preselectionCutStrategy + "--");
-// std::cout<<"culo2\n";
 
     //at least 4 jets required
     if(unsmearedJets.size()<4) return false;
@@ -776,7 +762,6 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
     }
 
 
-// std::cout<<"culo3\n";
     int H1b1_idx(-1), H1b2_idx(-1), H2b1_idx(-1), H2b2_idx(-1); //Jet indexes for variations
 
     for(auto & jets : jetEnergyVariationsMap)
@@ -793,7 +778,6 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
                 }
             }
 
-// std::cout<<"culo4\n";
             // now need to pair the jets
             std::vector<Jet> presel_jets = {{
                 (jets.second[0]),
@@ -817,7 +801,6 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
             }
             else throw std::runtime_error("cannot recognize bbbb choice strategy " + strategy);
 
-// std::cout<<"culo5\n";
             if(ordered_jets.size()!=4)
             {
                 if(!any_cast<bool>(parameterList_->at("UseAntiTagOnOneBjet")) && strategy == "HighestCSVandClosestToMh")
@@ -829,31 +812,50 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
 
             if(debug) std::cout<< "Event " << *(nat.run) << " - " << *(nat.luminosityBlock) << " - " << *(nat.event) << std::endl;
 
-// std::cout<<"culo6\n";
             if(jets.first == originalSampleName)
             {
                 std::vector< std::unique_ptr<Candidate> > selectedCandidates;
-// std::cout<<"culo6.1\n";
                 for(auto jet : ordered_jets)
                 {
                     selectedCandidates.emplace_back(std::make_unique<Jet>(jet));
                     //std::cout<<jet.P4().Eta()<<" "<<selectedCandidates.back()->P4().Eta()<<" "<<selectedCandidates.at(0)->P4().Eta()<<std::endl;
                 }
 
-                if(*(nat.nMuon)>0)
+                if(any_cast<string>(parameterList_->at("ObjectsForCut")) == "TriggerObjects")
                 {
-                    //Candidate *theHighestPtMuon = new Muon(0, &nat);
-                    selectedCandidates.emplace_back(std::make_unique<Muon>(Muon(0, &nat)));
+                    for (uint muonIt = 0; muonIt < *(nat.nMuon); ++muonIt)
+                    {
+                        if(nat.Muon_pfRelIso04_all[muonIt]<0.1)
+                        {
+                            int muonJetId = nat.Muon_jetIdx[muonIt];
+                            bool matchingJetFound = false;
+                            if(muonJetId >= 0)
+                            {
+                                for(auto jet : ordered_jets)
+                                {
+                                    if(jet.getIdx() == muonJetId)
+                                    {
+                                      matchingJetFound = true;
+                                      break;  
+                                    }
+                                } 
+                            }
+                            if(!matchingJetFound)
+                            {
+                                ot.userFloat("HighestIsoMuonPt") = nat.Muon_pt.At(muonJetId);
+                                selectedCandidates.emplace_back(std::make_unique<Muon>(Muon(muonJetId, &nat)));
+                                break;
+                            }
+                        }
+                    }
                 }
                 
                 calculateTriggerMatching(selectedCandidates,nat);
 
-// std::cout<<"culo6.2\n";
             }
                 
             if(jets.first == originalSampleName)
             {
-// std::cout<<"culo6.3\n";
                 for(auto & triggerFired : listOfPassedTriggers)
                 {
                     ot.userInt(triggerFired+"_Fired") = 1;
@@ -881,14 +883,12 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
                     if(debug)
                     {
                         Muon *theHighestPtMuon = new Muon(0, &nat);
-                        std::cout<< std::fixed << std::setprecision(3) <<theHighestPtMuon->getIdx()<<"\t\t"<<theHighestPtMuon->P4().Pt()<<"\t\t"<<theHighestPtMuon->P4().Eta()<<"\t\t"<<theHighestPtMuon->P4().Phi()<<"\n";
+                        std::cout<< std::fixed << std::setprecision(3) <<theHighestPtMuon->getIdx()<<"\t\t"<<theHighestPtMuon->P4().Pt()<<"\t\t"<<theHighestPtMuon->P4().Eta()<<"\t\t"<<theHighestPtMuon->P4().Phi()<<"\t\t"<<theHighestPtMuon->getCandidateTypeId()<<"\n";
                     }
 
                 }
-// std::cout<<"culo6.4\n";
             }
 
-// std::cout<<"culo7\n";
 
             // order H1, H2 by pT: pT(H1) > pT (H2)
             CompositeCandidate H1 = CompositeCandidate(ordered_jets.at(0), ordered_jets.at(1));
@@ -897,7 +897,6 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
             CompositeCandidate H2 = CompositeCandidate(ordered_jets.at(2), ordered_jets.at(3));
             H2.rebuildP4UsingRegressedPt(true,true);
             
-// std::cout<<"culo8\n";
             //Do a random swap to be sure that the m1 and m2 are simmetric
             bool swapped = (int(H1.P4().Pt()*100.) % 2 == 1);
          
@@ -962,12 +961,10 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
             ei.LumiSec = *(nat.luminosityBlock);
             ei.Event = *(nat.event);
 
-// std::cout<<"culo9\n";
 
         }
         else //Variations
         {
-// std::cout<<"culo10\n";
 
             int H1b1(-1), H1b2(-1), H2b1(-1), H2b2(-1); 
             for(size_t iJet=0; iJet<jets.second.size(); ++iJet){
@@ -1629,7 +1626,9 @@ void OfflineProducerHelper::initializeTriggerMatching(OutputTree &ot)
             }
             //Adding only the ones not already in there
             if(std::find(mapTriggerObjectIdAndFilter_[triggerObject.first.first].begin(),mapTriggerObjectIdAndFilter_[triggerObject.first.first].end(),triggerObject.first.second) == mapTriggerObjectIdAndFilter_[triggerObject.first.first].end())
+            {
                 mapTriggerObjectIdAndFilter_[triggerObject.first.first].emplace_back(triggerObject.first.second);
+            }
         }
     }
 }
@@ -1680,11 +1679,15 @@ void OfflineProducerHelper::calculateTriggerMatching(const std::vector< std::uni
     for (uint trigObjIt = 0; trigObjIt < *(nat.nTrigObj); ++trigObjIt) //for over all trigger objects
     {
         int triggerObjectId = nat.TrigObj_id.At(trigObjIt);
+
 //std::cout<<"culo6.1.2\n";
 //std::cout<<triggerObjectId<<std::endl;
 
         if(mapTriggerObjectIdAndFilter_.find(triggerObjectId) != mapTriggerObjectIdAndFilter_.end()) //check if the object particle id is needed
         {
+//std::cout<<"culo1  "<<triggerObjectId;
+//if(triggerObjectId==13) for(const auto & filterBit : mapTriggerObjectIdAndFilter_[triggerObjectId]) std::cout<<" "<<filterBit;
+//std::cout<<std::endl;
 //std::cout<<"culo6.1.3\n";
             bool newCandidate = true;
             bool isNeeded = false;
@@ -1694,11 +1697,16 @@ void OfflineProducerHelper::calculateTriggerMatching(const std::vector< std::uni
             float triggerObjectEta  = nat.TrigObj_eta       .At(trigObjIt);
             float triggerObjectPhi  = nat.TrigObj_phi       .At(trigObjIt);
             int candidateIdx=-1;
+//std::cout<<"culo2  "<<triggerObjectId;
+//if(triggerObjectId==13) for(const auto & filterBit : mapTriggerObjectIdAndFilter_[triggerObjectId]) std::cout<<" "<<filterBit;
+//std::cout<<std::endl;
 
             for(const auto & filterBit : mapTriggerObjectIdAndFilter_[triggerObjectId]) //loop over all the needed filters
             {
+//std::cout<<"culo3  "<<triggerObjectId;
+//if(triggerObjectId==13) for(const auto & filterBit : mapTriggerObjectIdAndFilter_[triggerObjectId]) std::cout<<" "<<filterBit;
+//std::cout<<std::endl;
 //std::cout<<"culo6.1.4\n";
-                //std::cout<<"!!! - "<<filterBit<<std::endl;
                 if( (triggerFilterBitSum >> filterBit) & 0x1 ) //check object passes the filter
                 {
                     if(!isNeeded) isNeeded=true;
@@ -1710,11 +1718,11 @@ void OfflineProducerHelper::calculateTriggerMatching(const std::vector< std::uni
                     else if(debug) std::cout<<" "<<filterBit;
 
 //std::cout<<"culo6.1.5\n";
-                    //std::cout<<"!!!~~ - "<<filterBit<<std::endl;
                     float deltaR = 1024; //easy to do square root
                     int tmpCandidateIdx=-1;
                     for(const auto & candidate : candidateList) //loop to find best Candidate matching DeltaR
                     {
+//std::cout<<"!!! --- "<<candidate->getCandidateTypeId()<<std::endl;
                         if(candidate->getCandidateTypeId() != triggerObjectId) continue; // Skip different particles
                         //std::cout<<"!!!~~~~ - "<<filterBit<<std::endl;
 
@@ -1869,7 +1877,6 @@ bool OfflineProducerHelper::select_gen_bb_bb (NanoAODTree& nat, EventInfo& ei)
         dump_gen_part(nat, true);
     }
 
-// std::cout<<"culo1\n";
     //match generated 
     std::vector<double> candidatePhi {ei.H1_b1->P4().Phi()    , ei.H1_b2->P4().Phi()    , ei.H2_b1->P4().Phi()    , ei.H2_b2->P4().Phi()    };
     std::vector<double> candidateEta {ei.H1_b1->P4().Eta()    , ei.H1_b2->P4().Eta()    , ei.H2_b1->P4().Eta()    , ei.H2_b2->P4().Eta()    };
@@ -1877,41 +1884,34 @@ bool OfflineProducerHelper::select_gen_bb_bb (NanoAODTree& nat, EventInfo& ei)
     std::vector<double> genBJetEta   {ei.gen_H1_b1->P4().Eta(), ei.gen_H1_b2->P4().Eta(), ei.gen_H2_b1->P4().Eta(), ei.gen_H2_b2->P4().Eta()};
     std::vector<bool> isCandidaterMatched(4,false);
     std::vector<int>  matchedCandidate(4,-1);
-// std::cout<<"culo2\n";
 
     for(uint8_t itGenBJet=0; itGenBJet<4; ++itGenBJet)
     {
-// std::cout<<"culo3\n";
         double deltaR = 1024;
         int    candidateMatched=-1;
         for(uint8_t itCandidate=0; itCandidate<4; ++itCandidate)
         {
-// std::cout<<"culo4\n";
             if(isCandidaterMatched[itCandidate]) continue;
             double tmpDeltaR = deltaPhi(candidatePhi[itCandidate],genBJetPhi[itGenBJet])*deltaPhi(candidatePhi[itCandidate],genBJetPhi[itGenBJet]) + (candidateEta[itCandidate]-genBJetEta[itGenBJet])*(candidateEta[itCandidate]-genBJetEta[itGenBJet]);
             if(tmpDeltaR<deltaR)
             {
-// std::cout<<"culo5\n";
                 deltaR = tmpDeltaR;
                 candidateMatched = itCandidate;
             }
         }
         if(deltaR< (0.3*0.3))
         {
-// std::cout<<"culo6\n";
             isCandidaterMatched[candidateMatched] = true;
             matchedCandidate[itGenBJet] = candidateMatched;
         }
 
     }
 
-// std::cout<<"culo7\n";
     ei.gen_H1_b1_matchedflag = matchedCandidate[0];
     ei.gen_H1_b2_matchedflag = matchedCandidate[1];
     ei.gen_H2_b1_matchedflag = matchedCandidate[2];
     ei.gen_H2_b2_matchedflag = matchedCandidate[3];
     // std::cout<<ei.gen_H1_b1_matchedflag.get()<<"  "<<ei.gen_H1_b2_matchedflag.get()<<"  "<<ei.gen_H2_b1_matchedflag.get()<<"  "<<ei.gen_H2_b2_matchedflag.get()<<std::endl;
-// std::cout<<"culo8\n";
 
 
     return all_ok;

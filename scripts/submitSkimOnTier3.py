@@ -79,6 +79,8 @@ args, unknown = parser.parse_known_args()
 
 ##################
 executable = 'bin/skim_ntuple_nonresonant.exe' ##If resonant analysis 'bin/skim_ntuple.exe'
+if "2016ResonantDiHiggs4BDataSets" in args.input : # dangerous for future
+    executable = 'bin/skim_ntuple.exe'
 ##################
 
 username = getpass.getuser()
@@ -258,7 +260,7 @@ for n in range(0, njobs):
     writeln(outScript, '%s' % this_full_command)
     writeln(outScript, 'echo "... execution finished with status $?"')
     writeln(outScript, 'echo "... copying output file %s to EOS in %s"' % (outputFileName, outputEOSName))
-    writeln(outScript, 'xrdcp -s %s %s' % (outputFileName, outputEOSName)) ## no not force overwrite output in destination
+    writeln(outScript, 'xrdcp -s -f %s %s' % (outputFileName, outputEOSName)) ## no force overwrite output in destination
     writeln(outScript, 'echo "... copy done with status $?"')
     # writeln(outScript, 'remove the input and output files if you dont want it automatically transferred when the job ends')
     # writeln(outScript, 'rm nameOfOutputFile.root')

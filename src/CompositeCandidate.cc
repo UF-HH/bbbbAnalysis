@@ -45,11 +45,8 @@ bool CompositeCandidate::sharesComponentWith(const CompositeCandidate& cc) const
 
 
 CompositeCandidate::CompositeCandidate(const CompositeCandidate& rhs)
+: Candidate(rhs)
 {
-    
-    this -> p4_ = rhs.p4_;
-    this -> isComposite_ = rhs.isComposite_;
-    this -> parentIdxVector_ = rhs.parentIdxVector_;
     this -> cand1_ = rhs.cand1_->clone();
     this -> cand2_ = rhs.cand2_->clone();
 }

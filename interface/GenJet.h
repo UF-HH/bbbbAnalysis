@@ -12,7 +12,7 @@ class GenJet : public Candidate
         std::unique_ptr<Candidate> clone() const {
         	GenJet *clonedGenJet = new GenJet(this->getIdx(), this->getNanoAODTree());
         	clonedGenJet->setP4(this->P4());
-        	return std::unique_ptr<GenJet> (clonedGenJet);
+            return std::unique_ptr<GenJet> (clonedGenJet);
         }
     private:
         void buildP4(); 

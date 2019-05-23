@@ -23,8 +23,10 @@ def getExitCode(fname):
         if code == -888:
             if "*** Break *** segmentation violation" in line:
                 code = -666;
-            if '... job finished with status' in line:
-                code = int(re.search('... job finished with status (\d+)', line).group(1))
+            # if '... job finished with status' in line:
+            if '... execution finished with status' in line:
+                # code = int(re.search('... job finished with status (\d+)', line).group(1))
+                code = int(re.search('... execution finished with status (\d+)', line).group(1))
         if "... copy done with status 0" in line:
             fileCopied = True;
 

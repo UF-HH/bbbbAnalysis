@@ -12,7 +12,7 @@ class Electron : public Candidate
         std::unique_ptr<Candidate> clone() const override{
         	Electron *clonedElectron = new Electron(this->getIdx(), this->getNanoAODTree());
         	clonedElectron->setP4(this->P4());
-        	return std::unique_ptr<Electron> (clonedElectron);
+            return std::unique_ptr<Electron> (clonedElectron);
         }
 
     private:

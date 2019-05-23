@@ -23,8 +23,27 @@ class Candidate
     public:
         Candidate(){nat_ = nullptr; idx_ = -1; isComposite_=false;} // creates an invalid Candidate
         Candidate(int idx, NanoAODTree* nat){idx_ = idx; nat_ = nat; isComposite_=false; parentIdxVector_.emplace_back(idx);} // standard ctor to be used for NanoAODTree inspection
-        ~Candidate(){};
-        
+        virtual ~Candidate(){};
+        // Candidate(const Candidate& rhs)
+        // {
+        //     this -> idx_ = rhs.idx_;
+        //     this -> parentIdxVector_ = rhs.parentIdxVector_;
+        //     this -> p4_ = rhs.p4_;
+        //     this -> nat_ = rhs.nat_;
+        //     this -> isComposite_ = rhs.isComposite_;
+        //     this -> typeId_ = rhs.typeId_;
+        // }
+
+        // Candidate& operator = (const Candidate& rhs)
+        // {
+        //     this -> p4_ = rhs.p4_;
+        //     this -> isComposite_ = rhs.isComposite_;
+        //     this -> parentIdxVector_ = rhs.parentIdxVector_;
+        //     this -> cand1_ = rhs.cand1_->clone();
+        //     this -> cand2_ = rhs.cand2_->clone();
+        //     return (*this);
+        // }
+                
         TLorentzVector P4() const      {return p4_;}
         void setP4( TLorentzVector p4) {p4_ = p4;}
         bool getIsComposite() const {return isComposite_;}

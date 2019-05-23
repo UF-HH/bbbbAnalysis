@@ -129,6 +129,9 @@ int main(int argc, char** argv)
             throw std::runtime_error("UseAntiTagOnOneBjet can be done only using PreselectionCut = bJetCut");
         }
     }
+    else if(bbbbChoice == "None"){
+        parameterList.emplace("UseAntiTagOnOneBjet" ,config.readBoolOpt("parameters::UseAntiTagOnOneBjet"  ));
+    } 
     // else if(other selection type){
     //     parameters fo be retreived;
     // }  
@@ -412,21 +415,19 @@ int main(int argc, char** argv)
         
         double weight = 1.;
         if(!is_data) weight = oph::calculateEventWeight(nat, ot, ec);
-// std::cout<<"pirla1\n";
         ec.updateProcessed(weight);
-// std::cout<<"pirla2\n";
 
         std::vector<std::string> listOfPassedTriggers = nat.getTrgPassed();
-// std::cout<<"pirla3\n";
 
         if( listOfPassedTriggers.size() == 0  && triggerVector.size()>0 ) continue;
-// std::cout<<"pirla4\n";
 
         ec.updateTriggered(weight);
-// std::cout<<"pirla5\n";
 
-        if (!oph::select_bbbb_jets(nat, ei, ot, listOfPassedTriggers)) continue;
-// std::cout<<"pirla6\n";
+        if (!oph::select_bbbb_jets(nat, ei, ot, listOfPassedTriggers)) 
+        {
+            // std::cout<<"skipped\n";
+            continue;
+        }
 
         if (is_signal){
             oph::select_gen_HH(nat, ei);
@@ -445,11 +446,8 @@ int main(int argc, char** argv)
 
         oph::save_objects_for_cut(nat, ot, ei);
 
-// std::cout<<"pirla7\n";
         ec.updateSelected(weight);
-// std::cout<<"pirla8\n";
         su::fill_output_tree(ot, nat, ei);
-// std::cout<<"pirla9\n";
 
     }
 

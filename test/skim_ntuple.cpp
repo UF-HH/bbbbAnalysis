@@ -129,9 +129,6 @@ int main(int argc, char** argv)
             throw std::runtime_error("UseAntiTagOnOneBjet can be done only using PreselectionCut = bJetCut");
         }
     }
-    else if(bbbbChoice == "None"){
-        parameterList.emplace("UseAntiTagOnOneBjet" ,config.readBoolOpt("parameters::UseAntiTagOnOneBjet"  ));
-    } 
     // else if(other selection type){
     //     parameters fo be retreived;
     // }  
@@ -357,7 +354,8 @@ int main(int argc, char** argv)
 
     }
 
-    parameterList.emplace("MaxDeltaR",config.readFloatOpt("triggers::MaxDeltaR"));        
+    parameterList.emplace("MaxDeltaR"     ,config.readFloatOpt("triggers::MaxDeltaR")     );        
+    // parameterList.emplace("TriggerStudies",config.readBoolOpt ("triggers::TriggerStudies"));        
     parameterList.emplace("TriggerObjectAndMinNumberMap", triggerObjectAndMinNumberMap);
     nat.triggerReader().setTriggers(triggerVector);
 

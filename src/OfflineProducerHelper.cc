@@ -52,12 +52,14 @@ void OfflineProducerHelper::initializeObjectsForCuts(OutputTree &ot)
                 mapTriggerObjectIdAndFilter_[triggerObject.first.first].emplace_back(triggerObject.first.second);
             ot.declareUserIntBranch(triggerObject.second, 0);
         }
-        ot.declareUserFloatBranch("FirstSelectedJetPt", -1.);
-        ot.declareUserFloatBranch("SecondSelectedJetPt", -1.);
-        ot.declareUserFloatBranch("ThirdSelectedJetPt", -1.);
-        ot.declareUserFloatBranch("ForthSelectedJetPt", -1.);
-        ot.declareUserFloatBranch("SelectedJetPtSum", -1.);
-        ot.declareUserFloatBranch("ThirdSelectedJetDeepCSV", -1.);
+
+        ot.declareUserFloatBranch("FirstJetPt", -1.);
+        ot.declareUserFloatBranch("SecondJetPt", -1.);
+        ot.declareUserFloatBranch("ThirdJetPt", -1.);
+        ot.declareUserFloatBranch("ForthJetPt", -1.);
+        ot.declareUserFloatBranch("FourHighetJetPtSum", -1.);
+        ot.declareUserFloatBranch("ThirdJetDeepCSV", -1.);
+        ot.declareUserFloatBranch("ForthJetCMVA", -1.);
         ot.declareUserFloatBranch("HighestIsoMuonPt", -1.);
 
     }
@@ -151,44 +153,10 @@ void OfflineProducerHelper::save_WAndZLeptonDecays (NanoAODTree& nat, OutputTree
 void OfflineProducerHelper::save_TriggerObjects (NanoAODTree& nat, OutputTree &ot, EventInfo& ei)
 {
 
-
     for( const auto & triggerAndBranch : any_cast<std::map<std::pair<int,int>, std::string > >(parameterList_->at("TriggerObjectsForStudies")) )
     {
         ot.userInt(triggerAndBranch.second) = mapTriggerMatching_[triggerAndBranch.first];
 
-    }
-
-    std::vector<double> candidatePt = 
-    {
-        ei.H1_b1->P4().Pt(),
-        ei.H1_b2->P4().Pt(),
-        ei.H2_b1->P4().Pt(),
-        ei.H2_b2->P4().Pt()
-    };
-    stable_sort(candidatePt.begin(), candidatePt.end(), greater<double>()); 
-
-    ot.userFloat("FirstSelectedJetPt")      = candidatePt[0];
-    ot.userFloat("SecondSelectedJetPt")     = candidatePt[1];
-    ot.userFloat("ThirdSelectedJetPt")      = candidatePt[2];
-    ot.userFloat("ForthSelectedJetPt")      = candidatePt[3];
-    ot.userFloat("SelectedJetPtSum")        = candidatePt[0] + candidatePt[1] + candidatePt[2] + candidatePt[3];
-
-
-    if(any_cast<string>(parameterList_->at("bbbbChoice")) != "None")
-    {
-        std::vector<double> candidateDeepCSV = 
-        {
-            get_property(ei.H1_b1.get(),Jet_btagDeepB),
-            get_property(ei.H1_b2.get(),Jet_btagDeepB),
-            get_property(ei.H2_b1.get(),Jet_btagDeepB),
-            get_property(ei.H2_b2.get(),Jet_btagDeepB)
-        };
-        stable_sort(candidateDeepCSV.begin(), candidateDeepCSV.end(), greater<double>()); 
-        ot.userFloat("ThirdSelectedJetDeepCSV") = candidateDeepCSV[2];
-    }
-    else
-    {
-        ot.userFloat("ThirdSelectedJetDeepCSV") = get_property((*thirdDeepCSVJet), Jet_btagDeepB);
     }
 
     return;
@@ -721,7 +689,6 @@ void OfflineProducerHelper::fillJetEnergyVariationBranch(OutputTree &ot, std::st
 
 bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, OutputTree &ot, std::vector<std::string> listOfPassedTriggers)
 {
-
     if (*(nat.nJet) < 4)
         return false;
     std::vector<Jet> unsmearedJets;
@@ -818,26 +785,11 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
             {
                 ordered_jets = bbbb_jets_idxs_HighestCSVandClosestToMh(&jets.second);
             }
-            else if(strategy == "None")
-            {
-                thirdDeepCSVJet = std::make_unique<Jet>(jets.second[2]);
-                //order them back by pt
-                stable_sort(jets.second.begin(), jets.second.end(), [](const Jet & a, const Jet & b) -> bool
-                {
-                    return ( a.P4().Pt() > b.P4().Pt() );
-                });
-                //I will keep only the four highest pt jets
-                ordered_jets = jets.second;
-                // ordered_jets.push_back(jets.second[0]);
-                // ordered_jets.push_back(jets.second[1]);
-                // ordered_jets.push_back(jets.second[2]);
-                // ordered_jets.push_back(jets.second[3]);
-            }
+            
             else throw std::runtime_error("cannot recognize bbbb choice strategy " + strategy);
 
             // std::cout << __PRETTY_FUNCTION__ << ordered_jets.size() << std::endl;
-
-            if(ordered_jets.size()!=4 && strategy != "None")
+            if(ordered_jets.size()!=4)
             {
                 if(strategy == "HighestCSVandClosestToMh")
                 {
@@ -851,12 +803,23 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
 
             if(debug) std::cout<< "Event " << *(nat.run) << " - " << *(nat.luminosityBlock) << " - " << *(nat.event) << std::endl;
 
-            std::vector< std::unique_ptr<Candidate> > selectedCandidates;
+            std::vector< std::unique_ptr<Candidate> > candidatesForTriggerMatching;
+
+            // if(any_cast<bool>(parameterList_->at("TriggerStudies"))) //case of trigger studies
+            // {
+            //     for(auto jet : jets.second)
+            //     {
+            //         candidatesForTriggerMatching.emplace_back(std::make_unique<Jet>(jet));
+            //     }
+            // }
+            // else
+            // if(!any_cast<bool>(parameterList_->at("TriggerStudies")))
+            // {
             for(auto jet : ordered_jets)
             {
-                selectedCandidates.emplace_back(std::make_unique<Jet>(jet));
-                //std::cout<<jet.P4().Eta()<<" "<<selectedCandidates.back()->P4().Eta()<<" "<<selectedCandidates.at(0)->P4().Eta()<<std::endl;
+                candidatesForTriggerMatching.emplace_back(std::make_unique<Jet>(jet));
             }
+            // }
 
             if(any_cast<string>(parameterList_->at("ObjectsForCut")) == "TriggerObjects")
             {
@@ -879,15 +842,44 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
                         }
                         if(!matchingJetFound)
                         {
-                            ot.userFloat("HighestIsoMuonPt") = nat.Muon_pt.At(muonJetId);
-                            selectedCandidates.emplace_back(std::make_unique<Muon>(Muon(muonJetId, &nat)));
+                            ot.userFloat("HighestIsoMuonPt") = nat.Muon_pt.At(muonIt);
+                            candidatesForTriggerMatching.emplace_back(std::make_unique<Muon>(Muon(muonIt, &nat)));
                             break;
                         }
                     }
                 }
+
+
+                // sort by deepCSV
+                stable_sort(ordered_jets.begin(), ordered_jets.end(), [](const Jet & a, const Jet & b) -> bool
+                {
+                    return ( get_property(a, Jet_btagDeepB) > get_property(b, Jet_btagDeepB) );
+                });
+
+                ot.userFloat("ThirdJetDeepCSV") = get_property(ordered_jets[2],Jet_btagDeepB);
+
+                // order by CMVA
+                stable_sort(ordered_jets.begin(), ordered_jets.end(), [](const Jet & a, const Jet & b) -> bool
+                {
+                    return ( get_property(a, Jet_btagCMVA) > get_property(b, Jet_btagCMVA) );
+                });
+                ot.userFloat("ForthJetCMVA") = get_property(ordered_jets[3],Jet_btagCMVA);
+
+                //order by unregressed pt
+                stable_sort(ordered_jets.begin(), ordered_jets.end(), [](const Jet & a, const Jet & b) -> bool
+                {
+                    return ( a.P4().Pt() > a.P4().Pt() );
+                });
+
+                ot.userFloat("FirstJetPt")         = ordered_jets[0].P4().Pt();
+                ot.userFloat("SecondJetPt")        = ordered_jets[1].P4().Pt();
+                ot.userFloat("ThirdJetPt")         = ordered_jets[2].P4().Pt();
+                ot.userFloat("ForthJetPt")         = ordered_jets[3].P4().Pt();
+                ot.userFloat("FourHighetJetPtSum") = ordered_jets[0].P4().Pt() + ordered_jets[1].P4().Pt() + ordered_jets[2].P4().Pt() + ordered_jets[3].P4().Pt();
+            
             }
 
-            calculateTriggerMatching(selectedCandidates,nat);
+            calculateTriggerMatching(candidatesForTriggerMatching,nat);
 
         
             for(auto & triggerFired : listOfPassedTriggers)
@@ -900,14 +892,17 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
                 if(debug)
                 {
                     std::cout<<"TriggerObjects not matched, Printing jets:\n";
-                    std::cout<<"Id\t\tPt\t\tEta\t\tPhi\t\tCSV\t\tSelected\n";
-                    for(const auto & jet : jets.second)
+                    std::cout<<"Id\t\tPt\t\tEta\t\tPhi\t\tPId\t\tCSV\t\tSelected\n";
+                    for(const auto & candidate : candidatesForTriggerMatching)
                     {
-                        std::cout<< std::fixed << std::setprecision(3) <<jet.getIdx()<<"\t\t"<<jet.P4().Pt()<<"\t\t"<<jet.P4().Eta()<<"\t\t"<<jet.P4().Phi()<<"\t\t"<<get_property((jet),Jet_btagDeepB)<<"\t\t";
+                        std::cout<< std::fixed << std::setprecision(3) <<candidate->getIdx()<<"\t\t"<<candidate->P4().Pt()<<"\t\t"<<candidate->P4().Eta()<<"\t\t"<<candidate->P4().Phi()<<"\t\t"<<candidate->getCandidateTypeId()<<"\t\t";
+                        if(candidate->getCandidateTypeId() == 1) std::cout<< std::fixed << std::setprecision(3)<<get_property((*static_cast<Jet*>(candidate.get())),Jet_btagDeepB)<<"\t\t";
+                        else std::cout << "\t\t\t";
                         bool selected=false;
                         for(const auto & selectedJet : ordered_jets)
                         {
-                            if(selectedJet.getIdx() == jet.getIdx())
+                            if(candidate->getCandidateTypeId() != 1) continue;
+                            if(selectedJet.getIdx() == candidate->getIdx())
                             {
                                 selected=true;
                                 break;
@@ -916,9 +911,6 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
                         if(selected) std::cout<<"*";
                         std::cout<<std::endl;
                     }
-
-                    Muon *theHighestPtMuon = new Muon(0, &nat);
-                    std::cout<< std::fixed << std::setprecision(3) <<theHighestPtMuon->getIdx()<<"\t\t"<<theHighestPtMuon->P4().Pt()<<"\t\t"<<theHighestPtMuon->P4().Eta()<<"\t\t"<<theHighestPtMuon->P4().Phi()<<"\t\t"<<theHighestPtMuon->getCandidateTypeId()<<"\n";
                 }
             }
 
@@ -969,16 +961,15 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
                 if(any_cast<float>(parameterList_->at("LMRToMMRTransition"))>=0. && ei.HH->P4().M() > any_cast<float>(parameterList_->at("LMRToMMRTransition"))) targetHiggsMass = any_cast<float>(parameterList_->at("HiggsMassMMR"));
 
             }
-            else if(strategy != "None")
+            else
             {
                 targetHiggsMass = any_cast<float>(parameterList_->at("HiggsMass"));
             }
-            else targetHiggsMass = 120.;
-
+            
             ei.HH_2DdeltaM = pow(ei.H1->P4().M() - targetHiggsMass,2) + pow(ei.H2->P4().M() - targetHiggsMass,2);
 
             bool applyKineamticFit=true;
-            if(applyKineamticFit && strategy != "None")
+            if(applyKineamticFit)
             {
                 HH4b_kinFit::constrainHH_signalMeasurement(&ordered_jets.at(0).p4Regressed_, &ordered_jets.at(1).p4Regressed_, &ordered_jets.at(2).p4Regressed_, &ordered_jets.at(3).p4Regressed_);
                 CompositeCandidate H1kf = CompositeCandidate(ordered_jets.at(0), ordered_jets.at(1));
@@ -1070,7 +1061,7 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
 }
 
 
-//functions fo apply preselection cuts:
+//functions for apply preselection cuts:
 void OfflineProducerHelper::bJets_PreselectionCut(std::vector<Jet> &jets)
 {
 
@@ -1635,8 +1626,9 @@ void OfflineProducerHelper::AddVBFGenMatchVariables(NanoAODTree& nat, EventInfo&
     return;
 } 
 
-void OfflineProducerHelper::AddGGFCategoryVariables(NanoAODTree& nat, EventInfo& ei,std::vector<Jet> ordered_jets){
-       //Fill branches with selected b-jets ordered by pt 
+void OfflineProducerHelper::AddGGFCategoryVariables(NanoAODTree& nat, EventInfo& ei,std::vector<Jet> ordered_jets)
+{
+    //Fill branches with selected b-jets ordered by pt 
    std::vector<Jet> presel_bjets;
    uint m=0; while(m<4){presel_bjets.push_back(ordered_jets.at(m)); m++;} 
    stable_sort(presel_bjets.begin(), presel_bjets.end(), [](const Jet & a, const Jet & b) -> bool
@@ -1661,133 +1653,134 @@ void OfflineProducerHelper::AddGGFCategoryVariables(NanoAODTree& nat, EventInfo&
 
 void OfflineProducerHelper::AddVBFCategoryVariables(NanoAODTree& nat, EventInfo& ei,std::vector<Jet> ordered_jets)
 {
-       //Fill branches with selected b-jets ordered by pt 
-   std::vector<Jet> presel_bjets;
-   uint m=0; while(m<4){presel_bjets.push_back(ordered_jets.at(m)); m++;} 
-   stable_sort(presel_bjets.begin(), presel_bjets.end(), [](const Jet & a, const Jet & b) -> bool
-       {return ( get_property(a, Jet_pt) > get_property(b, Jet_pt) );});
-   ei.HH_b1 = presel_bjets.at(0);
-   ei.HH_b2 = presel_bjets.at(1);
-   ei.HH_b3 = presel_bjets.at(2);
-   ei.HH_b4 = presel_bjets.at(3);
-       //Mass cut variables with a random swap to be sure that the m1 and m2 are simmetric when selecting the signal region
-   bool swapped = (int(ei.H1->P4().Pt()*100.) % 2 == 1);
-   if (!swapped){ei.H1rand = ei.H1.get();ei.H2rand = ei.H2.get();}
-   else{ei.H1rand = ei.H2.get();ei.H2rand = ei.H1.get();}
-       //dR,dPhi and dEta between pair b's
-   ei.H1_bb_deltaR = ei.H1_b1->P4().DeltaR(ei.H1_b2->P4());
-   ei.H1_bb_deltaPhi = ei.H1_b1->P4().DeltaPhi(ei.H1_b2->P4());
-   ei.H1_bb_deltaEta = abs(ei.H1_b1->P4().Eta() - ei.H1_b2->P4().Eta() );       
-   ei.H2_bb_deltaR = ei.H2_b1->P4().DeltaR(ei.H2_b2->P4());
-   ei.H2_bb_deltaPhi = ei.H2_b1->P4().DeltaPhi(ei.H2_b2->P4());
-   ei.H2_bb_deltaEta = abs(ei.H2_b1->P4().Eta() - ei.H2_b2->P4().Eta() );        
-       //Special variables:deltaR between jets
-   ei.b1b2_deltaR = ei.HH_b1->P4().DeltaR(ei.HH_b2->P4());
-   ei.b1b3_deltaR = ei.HH_b1->P4().DeltaR(ei.HH_b3->P4());
-   ei.b1b4_deltaR = ei.HH_b1->P4().DeltaR(ei.HH_b4->P4());
-   ei.b1j1_deltaR = ei.HH_b1->P4().DeltaR(ei.JJ_j1->P4());
-   ei.b1j2_deltaR = ei.HH_b1->P4().DeltaR(ei.JJ_j2->P4());
-   ei.b2b3_deltaR = ei.HH_b2->P4().DeltaR(ei.HH_b3->P4());
-   ei.b2b4_deltaR = ei.HH_b2->P4().DeltaR(ei.HH_b4->P4());
-   ei.b2j1_deltaR = ei.HH_b2->P4().DeltaR(ei.JJ_j1->P4());        
-   ei.b2j2_deltaR = ei.HH_b2->P4().DeltaR(ei.JJ_j2->P4());
-   ei.b3b4_deltaR = ei.HH_b3->P4().DeltaR(ei.HH_b4->P4());
-   ei.b3j1_deltaR = ei.HH_b3->P4().DeltaR(ei.JJ_j1->P4());       
-   ei.b3j2_deltaR = ei.HH_b3->P4().DeltaR(ei.JJ_j2->P4());
-   ei.b4j1_deltaR = ei.HH_b4->P4().DeltaR(ei.JJ_j1->P4());       
-   ei.b4j2_deltaR = ei.HH_b4->P4().DeltaR(ei.JJ_j2->P4());
-   ei.j1j2_deltaR = ei.JJ_j1->P4().DeltaR(ei.JJ_j2->P4());
-       //Special variables:deltaPhi between jets
-   ei.b1b2_deltaPhi = ei.HH_b1->P4().DeltaPhi(ei.HH_b2->P4());
-   ei.b1b3_deltaPhi = ei.HH_b1->P4().DeltaPhi(ei.HH_b3->P4());
-   ei.b1b4_deltaPhi = ei.HH_b1->P4().DeltaPhi(ei.HH_b4->P4());
-   ei.b1j1_deltaPhi = ei.HH_b1->P4().DeltaPhi(ei.JJ_j1->P4());
-   ei.b1j2_deltaPhi = ei.HH_b1->P4().DeltaPhi(ei.JJ_j2->P4());
-   ei.b2b3_deltaPhi = ei.HH_b2->P4().DeltaPhi(ei.HH_b3->P4());
-   ei.b2b4_deltaPhi = ei.HH_b2->P4().DeltaPhi(ei.HH_b4->P4());
-   ei.b2j1_deltaPhi = ei.HH_b2->P4().DeltaPhi(ei.JJ_j1->P4());        
-   ei.b2j2_deltaPhi = ei.HH_b2->P4().DeltaPhi(ei.JJ_j2->P4());
-   ei.b3b4_deltaPhi = ei.HH_b3->P4().DeltaPhi(ei.HH_b4->P4());
-   ei.b3j1_deltaPhi = ei.HH_b3->P4().DeltaPhi(ei.JJ_j1->P4());       
-   ei.b3j2_deltaPhi = ei.HH_b3->P4().DeltaPhi(ei.JJ_j2->P4());
-   ei.b4j1_deltaPhi = ei.HH_b4->P4().DeltaPhi(ei.JJ_j1->P4());       
-   ei.b4j2_deltaPhi = ei.HH_b4->P4().DeltaPhi(ei.JJ_j2->P4());
-   ei.j1j2_deltaPhi = ei.JJ_j1->P4().DeltaPhi(ei.JJ_j2->P4());
-       //Special variables:deltaEta between jets
-   ei.b1b2_deltaEta = abs(ei.HH_b1->P4().Eta() - ei.HH_b2->P4().Eta() );
-   ei.b1b3_deltaEta = abs(ei.HH_b1->P4().Eta() - ei.HH_b3->P4().Eta() );
-   ei.b1b4_deltaEta = abs(ei.HH_b1->P4().Eta() - ei.HH_b4->P4().Eta() );
-   ei.b1j1_deltaEta = abs(ei.HH_b1->P4().Eta() - ei.JJ_j1->P4().Eta() );
-   ei.b1j2_deltaEta = abs(ei.HH_b1->P4().Eta() - ei.JJ_j2->P4().Eta() );
-   ei.b2b3_deltaEta = abs(ei.HH_b2->P4().Eta() - ei.HH_b3->P4().Eta() );
-   ei.b2b4_deltaEta = abs(ei.HH_b2->P4().Eta() - ei.HH_b4->P4().Eta() );
-   ei.b2j1_deltaEta = abs(ei.HH_b2->P4().Eta() - ei.JJ_j1->P4().Eta() );        
-   ei.b2j2_deltaEta = abs(ei.HH_b2->P4().Eta() - ei.JJ_j2->P4().Eta() );
-   ei.b3b4_deltaEta = abs(ei.HH_b3->P4().Eta() - ei.HH_b4->P4().Eta() );
-   ei.b3j1_deltaEta = abs(ei.HH_b3->P4().Eta() - ei.JJ_j1->P4().Eta() );       
-   ei.b3j2_deltaEta = abs(ei.HH_b3->P4().Eta() - ei.JJ_j2->P4().Eta() );
-   ei.b4j1_deltaEta = abs(ei.HH_b4->P4().Eta() - ei.JJ_j1->P4().Eta() );       
-   ei.b4j2_deltaEta = abs(ei.HH_b4->P4().Eta() - ei.JJ_j2->P4().Eta() );
-   ei.j1j2_deltaEta = abs(ei.JJ_j1->P4().Eta() - ei.JJ_j2->P4().Eta() );
-   ei.VBFSelectedDeltaEta = abs(ei.JJ_j1->P4().Eta() - ei.JJ_j2->P4().Eta()) ;
-   ei.VBFSelectedEtaSign = (ei.JJ_j1->P4().Eta() * ei.JJ_j2->P4().Eta())/ abs( ei.JJ_j1->P4().Eta() * ei.JJ_j2->P4().Eta()  ) ;
-       //Special variables: deltaR between h1,h2,j1,j2,HH,JJ
-   ei.h1h2_deltaR = ei.H1->P4().DeltaR(ei.H2->P4());
-   ei.h1j1_deltaR = ei.H1->P4().DeltaR(ei.JJ_j1->P4());
-   ei.h1j2_deltaR = ei.H1->P4().DeltaR(ei.JJ_j2->P4());
-   ei.h2j1_deltaR = ei.H2->P4().DeltaR(ei.JJ_j1->P4());
-   ei.h2j2_deltaR = ei.H2->P4().DeltaR(ei.JJ_j2->P4());
-   ei.h1jj_deltaR = ei.H1->P4().DeltaR(ei.JJ->P4());
-   ei.h2jj_deltaR = ei.H2->P4().DeltaR(ei.JJ->P4());
-   ei.hhj1_deltaR = ei.HH->P4().DeltaR(ei.JJ_j1->P4());
-   ei.hhj2_deltaR = ei.HH->P4().DeltaR(ei.JJ_j2->P4());
-   ei.hhjj_deltaR = ei.HH->P4().DeltaR(ei.JJ->P4());
-       //Special variables: deltaPhi between h1,h2,j1,j2,HH,JJ
-   ei.h1h2_deltaPhi = ei.H1->P4().DeltaPhi(ei.H2->P4());
-   ei.h1j1_deltaPhi = ei.H1->P4().DeltaPhi(ei.JJ_j1->P4());
-   ei.h1j2_deltaPhi = ei.H1->P4().DeltaPhi(ei.JJ_j2->P4());
-   ei.h2j1_deltaPhi = ei.H2->P4().DeltaPhi(ei.JJ_j1->P4());
-   ei.h2j2_deltaPhi = ei.H2->P4().DeltaPhi(ei.JJ_j2->P4());
-   ei.h1jj_deltaPhi = ei.H1->P4().DeltaPhi(ei.JJ->P4());
-   ei.h2jj_deltaPhi = ei.H2->P4().DeltaPhi(ei.JJ->P4());
-   ei.hhj1_deltaPhi = ei.HH->P4().DeltaPhi(ei.JJ_j1->P4());
-   ei.hhj2_deltaPhi = ei.HH->P4().DeltaPhi(ei.JJ_j2->P4());
-   ei.hhjj_deltaPhi = ei.HH->P4().DeltaPhi(ei.JJ->P4());
-       //Special variables: deltaEta between h1,h2,j1,j2,HH,JJ
-   ei.h1h2_deltaEta = abs( ei.H1->P4().Eta() - ei.H2->P4().Eta());
-   ei.h1j1_deltaEta = abs( ei.H1->P4().Eta() - ei.JJ_j1->P4().Eta());
-   ei.h1j2_deltaEta = abs( ei.H1->P4().Eta() - ei.JJ_j2->P4().Eta());
-   ei.h2j1_deltaEta = abs( ei.H2->P4().Eta() - ei.JJ_j1->P4().Eta());
-   ei.h2j2_deltaEta = abs( ei.H2->P4().Eta() - ei.JJ_j2->P4().Eta());
-   ei.h1jj_deltaEta = abs( ei.H1->P4().Eta() - ei.JJ->P4().Eta());
-   ei.h2jj_deltaEta = abs( ei.H2->P4().Eta() - ei.JJ->P4().Eta());
-   ei.hhj1_deltaEta = abs( ei.HH->P4().Eta() - ei.JJ_j1->P4().Eta());
-   ei.hhj2_deltaEta = abs( ei.HH->P4().Eta() - ei.JJ_j2->P4().Eta());
-   ei.hhjj_deltaEta = abs( ei.HH->P4().Eta() - ei.JJ->P4().Eta());
-       //Extra and special variables
-   ei.j1etaj2eta = ei.JJ_j1->P4().Eta()*ei.JJ_j2->P4().Eta();
-   ei.maxj1etaj2eta = max( abs(ei.JJ_j1->P4().Eta() ), abs(ei.JJ_j2->P4().Eta() ) );
-   ei.ptbalance = abs((ei.HH->P4() + ei.JJ->P4() ).Pt()) / (ei.HH->P4().Pt() + ei.JJ->P4().Pt());
-   float ptcalc = sqrt (pow((ei.HH->P4().Px() - (((ei.JJ_j1->P4()+ei.JJ_j2->P4()).Px())/ 2)),2) + pow((ei.HH->P4().Py() - (((ei.JJ_j1->P4()+ei.JJ_j2->P4()).Py())/ 2)),2));
-   if( (ei.JJ_j1->P4()-ei.JJ_j2->P4()).Pt() != 0){ei.ptcentrality  = ptcalc / (ei.JJ_j1->P4()-ei.JJ_j2->P4()).Pt();}
-   else{ei.ptcentrality  = -1;} 
-   if(ei.JJ_j1->P4().Eta() != ei.JJ_j2->P4().Eta()){ei.etacentrality = abs( ei.HH->P4().Eta() - ((ei.JJ_j1->P4().Eta()+ei.JJ_j2->P4().Eta())/2)) / abs(ei.JJ_j1->P4().Eta() - ei.JJ_j2->P4().Eta());}
-   else{ei.etacentrality = -1;} 
-   int nextra=0,nextrabarrel=0,nextraendcap=0;
-   for (uint ij = 0; ij < *(nat.nJet); ++ij)
-   {
-    if ( abs(get_property(Jet(ij, &nat), Jet_pt)) < 25) continue;
-    if ( abs(get_property(Jet(ij, &nat), Jet_eta)) < 5){nextra++;}
-    if ( abs(get_property(Jet(ij, &nat), Jet_eta)) < 2.4){nextrabarrel++;}
-    if ( abs(get_property(Jet(ij, &nat), Jet_eta)) > 2.4 && abs(get_property(Jet(ij, &nat), Jet_eta)) < 5){nextraendcap++;}
-}
-ei.nExtraJet = nextra;
-ei.nExtraJetbarrel = nextrabarrel;
-ei.nExtraJetendcap = nextraendcap;
-return;
+    //Fill branches with selected b-jets ordered by pt 
+    std::vector<Jet> presel_bjets;
+    uint m=0; while(m<4){presel_bjets.push_back(ordered_jets.at(m)); m++;} 
+    stable_sort(presel_bjets.begin(), presel_bjets.end(), [](const Jet & a, const Jet & b) -> bool
+    {return ( get_property(a, Jet_pt) > get_property(b, Jet_pt) );});
+    ei.HH_b1 = presel_bjets.at(0);
+    ei.HH_b2 = presel_bjets.at(1);
+    ei.HH_b3 = presel_bjets.at(2);
+    ei.HH_b4 = presel_bjets.at(3);
+    //Mass cut variables with a random swap to be sure that the m1 and m2 are simmetric when selecting the signal region
+    bool swapped = (int(ei.H1->P4().Pt()*100.) % 2 == 1);
+    if (!swapped){ei.H1rand = ei.H1.get();ei.H2rand = ei.H2.get();}
+    else{ei.H1rand = ei.H2.get();ei.H2rand = ei.H1.get();}
+    //dR,dPhi and dEta between pair b's
+    ei.H1_bb_deltaR = ei.H1_b1->P4().DeltaR(ei.H1_b2->P4());
+    ei.H1_bb_deltaPhi = ei.H1_b1->P4().DeltaPhi(ei.H1_b2->P4());
+    ei.H1_bb_deltaEta = abs(ei.H1_b1->P4().Eta() - ei.H1_b2->P4().Eta() );       
+    ei.H2_bb_deltaR = ei.H2_b1->P4().DeltaR(ei.H2_b2->P4());
+    ei.H2_bb_deltaPhi = ei.H2_b1->P4().DeltaPhi(ei.H2_b2->P4());
+    ei.H2_bb_deltaEta = abs(ei.H2_b1->P4().Eta() - ei.H2_b2->P4().Eta() );        
+    //Special variables:deltaR between jets
+    ei.b1b2_deltaR = ei.HH_b1->P4().DeltaR(ei.HH_b2->P4());
+    ei.b1b3_deltaR = ei.HH_b1->P4().DeltaR(ei.HH_b3->P4());
+    ei.b1b4_deltaR = ei.HH_b1->P4().DeltaR(ei.HH_b4->P4());
+    ei.b1j1_deltaR = ei.HH_b1->P4().DeltaR(ei.JJ_j1->P4());
+    ei.b1j2_deltaR = ei.HH_b1->P4().DeltaR(ei.JJ_j2->P4());
+    ei.b2b3_deltaR = ei.HH_b2->P4().DeltaR(ei.HH_b3->P4());
+    ei.b2b4_deltaR = ei.HH_b2->P4().DeltaR(ei.HH_b4->P4());
+    ei.b2j1_deltaR = ei.HH_b2->P4().DeltaR(ei.JJ_j1->P4());        
+    ei.b2j2_deltaR = ei.HH_b2->P4().DeltaR(ei.JJ_j2->P4());
+    ei.b3b4_deltaR = ei.HH_b3->P4().DeltaR(ei.HH_b4->P4());
+    ei.b3j1_deltaR = ei.HH_b3->P4().DeltaR(ei.JJ_j1->P4());       
+    ei.b3j2_deltaR = ei.HH_b3->P4().DeltaR(ei.JJ_j2->P4());
+    ei.b4j1_deltaR = ei.HH_b4->P4().DeltaR(ei.JJ_j1->P4());       
+    ei.b4j2_deltaR = ei.HH_b4->P4().DeltaR(ei.JJ_j2->P4());
+    ei.j1j2_deltaR = ei.JJ_j1->P4().DeltaR(ei.JJ_j2->P4());
+    //Special variables:deltaPhi between jets
+    ei.b1b2_deltaPhi = ei.HH_b1->P4().DeltaPhi(ei.HH_b2->P4());
+    ei.b1b3_deltaPhi = ei.HH_b1->P4().DeltaPhi(ei.HH_b3->P4());
+    ei.b1b4_deltaPhi = ei.HH_b1->P4().DeltaPhi(ei.HH_b4->P4());
+    ei.b1j1_deltaPhi = ei.HH_b1->P4().DeltaPhi(ei.JJ_j1->P4());
+    ei.b1j2_deltaPhi = ei.HH_b1->P4().DeltaPhi(ei.JJ_j2->P4());
+    ei.b2b3_deltaPhi = ei.HH_b2->P4().DeltaPhi(ei.HH_b3->P4());
+    ei.b2b4_deltaPhi = ei.HH_b2->P4().DeltaPhi(ei.HH_b4->P4());
+    ei.b2j1_deltaPhi = ei.HH_b2->P4().DeltaPhi(ei.JJ_j1->P4());        
+    ei.b2j2_deltaPhi = ei.HH_b2->P4().DeltaPhi(ei.JJ_j2->P4());
+    ei.b3b4_deltaPhi = ei.HH_b3->P4().DeltaPhi(ei.HH_b4->P4());
+    ei.b3j1_deltaPhi = ei.HH_b3->P4().DeltaPhi(ei.JJ_j1->P4());       
+    ei.b3j2_deltaPhi = ei.HH_b3->P4().DeltaPhi(ei.JJ_j2->P4());
+    ei.b4j1_deltaPhi = ei.HH_b4->P4().DeltaPhi(ei.JJ_j1->P4());       
+    ei.b4j2_deltaPhi = ei.HH_b4->P4().DeltaPhi(ei.JJ_j2->P4());
+    ei.j1j2_deltaPhi = ei.JJ_j1->P4().DeltaPhi(ei.JJ_j2->P4());
+    //Special variables:deltaEta between jets
+    ei.b1b2_deltaEta = abs(ei.HH_b1->P4().Eta() - ei.HH_b2->P4().Eta() );
+    ei.b1b3_deltaEta = abs(ei.HH_b1->P4().Eta() - ei.HH_b3->P4().Eta() );
+    ei.b1b4_deltaEta = abs(ei.HH_b1->P4().Eta() - ei.HH_b4->P4().Eta() );
+    ei.b1j1_deltaEta = abs(ei.HH_b1->P4().Eta() - ei.JJ_j1->P4().Eta() );
+    ei.b1j2_deltaEta = abs(ei.HH_b1->P4().Eta() - ei.JJ_j2->P4().Eta() );
+    ei.b2b3_deltaEta = abs(ei.HH_b2->P4().Eta() - ei.HH_b3->P4().Eta() );
+    ei.b2b4_deltaEta = abs(ei.HH_b2->P4().Eta() - ei.HH_b4->P4().Eta() );
+    ei.b2j1_deltaEta = abs(ei.HH_b2->P4().Eta() - ei.JJ_j1->P4().Eta() );        
+    ei.b2j2_deltaEta = abs(ei.HH_b2->P4().Eta() - ei.JJ_j2->P4().Eta() );
+    ei.b3b4_deltaEta = abs(ei.HH_b3->P4().Eta() - ei.HH_b4->P4().Eta() );
+    ei.b3j1_deltaEta = abs(ei.HH_b3->P4().Eta() - ei.JJ_j1->P4().Eta() );       
+    ei.b3j2_deltaEta = abs(ei.HH_b3->P4().Eta() - ei.JJ_j2->P4().Eta() );
+    ei.b4j1_deltaEta = abs(ei.HH_b4->P4().Eta() - ei.JJ_j1->P4().Eta() );       
+    ei.b4j2_deltaEta = abs(ei.HH_b4->P4().Eta() - ei.JJ_j2->P4().Eta() );
+    ei.j1j2_deltaEta = abs(ei.JJ_j1->P4().Eta() - ei.JJ_j2->P4().Eta() );
+    ei.VBFSelectedDeltaEta = abs(ei.JJ_j1->P4().Eta() - ei.JJ_j2->P4().Eta()) ;
+    ei.VBFSelectedEtaSign = (ei.JJ_j1->P4().Eta() * ei.JJ_j2->P4().Eta())/ abs( ei.JJ_j1->P4().Eta() * ei.JJ_j2->P4().Eta()  ) ;
+    //Special variables: deltaR between h1,h2,j1,j2,HH,JJ
+    ei.h1h2_deltaR = ei.H1->P4().DeltaR(ei.H2->P4());
+    ei.h1j1_deltaR = ei.H1->P4().DeltaR(ei.JJ_j1->P4());
+    ei.h1j2_deltaR = ei.H1->P4().DeltaR(ei.JJ_j2->P4());
+    ei.h2j1_deltaR = ei.H2->P4().DeltaR(ei.JJ_j1->P4());
+    ei.h2j2_deltaR = ei.H2->P4().DeltaR(ei.JJ_j2->P4());
+    ei.h1jj_deltaR = ei.H1->P4().DeltaR(ei.JJ->P4());
+    ei.h2jj_deltaR = ei.H2->P4().DeltaR(ei.JJ->P4());
+    ei.hhj1_deltaR = ei.HH->P4().DeltaR(ei.JJ_j1->P4());
+    ei.hhj2_deltaR = ei.HH->P4().DeltaR(ei.JJ_j2->P4());
+    ei.hhjj_deltaR = ei.HH->P4().DeltaR(ei.JJ->P4());
+    //Special variables: deltaPhi between h1,h2,j1,j2,HH,JJ
+    ei.h1h2_deltaPhi = ei.H1->P4().DeltaPhi(ei.H2->P4());
+    ei.h1j1_deltaPhi = ei.H1->P4().DeltaPhi(ei.JJ_j1->P4());
+    ei.h1j2_deltaPhi = ei.H1->P4().DeltaPhi(ei.JJ_j2->P4());
+    ei.h2j1_deltaPhi = ei.H2->P4().DeltaPhi(ei.JJ_j1->P4());
+    ei.h2j2_deltaPhi = ei.H2->P4().DeltaPhi(ei.JJ_j2->P4());
+    ei.h1jj_deltaPhi = ei.H1->P4().DeltaPhi(ei.JJ->P4());
+    ei.h2jj_deltaPhi = ei.H2->P4().DeltaPhi(ei.JJ->P4());
+    ei.hhj1_deltaPhi = ei.HH->P4().DeltaPhi(ei.JJ_j1->P4());
+    ei.hhj2_deltaPhi = ei.HH->P4().DeltaPhi(ei.JJ_j2->P4());
+    ei.hhjj_deltaPhi = ei.HH->P4().DeltaPhi(ei.JJ->P4());
+    //Special variables: deltaEta between h1,h2,j1,j2,HH,JJ
+    ei.h1h2_deltaEta = abs( ei.H1->P4().Eta() - ei.H2->P4().Eta());
+    ei.h1j1_deltaEta = abs( ei.H1->P4().Eta() - ei.JJ_j1->P4().Eta());
+    ei.h1j2_deltaEta = abs( ei.H1->P4().Eta() - ei.JJ_j2->P4().Eta());
+    ei.h2j1_deltaEta = abs( ei.H2->P4().Eta() - ei.JJ_j1->P4().Eta());
+    ei.h2j2_deltaEta = abs( ei.H2->P4().Eta() - ei.JJ_j2->P4().Eta());
+    ei.h1jj_deltaEta = abs( ei.H1->P4().Eta() - ei.JJ->P4().Eta());
+    ei.h2jj_deltaEta = abs( ei.H2->P4().Eta() - ei.JJ->P4().Eta());
+    ei.hhj1_deltaEta = abs( ei.HH->P4().Eta() - ei.JJ_j1->P4().Eta());
+    ei.hhj2_deltaEta = abs( ei.HH->P4().Eta() - ei.JJ_j2->P4().Eta());
+    ei.hhjj_deltaEta = abs( ei.HH->P4().Eta() - ei.JJ->P4().Eta());
+    //Extra and special variables
+    ei.j1etaj2eta = ei.JJ_j1->P4().Eta()*ei.JJ_j2->P4().Eta();
+    ei.maxj1etaj2eta = max( abs(ei.JJ_j1->P4().Eta() ), abs(ei.JJ_j2->P4().Eta() ) );
+    ei.ptbalance = abs((ei.HH->P4() + ei.JJ->P4() ).Pt()) / (ei.HH->P4().Pt() + ei.JJ->P4().Pt());
+    float ptcalc = sqrt (pow((ei.HH->P4().Px() - (((ei.JJ_j1->P4()+ei.JJ_j2->P4()).Px())/ 2)),2) + pow((ei.HH->P4().Py() - (((ei.JJ_j1->P4()+ei.JJ_j2->P4()).Py())/ 2)),2));
+    if( (ei.JJ_j1->P4()-ei.JJ_j2->P4()).Pt() != 0){ei.ptcentrality  = ptcalc / (ei.JJ_j1->P4()-ei.JJ_j2->P4()).Pt();}
+    else{ei.ptcentrality  = -1;} 
+    if(ei.JJ_j1->P4().Eta() != ei.JJ_j2->P4().Eta()){ei.etacentrality = abs( ei.HH->P4().Eta() - ((ei.JJ_j1->P4().Eta()+ei.JJ_j2->P4().Eta())/2)) / abs(ei.JJ_j1->P4().Eta() - ei.JJ_j2->P4().Eta());}
+    else{ei.etacentrality = -1;} 
+    int nextra=0,nextrabarrel=0,nextraendcap=0;
+    for (uint ij = 0; ij < *(nat.nJet); ++ij)
+    {
+        if ( abs(get_property(Jet(ij, &nat), Jet_pt)) < 25) continue;
+        if ( abs(get_property(Jet(ij, &nat), Jet_eta)) < 5){nextra++;}
+        if ( abs(get_property(Jet(ij, &nat), Jet_eta)) < 2.4){nextrabarrel++;}
+        if ( abs(get_property(Jet(ij, &nat), Jet_eta)) > 2.4 && abs(get_property(Jet(ij, &nat), Jet_eta)) < 5){nextraendcap++;}
+    }
+    ei.nExtraJet = nextra;
+    ei.nExtraJetbarrel = nextrabarrel;
+    ei.nExtraJetendcap = nextraendcap;
+    return;
 }
 
-float OfflineProducerHelper::GetBDTScore(EventInfo& ei){
+float OfflineProducerHelper::GetBDTScore(EventInfo& ei)
+{
    TMVA::Reader *reader0 = new TMVA::Reader( "!Color:Silent" );
    float H1_eta_bdt=ei.H1->P4().Eta();
    float H2_eta_bdt=ei.H2->P4().Eta();
@@ -2108,7 +2101,7 @@ bool OfflineProducerHelper::checkTriggerObjectMatching(std::vector<std::string> 
 void OfflineProducerHelper::calculateTriggerMatching(const std::vector< std::unique_ptr<Candidate> > &candidateList, NanoAODTree& nat)
 {
     if(debug) std::cout<<"Matching triggers, Objects found:\n";
-    if(debug) std::cout<<"\t\tPt\t\tEta\t\tPhi\t\tBit\t\tMatchedJetId\n";
+    if(debug) std::cout<<"\t\tPt\t\tEta\t\tPhi\t\tObjId\t\tBit\t\tMatchedJetId\n";
 
     mapTriggerMatching_.clear();
 
@@ -2135,7 +2128,7 @@ void OfflineProducerHelper::calculateTriggerMatching(const std::vector< std::uni
                     if(!isNeeded) isNeeded=true;
                     if(newCandidate)
                     {
-                        if(debug) std::cout<< std::fixed << std::setprecision(3) <<"\t\t"<<triggerObjectPt<<"\t\t"<<triggerObjectEta<<"\t\t"<<triggerObjectPhi<<"\t\t"<<filterBit;
+                        if(debug ) std::cout<< std::fixed << std::setprecision(3) <<"\t\t"<<triggerObjectPt<<"\t\t"<<triggerObjectEta<<"\t\t"<<triggerObjectPhi<<"\t\t"<<triggerObjectId<<"\t\t"<<filterBit;
                         newCandidate=false;
                     }
                     else if(debug) std::cout<<" "<<filterBit;
@@ -2143,29 +2136,28 @@ void OfflineProducerHelper::calculateTriggerMatching(const std::vector< std::uni
                     float deltaR = 1024; //easy to do square root
                     int tmpCandidateIdx=-1;
 
-                    if(false)//(any_cast<string>(parameterList_->at("bbbbChoice")) == "None" && triggerObjectId == 1) //case of no selection and jets
+                    // if(any_cast<bool>(parameterList_->at("TriggerStudies")) && triggerObjectId == 1) 
+                    // {
+                    //     deltaR = 0;
+                    // }
+                    // else
+                    // {
+                    for(const auto & candidate : candidateList) //loop to find best Candidate matching DeltaR
                     {
-                        deltaR = 0.;
-                    }
-                    else
-                    {
-                        for(const auto & candidate : candidateList) //loop to find best Candidate matching DeltaR
+                        if(candidate->getCandidateTypeId() != triggerObjectId) continue; // Skip different particles
+
+                        float candidateEta    = candidate->P4().Eta ();
+                        float candidatePhi    = candidate->P4().Phi ();
+                        float tmpdeltaR       = (candidateEta - triggerObjectEta)*(candidateEta - triggerObjectEta) + deltaPhi(candidatePhi,triggerObjectPhi)*deltaPhi(candidatePhi,triggerObjectPhi);
+
+                        if(tmpdeltaR < deltaR)
                         {
-                            if(candidate->getCandidateTypeId() != triggerObjectId) continue; // Skip different particles
-
-                            float candidateEta    = candidate->P4().Eta ();
-                            float candidatePhi    = candidate->P4().Phi ();
-                            float tmpdeltaR       = (candidateEta - triggerObjectEta)*(candidateEta - triggerObjectEta) + deltaPhi(candidatePhi,triggerObjectPhi)*deltaPhi(candidatePhi,triggerObjectPhi);
-
-                            if(tmpdeltaR < deltaR)
-                            {
-                                deltaR = tmpdeltaR;
-                                tmpCandidateIdx=candidate->getIdx();
-
-                            }
+                            deltaR = tmpdeltaR;
+                            tmpCandidateIdx=candidate->getIdx();
 
                         }
                     }
+                    // }
 
                     if(sqrt(deltaR) < any_cast<float>(parameterList_->at("MaxDeltaR"))) // check if a matching was found
                     {

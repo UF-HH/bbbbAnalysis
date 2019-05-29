@@ -27,6 +27,8 @@
 #get_sample_PU_weights.exe --realPU weights/Collision16PileupHistogram.root --realPU_up weights/Collision16PileupHistogramUp.root --realPU_down weights/Collision16PileupHistogramDown.root --input inputFiles/2016ResonantDiHiggs4BDataSets/MCSignal_GluGluToRadionToHHTo4B_M-900_narrow_13TeV-madgraph.txt
 #get_sample_PU_weights.exe --realPU weights/Collision16PileupHistogram.root --realPU_up weights/Collision16PileupHistogramUp.root --realPU_down weights/Collision16PileupHistogramDown.root --input inputFiles/2016ResonantDiHiggs4BDataSets/MCSignal_RadionTohhTohbbhbb_narrow_M-1000_13TeV-madgraph.txt
 #get_sample_PU_weights.exe --realPU weights/Collision16PileupHistogram.root --realPU_up weights/Collision16PileupHistogramUp.root --realPU_down weights/Collision16PileupHistogramDown.root --input inputFiles/2016ResonantDiHiggs4BDataSets/MCSignal_RadionTohhTohbbhbb_narrow_M-1200_13TeV-madgraph.txt
+#get_sample_PU_weights.exe --realPU weights/Collision16PileupHistogram.root --realPU_up weights/Collision16PileupHistogramUp.root --realPU_down weights/Collision16PileupHistogramDown.root --input inputFiles/2016ResonantDiHiggs4BDataSets/MC_TT_TuneCUETP8M2T4_13TeV-powheg-pythia8.txt
+
 
 #2016 NON RESONANT SAMPLES
 get_sample_PU_weights.exe --realPU weights/Collision16PileupHistogram.root --realPU_up weights/Collision16PileupHistogramUp.root --realPU_down weights/Collision16PileupHistogramDown.root -output weights/2016/GluGluToHHTo4B_node_SM_13TeV-madgraph_PUweights.txt --input inputFiles/2016NonResonantDiHiggs4BDataSets/GluGluToHHTo4B_node_SM_13TeV-madgraph.txt                  

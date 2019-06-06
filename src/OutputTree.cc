@@ -35,22 +35,23 @@ using namespace std;
     OBJ ## _phi           = -999.; \
     OBJ ## _p4            . SetPxPyPzE(0,0,0,0);
 
-OutputTree::OutputTree (bool savetlv, string name, string title) :
+OutputTree::OutputTree (bool savetlv, string name, string title, bool initAllBranches) :
 savetlv_ (savetlv)
 {
     tree_ = std::unique_ptr<TTree> (new TTree(name.c_str(), title.c_str()));
     
-    init_branches();
+    init_branches(initAllBranches);
     clear();
 }
 
-void OutputTree::init_branches()
+void OutputTree::init_branches(bool initAllBranches)
 {
 
     //event information
     tree_->Branch("Run", &Run);
     tree_->Branch("LumiSec", &LumiSec);
     tree_->Branch("Event", &Event);
+    if(!initAllBranches) return;
     // reco b jets
     BRANCH_m_pt_ptRegressed_eta_phi_p4(H1_b1)
     tree_->Branch("H1_b1_deepCSV", &H1_b1_deepCSV);

@@ -354,7 +354,8 @@ int main(int argc, char** argv)
 
     }
 
-    parameterList.emplace("MaxDeltaR"     ,config.readFloatOpt("triggers::MaxDeltaR")     );        
+    parameterList.emplace("MaxDeltaR",                config.readFloatOpt("triggers::MaxDeltaR")     );     
+    parameterList.emplace("MatchWithSelectedObjects", config.readBoolOpt("triggers::MatchWithSelectedObjects")     ); 
     // parameterList.emplace("TriggerStudies",config.readBoolOpt ("triggers::TriggerStudies"));        
     parameterList.emplace("TriggerObjectAndMinNumberMap", triggerObjectAndMinNumberMap);
     nat.triggerReader().setTriggers(triggerVector);

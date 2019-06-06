@@ -41,7 +41,7 @@
 class OutputTree {
     
     public:
-        OutputTree (bool savetlv = false, std::string name = "bbbbTree", std::string title = "bbbbTree");
+        OutputTree (bool savetlv = false, std::string name = "bbbbTree", std::string title = "bbbbTree", bool initAllBranches = true);
         ~OutputTree(){};
         
         void clear(); // to be called to reset the var values
@@ -322,7 +322,7 @@ class OutputTree {
         float hhj2_deltaEta; 
         float hhjj_deltaEta;    
     private:
-        void init_branches();
+        void init_branches(bool initAllBranches);
         std::unique_ptr<TTree> tree_;
         const bool savetlv_;
         

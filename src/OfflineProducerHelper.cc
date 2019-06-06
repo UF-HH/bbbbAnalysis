@@ -1063,9 +1063,16 @@ void OfflineProducerHelper::bJets_PreselectionCut(std::vector<Jet> &jets)
     float minimumDeepCSVaccepted            = any_cast<float>(parameterList_->at("MinDeepCSV"          ));
     float maximumPtAccepted                 = any_cast<float>(parameterList_->at("MinPt"               ));
     float maximumAbsEtaCSVaccepted          = any_cast<float>(parameterList_->at("MaxAbsEta"           ));
-    if(any_cast<bool>(parameterList_->at("UseAntiTagOnOneBjet")))
+
+    if(parameterList_->find("bbbbChoice") != parameterList_->end())
     {
-        minimumDeepCSVaccepted = -1;
+        if(any_cast<string>(parameterList_->at("bbbbChoice")) == "HighestCSVandClosestToMh")
+        {
+            if(any_cast<bool>(parameterList_->at("UseAntiTagOnOneBjet")))
+            {
+                minimumDeepCSVaccepted = -1;
+            }
+        }
     }
 
     if(minimumDeepCSVaccepted<=0. && maximumPtAccepted<=0. && maximumAbsEtaCSVaccepted<=0.) return;
@@ -2131,28 +2138,28 @@ void OfflineProducerHelper::calculateTriggerMatching(const std::vector< std::uni
                     float deltaR = 1024; //easy to do square root
                     int tmpCandidateIdx=-1;
 
-                    // if(any_cast<bool>(parameterList_->at("TriggerStudies")) && triggerObjectId == 1) 
-                    // {
-                    //     deltaR = 0;
-                    // }
-                    // else
-                    // {
-                    for(const auto & candidate : candidateList) //loop to find best Candidate matching DeltaR
+                    if(any_cast<bool>(parameterList_->at("MatchWithSelectedObjects")) && triggerObjectId == 1) 
                     {
-                        if(candidate->getCandidateTypeId() != triggerObjectId) continue; // Skip different particles
-
-                        float candidateEta    = candidate->P4().Eta ();
-                        float candidatePhi    = candidate->P4().Phi ();
-                        float tmpdeltaR       = (candidateEta - triggerObjectEta)*(candidateEta - triggerObjectEta) + deltaPhi(candidatePhi,triggerObjectPhi)*deltaPhi(candidatePhi,triggerObjectPhi);
-
-                        if(tmpdeltaR < deltaR)
+                        deltaR = 0;
+                    }
+                    else
+                    {
+                        for(const auto & candidate : candidateList) //loop to find best Candidate matching DeltaR
                         {
-                            deltaR = tmpdeltaR;
-                            tmpCandidateIdx=candidate->getIdx();
+                            if(candidate->getCandidateTypeId() != triggerObjectId) continue; // Skip different particles
 
+                            float candidateEta    = candidate->P4().Eta ();
+                            float candidatePhi    = candidate->P4().Phi ();
+                            float tmpdeltaR       = (candidateEta - triggerObjectEta)*(candidateEta - triggerObjectEta) + deltaPhi(candidatePhi,triggerObjectPhi)*deltaPhi(candidatePhi,triggerObjectPhi);
+
+                            if(tmpdeltaR < deltaR)
+                            {
+                                deltaR = tmpdeltaR;
+                                tmpCandidateIdx=candidate->getIdx();
+
+                            }
                         }
                     }
-                    // }
 
                     if(sqrt(deltaR) < any_cast<float>(parameterList_->at("MaxDeltaR"))) // check if a matching was found
                     {

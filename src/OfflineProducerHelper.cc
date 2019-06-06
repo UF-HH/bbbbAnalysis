@@ -809,6 +809,17 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
 
             if(any_cast<string>(parameterList_->at("ObjectsForCut")) == "TriggerObjects")
             {
+                
+                std::vector<Jet> jetsForTriggerStudies;
+                if(any_cast<bool>(parameterList_->at("MatchWithSelectedObjects")))
+                {
+                    jetsForTriggerStudies = ordered_jets;
+                }
+                else
+                {
+                    jetsForTriggerStudies = jets.second;
+                }
+
                 for (uint muonIt = 0; muonIt < *(nat.nMuon); ++muonIt)
                 {
                     if(nat.Muon_pfRelIso04_all[muonIt]<0.1)
@@ -817,7 +828,7 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
                         bool matchingJetFound = false;
                         if(muonJetId >= 0)
                         {
-                            for(auto jet : ordered_jets)
+                            for(auto jet : jetsForTriggerStudies)
                             {
                                 if(jet.getIdx() == muonJetId)
                                 {
@@ -835,43 +846,36 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
                     }
                 }
 
-
                 // sort by deepCSV
-                stable_sort(ordered_jets.begin(), ordered_jets.end(), [](const Jet & a, const Jet & b) -> bool
+                stable_sort(jetsForTriggerStudies.begin(), jetsForTriggerStudies.end(), [](const Jet & a, const Jet & b) -> bool
                 {
                     return ( get_property(a, Jet_btagDeepB) > get_property(b, Jet_btagDeepB) );
                 });
 
-                ot.userFloat("ThirdJetDeepCSV") = get_property(ordered_jets[2],Jet_btagDeepB);
-                // std::cout << __PRETTY_FUNCTION__ << get_property(ordered_jets[0],Jet_btagDeepB) << " " << get_property(ordered_jets[1],Jet_btagDeepB) << " " << get_property(ordered_jets[2],Jet_btagDeepB) << " " << get_property(ordered_jets[3],Jet_btagDeepB) << " " << std::endl;
+                ot.userFloat("ThirdJetDeepCSV") = get_property(jetsForTriggerStudies[2],Jet_btagDeepB);
+                // std::cout << __PRETTY_FUNCTION__ << get_property(jetsForTriggerStudies[0],Jet_btagDeepB) << " " << get_property(jetsForTriggerStudies[1],Jet_btagDeepB) << " " << get_property(jetsForTriggerStudies[2],Jet_btagDeepB) << " " << get_property(jetsForTriggerStudies[3],Jet_btagDeepB) << " " << std::endl;
 
                 // order by CMVA
-                stable_sort(ordered_jets.begin(), ordered_jets.end(), [](const Jet & a, const Jet & b) -> bool
+                stable_sort(jetsForTriggerStudies.begin(), jetsForTriggerStudies.end(), [](const Jet & a, const Jet & b) -> bool
                 {
                     return ( get_property(a, Jet_btagCMVA) > get_property(b, Jet_btagCMVA) );
                 });
-                ot.userFloat("ForthJetCMVA") = get_property(ordered_jets[3],Jet_btagCMVA);
-                // std::cout << __PRETTY_FUNCTION__ << get_property(ordered_jets[0],Jet_btagCMVA) << " " << get_property(ordered_jets[1],Jet_btagCMVA) << " " << get_property(ordered_jets[2],Jet_btagCMVA) << " " << get_property(ordered_jets[3],Jet_btagCMVA) << " " << std::endl;
+                ot.userFloat("ForthJetCMVA") = get_property(jetsForTriggerStudies[3],Jet_btagCMVA);
+                // std::cout << __PRETTY_FUNCTION__ << get_property(jetsForTriggerStudies[0],Jet_btagCMVA) << " " << get_property(jetsForTriggerStudies[1],Jet_btagCMVA) << " " << get_property(jetsForTriggerStudies[2],Jet_btagCMVA) << " " << get_property(jetsForTriggerStudies[3],Jet_btagCMVA) << " " << std::endl;
 
                 //order by unregressed pt
-                stable_sort(ordered_jets.begin(), ordered_jets.end(), [](const Jet & a, const Jet & b) -> bool
+                stable_sort(jetsForTriggerStudies.begin(), jetsForTriggerStudies.end(), [](const Jet & a, const Jet & b) -> bool
                 {
                     return ( a.P4().Pt() > b.P4().Pt() );
                 });
 
-                // std::cout << __PRETTY_FUNCTION__ << ordered_jets[0].P4().Pt() << " " << ordered_jets[1].P4().Pt() << " " << ordered_jets[2].P4().Pt() << " " << ordered_jets[3].P4().Pt() << " " << std::endl;
-                ot.userFloat("FirstJetPt")         = ordered_jets[0].P4().Pt();
-                ot.userFloat("SecondJetPt")        = ordered_jets[1].P4().Pt();
-                ot.userFloat("ThirdJetPt")         = ordered_jets[2].P4().Pt();
-                ot.userFloat("ForthJetPt")         = ordered_jets[3].P4().Pt();
-                ot.userFloat("FourHighetJetPtSum") = ordered_jets[0].P4().Pt() + ordered_jets[1].P4().Pt() + ordered_jets[2].P4().Pt() + ordered_jets[3].P4().Pt();
+                // std::cout << __PRETTY_FUNCTION__ << jetsForTriggerStudies[0].P4().Pt() << " " << jetsForTriggerStudies[1].P4().Pt() << " " << jetsForTriggerStudies[2].P4().Pt() << " " << jetsForTriggerStudies[3].P4().Pt() << " " << std::endl;
+                ot.userFloat("FirstJetPt")         = jetsForTriggerStudies[0].P4().Pt();
+                ot.userFloat("SecondJetPt")        = jetsForTriggerStudies[1].P4().Pt();
+                ot.userFloat("ThirdJetPt")         = jetsForTriggerStudies[2].P4().Pt();
+                ot.userFloat("ForthJetPt")         = jetsForTriggerStudies[3].P4().Pt();
+                ot.userFloat("FourHighetJetPtSum") = jetsForTriggerStudies[0].P4().Pt() + jetsForTriggerStudies[1].P4().Pt() + jetsForTriggerStudies[2].P4().Pt() + jetsForTriggerStudies[3].P4().Pt();
             
-
-
-
-
-
-
             }
 
             calculateTriggerMatching(candidatesForTriggerMatching,nat);
@@ -2138,7 +2142,7 @@ void OfflineProducerHelper::calculateTriggerMatching(const std::vector< std::uni
                     float deltaR = 1024; //easy to do square root
                     int tmpCandidateIdx=-1;
 
-                    if(any_cast<bool>(parameterList_->at("MatchWithSelectedObjects")) && triggerObjectId == 1) 
+                    if(triggerObjectId == 1 && !any_cast<bool>(parameterList_->at("MatchWithSelectedObjects"))) 
                     {
                         deltaR = 0;
                     }

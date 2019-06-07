@@ -63,7 +63,9 @@ void OfflineProducerHelper::initializeObjectsForCuts(OutputTree &ot)
         ot.declareUserFloatBranch("HighestIsoMuonPt", -1.);
 
         ot.declareUserFloatBranch("ResolutionOnlineCaloJetPt", -999.);
+        ot.declareUserFloatBranch("OfflineJetPtForCaloResolution", -999.);
         ot.declareUserFloatBranch("ResolutionOnlinePFJetPt", -999.);
+        ot.declareUserFloatBranch("OfflineJetPtForPFResolution", -999.);
         ot.declareUserIntBranch("NumberOfJetsPassingPreselection", -1);
 
     }
@@ -2147,6 +2149,7 @@ void OfflineProducerHelper::calculateTriggerMatching(const std::vector< std::uni
 
                     float deltaR = 1024; //easy to do square root
                     float deltaPt = -999;
+                    float offlinePt = -999;
                     int tmpCandidateIdx=-1;
 
                     if(triggerObjectId == 1 && !any_cast<bool>(parameterList_->at("MatchWithSelectedObjects"))) 
@@ -2168,6 +2171,7 @@ void OfflineProducerHelper::calculateTriggerMatching(const std::vector< std::uni
                                 deltaR = tmpdeltaR;
                                 tmpCandidateIdx=candidate->getIdx();
                                 deltaPt = candidate->P4().Pt() - triggerObjectPt;
+                                offlinePt = candidate->P4().Pt();
 
                             }
                         }
@@ -2193,6 +2197,7 @@ void OfflineProducerHelper::calculateTriggerMatching(const std::vector< std::uni
                                     if(filterBit == 1 || filterBit == 4 || filterBit == 7)
                                     {
                                         ot.userFloat("ResolutionOnlineCaloJetPt") = deltaPt;
+                                        ot.userFloat("OfflineJetPtForCaloResolution") = offlinePt;
                                     }
                                 }
                                 if(ot.userFloat("ResolutionOnlinePFJetPt") == -999.)
@@ -2200,6 +2205,7 @@ void OfflineProducerHelper::calculateTriggerMatching(const std::vector< std::uni
                                     if(filterBit == 2 || filterBit == 5 || filterBit == 8)
                                     {
                                         ot.userFloat("ResolutionOnlinePFJetPt") = deltaPt;
+                                        ot.userFloat("OfflineJetPtForPFResolution") = offlinePt;
                                     }
                                 }
                             }

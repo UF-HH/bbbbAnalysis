@@ -103,7 +103,7 @@ namespace OfflineProducerHelper {
     // save trigger Objects for trigger studies
     void save_TriggerObjects (NanoAODTree& nat, OutputTree &ot, EventInfo& ei);
     // Calculate trigger map
-    void calculateTriggerMatching(const std::vector< std::unique_ptr<Candidate> > &candidateList, NanoAODTree& nat);
+    void calculateTriggerMatching(const std::vector< std::unique_ptr<Candidate> > &candidateList, NanoAODTree& nat, OutputTree &ot);
 
     //Initialize trigger Matching variables
     void initializeTriggerMatching(OutputTree &ot);

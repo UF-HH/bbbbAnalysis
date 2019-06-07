@@ -62,6 +62,10 @@ void OfflineProducerHelper::initializeObjectsForCuts(OutputTree &ot)
         ot.declareUserFloatBranch("ForthJetCMVA", -1.);
         ot.declareUserFloatBranch("HighestIsoMuonPt", -1.);
 
+        ot.declareUserFloatBranch("ResolutionOnlineCaloJetPt", -999.);
+        ot.declareUserFloatBranch("ResolutionOnlinePFJetPt", -999.);
+        ot.declareUserIntBranch("NumberOfJetsPassingPreselection", -1);
+
     }
 
     return;
@@ -876,9 +880,11 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
                 ot.userFloat("ForthJetPt")         = jetsForTriggerStudies[3].P4().Pt();
                 ot.userFloat("FourHighetJetPtSum") = jetsForTriggerStudies[0].P4().Pt() + jetsForTriggerStudies[1].P4().Pt() + jetsForTriggerStudies[2].P4().Pt() + jetsForTriggerStudies[3].P4().Pt();
             
+                ot.userInt("NumberOfJetsPassingPreselection") = jets.second.size();
+
             }
 
-            calculateTriggerMatching(candidatesForTriggerMatching,nat);
+            calculateTriggerMatching(candidatesForTriggerMatching,nat,ot);
 
         
             for(auto & triggerFired : listOfPassedTriggers)
@@ -2104,7 +2110,7 @@ bool OfflineProducerHelper::checkTriggerObjectMatching(std::vector<std::string> 
     return triggerMatched; // no matching trigger found among the fired ones
 }
 
-void OfflineProducerHelper::calculateTriggerMatching(const std::vector< std::unique_ptr<Candidate> > &candidateList, NanoAODTree& nat)
+void OfflineProducerHelper::calculateTriggerMatching(const std::vector< std::unique_ptr<Candidate> > &candidateList, NanoAODTree& nat, OutputTree &ot)
 {
     if(debug) std::cout<<"Matching triggers, Objects found:\n";
     if(debug) std::cout<<"\t\tPt\t\tEta\t\tPhi\t\tObjId\t\tBit\t\tMatchedJetId\n";
@@ -2140,6 +2146,7 @@ void OfflineProducerHelper::calculateTriggerMatching(const std::vector< std::uni
                     else if(debug) std::cout<<" "<<filterBit;
 
                     float deltaR = 1024; //easy to do square root
+                    float deltaPt = -999;
                     int tmpCandidateIdx=-1;
 
                     if(triggerObjectId == 1 && !any_cast<bool>(parameterList_->at("MatchWithSelectedObjects"))) 
@@ -2160,11 +2167,12 @@ void OfflineProducerHelper::calculateTriggerMatching(const std::vector< std::uni
                             {
                                 deltaR = tmpdeltaR;
                                 tmpCandidateIdx=candidate->getIdx();
+                                deltaPt = candidate->P4().Pt() - triggerObjectPt;
 
                             }
                         }
                     }
-
+        
                     if(sqrt(deltaR) < any_cast<float>(parameterList_->at("MaxDeltaR"))) // check if a matching was found
                     {
                         std::pair<int,int> particleAndFilter(triggerObjectId,filterBit);
@@ -2174,6 +2182,28 @@ void OfflineProducerHelper::calculateTriggerMatching(const std::vector< std::uni
                         }
                         ++mapTriggerMatching_[particleAndFilter];
                         candidateIdx=tmpCandidateIdx;
+
+                        //Plot fro online vs offline jet pt resolution
+                        if(any_cast<string>(parameterList_->at("ObjectsForCut")) == "TriggerObjects")
+                        {
+                            if(triggerObjectId == 1 && any_cast<bool>(parameterList_->at("MatchWithSelectedObjects")))
+                            {
+                                if(ot.userFloat("ResolutionOnlineCaloJetPt") == -999.)
+                                {
+                                    if(filterBit == 1 || filterBit == 4 || filterBit == 7)
+                                    {
+                                        ot.userFloat("ResolutionOnlineCaloJetPt") = deltaPt;
+                                    }
+                                }
+                                if(ot.userFloat("ResolutionOnlinePFJetPt") == -999.)
+                                {
+                                    if(filterBit == 2 || filterBit == 5 || filterBit == 8)
+                                    {
+                                        ot.userFloat("ResolutionOnlinePFJetPt") = deltaPt;
+                                    }
+                                }
+                            }
+                        } 
                     }
                 }
             }

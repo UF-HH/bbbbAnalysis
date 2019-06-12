@@ -828,7 +828,7 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
 
                 for (uint muonIt = 0; muonIt < *(nat.nMuon); ++muonIt)
                 {
-                    if(nat.Muon_pfRelIso04_all[muonIt]<0.1)
+                    if(nat.Muon_pfRelIso04_all[muonIt]<0.1 && nat.Muon_mediumId[muonIt])
                     {
                         int muonJetId = nat.Muon_jetIdx[muonIt];
                         bool matchingJetFound = false;

@@ -61,12 +61,17 @@ void OfflineProducerHelper::initializeObjectsForCuts(OutputTree &ot)
         ot.declareUserFloatBranch("ThirdJetDeepCSV", -1.);
         ot.declareUserFloatBranch("ForthJetCMVA", -1.);
         ot.declareUserFloatBranch("HighestIsoMuonPt", -1.);
+        ot.declareUserFloatBranch("HighestIsoElectronPt", -1.);
+        ot.declareUserIntBranch  ("MuonElectronChargeMultiplication", 0);
+        ot.declareUserFloatBranch("FirstPtOrderedJetDeepCSV", -1.);
+        ot.declareUserFloatBranch("SecondPtOrderedJetDeepCSV", -1.);
+        ot.declareUserIntBranch  ("FirstPtOrderedJetOnlineBtag", 0);
 
         ot.declareUserFloatBranch("ResolutionOnlineCaloJetPt", -999.);
         ot.declareUserFloatBranch("OfflineJetPtForCaloResolution", -999.);
         ot.declareUserFloatBranch("ResolutionOnlinePFJetPt", -999.);
         ot.declareUserFloatBranch("OfflineJetPtForPFResolution", -999.);
-        ot.declareUserIntBranch("NumberOfJetsPassingPreselection", -1);
+        ot.declareUserIntBranch  ("NumberOfJetsPassingPreselection", -1);
 
     }
 
@@ -807,14 +812,21 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
             if(debug) std::cout<< "Event " << *(nat.run) << " - " << *(nat.luminosityBlock) << " - " << *(nat.event) << std::endl;
 
             std::vector< std::unique_ptr<Candidate> > candidatesForTriggerMatching;
+
             for(auto jet : ordered_jets)
             {
                 candidatesForTriggerMatching.emplace_back(std::make_unique<Jet>(jet));
             }
-            // }
+            
+
 
             if(any_cast<string>(parameterList_->at("ObjectsForCut")) == "TriggerObjects")
             {
+                
+                stable_sort(candidatesForTriggerMatching.begin(), candidatesForTriggerMatching.end(), [](const std::unique_ptr<Candidate> & a, const std::unique_ptr<Candidate> & b)
+                {
+                    return ( a->P4().Pt() > b->P4().Pt() );
+                });
                 
                 std::vector<Jet> jetsForTriggerStudies;
                 if(any_cast<bool>(parameterList_->at("MatchWithSelectedObjects")))
@@ -846,7 +858,35 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
                         if(!matchingJetFound)
                         {
                             ot.userFloat("HighestIsoMuonPt") = nat.Muon_pt.At(muonIt);
+                            ot.userInt  ("MuonElectronChargeMultiplication") = nat.Muon_charge.At(muonIt);
                             candidatesForTriggerMatching.emplace_back(std::make_unique<Muon>(Muon(muonIt, &nat)));
+                            break;
+                        }
+                    }
+                }
+
+                for (uint electronIt = 0; electronIt < *(nat.nElectron); ++electronIt)
+                {
+                    if(nat.Electron_pfRelIso03_all[electronIt]<0.1 && abs(nat.Electron_eta[electronIt])<2.4 && nat.Electron_cutBased[electronIt] == 3)
+                    {
+
+                        int electronJetId = nat.Electron_jetIdx[electronIt];
+                        bool matchingJetFound = false;
+                        if(electronJetId >= 0)
+                        {
+                            for(auto jet : jetsForTriggerStudies)
+                            {
+                                if(jet.getIdx() == electronJetId)
+                                {
+                                    matchingJetFound = true;
+                                    break;  
+                                }
+                            } 
+                        }
+                        if(!matchingJetFound)
+                        {
+                            ot.userFloat("HighestIsoElectronPt") = nat.Electron_pt.At(electronIt);
+                            ot.userInt  ("MuonElectronChargeMultiplication") *= nat.Electron_charge.At(electronIt);
                             break;
                         }
                     }
@@ -882,6 +922,9 @@ bool OfflineProducerHelper::select_bbbb_jets(NanoAODTree& nat, EventInfo& ei, Ou
                 ot.userFloat("ForthJetPt")         = jetsForTriggerStudies[3].P4().Pt();
                 ot.userFloat("FourHighetJetPtSum") = jetsForTriggerStudies[0].P4().Pt() + jetsForTriggerStudies[1].P4().Pt() + jetsForTriggerStudies[2].P4().Pt() + jetsForTriggerStudies[3].P4().Pt();
             
+                ot.userFloat("FirstPtOrderedJetDeepCSV")  = get_property(jetsForTriggerStudies[0],Jet_btagDeepB);
+                ot.userFloat("SecondPtOrderedJetDeepCSV") = get_property(jetsForTriggerStudies[1],Jet_btagDeepB);
+
                 ot.userInt("NumberOfJetsPassingPreselection") = jets.second.size();
 
             }
@@ -2151,32 +2194,38 @@ void OfflineProducerHelper::calculateTriggerMatching(const std::vector< std::uni
                     float deltaPt = -999;
                     float offlinePt = -999;
                     int tmpCandidateIdx=-1;
+                    int tmpCandidateNumber=0;
+                    bool firstCandidadeMatched = false;
+                    float firstCandidadeMatchedDeltaR = deltaR; //easy to do square root
 
+                    for(const auto & candidate : candidateList) //loop to find best Candidate matching DeltaR
+                    {
+                        
+                        if(candidate->getCandidateTypeId() != triggerObjectId) continue; // Skip different particles
+
+                        float candidateEta    = candidate->P4().Eta ();
+                        float candidatePhi    = candidate->P4().Phi ();
+                        float tmpdeltaR       = (candidateEta - triggerObjectEta)*(candidateEta - triggerObjectEta) + deltaPhi(candidatePhi,triggerObjectPhi)*deltaPhi(candidatePhi,triggerObjectPhi);
+
+                        if(tmpdeltaR < deltaR)
+                        {
+                            if(tmpCandidateNumber == 0) firstCandidadeMatched = true;
+                            else firstCandidadeMatched = false;
+                            deltaR = tmpdeltaR;
+                            firstCandidadeMatchedDeltaR = tmpdeltaR;
+                            tmpCandidateIdx=candidate->getIdx();
+                            deltaPt = candidate->P4().Pt() - triggerObjectPt;
+                            offlinePt = candidate->P4().Pt();
+
+                        }
+
+                        ++tmpCandidateNumber;
+                    }
+        
                     if(triggerObjectId == 1 && !any_cast<bool>(parameterList_->at("MatchWithSelectedObjects"))) 
                     {
                         deltaR = 0;
                     }
-                    else
-                    {
-                        for(const auto & candidate : candidateList) //loop to find best Candidate matching DeltaR
-                        {
-                            if(candidate->getCandidateTypeId() != triggerObjectId) continue; // Skip different particles
-
-                            float candidateEta    = candidate->P4().Eta ();
-                            float candidatePhi    = candidate->P4().Phi ();
-                            float tmpdeltaR       = (candidateEta - triggerObjectEta)*(candidateEta - triggerObjectEta) + deltaPhi(candidatePhi,triggerObjectPhi)*deltaPhi(candidatePhi,triggerObjectPhi);
-
-                            if(tmpdeltaR < deltaR)
-                            {
-                                deltaR = tmpdeltaR;
-                                tmpCandidateIdx=candidate->getIdx();
-                                deltaPt = candidate->P4().Pt() - triggerObjectPt;
-                                offlinePt = candidate->P4().Pt();
-
-                            }
-                        }
-                    }
-        
                     if(sqrt(deltaR) < any_cast<float>(parameterList_->at("MaxDeltaR"))) // check if a matching was found
                     {
                         std::pair<int,int> particleAndFilter(triggerObjectId,filterBit);
@@ -2187,9 +2236,13 @@ void OfflineProducerHelper::calculateTriggerMatching(const std::vector< std::uni
                         ++mapTriggerMatching_[particleAndFilter];
                         candidateIdx=tmpCandidateIdx;
 
-                        //Plot fro online vs offline jet pt resolution
+                        //Plot for online vs offline jet pt resolution
                         if(any_cast<string>(parameterList_->at("ObjectsForCut")) == "TriggerObjects")
                         {
+                            if(triggerObjectId == 1 && firstCandidadeMatched && firstCandidadeMatchedDeltaR < any_cast<float>(parameterList_->at("MaxDeltaR"))  && filterBit == 0) //BTagged
+                            {
+                                ot.userInt("FirstPtOrderedJetOnlineBtag")++;
+                            }
                             if(triggerObjectId == 1 && any_cast<bool>(parameterList_->at("MatchWithSelectedObjects")))
                             {
                                 if(ot.userFloat("ResolutionOnlineCaloJetPt") == -999.)

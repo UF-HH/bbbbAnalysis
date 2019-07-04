@@ -72,18 +72,26 @@ void SkimUtils::fill_output_tree(OutputTree& ot, NanoAODTree& nat, EventInfo& ei
 {
 
     // set the variables for resonant analysis
-    ot.Run  = *ei.Run;
-    ot.LumiSec  = *ei.LumiSec;
-    ot.Event  = *ei.Event;
+    if(ei.Run) ot.Run  = *ei.Run;
+    if(ei.LumiSec) ot.LumiSec  = *ei.LumiSec;
+    if(ei.Event) ot.Event  = *ei.Event;
 
     COPY_OPTIONAL_m_pt_ptRegressed_eta_phi_p4(H1_b1)
     if (ei.H1_b1) ot.H1_b1_deepCSV = get_property(ei.H1_b1.get(),Jet_btagDeepB);   
+    if (ei.H1_b1) ot.H1_b1_jetId   = get_property(ei.H1_b1.get(),Jet_jetId); 
+    if (ei.H1_b1) ot.H1_b1_puId    = get_property(ei.H1_b1.get(),Jet_puId);
     COPY_OPTIONAL_m_pt_ptRegressed_eta_phi_p4(H1_b2)
     if (ei.H1_b2) ot.H1_b2_deepCSV = get_property(ei.H1_b2.get(),Jet_btagDeepB);
+    if (ei.H1_b2) ot.H1_b2_jetId   = get_property(ei.H1_b2.get(),Jet_jetId); 
+    if (ei.H1_b2) ot.H1_b2_puId    = get_property(ei.H1_b2.get(),Jet_puId);
     COPY_OPTIONAL_m_pt_ptRegressed_eta_phi_p4(H2_b1)
     if (ei.H2_b1) ot.H2_b1_deepCSV = get_property(ei.H2_b1.get(),Jet_btagDeepB);
+    if (ei.H2_b1) ot.H2_b1_jetId   = get_property(ei.H2_b1.get(),Jet_jetId); 
+    if (ei.H2_b1) ot.H2_b1_puId    = get_property(ei.H2_b1.get(),Jet_puId);
     COPY_OPTIONAL_m_pt_ptRegressed_eta_phi_p4(H2_b2)
     if (ei.H2_b2) ot.H2_b2_deepCSV = get_property(ei.H2_b2.get(),Jet_btagDeepB);
+    if (ei.H2_b2) ot.H2_b2_jetId   = get_property(ei.H2_b2.get(),Jet_jetId); 
+    if (ei.H2_b2) ot.H2_b2_puId    = get_property(ei.H2_b2.get(),Jet_puId);
 
     COPY_OPTIONAL_m_pt_eta_phi_p4(H1)
     if(ei.H1_bb_DeltaR) ot.H1_bb_DeltaR  = *ei.H1_bb_DeltaR;
@@ -93,11 +101,26 @@ void SkimUtils::fill_output_tree(OutputTree& ot, NanoAODTree& nat, EventInfo& ei
     if(ei.HH_2DdeltaM) ot.HH_2DdeltaM  = *ei.HH_2DdeltaM;
     if(ei.HH_m_kinFit) ot.HH_m_kinFit  = *ei.HH_m_kinFit;
  
+    //set the variables for TTEMU studies
+    COPY_OPTIONAL_m_pt_ptRegressed_eta_phi_p4(TT_b1)
+    if (ei.TT_b1) ot.TT_b1_deepCSV = get_property(ei.TT_b1.get(),Jet_btagDeepB);   
+    COPY_OPTIONAL_m_pt_ptRegressed_eta_phi_p4(TT_b2)
+    if (ei.TT_b2) ot.TT_b2_deepCSV = get_property(ei.TT_b2.get(),Jet_btagDeepB);
+    COPY_OPTIONAL_m_pt_eta_phi_p4(TT_e)
+    COPY_OPTIONAL_m_pt_eta_phi_p4(TT_mu)
+    if(ei.TT_m) ot.TT_m  = *ei.TT_m;            
+    if(ei.TT_nPV) ot.TT_nPV  = *ei.TT_nPV;
+    if(ei.TT_nPVgood) ot.TT_nPVgood  = *ei.TT_nPVgood;
+    if(ei.TT_nJet) ot.TT_nJet  = *ei.TT_nJet;    
     //set the variables for non-resonant analysis and studies
     if(ei.H1_b1_quarkID) ot.H1_b1_quarkID  = *ei.H1_b1_quarkID;
     if(ei.H1_b2_quarkID) ot.H1_b2_quarkID  = *ei.H1_b2_quarkID;
     if(ei.H2_b1_quarkID) ot.H2_b1_quarkID  = *ei.H2_b1_quarkID;
     if(ei.H2_b2_quarkID) ot.H2_b2_quarkID  = *ei.H2_b2_quarkID;
+    if(ei.H1_b1_rawpt) ot.H1_b1_rawpt = *ei.H1_b1_rawpt;
+    if(ei.H1_b2_rawpt) ot.H1_b2_rawpt = *ei.H1_b2_rawpt;
+    if(ei.H2_b1_rawpt) ot.H2_b1_rawpt = *ei.H2_b1_rawpt;
+    if(ei.H2_b2_rawpt) ot.H2_b2_rawpt = *ei.H2_b2_rawpt;
     if(ei.H1_b1_genJetIdx) ot.H1_b1_genJetIdx  = *ei.H1_b1_genJetIdx;
     if(ei.H1_b2_genJetIdx) ot.H1_b2_genJetIdx  = *ei.H1_b2_genJetIdx;
     if(ei.H2_b1_genJetIdx) ot.H2_b1_genJetIdx  = *ei.H2_b1_genJetIdx;
@@ -113,6 +136,9 @@ void SkimUtils::fill_output_tree(OutputTree& ot, NanoAODTree& nat, EventInfo& ei
     COPY_OPTIONAL_m_pt_ptRegressed_eta_phi_p4(HH_b1)
     if(ei.HH_b1)                ot.HH_b1_deepCSV = get_property(ei.HH_b1.get(),Jet_btagDeepB);
     if(ei.HH_b1)                ot.HH_b1_qgl = get_property(ei.HH_b1.get(),Jet_qgl);
+    if(ei.HH_b1) ot.HH_b1_jetId   = get_property(ei.HH_b1.get(),Jet_jetId); 
+    if(ei.HH_b1) ot.HH_b1_puId    = get_property(ei.HH_b1.get(),Jet_puId);
+    if(ei.HH_b1_rawpt) ot.HH_b1_rawpt   = *ei.HH_b1_rawpt;
     if(ei.HH_b1_quarkID)        ot.HH_b1_quarkID = *ei.HH_b1_quarkID;
     if(ei.HH_b1_genJetIdx)        ot.HH_b1_genJetIdx = *ei.HH_b1_genJetIdx;
     if(ei.HH_b1_partonFlavour)        ot.HH_b1_partonFlavour = *ei.HH_b1_partonFlavour;   
@@ -120,6 +146,9 @@ void SkimUtils::fill_output_tree(OutputTree& ot, NanoAODTree& nat, EventInfo& ei
     COPY_OPTIONAL_m_pt_ptRegressed_eta_phi_p4(HH_b2)
     if(ei.HH_b2)                ot.HH_b2_deepCSV = get_property(ei.HH_b2.get(),Jet_btagDeepB);
     if(ei.HH_b2)                ot.HH_b2_qgl = get_property(ei.HH_b2.get(),Jet_qgl);
+    if(ei.HH_b2) ot.HH_b2_jetId   = get_property(ei.HH_b2.get(),Jet_jetId); 
+    if(ei.HH_b2) ot.HH_b2_puId    = get_property(ei.HH_b2.get(),Jet_puId);
+    if(ei.HH_b2_rawpt) ot.HH_b2_rawpt   = *ei.HH_b2_rawpt;
     if(ei.HH_b2_quarkID)        ot.HH_b2_quarkID = *ei.HH_b2_quarkID;
     if(ei.HH_b2_genJetIdx)        ot.HH_b2_genJetIdx = *ei.HH_b2_genJetIdx;
     if(ei.HH_b2_partonFlavour)        ot.HH_b2_partonFlavour = *ei.HH_b2_partonFlavour; 
@@ -127,6 +156,9 @@ void SkimUtils::fill_output_tree(OutputTree& ot, NanoAODTree& nat, EventInfo& ei
     COPY_OPTIONAL_m_pt_ptRegressed_eta_phi_p4(HH_b3)
     if(ei.HH_b3)                ot.HH_b3_deepCSV = get_property(ei.HH_b3.get(),Jet_btagDeepB);
     if(ei.HH_b3)                ot.HH_b3_qgl = get_property(ei.HH_b3.get(),Jet_qgl);
+    if(ei.HH_b3) ot.HH_b3_jetId   = get_property(ei.HH_b3.get(),Jet_jetId); 
+    if(ei.HH_b3) ot.HH_b3_puId    = get_property(ei.HH_b3.get(),Jet_puId);
+    if(ei.HH_b3_rawpt) ot.HH_b3_rawpt   = *ei.HH_b3_rawpt;
     if(ei.HH_b3_quarkID)        ot.HH_b3_quarkID = *ei.HH_b3_quarkID;
     if(ei.HH_b3_genJetIdx)                ot.HH_b3_genJetIdx = *ei.HH_b3_genJetIdx;
     if(ei.HH_b3_partonFlavour)        ot.HH_b3_partonFlavour = *ei.HH_b3_partonFlavour;
@@ -134,6 +166,9 @@ void SkimUtils::fill_output_tree(OutputTree& ot, NanoAODTree& nat, EventInfo& ei
     COPY_OPTIONAL_m_pt_ptRegressed_eta_phi_p4(HH_b4)
     if(ei.HH_b4)                ot.HH_b4_deepCSV = get_property(ei.HH_b4.get(),Jet_btagDeepB);
     if(ei.HH_b4)                ot.HH_b4_qgl = get_property(ei.HH_b4.get(),Jet_qgl);
+    if(ei.HH_b4) ot.HH_b4_jetId   = get_property(ei.HH_b4.get(),Jet_jetId); 
+    if(ei.HH_b4) ot.HH_b4_puId    = get_property(ei.HH_b4.get(),Jet_puId);
+    if(ei.HH_b4_rawpt) ot.HH_b4_rawpt   = *ei.HH_b4_rawpt;
     if(ei.HH_b4_quarkID)        ot.HH_b4_quarkID = *ei.HH_b4_quarkID;
     if(ei.HH_b4_genJetIdx)                ot.HH_b4_genJetIdx = *ei.HH_b4_genJetIdx;    
     if(ei.HH_b4_partonFlavour)        ot.HH_b4_partonFlavour = *ei.HH_b4_partonFlavour;
@@ -141,18 +176,44 @@ void SkimUtils::fill_output_tree(OutputTree& ot, NanoAODTree& nat, EventInfo& ei
     COPY_OPTIONAL_m_pt_eta_phi_p4(JJ_j1)
     if(ei.JJ_j1)                ot.JJ_j1_deepCSV = get_property(ei.JJ_j1.get(),Jet_btagDeepB);
     if(ei.JJ_j1)                ot.JJ_j1_qgl = get_property(ei.JJ_j1.get(),Jet_qgl);
+    if(ei.JJ_j1) ot.JJ_j1_jetId   = get_property(ei.JJ_j1.get(),Jet_jetId); 
+    if(ei.JJ_j1) ot.JJ_j1_puId    = get_property(ei.JJ_j1.get(),Jet_puId);
+    if(ei.JJ_j1_rawpt) ot.JJ_j1_rawpt   = *ei.JJ_j1_rawpt;
     if(ei.JJ_j1_quarkID)        ot.JJ_j1_quarkID  = *ei.JJ_j1_quarkID;
     if(ei.JJ_j1_genJetIdx)                ot.JJ_j1_genJetIdx = *ei.JJ_j1_genJetIdx;
     if(ei.JJ_j1_partonFlavour)        ot.JJ_j1_partonFlavour = *ei.JJ_j1_partonFlavour;
     if(ei.JJ_j1_hadronFlavour)        ot.JJ_j1_hadronFlavour = *ei.JJ_j1_hadronFlavour;
+    if(ei.JJ_j1_location)        ot.JJ_j1_location = *ei.JJ_j1_location;
     COPY_OPTIONAL_m_pt_eta_phi_p4(JJ_j2)
     if(ei.JJ_j2)                ot.JJ_j2_deepCSV = get_property(ei.JJ_j2.get(),Jet_btagDeepB);
     if(ei.JJ_j2)                ot.JJ_j2_qgl = get_property(ei.JJ_j2.get(),Jet_qgl);
+    if(ei.JJ_j2) ot.JJ_j2_jetId   = get_property(ei.JJ_j2.get(),Jet_jetId); 
+    if(ei.JJ_j2) ot.JJ_j2_puId    = get_property(ei.JJ_j2.get(),Jet_puId);
+    if(ei.JJ_j2_rawpt) ot.JJ_j2_rawpt   = *ei.JJ_j2_rawpt;
     if(ei.JJ_j2_quarkID)        ot.JJ_j2_quarkID  = *ei.JJ_j2_quarkID;
     if(ei.JJ_j2_genJetIdx)                ot.JJ_j2_genJetIdx = *ei.JJ_j2_genJetIdx;      
     if(ei.JJ_j2_partonFlavour)        ot.JJ_j2_partonFlavour = *ei.JJ_j2_partonFlavour;
     if(ei.JJ_j2_hadronFlavour)        ot.JJ_j2_hadronFlavour = *ei.JJ_j2_hadronFlavour;
+    if(ei.JJ_j2_location)        ot.JJ_j2_location = *ei.JJ_j2_location;
     COPY_OPTIONAL_m_pt_eta_phi_p4(JJ)
+    COPY_OPTIONAL_m_pt_ptRegressed_eta_phi_p4(HH_btag_b1)
+    if(ei.HH_btag_b1)                ot.HH_btag_b1_deepCSV = get_property(ei.HH_btag_b1.get(),Jet_btagDeepB);
+    COPY_OPTIONAL_m_pt_ptRegressed_eta_phi_p4(HH_btag_b2)
+    if(ei.HH_btag_b2)                ot.HH_btag_b2_deepCSV = get_property(ei.HH_btag_b2.get(),Jet_btagDeepB);
+    COPY_OPTIONAL_m_pt_ptRegressed_eta_phi_p4(HH_btag_b3)
+    if(ei.HH_btag_b3)                ot.HH_btag_b3_deepCSV = get_property(ei.HH_btag_b3.get(),Jet_btagDeepB);
+    COPY_OPTIONAL_m_pt_ptRegressed_eta_phi_p4(HH_btag_b4)
+    if(ei.HH_btag_b4)                ot.HH_btag_b4_deepCSV = get_property(ei.HH_btag_b4.get(),Jet_btagDeepB);
+
+    COPY_OPTIONAL_m_pt_ptRegressed_eta_phi_p4(HH_btag_cmva_b1)
+    if(ei.HH_btag_cmva_b1)                ot.HH_btag_cmva_b1_cmva = get_property(ei.HH_btag_cmva_b1.get(),Jet_btagCMVA);
+    COPY_OPTIONAL_m_pt_ptRegressed_eta_phi_p4(HH_btag_cmva_b2)
+    if(ei.HH_btag_cmva_b2)                ot.HH_btag_cmva_b2_cmva = get_property(ei.HH_btag_cmva_b2.get(),Jet_btagCMVA);
+    COPY_OPTIONAL_m_pt_ptRegressed_eta_phi_p4(HH_btag_cmva_b3)
+    if(ei.HH_btag_cmva_b3)                ot.HH_btag_cmva_b3_cmva = get_property(ei.HH_btag_cmva_b3.get(),Jet_btagCMVA);
+    COPY_OPTIONAL_m_pt_ptRegressed_eta_phi_p4(HH_btag_cmva_b4)
+    if(ei.HH_btag_cmva_b4)                ot.HH_btag_cmva_b4_cmva = get_property(ei.HH_btag_cmva_b4.get(),Jet_btagCMVA);
+
     if( ei.b1b2_deltaR) ot.b1b2_deltaR = *ei.b1b2_deltaR; 
     if( ei.b1b3_deltaR) ot.b1b3_deltaR = *ei.b1b3_deltaR; 
     if( ei.b1b4_deltaR) ot.b1b4_deltaR = *ei.b1b4_deltaR; 
@@ -229,6 +290,7 @@ void SkimUtils::fill_output_tree(OutputTree& ot, NanoAODTree& nat, EventInfo& ei
     if( ei.hhj2_deltaEta) ot.hhj2_deltaEta = *ei.hhj2_deltaEta; 
     if( ei.hhjj_deltaEta) ot.hhjj_deltaEta = *ei.hhjj_deltaEta;
     if(ei.VBFEvent) ot.VBFEvent  = *ei.VBFEvent;
+    if(ei.VBFEventLocation) ot.VBFEventLocation  = *ei.VBFEventLocation;
     if(ei.H1_ukflag) ot.H1_ukflag  = *ei.H1_ukflag;
     if(ei.H2_ukflag) ot.H2_ukflag  = *ei.H2_ukflag;
     if(ei.H1_wpflag) ot.H1_wpflag  = *ei.H1_wpflag;
@@ -253,22 +315,30 @@ void SkimUtils::fill_output_tree(OutputTree& ot, NanoAODTree& nat, EventInfo& ei
     if(ei.VBFGeneratedDeltaEta) ot.VBFGeneratedDeltaEta  = *ei.VBFGeneratedDeltaEta;
     if(ei.VBFGeneratedEtaSign) ot.VBFGeneratedEtaSign  = *ei.VBFGeneratedEtaSign;
 
-    if(ei.nExtraJet) ot.nExtraJet = *ei.nExtraJet;
+    if(ei.nJet) ot.nJet = *ei.nJet;
+    if(ei.nPVgood) ot.nPVgood  = *ei.nPVgood;
     if(ei.NVBFCandidates) ot.NVBFCandidates = *ei.NVBFCandidates;  
-    if(ei.nExtraJetbarrel) ot.nExtraJetbarrel = *ei.nExtraJetbarrel;
-    if(ei.nExtraJetendcap) ot.nExtraJetendcap = *ei.nExtraJetendcap;
+    if(ei.nJetbarrel) ot.nJetbarrel = *ei.nJetbarrel;
+    if(ei.nJetendcap) ot.nJetendcap = *ei.nJetendcap;
+    if(ei.nJethf) ot.nJethf = *ei.nJethf;
     if(ei.maxj1etaj2eta) ot.maxj1etaj2eta = *ei.maxj1etaj2eta;
     if(ei.j1etaj2eta) ot.j1etaj2eta = *ei.j1etaj2eta;
-    
-    if(ei.ptbalance) ot.ptbalance = *ei.ptbalance;
-    if(ei.ptcentrality) ot.ptcentrality = *ei.ptcentrality;
-    if(ei.etacentrality) ot.etacentrality = *ei.etacentrality;
-    if(ei.BDT) ot.BDT = *ei.BDT;
-    if(ei.DNN) ot.DNN = *ei.DNN;
+    if(ei.BDT1) ot.BDT1 = *ei.BDT1;
+    if(ei.BDT2) ot.BDT2 = *ei.BDT2;
+    if(ei.BDT3) ot.BDT3 = *ei.BDT3;
     if(ei.ExtraVBFJetDecision) ot.ExtraVBFJetDecision = *ei.ExtraVBFJetDecision;
     if(ei.ExtraVBFJetPt) ot.ExtraVBFJetPt = *ei.ExtraVBFJetPt;
     if(ei.ExtraVBFJetEta) ot.ExtraVBFJetEta = *ei.ExtraVBFJetEta;
-
+    if(ei.costh_H1_cm   ) ot.costh_H1_cm   = *ei.costh_H1_cm   ;       
+    if(ei.costh_H2_cm   ) ot.costh_H2_cm   = *ei.costh_H2_cm   ;   
+    if(ei.costh_HH_cm   ) ot.costh_HH_cm   = *ei.costh_HH_cm   ;   
+    if(ei.costh_JJ_cm   ) ot.costh_JJ_cm   = *ei.costh_JJ_cm   ;   
+    if(ei.costh_HH_b1_cm) ot.costh_HH_b1_cm= *ei.costh_HH_b1_cm;    
+    if(ei.costh_HH_b2_cm) ot.costh_HH_b2_cm= *ei.costh_HH_b2_cm;
+    if(ei.costh_HH_b3_cm) ot.costh_HH_b3_cm= *ei.costh_HH_b3_cm;    
+    if(ei.costh_HH_b4_cm) ot.costh_HH_b4_cm= *ei.costh_HH_b4_cm;
+    if(ei.costh_JJ_j1_cm) ot.costh_JJ_j1_cm= *ei.costh_JJ_j1_cm;    
+    if(ei.costh_JJ_j2_cm) ot.costh_JJ_j2_cm= *ei.costh_JJ_j2_cm;
     COPY_OPTIONAL_m_pt_eta_phi_p4(H1rand)
     COPY_OPTIONAL_m_pt_eta_phi_p4(H2rand)
     if(ei.H1_bb_deltaR) ot.H1_bb_deltaR= *ei.H1_bb_deltaR;
@@ -297,7 +367,7 @@ void SkimUtils::fill_output_tree(OutputTree& ot, NanoAODTree& nat, EventInfo& ei
     COPY_OPTIONAL_m_pt_eta_phi_p4(gen_H2_b1)
     if(ei.gen_H2_b1_matchedflag) ot.gen_H2_b1_matchedflag  = *ei.gen_H2_b1_matchedflag;
     COPY_OPTIONAL_m_pt_eta_phi_p4(gen_H2_b2)
-    if(ei.gen_H2_b2_matchedflag) ot.gen_H2_b2_matchedflag  = *ei.gen_H2_b2_matchedflag;
+    if(ei.gen_H2_b2_matchedflag) ot.gen_H2_b2_matchedflag = *ei.gen_H2_b2_matchedflag;
     COPY_OPTIONAL_m_pt_eta_phi_p4(gen_q1_in)
     COPY_OPTIONAL_m_pt_eta_phi_p4(gen_q2_in)
     COPY_OPTIONAL_m_pt_eta_phi_p4(gen_q1_out)

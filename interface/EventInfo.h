@@ -14,6 +14,8 @@
 
 #include "CompositeCandidate.h"
 #include "Jet.h"
+#include "Muon.h"
+#include "Electron.h"
 #include "GenPart.h"
 
 struct EventInfo{
@@ -105,6 +107,10 @@ struct EventInfo{
     boost::optional<int> H1_b2_genJetIdx;
     boost::optional<int> H2_b1_genJetIdx;
     boost::optional<int> H2_b2_genJetIdx;   
+    boost::optional<float> H1_b1_rawpt;
+    boost::optional<float> H1_b2_rawpt;
+    boost::optional<float> H2_b1_rawpt;
+    boost::optional<float> H2_b2_rawpt;  
     boost::optional<int> H1_b1_partonFlavour;
     boost::optional<int> H1_b2_partonFlavour;
     boost::optional<int> H2_b1_partonFlavour;
@@ -118,34 +124,50 @@ struct EventInfo{
     boost::optional<int> JJ_j1_genJetIdx;
     boost::optional<int> JJ_j1_partonFlavour;
     boost::optional<int> JJ_j1_hadronFlavour;    
-    boost::optional<int> JJ_j1_qgl;       
+    boost::optional<float> JJ_j1_qgl;       
+    boost::optional<float> JJ_j1_rawpt; 
+    boost::optional<int> JJ_j1_location; 
     boost::optional<Jet> JJ_j2;   
     boost::optional<int> JJ_j2_quarkID;
     boost::optional<int> JJ_j2_genJetIdx;
-    boost::optional<int> JJ_j2_qgl;
+    boost::optional<float> JJ_j2_qgl;
+    boost::optional<float> JJ_j2_rawpt;
     boost::optional<int> JJ_j2_partonFlavour;
     boost::optional<int> JJ_j2_hadronFlavour;    
+    boost::optional<int> JJ_j2_location;
     boost::optional<Jet> HH_b1;
     boost::optional<int> HH_b1_quarkID;    
     boost::optional<int> HH_b1_genJetIdx;
     boost::optional<int> HH_b1_partonFlavour; 
-    boost::optional<int> HH_b1_hadronFlavour;        
+    boost::optional<int> HH_b1_hadronFlavour; 
+    boost::optional<float> HH_b1_rawpt;       
     boost::optional<Jet> HH_b2;   
     boost::optional<int> HH_b2_quarkID;   
     boost::optional<int> HH_b2_genJetIdx;
     boost::optional<int> HH_b2_partonFlavour;
     boost::optional<int> HH_b2_hadronFlavour;    
+    boost::optional<float> HH_b2_rawpt; 
     boost::optional<Jet> HH_b3;
     boost::optional<int> HH_b3_quarkID;        
     boost::optional<int> HH_b3_genJetIdx;
     boost::optional<int> HH_b3_partonFlavour;
     boost::optional<int> HH_b3_hadronFlavour;        
+    boost::optional<float> HH_b3_rawpt; 
     boost::optional<Jet> HH_b4;
     boost::optional<int> HH_b4_quarkID;
     boost::optional<int> HH_b4_genJetIdx;      
     boost::optional<int> HH_b4_partonFlavour;
     boost::optional<int> HH_b4_hadronFlavour;
+    boost::optional<float> HH_b4_rawpt; 
     boost::optional<CompositeCandidate> JJ;
+    boost::optional<Jet> HH_btag_b1;
+    boost::optional<Jet> HH_btag_b2;
+    boost::optional<Jet> HH_btag_b3;
+    boost::optional<Jet> HH_btag_b4;    
+    boost::optional<Jet> HH_btag_cmva_b1;
+    boost::optional<Jet> HH_btag_cmva_b2;
+    boost::optional<Jet> HH_btag_cmva_b3;
+    boost::optional<Jet> HH_btag_cmva_b4; 
     boost::optional<float> b1b2_deltaR; 
     boost::optional<float> b1b3_deltaR; 
     boost::optional<float> b1b4_deltaR; 
@@ -221,6 +243,16 @@ struct EventInfo{
     boost::optional<float> hhj1_deltaEta; 
     boost::optional<float> hhj2_deltaEta; 
     boost::optional<float> hhjj_deltaEta; 
+    boost::optional<float> costh_H1_cm   ;
+    boost::optional<float> costh_H2_cm   ;
+    boost::optional<float> costh_HH_cm   ;
+    boost::optional<float> costh_JJ_cm   ;
+    boost::optional<float> costh_HH_b1_cm;
+    boost::optional<float> costh_HH_b2_cm;
+    boost::optional<float> costh_HH_b3_cm;
+    boost::optional<float> costh_HH_b4_cm;
+    boost::optional<float> costh_JJ_j1_cm;
+    boost::optional<float> costh_JJ_j2_cm;
     boost::optional<int> NVBFCandidates;
     boost::optional<int> VBFMatchedCandidatesEtaSign;
     boost::optional<float> VBFMatchedCandidatesDeltaEta;
@@ -228,16 +260,14 @@ struct EventInfo{
     boost::optional<int> VBFSelectedEtaSign;
     boost::optional<float> VBFGeneratedDeltaEta;
     boost::optional<int> VBFGeneratedEtaSign;
-    boost::optional<int> nExtraJet;
-    boost::optional<int> nExtraJetbarrel;
-    boost::optional<int> nExtraJetendcap;
-    boost::optional<float> ptbalance;
-    boost::optional<float> ptcentrality;
-    boost::optional<float> etacentrality;
+    boost::optional<int> nJet;
+    boost::optional<int> nJetbarrel;
+    boost::optional<int> nJetendcap;
+    boost::optional<int> nJethf;
     boost::optional<float> j1etaj2eta;
     boost::optional<float> maxj1etaj2eta;    
     boost::optional<int> VBFEvent;
-    boost::optional<float> DNN;
+    boost::optional<int> VBFEventLocation;
     boost::optional<int> ExtraVBFJetDecision;
     boost::optional<float> ExtraVBFJetPt;
     boost::optional<float> ExtraVBFJetEta;   
@@ -266,7 +296,20 @@ struct EventInfo{
     boost::optional<int> HHJJ_quality;
     boost::optional<int> NPartonsMatchedToJets;
     boost::optional<int> NVBFCandidateswithVBFMatch;
-    boost::optional<float> BDT;   
+    boost::optional<float> BDT1;
+    boost::optional<float> BDT2;
+    boost::optional<float> BDT3;
+    boost::optional<int> nPVgood;   
+    //TTEMU Events
+    boost::optional<Jet> TT_b1;
+    boost::optional<Jet> TT_b2;
+    boost::optional<Electron> TT_e;
+    boost::optional<Muon> TT_mu;     
+    boost::optional<float> TT_m;
+    boost::optional<int> TT_nPV;
+    boost::optional<int> TT_nPVgood;
+    boost::optional<int> TT_nJet;        
+
 };
 
 #endif

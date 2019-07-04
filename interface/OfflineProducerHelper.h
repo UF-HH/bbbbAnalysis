@@ -157,7 +157,8 @@ namespace OfflineProducerHelper {
     BTagCalibrationReader *btagCalibrationReader_bJets_;
     //functions fo apply preselection cuts:
     void bJets_PreselectionCut(std::vector<Jet> &jets);
-    std::vector<Jet> bjJets_PreselectionCut(NanoAODTree& nat, EventInfo& ei,std::vector<Jet> jets);
+    std::vector<Jet> bjJets_PreselectionCut(NanoAODTree& nat, EventInfo& ei, OutputTree &ot, std::vector<Jet> jets);
+    std::vector<Jet> bjJets_2016_PreselectionCut(NanoAODTree& nat, EventInfo& ei, OutputTree &ot, std::vector<Jet> jets);
     std::vector<int> QuarkToJetMatcher(const std::vector<GenPart> quarks,const std::vector<Jet> jets);
     std::vector<int> AddGenMatchingInfo(NanoAODTree& nat, EventInfo& ei, std::vector<Jet> jets);
     std::vector<Jet> OppositeEtaJetPair(std::vector<Jet> jjets);
@@ -168,6 +169,11 @@ namespace OfflineProducerHelper {
     // functions that act on the EventInfo
     bool select_bbbb_jets (NanoAODTree& nat, EventInfo& ei, OutputTree &ot, std::vector<std::string> listOfPassedTriggers);
     bool select_bbbbjj_jets (NanoAODTree& nat, EventInfo& ei, OutputTree &ot);
+    //functions for TTEMU studies
+    bool select_bbemu(NanoAODTree& nat, EventInfo& ei, OutputTree &ot);
+    std::vector<Jet> bbJets_PreselectionCut(std::vector<Jet> &jets);
+    std::vector<std::tuple <Electron,Muon>> emu_PreselectionCut(NanoAODTree& nat, EventInfo& ei, OutputTree &ot);
+    std::vector<std::tuple <Electron,Muon>> OppositeChargeEMUPair(std::vector<Electron> Electrons, std::vector<Muon> Muons, float mass); 
     // bbbbSelectionStrategy strategy_;
     // functions to pair a preselected set of four jets. They all shuffle the input set of jets and return them as (H1_b1, H1_b2, H2_b1, H2_b2)
     //
@@ -179,15 +185,20 @@ namespace OfflineProducerHelper {
     std::vector<Jet> bbbb_jets_idxs_MostBackToBack(const std::vector<Jet> *presel_jets);
     //pair by ordering the jets by CSV and then finding the compination closer to targetmH for both candidates
     std::vector<Jet> bbbb_jets_idxs_HighestCSVandClosestToMh(const std::vector<Jet> *presel_jets);
+    //A la ATLAS
+    std::vector<Jet> bbbb_jets_idxs_BothClosestToDiagonal(const std::vector<Jet> *presel_jets);
+    // A la 2016 paper
+    std::vector<Jet> bbbb_jets_idxs_MinMassDifference(const std::vector<Jet> *presel_jets);
 
     //Additional kinematic variables
+    void CalculateBtagScaleFactor(const std::vector<Jet> presel_bjets,NanoAODTree& nat,OutputTree &ot);
     void AddVBFCategoryVariables(NanoAODTree& nat, EventInfo& ei,std::vector<Jet> ordered_jets);
-    void AddGGFCategoryVariables(NanoAODTree& nat, EventInfo& ei,std::vector<Jet> ordered_jets);    
-    void VBFCandidatesStudies(NanoAODTree& nat, EventInfo& ei, std::vector<Jet> vbfjets);
-    void VBFCandidatesStudies2(NanoAODTree& nat, EventInfo& ei,std::vector<Jet> vbfjets,std::vector<Jet> vbfjets2);
+    void AddInclusiveCategoryVariables(NanoAODTree& nat, EventInfo& ei,std::vector<Jet> ordered_jets);    
     float MindRToAJet(const GenPart quark,const std::vector<Jet> jets);
     float MindRToAGenJet(const GenPart quark,const std::vector<GenJet> jets);
-    float GetBDTScore(EventInfo& ei);
+    float GetBDT1Score(EventInfo& ei, std::string weights);//GGFHHKiller
+    float GetBDT2Score(EventInfo& ei, std::string weights);//VBFQCDKiller
+    float GetBDT3Score(EventInfo& ei, std::string weights);//GGFQCDHHKiller
     float GetDNNScore(EventInfo& ei);
     float GenJetToPartonPt(const GenPart quark,const std::vector<GenJet> jets);
 

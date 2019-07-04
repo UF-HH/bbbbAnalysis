@@ -277,11 +277,12 @@ class SampleHistColl:
         self.extratextfont = 52     # for the "preliminary"
         self.extratextsize = 0.76 * self.cmstextsize # for the "preliminary"
         self.cmstextinframe = True
+        self.selectiontextsize = 18
 
         self.lowerpadbottommargin = 0.35
 
-        self.ratioymin = 0.6
-        self.ratioymax = 1.4
+        self.ratioymin = 0
+        self.ratioymax = 2
         self.sbymin = 0
         self.sbymax = 5
 
@@ -290,7 +291,8 @@ class SampleHistColl:
         self.lumiformat = '{:.1f}'
         self.chan = None    ## e.g. 'bb XX'
         self.ispreliminary = False
-
+        self.selection = None    ## e.g. 'bb XX'
+        self.region = None    ## e.g. 'bb XX'
         ## titles and plot properties
         # self.xtitle = 'xtitle'
         # self.ytitle = 'ytitle'
@@ -361,6 +363,7 @@ class SampleHistColl:
             legymax = self.legcoords[3]
         self.legend = ROOT.TLegend (legxmin, legymin, legxmax, legymax)
         self.legend.SetFillStyle(0)
+        self.legend.SetNColumns(2)
         self.legend.SetBorderSize(0)
         self.legend.SetTextFont(self.textfont)
         self.legend.SetTextSize(self.legtextsize)
@@ -379,7 +382,7 @@ class SampleHistColl:
             self.legend.AddEntry(his, self.bkgs[sh].getTitle(), "f")
 
         if hasattr(self, 'stackErrorHist'):
-            self.legend.AddEntry (self.stackErrorHist, "Bkg. uncertainty", "f")
+            self.legend.AddEntry (self.stackErrorHist, "Bkg. unc.", "f")
 
         if self.plotSig:
             for name in reversed(self.sigsToPlot):
@@ -796,6 +799,59 @@ class SampleHistColl:
             chBox2.SetTextColor(ROOT.kBlack)
             chBox2.SetTextAlign(13)
             # self.extratexts['chan2'] = chBox2
+        ## selection_
+        if self.selection:
+            # xposch = xpos + 0.14 if self.ispreliminary else xpos + 0.11 ## shift left for more space if not preliminary
+            # xposch = xpos + 0.19 if self.ispreliminary else xpos + 0.11 ## shift left for more space if not preliminary
+            xposch = xpos
+            # if not self.cmstextinframe:
+            #     xposch = xpos
+            # yposch = ypos if self.cmstextinframe else 0.94
+            yposch = ypos if not self.cmstextinframe - 0.007 else ypos - 0.065
+            # chBox = ROOT.TLatex  (xposch, yposch - 0.007, self.chan)
+            chBox = ROOT.TLatex  (xposch, yposch-0.05, self.selection)
+            # chBox = ROOT.TLatex  (xposch, yposch - 0.069+ 0.025 - 0.007, self.chan)
+            chBox.SetNDC()
+            # chBox.SetTextSize(self.cmstextsize+18)
+            chBox.SetTextSize(self.selectiontextsize)
+            chBox.SetTextFont(self.textfont)
+            chBox.SetTextColor(ROOT.kBlack)
+            chBox.SetTextAlign(13)
+            self.extratexts['selection'] = chBox
+            chBox2 = ROOT.TLatex  (xposch, yposch - 0.069+ 0.025 - 0.007, "selection")
+            chBox2.SetNDC()
+            # chBox2.SetTextSize(self.cmstextsize+18)
+            chBox2.SetTextSize(self.selectiontextsize)
+            chBox2.SetTextFont(self.textfont)
+            chBox2.SetTextColor(ROOT.kBlack)
+            chBox2.SetTextAlign(13)
+            # self.extratexts['chan2'] = chBox2
+        ## 
+        if self.region:
+            # xposch = xpos + 0.14 if self.ispreliminary else xpos + 0.11 ## shift left for more space if not preliminary
+            # xposch = xpos + 0.19 if self.ispreliminary else xpos + 0.11 ## shift left for more space if not preliminary
+            xposch = xpos
+            # if not self.cmstextinframe:
+            #     xposch = xpos
+            # yposch = ypos if self.cmstextinframe else 0.94
+            yposch = ypos if not self.cmstextinframe - 0.007 else ypos - 0.065
+            # chBox = ROOT.TLatex  (xposch, yposch - 0.007, self.chan)
+            chBox = ROOT.TLatex  (xposch, yposch-0.1, self.region)
+            # chBox = ROOT.TLatex  (xposch, yposch - 0.069+ 0.025 - 0.007, self.chan)
+            chBox.SetNDC()
+            # chBox.SetTextSize(self.cmstextsize+18)
+            chBox.SetTextSize(self.selectiontextsize)
+            chBox.SetTextFont(self.textfont)
+            chBox.SetTextColor(ROOT.kBlack)
+            chBox.SetTextAlign(13)
+            self.extratexts['region'] = chBox
+            chBox2 = ROOT.TLatex  (xposch, yposch - 0.069+ 0.025 - 0.007, "region")
+            chBox2.SetNDC()
+            # chBox2.SetTextSize(self.cmstextsize+18)
+            chBox2.SetTextSize(self.selectiontextsize)
+            chBox2.SetTextFont(self.textfont)
+            chBox2.SetTextColor(ROOT.kBlack)
+            chBox2.SetTextAlign(13)
 
     def makeErrorHisto(self):
         """ creates a shaded histo for syst error.

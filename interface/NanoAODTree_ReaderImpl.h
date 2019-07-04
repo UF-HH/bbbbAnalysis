@@ -406,6 +406,7 @@ class NanoAODTree_ReaderImpl {
         NanoReaderValue<Float_t>   PV_chi2                              {fReader, "PV_chi2"};
         NanoReaderValue<Float_t>   PV_score                             {fReader, "PV_score"};
         NanoReaderValue<Int_t>     PV_npvs                              {fReader, "PV_npvs"};
+        NanoReaderValue<Int_t>     PV_npvsGood                          {fReader, "PV_npvsGood"};
         
         NanoReaderValue<UInt_t>    nSV                                  {fReader, "nSV"};
         NanoReaderArray<Float_t>   SV_dlen                              {fReader, "SV_dlen"};

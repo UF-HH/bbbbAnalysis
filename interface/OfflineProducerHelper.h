@@ -24,6 +24,7 @@
 #include "Jet.h"
 #include "GenJet.h"
 #include "SkimEffCounter.h"
+#include "BDTEval.h"
 
 #include <array>
 #include <utility>
@@ -57,6 +58,62 @@ namespace OfflineProducerHelper {
     std::map<std::string, float> branchesAffectedByJetEnergyVariations_;
     float sampleCrossSection_;
 
+    // -------------------------------------------------------------------------------
+    // helpers for the BDT evaluation
+    std::vector<std::string> float_varlist_BDT1 = {
+        "abs_H1_eta:=abs(H1_eta)",
+        "abs_H2_eta:=abs(H2_eta)",
+        "H1_pt",
+        "H2_pt",
+        "JJ_j1_pt",
+        "JJ_j2_pt",
+        "abs_JJ_eta:=abs(JJ_eta)",
+        "h1h2_deltaEta",
+        "h1j1_deltaR",
+        "h1j2_deltaR",
+        "h2j1_deltaR",
+        "h2j2_deltaR",
+        "abs_j1etaj2eta:=abs(j1etaj2eta)",
+        "abs_costh_HH_b1_cm:=abs(costh_HH_b1_cm)",
+        "abs_costh_HH_b2_cm:=abs(costh_HH_b2_cm)",
+    };
+
+    std::vector<std::string> float_varlist_BDT2 = {
+        "HH_b3_pt",
+        "HH_b4_pt",
+        "JJ_j1_qgl",
+        "JJ_j2_qgl",
+        "H1_m",
+        "H2_m",
+        "H1_bb_deltaR",
+        "H2_bb_deltaR",
+        "JJ_m",
+        "j1j2_deltaEta",
+        "abs_costh_JJ_j1_cm:=abs(costh_JJ_j1_cm)",
+    };
+
+    std::vector<std::string> float_varlist_BDT3 = {
+        "HH_b3_pt",
+        "HH_b4_pt",
+        "abs_HH_b3_eta:=abs(HH_b3_eta)",
+        "abs_HH_b4_eta:=abs(HH_b4_eta)",
+        "H1_m",
+        "H2_m",
+        "H1_bb_deltaR",
+        "H2_bb_deltaR",
+        "H1_bb_deltaPhi",
+        "H2_bb_deltaPhi",
+        "abs_costh_HH_b1_cm:=abs(costh_HH_b1_cm)",
+        "abs_costh_HH_b2_cm:=abs(costh_HH_b2_cm)",
+    };
+
+    BDTEval eval_BDT1 (float_varlist_BDT1, std::vector<std::string>(0) );
+    BDTEval eval_BDT2 (float_varlist_BDT2, std::vector<std::string>(0) );
+    BDTEval eval_BDT3 (float_varlist_BDT3, std::vector<std::string>(0) );
+    void init_BDT_evals();
+
+    // -------------------------------------------------------------------------------
+
     // All maps need to be cleared otherwise we have a glibc detected
     void clean() {
         weightMap_.clear();
@@ -67,6 +124,13 @@ namespace OfflineProducerHelper {
         branchesAffectedByJetEnergyVariations_.clear();
         mapTriggerMatching_.clear();
         mapTriggerObjectIdAndFilter_.clear();
+
+        eval_BDT1.floatVarsMap.clear();
+        eval_BDT2.floatVarsMap.clear();
+        eval_BDT3.floatVarsMap.clear();
+        eval_BDT1.intVarsMap.clear();
+        eval_BDT2.intVarsMap.clear();
+        eval_BDT3.intVarsMap.clear();
     }
 
     void initializeOfflineProducerHelper(const std::map<std::string, std::any> *parameterList) {
@@ -92,6 +156,8 @@ namespace OfflineProducerHelper {
         // branchesAffectedByJetEnergyVariations_["HH_pt"] = -1.;
         branchesAffectedByJetEnergyVariations_["HH_m_kinFit"] = -1.;
         branchesAffectedByJetEnergyVariations_["HH_2DdeltaM"] = 999.;
+
+        init_BDT_evals();
     }
 
     void initializeObjectsForCuts(OutputTree &ot);
@@ -196,9 +262,12 @@ namespace OfflineProducerHelper {
     void AddInclusiveCategoryVariables(NanoAODTree& nat, EventInfo& ei,std::vector<Jet> ordered_jets);    
     float MindRToAJet(const GenPart quark,const std::vector<Jet> jets);
     float MindRToAGenJet(const GenPart quark,const std::vector<GenJet> jets);
-    float GetBDT1Score(EventInfo& ei, std::string weights);//GGFHHKiller
-    float GetBDT2Score(EventInfo& ei, std::string weights);//VBFQCDKiller
-    float GetBDT3Score(EventInfo& ei, std::string weights);//GGFQCDHHKiller
+    // float GetBDT1Score(EventInfo& ei, std::string weights);//GGFHHKiller
+    // float GetBDT2Score(EventInfo& ei, std::string weights);//VBFQCDKiller
+    // float GetBDT3Score(EventInfo& ei, std::string weights);//GGFQCDHHKiller
+    float GetBDT1Score(EventInfo& ei);//GGFHHKiller
+    float GetBDT2Score(EventInfo& ei);//VBFQCDKiller
+    float GetBDT3Score(EventInfo& ei);//GGFQCDHHKiller
     float GetDNNScore(EventInfo& ei);
     float GenJetToPartonPt(const GenPart quark,const std::vector<GenJet> jets);
 

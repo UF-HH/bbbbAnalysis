@@ -31,15 +31,17 @@ void OfflineProducerHelper::initializeObjectsForCuts(OutputTree &ot){
 
     if(objectsForCut == "None")
         save_objects_for_cut = [](NanoAODTree& nat, OutputTree &ot, EventInfo& ei) -> void {return;};
+
     else if(objectsForCut == "WandZleptonDecays"){
-        save_objects_for_cut = &save_WAndZLeptonDecays;
+        save_objects_for_cut = [=](NanoAODTree& nat, OutputTree &ot, EventInfo& ei) -> void {this -> save_WAndZLeptonDecays(nat, ot, ei);};
         ot.declareUserFloatBranch("LeadingIsolatedZElectron_pt", -1.);
         ot.declareUserFloatBranch("LeadingIsolatedZMuon_pt", -1.);
         ot.declareUserFloatBranch("LeadingIsolatedWElectron_pt", -1.);
         ot.declareUserFloatBranch("LeadingIsolatedWMuon_pt", -1.);
     }
+
     else if(objectsForCut == "TriggerObjects"){
-        save_objects_for_cut = &save_TriggerObjects;
+        save_objects_for_cut = [=] (NanoAODTree& nat, OutputTree &ot, EventInfo& ei) -> void {this -> save_TriggerObjects(nat, ot, ei);};
         for(const auto & triggerObject : any_cast< std::map< std::pair<int,int>, std::string > >(parameterList_->at("TriggerObjectsForStudies")))
         {
             if(mapTriggerObjectIdAndFilter_.find(triggerObject.first.first) == mapTriggerObjectIdAndFilter_.end())
@@ -290,11 +292,11 @@ void OfflineProducerHelper::initializeObjectsForEventWeight(OutputTree &ot, Skim
 
     if(weightsMethod == "None")
     {
-        calculateEventWeight = [](NanoAODTree& nat, OutputTree &ot, SkimEffCounter &ec) -> float {return sampleCrossSection_;};
+        calculateEventWeight = [=](NanoAODTree& nat, OutputTree &ot, SkimEffCounter &ec) -> float {return sampleCrossSection_;};
     }
     else if(weightsMethod == "StandardWeight")
     {
-        calculateEventWeight = &calculateEventWeight_AllWeights;
+        calculateEventWeight = [=] (NanoAODTree& nat, OutputTree &ot, SkimEffCounter &ec) -> float {return this -> calculateEventWeight_AllWeights (nat, ot, ec);};
         std::string branchName;
 
         int weightBin = ec.binMap_.size();
@@ -524,12 +526,13 @@ void OfflineProducerHelper::initializeJERsmearingAndVariations(OutputTree &ot)
 
     if (JERmethod == "None")
     {
-        JERsmearing = [](NanoAODTree& nat, std::vector<Jet> &jets) -> std::vector<Jet>  {return jets;};
+        JERsmearing   = [](NanoAODTree& nat, std::vector<Jet> &jets) -> std::vector<Jet>  {return jets;};
         JERvariations = [](NanoAODTree& nat, std::vector<Jet> &jets, std::vector< std::pair<std::string, std::vector<Jet> > > &jetEnergyVariationsMap) -> void {return;};
     }
     else if (JERmethod == "StandardJER")
     {
-        JERsmearing = &standardJERsmearing;
+        // JERsmearing = &OfflineProducerHelper::standardJERsmearing;
+        JERsmearing = [=] (NanoAODTree& nat, std::vector<Jet> &jets) -> std::vector<Jet> {return this -> standardJERsmearing(nat, jets);};
         jetResolutionScaleFactor_ = new JME::JetResolutionScaleFactor(any_cast<string>(parameterList_->at("JERScaleFactorFile")));
         jetResolution_            = new JME::JetResolution           (any_cast<string>(parameterList_->at("JERResolutionFile" )));
         gRandom->SetSeed(any_cast<int>(parameterList_->at("RandomGeneratorSeed")));
@@ -539,7 +542,9 @@ void OfflineProducerHelper::initializeJERsmearingAndVariations(OutputTree &ot)
         {
             mapJERNamesAndVariation_["JER_up"  ] = Variation::UP  ;
             mapJERNamesAndVariation_["JER_down"] = Variation::DOWN;
-            JERvariations = &standardJERVariations;
+            // JERvariations = &OfflineProducerHelper::standardJERVariations;
+            JERvariations = [=] (NanoAODTree& nat, std::vector<Jet> &jets, std::vector< std::pair<std::string, std::vector<Jet> > > &jetEnergyVariationsMap)
+                {this -> standardJERVariations (nat, jets, jetEnergyVariationsMap);};
             for(const auto & branch : branchesAffectedByJetEnergyVariations_)
             {
                 for(const auto & variation : mapJERNamesAndVariation_)
@@ -639,7 +644,9 @@ void OfflineProducerHelper::initializeJECVariations(OutputTree &ot)
     }
     else if (JECmethod == "StandardJEC")
     {
-        JECvariations = &standardJECVariations;
+        // JECvariations = &OfflineProducerHelper::standardJECVariations;
+        JECvariations = [=] (NanoAODTree& nat, std::vector<Jet> &jets, std::vector< std::pair<std::string, std::vector<Jet> > > &jetEnergyVariationsMap) -> void
+            {this -> standardJECVariations(nat, jets, jetEnergyVariationsMap);};
         mapJECNamesAndVariation_["_up"]   = true  ;
         mapJECNamesAndVariation_["_down"] = false ;
 
@@ -2150,13 +2157,13 @@ void OfflineProducerHelper::init_BDT_evals()
         // some fallback?
 
     std::cout << "[INFO] ... initialising BDT evals" << std::endl;
-    std::cout << "  - BDT 1 . method : " << method << ", weight_file : " << weights_BDT1 << std::endl;
-    std::cout << "  - BDT 2 . method : " << method << ", weight_file : " << weights_BDT2 << std::endl;
-    std::cout << "  - BDT 3 . method : " << method << ", weight_file : " << weights_BDT3 << std::endl;
+    std::cout << "   - BDT 1 . method : " << method << ", weight_file : " << weights_BDT1 << std::endl;
+    std::cout << "   - BDT 2 . method : " << method << ", weight_file : " << weights_BDT2 << std::endl;
+    std::cout << "   - BDT 3 . method : " << method << ", weight_file : " << weights_BDT3 << std::endl;
 
-    eval_BDT1.init(method, weights_BDT1);
-    eval_BDT2.init(method, weights_BDT2);
-    eval_BDT3.init(method, weights_BDT3);
+    eval_BDT1_->init(method, weights_BDT1);
+    eval_BDT2_->init(method, weights_BDT2);
+    eval_BDT3_->init(method, weights_BDT3);
 }
 
 
@@ -2216,23 +2223,23 @@ float OfflineProducerHelper::GetBDT1Score(EventInfo& ei){
         float abs_costh_HH_b1_cm_bdt          = abs(ei.costh_HH_b1_cm.get());
         float abs_costh_HH_b2_cm_bdt          = abs(ei.costh_HH_b2_cm.get());
 
-        eval_BDT1.floatVarsMap["abs_H1_eta:=abs(H1_eta)"]                  = abs_H1_eta_bdt;
-        eval_BDT1.floatVarsMap["abs_H2_eta:=abs(H2_eta)"]                  = abs_H2_eta_bdt;
-        eval_BDT1.floatVarsMap["H1_pt"]                                    = H1_pt_bdt;
-        eval_BDT1.floatVarsMap["H2_pt"]                                    = H2_pt_bdt;
-        eval_BDT1.floatVarsMap["JJ_j1_pt"]                                 = JJ_j1_pt_bdt;
-        eval_BDT1.floatVarsMap["JJ_j2_pt"]                                 = JJ_j2_pt_bdt;
-        eval_BDT1.floatVarsMap["abs_JJ_eta:=abs(JJ_eta)"]                  = abs_JJ_eta_bdt;
-        eval_BDT1.floatVarsMap["h1h2_deltaEta"]                            = h1h2_deltaEta_bdt;
-        eval_BDT1.floatVarsMap["h1j1_deltaR"]                              = h1j1_deltaR_bdt;
-        eval_BDT1.floatVarsMap["h1j2_deltaR"]                              = h1j2_deltaR_bdt;
-        eval_BDT1.floatVarsMap["h2j1_deltaR"]                              = h2j1_deltaR_bdt;
-        eval_BDT1.floatVarsMap["h2j2_deltaR"]                              = h2j2_deltaR_bdt;
-        eval_BDT1.floatVarsMap["abs_j1etaj2eta:=abs(j1etaj2eta)"]          = abs_j1etaj2eta_bdt;
-        eval_BDT1.floatVarsMap["abs_costh_HH_b1_cm:=abs(costh_HH_b1_cm)"]  = abs_costh_HH_b1_cm_bdt;
-        eval_BDT1.floatVarsMap["abs_costh_HH_b2_cm:=abs(costh_HH_b2_cm)"]  = abs_costh_HH_b2_cm_bdt;
+        eval_BDT1_ -> floatVarsMap["abs_H1_eta:=abs(H1_eta)"]                  = abs_H1_eta_bdt;
+        eval_BDT1_ -> floatVarsMap["abs_H2_eta:=abs(H2_eta)"]                  = abs_H2_eta_bdt;
+        eval_BDT1_ -> floatVarsMap["H1_pt"]                                    = H1_pt_bdt;
+        eval_BDT1_ -> floatVarsMap["H2_pt"]                                    = H2_pt_bdt;
+        eval_BDT1_ -> floatVarsMap["JJ_j1_pt"]                                 = JJ_j1_pt_bdt;
+        eval_BDT1_ -> floatVarsMap["JJ_j2_pt"]                                 = JJ_j2_pt_bdt;
+        eval_BDT1_ -> floatVarsMap["abs_JJ_eta:=abs(JJ_eta)"]                  = abs_JJ_eta_bdt;
+        eval_BDT1_ -> floatVarsMap["h1h2_deltaEta"]                            = h1h2_deltaEta_bdt;
+        eval_BDT1_ -> floatVarsMap["h1j1_deltaR"]                              = h1j1_deltaR_bdt;
+        eval_BDT1_ -> floatVarsMap["h1j2_deltaR"]                              = h1j2_deltaR_bdt;
+        eval_BDT1_ -> floatVarsMap["h2j1_deltaR"]                              = h2j1_deltaR_bdt;
+        eval_BDT1_ -> floatVarsMap["h2j2_deltaR"]                              = h2j2_deltaR_bdt;
+        eval_BDT1_ -> floatVarsMap["abs_j1etaj2eta:=abs(j1etaj2eta)"]          = abs_j1etaj2eta_bdt;
+        eval_BDT1_ -> floatVarsMap["abs_costh_HH_b1_cm:=abs(costh_HH_b1_cm)"]  = abs_costh_HH_b1_cm_bdt;
+        eval_BDT1_ -> floatVarsMap["abs_costh_HH_b2_cm:=abs(costh_HH_b2_cm)"]  = abs_costh_HH_b2_cm_bdt;
 
-        return eval_BDT1.eval();
+        return eval_BDT1_ -> eval();
 }
 
 float OfflineProducerHelper::GetBDT2Score(EventInfo& ei){
@@ -2277,19 +2284,19 @@ float OfflineProducerHelper::GetBDT2Score(EventInfo& ei){
        float j1j2_deltaEta_bdt          = ei.j1j2_deltaEta.get();
        float abs_costh_JJ_j1_cm_bdt     = abs(ei.costh_JJ_j1_cm.get());
 
-        eval_BDT2.floatVarsMap["HH_b3_pt"]                                = HH_b3_pt_bdt;
-        eval_BDT2.floatVarsMap["HH_b4_pt"]                                = HH_b4_pt_bdt;
-        eval_BDT2.floatVarsMap["JJ_j1_qgl"]                               = JJ_j1_qgl_bdt;
-        eval_BDT2.floatVarsMap["JJ_j2_qgl"]                               = JJ_j2_qgl_bdt;
-        eval_BDT2.floatVarsMap["H1_m"]                                    = H1_m_bdt;
-        eval_BDT2.floatVarsMap["H2_m"]                                    = H2_m_bdt;
-        eval_BDT2.floatVarsMap["H1_bb_deltaR"]                            = H1_bb_deltaR_bdt;
-        eval_BDT2.floatVarsMap["H2_bb_deltaR"]                            = H2_bb_deltaR_bdt;
-        eval_BDT2.floatVarsMap["JJ_m"]                                    = JJ_m_bdt;
-        eval_BDT2.floatVarsMap["j1j2_deltaEta"]                           = j1j2_deltaEta_bdt;
-        eval_BDT2.floatVarsMap["abs_costh_JJ_j1_cm:=abs(costh_JJ_j1_cm)"] = abs_costh_JJ_j1_cm_bdt;
+        eval_BDT2_ -> floatVarsMap["HH_b3_pt"]                                = HH_b3_pt_bdt;
+        eval_BDT2_ -> floatVarsMap["HH_b4_pt"]                                = HH_b4_pt_bdt;
+        eval_BDT2_ -> floatVarsMap["JJ_j1_qgl"]                               = JJ_j1_qgl_bdt;
+        eval_BDT2_ -> floatVarsMap["JJ_j2_qgl"]                               = JJ_j2_qgl_bdt;
+        eval_BDT2_ -> floatVarsMap["H1_m"]                                    = H1_m_bdt;
+        eval_BDT2_ -> floatVarsMap["H2_m"]                                    = H2_m_bdt;
+        eval_BDT2_ -> floatVarsMap["H1_bb_deltaR"]                            = H1_bb_deltaR_bdt;
+        eval_BDT2_ -> floatVarsMap["H2_bb_deltaR"]                            = H2_bb_deltaR_bdt;
+        eval_BDT2_ -> floatVarsMap["JJ_m"]                                    = JJ_m_bdt;
+        eval_BDT2_ -> floatVarsMap["j1j2_deltaEta"]                           = j1j2_deltaEta_bdt;
+        eval_BDT2_ -> floatVarsMap["abs_costh_JJ_j1_cm:=abs(costh_JJ_j1_cm)"] = abs_costh_JJ_j1_cm_bdt;
 
-        return eval_BDT2.eval();
+        return eval_BDT2_ -> eval();
 }
 
 float OfflineProducerHelper::GetBDT3Score(EventInfo& ei){
@@ -2337,20 +2344,20 @@ float OfflineProducerHelper::GetBDT3Score(EventInfo& ei){
         float abs_costh_HH_b1_cm_bdt =  abs(ei.costh_HH_b1_cm.get());
         float abs_costh_HH_b2_cm_bdt =  abs(ei.costh_HH_b2_cm.get());
 
-        eval_BDT3.floatVarsMap["HH_b3_pt"]                                 = HH_b3_pt_bdt;
-        eval_BDT3.floatVarsMap["HH_b4_pt"]                                 = HH_b4_pt_bdt;
-        eval_BDT3.floatVarsMap["abs_HH_b3_eta:=abs(HH_b3_eta)"]            = abs_HH_b3_eta_bdt;
-        eval_BDT3.floatVarsMap["abs_HH_b4_eta:=abs(HH_b4_eta)"]            = abs_HH_b4_eta_bdt;
-        eval_BDT3.floatVarsMap["H1_m"]                                     = H1_m_bdt;
-        eval_BDT3.floatVarsMap["H2_m"]                                     = H2_m_bdt;
-        eval_BDT3.floatVarsMap["H1_bb_deltaR"]                             = H1_bb_deltaR_bdt;
-        eval_BDT3.floatVarsMap["H2_bb_deltaR"]                             = H2_bb_deltaR_bdt;
-        eval_BDT3.floatVarsMap["H1_bb_deltaPhi"]                           = H1_bb_deltaPhi_bdt;
-        eval_BDT3.floatVarsMap["H2_bb_deltaPhi"]                           = H2_bb_deltaPhi_bdt;
-        eval_BDT3.floatVarsMap["abs_costh_HH_b1_cm:=abs(costh_HH_b1_cm)"]  = abs_costh_HH_b1_cm_bdt;
-        eval_BDT3.floatVarsMap["abs_costh_HH_b2_cm:=abs(costh_HH_b2_cm)"]  = abs_costh_HH_b2_cm_bdt;
+        eval_BDT3_ -> floatVarsMap["HH_b3_pt"]                                 = HH_b3_pt_bdt;
+        eval_BDT3_ -> floatVarsMap["HH_b4_pt"]                                 = HH_b4_pt_bdt;
+        eval_BDT3_ -> floatVarsMap["abs_HH_b3_eta:=abs(HH_b3_eta)"]            = abs_HH_b3_eta_bdt;
+        eval_BDT3_ -> floatVarsMap["abs_HH_b4_eta:=abs(HH_b4_eta)"]            = abs_HH_b4_eta_bdt;
+        eval_BDT3_ -> floatVarsMap["H1_m"]                                     = H1_m_bdt;
+        eval_BDT3_ -> floatVarsMap["H2_m"]                                     = H2_m_bdt;
+        eval_BDT3_ -> floatVarsMap["H1_bb_deltaR"]                             = H1_bb_deltaR_bdt;
+        eval_BDT3_ -> floatVarsMap["H2_bb_deltaR"]                             = H2_bb_deltaR_bdt;
+        eval_BDT3_ -> floatVarsMap["H1_bb_deltaPhi"]                           = H1_bb_deltaPhi_bdt;
+        eval_BDT3_ -> floatVarsMap["H2_bb_deltaPhi"]                           = H2_bb_deltaPhi_bdt;
+        eval_BDT3_ -> floatVarsMap["abs_costh_HH_b1_cm:=abs(costh_HH_b1_cm)"]  = abs_costh_HH_b1_cm_bdt;
+        eval_BDT3_ -> floatVarsMap["abs_costh_HH_b2_cm:=abs(costh_HH_b2_cm)"]  = abs_costh_HH_b2_cm_bdt;
 
-        return eval_BDT3.eval();
+        return eval_BDT3_ -> eval();
 }
 
 std::vector<Jet> OfflineProducerHelper::bjJets_PreselectionCut(NanoAODTree& nat, EventInfo& ei,OutputTree &ot,std::vector<Jet> jets)

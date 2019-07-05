@@ -20,7 +20,7 @@ namespace po = boost::program_options;
 namespace su = SkimUtils;
 
 #include "OfflineProducerHelper.h"
-namespace oph = OfflineProducerHelper;
+// namespace oph = OfflineProducerHelper;
 
 #include "OutputTree.h"
 #include "SkimEffCounter.h"
@@ -253,7 +253,10 @@ int main(int argc, char** argv)
 
     }
 
-    oph::initializeOfflineProducerHelper(&parameterList);
+    OfflineProducerHelper oph;
+
+    // oph::initializeOfflineProducerHelper(&parameterList);
+    oph.initializeOfflineProducerHelper(&parameterList);
 
     ////////////////////////////////////////////////////////////////////////
     // Prepare event loop
@@ -298,14 +301,14 @@ int main(int argc, char** argv)
 
     SkimEffCounter ec;
 
-    oph::initializeObjectsForCuts(ot);
+    oph.initializeObjectsForCuts(ot);
 
     if(!is_data)
     {
-        oph::initializeJERsmearingAndVariations(ot);
-        oph::initializeJECVariations(ot);
-        oph::initializeObjectsForEventWeight(ot,ec,opts["puWeight"].as<string>(),xs);
-        oph::initializeObjectsBJetForScaleFactors(ot);
+        oph.initializeJERsmearingAndVariations(ot);
+        oph.initializeJECVariations(ot);
+        oph.initializeObjectsForEventWeight(ot,ec,opts["puWeight"].as<string>(),xs);
+        oph.initializeObjectsBJetForScaleFactors(ot);
     }
 
     jsonLumiFilter jlf;
@@ -341,7 +344,7 @@ int main(int argc, char** argv)
         EventInfo ei;
         
         double weight = 1.;
-        if(!is_data) weight = oph::calculateEventWeight(nat, ot, ec);
+        if(!is_data) weight = oph.calculateEventWeight(nat, ot, ec);
 
         //cout<<"The weight = "<<weight<<endl;
         ec.updateProcessed(weight);
@@ -351,9 +354,9 @@ int main(int argc, char** argv)
         ec.updateTriggered(weight);
 
         if (is_VBF_sig){
-            oph::select_gen_HH(nat, ei);
-            oph::select_gen_bb_bb(nat, ei);            
-            bool got_gen_VBF = oph::select_gen_VBF_partons(nat, ei);
+            oph.select_gen_HH(nat, ei);
+            oph.select_gen_bb_bb(nat, ei);            
+            bool got_gen_VBF = oph.select_gen_VBF_partons(nat, ei);
             if (!got_gen_VBF){
                 cout << "Failed on iEv = " << iEv << " evt num = " << *(nat.event) << " run = " << *(nat.run) << endl;
                 continue;
@@ -361,16 +364,16 @@ int main(int argc, char** argv)
         }
 
         
-        if (!oph::select_bbbbjj_jets(nat, ei, ot)) continue; 
+        if (!oph.select_bbbbjj_jets(nat, ei, ot)) continue; 
         if(!is_data){ot.userFloat("XS")=xs;}
-        oph::save_objects_for_cut(nat, ot,ei);
+        oph.save_objects_for_cut(nat, ot,ei);
 
         ec.updateSelected(weight);
         su::fill_output_tree(ot, nat, ei);
 
     }
 
-    oph::clean();
+    oph.clean();
 
     outputFile.cd();
     ot.write();

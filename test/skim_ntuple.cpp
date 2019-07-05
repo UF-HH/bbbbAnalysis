@@ -454,7 +454,7 @@ int main(int argc, char** argv)
 
     }
 
-    oph.clean();
+    // oph.clean();
 
     outputFile.cd();
     ot.write();

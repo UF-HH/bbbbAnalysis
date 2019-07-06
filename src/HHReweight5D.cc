@@ -18,6 +18,8 @@ HHReweight5D::HHReweight5D(std::string coeffFile, const TH2* hInput, bool useAbs
 
     // clone the input histogram
     TH2* cloneH = (TH2*) hInput->Clone("h_input");
+    cloneH->SetDirectory(0);
+
     if (!CheckConsistency(cloneH, h_A_vec_.at(0).get()))
     {
         cerr << " ** Error : the input histogram to HHReweight is not compatible with the reweight file, did you use the correct binning?" << endl;
@@ -42,7 +44,6 @@ HHReweight5D::~HHReweight5D()
 double HHReweight5D::getWeight(double kl, double kt, double c2, double cg, double c2g, double mhh, double cth)
 {
     if (useAbsEta_) cth = TMath::Abs(cth);
-
     pair<int,int> bins = find2DBin(h_input_.get(), mhh, cth);
     double denom = h_input_->GetBinContent(bins.first, bins.second);
     if (denom == 0)
@@ -102,13 +103,16 @@ void HHReweight5D::readInputFile(std::string coeffFile)
     {
       string name = "h_A" + std::to_string(ic);
       h_A_vec_.at(ic) = std::make_shared<TH2D> (name.c_str(), name.c_str(), nbins_mHH, binning_mHH, nbins_cth, binning_cth );
+      h_A_vec_.at(ic)->SetDirectory(0);
     }
 
     h_SM_    = std::make_shared<TH2D> ("h_SM", "h_SM",       nbins_mHH, binning_mHH, nbins_cth, binning_cth );
     h_sumv1_ = std::make_shared<TH2D> ("h_sumv1", "h_sumv1", nbins_mHH, binning_mHH, nbins_cth, binning_cth );
 
-    if (DEBUG) cout << " -- Histograms done" << endl;
+    h_SM_ ->SetDirectory(0);
+    h_sumv1_ ->SetDirectory(0);
 
+    if (DEBUG) cout << " -- Histograms done" << endl;
 
     // read and fill from the file
     std::ifstream infile;

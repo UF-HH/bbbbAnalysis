@@ -684,6 +684,8 @@ bool OutputTree::declareUserIntBranch (std::string name, int defaultClearValue)
         return false;
     }
 
+    cout << "[INFO] OutputTree : creating userIntBranch " << name << " (" << defaultClearValue << ")" << endl;
+
     // set the branch
     tree_->Branch(name.c_str(), userInts_.getValPtr(name));
     return true;
@@ -701,6 +703,8 @@ bool OutputTree::declareUserFloatBranch (std::string name, float defaultClearVal
         cout << "[WARNING] OutputTree : declareUserFloatBranch : branch " << name << " was already found as a userFloat, cannot create it" << endl;
         return false;
     }
+
+    cout << "[INFO] OutputTree : creating userFloatBranch " << name << " (" << defaultClearValue << ")" << endl;
 
     // set the branch
     tree_->Branch(name.c_str(), userFloats_.getValPtr(name));

@@ -50,9 +50,13 @@ int main(int argc, char** argv)
         ("input" , po::value<string>()->required(), "input file list")
         ("output", po::value<string>()->required(), "output file LFN")
         // optional
-        ("xs"       , po::value<float>(), "cross section [pb]")
-        ("maxEvts"  , po::value<int>()->default_value(-1), "max number of events to process")
-        ("puWeight" , po::value<string>()->default_value(""), "PU weight file name")
+        ("xs"        , po::value<float>(), "cross section [pb]")
+        ("maxEvts"   , po::value<int>()->default_value(-1), "max number of events to process")
+        ("puWeight"  , po::value<string>()->default_value(""), "PU weight file name")
+        // ("kl-rew-list"  , po::value<std::vector<float>>()->multitoken()->default_value(std::vector<float>(0), "-"), "list of klambda values for reweight")
+        ("kl-rew"    , po::value<float>(),  "klambda value for reweighting")
+        ("kl-map"    , po::value<string>()->default_value(""), "klambda input map for reweighting")
+        // ("kl-histo"  , po::value<string>()->default_value("hhGenLevelDistr"), "klambda histogram name for reweighting")
         // flags
         ("is-data",    po::value<bool>()->zero_tokens()->implicit_value(true)->default_value(false), "mark as a data sample (default is false)")
         ("is-signal",  po::value<bool>()->zero_tokens()->implicit_value(true)->default_value(false), "mark as a HH signal sample (default is false)")
@@ -97,7 +101,7 @@ int main(int argc, char** argv)
     CfgParser config;
     if (!config.init(opts["cfg"].as<string>())) return 1;
     cout << "[INFO] ... using config file " << opts["cfg"].as<string>() << endl;
-    
+ 
     ////////////////////////////////////////////////////////////////////////
     // Read needed fields from config file and pass them to the oph
     ////////////////////////////////////////////////////////////////////////
@@ -250,7 +254,6 @@ int main(int argc, char** argv)
         //     parameters fo be retreived;
         // }  
         else throw std::runtime_error("cannot recognize event choice ObjectsForCut " + JECstrategy);
-
     }
 
     OfflineProducerHelper oph;
@@ -309,6 +312,18 @@ int main(int argc, char** argv)
         oph.initializeJECVariations(ot);
         oph.initializeObjectsForEventWeight(ot,ec,opts["puWeight"].as<string>(),xs);
         oph.initializeObjectsBJetForScaleFactors(ot);
+
+        // MC reweight initialization
+        if (opts.find("kl-rew") != opts.end()) // a kl value was passed
+        {
+            float  kl_rew    = opts["kl-rew"].as<float>();  // target value
+            string kl_map    = opts["kl-map"].as<string>(); // sample map fname
+            string kl_histo  = "hhGenLevelDistr";           // sample map histo
+            string kl_coeffs = config.readStringOpt("hhreweight::coeff_file"); // coefficient file
+
+            oph.init_HH_reweighter(ot, kl_coeffs, kl_map, kl_histo);
+            oph.hhreweighter_kl_ = kl_rew;
+        }
     }
 
     jsonLumiFilter jlf;
@@ -342,9 +357,22 @@ int main(int argc, char** argv)
               
         ot.clear();
         EventInfo ei;
+
+        // HH reweight needs the GEN info -> keep first
+        if (is_signal){
+            oph.select_gen_HH(nat, ei);
+            oph.select_gen_bb_bb(nat, ei);            
+            if (is_VBF_sig) {
+                bool got_gen_VBF = oph.select_gen_VBF_partons(nat, ei);
+                if (!got_gen_VBF){
+                    cout << "Failed on iEv = " << iEv << " evt num = " << *(nat.event) << " run = " << *(nat.run) << endl;
+                    continue;
+                }
+            }
+        }
         
         double weight = 1.;
-        if(!is_data) weight = oph.calculateEventWeight(nat, ot, ec);
+        if(!is_data) weight = oph.calculateEventWeight(nat, ei, ot, ec);
 
         //cout<<"The weight = "<<weight<<endl;
         ec.updateProcessed(weight);
@@ -352,17 +380,6 @@ int main(int argc, char** argv)
         if( !nat.getTrgOr() ) continue;
 
         ec.updateTriggered(weight);
-
-        if (is_VBF_sig){
-            oph.select_gen_HH(nat, ei);
-            oph.select_gen_bb_bb(nat, ei);            
-            bool got_gen_VBF = oph.select_gen_VBF_partons(nat, ei);
-            if (!got_gen_VBF){
-                cout << "Failed on iEv = " << iEv << " evt num = " << *(nat.event) << " run = " << *(nat.run) << endl;
-                continue;
-            }
-        }
-
         
         if (!oph.select_bbbbjj_jets(nat, ei, ot)) continue; 
         if(!is_data){ot.userFloat("XS")=xs;}

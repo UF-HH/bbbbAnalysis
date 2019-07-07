@@ -25,6 +25,7 @@
 #include "GenJet.h"
 #include "SkimEffCounter.h"
 #include "BDTEval.h"
+#include "HHReweight5D.h"
 
 #include <array>
 #include <utility>
@@ -40,10 +41,14 @@ class OfflineProducerHelper{
 
         OfflineProducerHelper ()
         {
-
+            // BDT evals
             eval_BDT1_ = std::unique_ptr<BDTEval> (new BDTEval (float_varlist_BDT1, std::vector<std::string>(0)) );
             eval_BDT2_ = std::unique_ptr<BDTEval> (new BDTEval (float_varlist_BDT2, std::vector<std::string>(0)) );
             eval_BDT3_ = std::unique_ptr<BDTEval> (new BDTEval (float_varlist_BDT3, std::vector<std::string>(0)) );
+
+            // HH reweighters
+            hhreweighter_    = std::unique_ptr<HHReweight5D>(nullptr);
+            hhreweighter_kl_ = 1.0;
         };
 
         ~OfflineProducerHelper() {};
@@ -51,6 +56,9 @@ class OfflineProducerHelper{
         std::unique_ptr<BDTEval> eval_BDT1_;
         std::unique_ptr<BDTEval> eval_BDT2_;
         std::unique_ptr<BDTEval> eval_BDT3_;
+
+        std::unique_ptr<HHReweight5D> hhreweighter_;
+        float hhreweighter_kl_;
 
         bool debug = true;
         // Load configurations to match the b jets
@@ -125,27 +133,29 @@ class OfflineProducerHelper{
         };
 
         void init_BDT_evals();
+        void init_HH_reweighter(OutputTree& ot, std::string coeffFile, std::string hhreweighterInputMap, std::string histoName);
 
         // -------------------------------------------------------------------------------
 
         // All maps need to be cleared otherwise we have a glibc detected
-        void clean() {
-            weightMap_.clear();
-            PUWeightMap_.clear();
-            mapForJECuncertanties_.clear();
-            mapJERNamesAndVariation_.clear();
-            mapJECNamesAndVariation_.clear();
-            branchesAffectedByJetEnergyVariations_.clear();
-            mapTriggerMatching_.clear();
-            mapTriggerObjectIdAndFilter_.clear();
+        // segfault issue fixed by making oph a class -> removing function
+        // void clean() {
+        //     weightMap_.clear();
+        //     PUWeightMap_.clear();
+        //     mapForJECuncertanties_.clear();
+        //     mapJERNamesAndVariation_.clear();
+        //     mapJECNamesAndVariation_.clear();
+        //     branchesAffectedByJetEnergyVariations_.clear();
+        //     mapTriggerMatching_.clear();
+        //     mapTriggerObjectIdAndFilter_.clear();
 
-            eval_BDT1_->floatVarsMap.clear();
-            eval_BDT2_->floatVarsMap.clear();
-            eval_BDT3_->floatVarsMap.clear();
-            eval_BDT1_->intVarsMap.clear();
-            eval_BDT2_->intVarsMap.clear();
-            eval_BDT3_->intVarsMap.clear();
-        }
+        //     eval_BDT1_->floatVarsMap.clear();
+        //     eval_BDT2_->floatVarsMap.clear();
+        //     eval_BDT3_->floatVarsMap.clear();
+        //     eval_BDT1_->intVarsMap.clear();
+        //     eval_BDT2_->intVarsMap.clear();
+        //     eval_BDT3_->intVarsMap.clear();
+        // }
 
         void initializeOfflineProducerHelper(const std::map<std::string, std::any> *parameterList) {
             parameterList_ = parameterList;
@@ -172,6 +182,11 @@ class OfflineProducerHelper{
             branchesAffectedByJetEnergyVariations_["HH_2DdeltaM"] = 999.;
 
             init_BDT_evals();
+            // if (parameterList_->count("do_kl_rew") > 0 && std::any_cast<bool>(parameterList_->at("do_kl_rew")))
+            //     init_HH_reweighter(
+            //         std::any_cast<std::string>(parameterList_->at("kl_coeffs")),
+            //         std::any_cast<std::string>(parameterList_->at("kl_map")),
+            //         std::any_cast<std::string>(parameterList_->at("kl_histo")));
         }
 
         void initializeObjectsForCuts(OutputTree &ot);
@@ -194,9 +209,9 @@ class OfflineProducerHelper{
 
         void initializeObjectsForEventWeight(OutputTree &ot, SkimEffCounter &ec, std::string PUWeightFileName, float crossSection);
         // functions to select events based on non-jet particles:
-        std::function<float (NanoAODTree&, OutputTree&, SkimEffCounter &ec)> calculateEventWeight;
+        std::function<float (NanoAODTree&,  EventInfo& ei, OutputTree&, SkimEffCounter &ec)> calculateEventWeight;
         // reject events with leptons that may come from W and Z decays
-        float calculateEventWeight_AllWeights(NanoAODTree& nat, OutputTree &ot, SkimEffCounter &ec);
+        float calculateEventWeight_AllWeights(NanoAODTree& nat, EventInfo& ei, OutputTree &ot, SkimEffCounter &ec);
         
 
         void initializeObjectsBJetForScaleFactors(OutputTree &ot);

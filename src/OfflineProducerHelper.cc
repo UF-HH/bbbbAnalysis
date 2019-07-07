@@ -292,11 +292,11 @@ void OfflineProducerHelper::initializeObjectsForEventWeight(OutputTree &ot, Skim
 
     if(weightsMethod == "None")
     {
-        calculateEventWeight = [=](NanoAODTree& nat, OutputTree &ot, SkimEffCounter &ec) -> float {return sampleCrossSection_;};
+        calculateEventWeight = [=](NanoAODTree& nat, EventInfo& ei, OutputTree &ot, SkimEffCounter &ec) -> float {return sampleCrossSection_;};
     }
     else if(weightsMethod == "StandardWeight")
     {
-        calculateEventWeight = [=] (NanoAODTree& nat, OutputTree &ot, SkimEffCounter &ec) -> float {return this -> calculateEventWeight_AllWeights (nat, ot, ec);};
+        calculateEventWeight = [=] (NanoAODTree& nat, EventInfo& ei, OutputTree &ot, SkimEffCounter &ec) -> float {return this -> calculateEventWeight_AllWeights (nat, ei, ot, ec);};
         std::string branchName;
 
         int weightBin = ec.binMap_.size();
@@ -369,7 +369,7 @@ void OfflineProducerHelper::initializeObjectsForEventWeight(OutputTree &ot, Skim
 
 }
 
-float OfflineProducerHelper::calculateEventWeight_AllWeights(NanoAODTree& nat, OutputTree &ot, SkimEffCounter &ec)
+float OfflineProducerHelper::calculateEventWeight_AllWeights(NanoAODTree& nat, EventInfo& ei, OutputTree &ot, SkimEffCounter &ec)
 {
 
     for(auto & weight : weightMap_)
@@ -498,6 +498,25 @@ float OfflineProducerHelper::calculateEventWeight_AllWeights(NanoAODTree& nat, O
         }
         ot.userFloat(variationBranch) = tmpWeight;
         weightMap_[branchName].second[variationBranch] = tmpWeight;
+    }
+
+    // hh reweight if needed
+    if (hhreweighter_)
+    {
+
+        float kl = hhreweighter_kl_;
+        TLorentzVector vSum = ei.gen_H1->P4() + ei.gen_H2->P4();
+        
+        // boost to CM
+        TLorentzVector vH1_cm = ei.gen_H1->P4();
+        vH1_cm.Boost(-vSum.BoostVector());
+
+        float gen_mHH          = vSum.M();
+        float gen_costh_H1_cm  = vH1_cm.CosTheta();
+
+        double w = hhreweighter_->getWeight(kl, 1.0, gen_mHH, gen_costh_H1_cm);
+        ot.userFloat("HH_reweight") = w;
+        eventWeight *= w;
     }
 
     //calculate bins for weights variations
@@ -2166,6 +2185,23 @@ void OfflineProducerHelper::init_BDT_evals()
     eval_BDT3_->init(method, weights_BDT3);
 }
 
+
+void OfflineProducerHelper::init_HH_reweighter(OutputTree& ot, std::string coeffFile, std::string hhreweighterInputMap, std::string histoName)
+{
+    // initialise the reweighter
+    std::cout << "[INFO] ... initialising HH reweighter" << std::endl;
+    std::cout << "   - coefficient file       : " << coeffFile            << std::endl;
+    std::cout << "   - input sample map file  : " << hhreweighterInputMap << std::endl;
+    std::cout << "   - input sample map hisot : " << histoName            << std::endl;
+
+    TFile* fIn = TFile::Open(hhreweighterInputMap.c_str());
+    TH2D*  hIn = (TH2D*) fIn->Get(histoName.c_str());
+    hhreweighter_ = std::unique_ptr<HHReweight5D> (new HHReweight5D (coeffFile, hIn));
+    fIn->Close();
+
+    // create the needed branches for the reweigh
+    ot.declareUserFloatBranch("HH_reweight", 1.0);
+}
 
 // float OfflineProducerHelper::GetBDT1Score(EventInfo& ei, string weights){
 float OfflineProducerHelper::GetBDT1Score(EventInfo& ei){

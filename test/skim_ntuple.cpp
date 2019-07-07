@@ -412,7 +412,7 @@ int main(int argc, char** argv)
         EventInfo ei;
         
         double weight = 1.;
-        if(!is_data) weight = oph.calculateEventWeight(nat, ot, ec);
+        if(!is_data) weight = oph.calculateEventWeight(nat, ei, ot, ec);
 // std::cout<<"pirla1\n";
         ec.updateProcessed(weight);
 // std::cout<<"pirla2\n";

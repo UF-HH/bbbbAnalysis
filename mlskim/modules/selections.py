@@ -11,28 +11,29 @@ from numpy.lib.recfunctions import stack_arrays
 def eventbtagregion(data,btagregion):
 	#Select b-tagging region
 	if btagregion   == '4b':
-			sel  = data[  data.nBtag==4 ]
+			selected = data[  data.nBtag==4 ]
+			rejected = data[  data.nBtag!=4 ]
 	elif btagregion == '3b': 
-			sel  = data[  data.nBtag==3 ]
+			selected = data[  data.nBtag==3 ]
+			rejected = data[  data.nBtag!=3 ]
 	else:
-			sel = data
-			print "The b-tagging region was not specify, the data is b-tagging inclusive!" 
-	return sel	
+			selected = data
+			rejected = pandas.DataFrame()
+			print "[INFO] The b-tagging region was not specify, the data is b-tagging inclusive! Then rejected dataframe is empty!" 
+	return  selected,rejected	
 	
 def eventcategory(data,category):
-	if category   == 'preVBF':
-		 sel = data[ (data.VBFEvent == 1)]
-	elif category == 'preGGF':
-		 sel = data[ (data.VBFEvent == 0)]
-	elif category == 'VBF':
-		 sel = data[ (data.VBFEvent == 1) & (data.BDT1 >=0) ]
+	if category   == 'VBF':
+		 selected = data[data.BDT1 >=0]
+		 rejected = data[data.BDT1 < 0]
 	elif category == 'GGF':
-		 sel = data[(data.BDT1 <0)]    	
+		 selected = data[data.BDT1 < 0]    	
+		 rejected = data[data.BDT1 >=0]
 	else:
-		 sel = data 
-		 print "The hh-category was not specify, the data is category inclusive!"
-	return sel
-	##TODO:Here code for jet cleaning, pt, etc
+		 selected = data
+		 rejected = pandas.DataFrame()
+		 print "[INFO] The hh-category was not specify, the data is category inclusive! Then rejected dataframe is empty!"
+	return selected,rejected
 
 def eventmassregion(data,massregion,validation=False):
 	# 2016 is (115,)
@@ -46,17 +47,26 @@ def eventmassregion(data,massregion,validation=False):
 	radius2  = 60
 
 	if   massregion == 'CR':
-		sel  = data[ (((data.H1_m-center1)**2+(data.H2_m-center2)**2)**(0.5) >= radius1) & (((data.H1_m-center1)**2+(data.H2_m-center2)**2)**(0.5) <= radius2) ] 
-		sel  = sel[ ~(((sel.H1_m-center1)**2 +(sel.H2_m-center2)**2)**(0.5) < radius1) ]
+		selected = data[ (((data.H1_m-center1)**2+(data.H2_m-center2)**2)**(0.5) >= radius1) & (((data.H1_m-center1)**2+(data.H2_m-center2)**2)**(0.5) <= radius2) ]
+		rejected = data[ (((data.H1_m-center1)**2+(data.H2_m-center2)**2)**(0.5) >= radius1) & (((data.H1_m-center1)**2+(data.H2_m-center2)**2)**(0.5) >  radius2) |  (((data.H1_m-center1)**2 +(data.H2_m-center2)**2)**(0.5) < radius1) ] 
 	elif massregion == 'SR':
-		sel  = data[((data.H1_m-center1)**2+(data.H2_m-center2)**2)**(0.5) < radius1 ]
+		selected = data[((data.H1_m-center1)**2+(data.H2_m-center2)**2)**(0.5) <  radius1 ]
+		rejected = data[((data.H1_m-center1)**2+(data.H2_m-center2)**2)**(0.5) >= radius1 ]
 	else:
-		sel  = data
-		print "The mass region was not specify, the data is mass region inclusive!"
-	return sel
+		selected = data
+		rejected = pandas.DataFrame()
+		print "[INFO] The mass region was not specify, the data is mass region inclusive! Then rejected dataframe is empty!"
+	return selected,rejected
 
 def eventselection(data,btagregion=None,category=None,massregion=None,validation=None):
-	databtagregion  = eventbtagregion(data,btagregion)
-	datacategory    = eventcategory(databtagregion,category) 
-	datamassregion  = eventmassregion(datacategory,massregion,validation)    
-	return datamassregion
+	databtagregionselected,databtagregionrejected = eventbtagregion(data,btagregion)
+	datacategoryselected,datacategoryrejected     = eventcategory(databtagregionselected,category) 
+	datamassregionselected,datamassregionrejected = eventmassregion(datacategoryselected,massregion,validation) 
+	dataselected = datamassregionselected
+	datarejected = pandas.concat((databtagregionrejected,datacategoryrejected,datamassregionrejected), ignore_index=True)
+	print "[INFO] DATAFRAME SLICING REPORT BELOW" 
+	print "   -Number of events in dataset (before) = ",len(data) 
+	print "   -Number of selected events            = ",len(dataselected)  
+	print "   -Number of rejected events            = ",len(datarejected)
+	print "   -Number of events in dataset (after)  = ",int(len(dataselected)+len(datarejected))
+	return dataselected,datarejected

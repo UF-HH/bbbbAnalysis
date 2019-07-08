@@ -97,9 +97,15 @@ def preparedataformodel(ioriginal, itarget, variables):
 	original_weights = numpy.multiply(original_weights,tfactor)
 	target_weights   = numpy.ones(dtype='float64',shape=len(target))
 	return original,target,original_weights,target_weights
+
+def preparedataforprediction(ioriginal,tfactor, variables):
+	original  = ioriginal[variables].reset_index(drop=True)
+	original_weights = numpy.ones(dtype='float64',shape=len(original))
+	#original_weights = numpy.multiply(original_weights,tfactor)
+	return original,original_weights
    
-def fitreweightermodel(original,target,original_weights,target_weights):
-	model   = bdtreweighter.reweightermodel(original,target,original_weights,target_weights) 
+def fitreweightermodel(original,target,original_weights,target_weights, model_args):
+	model   = bdtreweighter.reweightermodel(original,target,original_weights,target_weights,model_args) 
 	weights = model.predict_weights(original,original_weights)
 	factor  = float( float(len(target.index)) / weights.sum()  ) 
 	print "The sum of target weights                         = ",target_weights.sum(),"+/-",math.sqrt(numpy.square(target_weights).sum() )

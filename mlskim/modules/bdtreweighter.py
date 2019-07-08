@@ -15,8 +15,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score
 from matplotlib.colors import LogNorm
 
-def reweightermodel(original,target,original_weights,target_weights):
-	reweighter_base = reweight.GBReweighter(n_estimators=100, learning_rate=0.1, max_depth=5, min_samples_leaf=300, gb_args={'subsample': 0.5})
+def reweightermodel(original,target,original_weights,target_weights,args): 
+	reweighter_base = reweight.GBReweighter(n_estimators=args[0], learning_rate=args[1], max_depth=args[2], min_samples_leaf=args[3],gb_args={'subsample': args[4]})
 	reweighter = reweight.FoldingReweighter(reweighter_base,random_state=2019, n_folds=2, verbose=True)
 	reweighter.fit(original,target,original_weights,target_weights)
 	return reweighter

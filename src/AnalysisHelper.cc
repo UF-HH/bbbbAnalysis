@@ -1078,8 +1078,24 @@ void AnalysisHelper::fillHistosSample(Sample& sample)
     for (auto it = valuesMap.begin(); it != valuesMap.end(); ++it)
     {
         TBranch* br = (TBranch*) branchList->FindObject(it->first.c_str());
-        if (!br)
-            cerr << endl << "** ERROR: AnalysisHelper::fillHistosSample : sample : " << sample.getName() << " does not have branch " << it->first << ", expect a crash..." << endl;
+        if (!br){
+            // if branch not found, check if a default version is fiven in the cfg
+            // if (sampleCfg_ -> hasOpt( Form("defaultWeight::%s",sample.getName().c_str())))
+            if (hasDefaultWeight(it->first.c_str()))
+            {
+                double def_val = getDefaultWeight(it->first.c_str());
+                cout << " >> INFO: in sample " << sample.getName() << " will use the default value of " << def_val << " for weight " << it->first.c_str() << endl;
+                it->second = def_val;
+                continue; // do not continue to set the branch address
+            }
+            else
+            {
+                // cerr << endl << "** ERROR: AnalysisHelper::fillHistosSample : sample : " << sample.getName() << " does not have branch " << it->first << ", expect a crash..." << endl;
+                cerr << endl << "** ERROR: AnalysisHelper::fillHistosSample : sample : " << sample.getName() << " does not have branch " << it->first << ", aborting to avoid a crash..." << endl;
+                cerr <<         "**        Please note that you can set a default value for a missing branch using the syntax [defaultWeight] weight_name = default_value in the selection cfg" << endl;
+                exit(1);
+            }
+        }
 
         string brName = br->GetTitle();
         if (brName.find(string("/F")) != string::npos) // F : a 32 bit floating point (Float_t)
@@ -1261,11 +1277,16 @@ void AnalysisHelper::activateBranches(Sample& sample)
         for (uint iw = 0; iw < sample.getWeights().size(); ++iw)
         {
             const Weight& currW = sample.getWeights().at(iw);
-            tree->SetBranchStatus(currW.getName().c_str(), 1);
+
+            // this is not default weight for this sample
+            if (!hasDefaultWeight(currW.getName()))
+                tree->SetBranchStatus(currW.getName().c_str(), 1);
+            
             for (int isys = 0; isys < currW.getNSysts(); ++isys)
             {
                //currW.getSyst(isys); // <----- keep an eye on it. It happened to throw range 
-               tree->SetBranchStatus(currW.getSyst(isys).c_str(), 1); 
+                if (!hasDefaultWeight(currW.getSyst(isys)))
+                    tree->SetBranchStatus(currW.getSyst(isys).c_str(), 1); 
             }
         }
         if (DEBUG) cout << " ..........DEBUG: activated sample weights branches" << endl;
@@ -1280,10 +1301,12 @@ void AnalysisHelper::activateBranches(Sample& sample)
             for (uint iw = 0; iw < currSel.getWeights().size(); ++iw)
             {
                 const Weight& currW = currSel.getWeights().at(iw);
-                tree->SetBranchStatus(currW.getName().c_str(), 1);
+                if (!hasDefaultWeight(currW.getName()))
+                    tree->SetBranchStatus(currW.getName().c_str(), 1);
                 for (int isys = 0; isys < currW.getNSysts(); ++isys)
                 {
-                   tree->SetBranchStatus(currW.getSyst(isys).c_str(), 1); 
+                    if (!hasDefaultWeight(currW.getSyst(isys)))
+                       tree->SetBranchStatus(currW.getSyst(isys).c_str(), 1); 
                 }
             }
         }
@@ -1651,4 +1674,16 @@ void AnalysisHelper::mergeSamples()
                 cout << "    ................ " << chosenMap->key(ii) << endl;
         }
     }
+}
+
+
+bool   AnalysisHelper::hasDefaultWeight(std::string weightName)
+{
+    return cutCfg_ -> hasOpt( Form("defaultWeight::%s",weightName.c_str()));
+}
+
+double AnalysisHelper::getDefaultWeight(std::string weightName)
+{
+    double def_val = (double) cutCfg_ -> readFloatOpt( Form("defaultWeight::%s",weightName.c_str()));
+    return def_val;
 }

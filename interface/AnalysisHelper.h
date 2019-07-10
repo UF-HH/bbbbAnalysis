@@ -82,6 +82,10 @@ class AnalysisHelper
         void prepareSamples2DHistos();
         // std::vector<const Weight*> getWeightsWithSyst (const Selection& sel, const Sample& sample); // pointers to all weights that have at least one syst defined
 
+        // check if a weight value is declared as default
+        bool   hasDefaultWeight(std::string weightName);
+        double getDefaultWeight(std::string weightName);
+
         std::unique_ptr<CfgParser> mainCfg_;
         std::unique_ptr<CfgParser> cutCfg_;
         std::unique_ptr<CfgParser> sampleCfg_;

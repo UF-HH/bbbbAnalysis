@@ -1948,7 +1948,7 @@ void OfflineProducerHelper::AddInclusiveCategoryVariables(NanoAODTree& nat, Even
        ei.costh_HH_b4_cm = HH_b4_cm.CosTheta();
        
        //GGF-QCDKiller
-       ei.BDT3 = 1;// GetBDT3Score(ei);
+       ei.BDT3 = GetBDT3Score(ei);
 
        // string strategy = any_cast<string>(parameterList_->at("bbbbChoice"));
        // if(strategy=="BothClosestToMh")
@@ -2114,7 +2114,7 @@ void OfflineProducerHelper::AddVBFCategoryVariables(NanoAODTree& nat, EventInfo&
        // }
 
        //VBF-QCDKiller
-       ei.BDT2 = 1;// GetBDT2Score(ei);
+       ei.BDT2 = GetBDT2Score(ei);
 
        // if(strategy=="BothClosestToMh")
        // {

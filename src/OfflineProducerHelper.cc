@@ -1294,18 +1294,47 @@ std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_BothClosestToDiagonal(con
     float targetHiggsMass1 = any_cast<float>(parameterList_->at("LeadingHiggsMass"));
     float targetHiggsMass2 = any_cast<float>(parameterList_->at("SubleadingHiggsMass"));
 
-    std::vector<float> mHs;
+    std::vector<TLorentzVector> p4s;
 
     for (uint i = 0; i < presel_jets->size(); ++i)
         for (uint j = i+1; j < presel_jets->size(); ++j)
         {
             TLorentzVector p4sum = (presel_jets->at(i).P4() + presel_jets->at(j).P4());
-            mHs.emplace_back(p4sum.Mag());
+            p4s.emplace_back(p4sum);
         }
 
-    std::pair<float, float> m_12_34 = make_pair (mHs.at(0), mHs.at(5));
-    std::pair<float, float> m_13_24 = make_pair (mHs.at(1), mHs.at(4));
-    std::pair<float, float> m_14_23 = make_pair (mHs.at(2), mHs.at(3));
+    float m1,m2,m3,m4,m5,m6;
+
+    if(p4s.at(0).Pt() > p4s.at(5).Pt())
+    {
+      m1 = p4s.at(0).M(); m2 = p4s.at(5).M();
+    }
+    else
+    {
+      m1 = p4s.at(5).M(); m2 = p4s.at(0).M();        
+    }
+
+    if(p4s.at(1).Pt() > p4s.at(4).Pt())
+    {
+      m3 = p4s.at(1).M(); m4 = p4s.at(4).M();
+    }
+    else
+    {
+      m3 = p4s.at(4).M(); m4 = p4s.at(1).M();       
+    }
+
+    if(p4s.at(2).Pt() > p4s.at(3).Pt())
+    {
+      m5 = p4s.at(2).M(); m6 = p4s.at(3).M();
+    }
+    else
+    {
+      m5 = p4s.at(3).M(); m6 = p4s.at(2).M();       
+    }
+
+    std::pair<float, float> m_12_34 = make_pair(m1,m2);
+    std::pair<float, float> m_13_24 = make_pair(m3,m4);
+    std::pair<float, float> m_14_23 = make_pair(m5,m6);
 
     float d12_34 = fabs( m_12_34.first - ((targetHiggsMass1/targetHiggsMass2)*m_12_34.second) );
     float d13_24 = fabs( m_13_24.first - ((targetHiggsMass1/targetHiggsMass2)*m_13_24.second) );
@@ -1821,6 +1850,7 @@ void OfflineProducerHelper::AddInclusiveCategoryVariables(NanoAODTree& nat, Even
            ei.H1_b1 = ordered_jets.at(2);ei.H1_b2 = ordered_jets.at(3);
            ei.H2_b1 = ordered_jets.at(0);ei.H2_b2 = ordered_jets.at(1);
        }
+       //cout<<" H1 pt "<<ei.H1.get().P4().Pt()<<" H2 pt "<<ei.H2.get().P4().Pt()<<endl;
        //HH variables
        ei.HH = CompositeCandidate(ei.H1.get(), ei.H2.get());
        //Fill branches with selected b-jets ordered by pt
@@ -1918,7 +1948,7 @@ void OfflineProducerHelper::AddInclusiveCategoryVariables(NanoAODTree& nat, Even
        ei.costh_HH_b4_cm = HH_b4_cm.CosTheta();
        
        //GGF-QCDKiller
-       ei.BDT3 = GetBDT3Score(ei);
+       ei.BDT3 = 1;// GetBDT3Score(ei);
 
        // string strategy = any_cast<string>(parameterList_->at("bbbbChoice"));
        // if(strategy=="BothClosestToMh")
@@ -2084,7 +2114,7 @@ void OfflineProducerHelper::AddVBFCategoryVariables(NanoAODTree& nat, EventInfo&
        // }
 
        //VBF-QCDKiller
-       ei.BDT2 = GetBDT2Score(ei);
+       ei.BDT2 = 1;// GetBDT2Score(ei);
 
        // if(strategy=="BothClosestToMh")
        // {
@@ -2175,10 +2205,10 @@ void OfflineProducerHelper::init_BDT_evals()
     // else
         // some fallback?
 
-    std::cout << "[INFO] ... initialising BDT evals" << std::endl;
-    std::cout << "   - BDT 1 . method : " << method << ", weight_file : " << weights_BDT1 << std::endl;
-    std::cout << "   - BDT 2 . method : " << method << ", weight_file : " << weights_BDT2 << std::endl;
-    std::cout << "   - BDT 3 . method : " << method << ", weight_file : " << weights_BDT3 << std::endl;
+    //std::cout << "[INFO] ... initialising BDT evals" << std::endl;
+    //std::cout << "   - BDT 1 . method : " << method << ", weight_file : " << weights_BDT1 << std::endl;
+    //std::cout << "   - BDT 2 . method : " << method << ", weight_file : " << weights_BDT2 << std::endl;
+    //std::cout << "   - BDT 3 . method : " << method << ", weight_file : " << weights_BDT3 << std::endl;
 
     eval_BDT1_->init(method, weights_BDT1);
     eval_BDT2_->init(method, weights_BDT2);
@@ -2189,10 +2219,10 @@ void OfflineProducerHelper::init_BDT_evals()
 void OfflineProducerHelper::init_HH_reweighter(OutputTree& ot, std::string coeffFile, std::string hhreweighterInputMap, std::string histoName)
 {
     // initialise the reweighter
-    std::cout << "[INFO] ... initialising HH reweighter" << std::endl;
-    std::cout << "   - coefficient file       : " << coeffFile            << std::endl;
-    std::cout << "   - input sample map file  : " << hhreweighterInputMap << std::endl;
-    std::cout << "   - input sample map hisot : " << histoName            << std::endl;
+    //std::cout << "[INFO] ... initialising HH reweighter" << std::endl;
+    //std::cout << "   - coefficient file       : " << coeffFile            << std::endl;
+    //std::cout << "   - input sample map file  : " << hhreweighterInputMap << std::endl;
+    //std::cout << "   - input sample map hisot : " << histoName            << std::endl;
 
     TFile* fIn = TFile::Open(hhreweighterInputMap.c_str());
     TH2D*  hIn = (TH2D*) fIn->Get(histoName.c_str());
@@ -2831,7 +2861,7 @@ bool OfflineProducerHelper::select_gen_HH (NanoAODTree& nat, EventInfo& ei)
         if (gp.isFirstCopy())
         {
             if (!assign_to_uninit(gp, {&ei.gen_H1, &ei.gen_H2} )) {
-                cout << "** [WARNING] : select_gen_HH : more than two Higgs found" << endl;
+                //cout << "** [WARNING] : select_gen_HH : more than two Higgs found" << endl;
                 all_ok = false;
             }
 
@@ -2846,7 +2876,7 @@ bool OfflineProducerHelper::select_gen_HH (NanoAODTree& nat, EventInfo& ei)
         if (gp.isLastCopy())
         {
             if (!assign_to_uninit(gp, {&ei.gen_H1_last, &ei.gen_H2_last} )) {
-                cout << "** [WARNING] : select_gen_HH : more than two Higgs found (last copy)" << endl;
+                //cout << "** [WARNING] : select_gen_HH : more than two Higgs found (last copy)" << endl;
                 all_ok = false;
             }
 
@@ -2861,12 +2891,12 @@ bool OfflineProducerHelper::select_gen_HH (NanoAODTree& nat, EventInfo& ei)
     }
 
     if (!ei.gen_H1 || !ei.gen_H2){
-        cout << "** [WARNING] : select_gen_HH : didn't find two Higgs : "
-             << std::boolalpha
-             << "H1 :" << ei.gen_H1.is_initialized()
-             << "H2 :" << ei.gen_H2.is_initialized()
-             << std::noboolalpha
-             << endl;
+//        cout << "** [WARNING] : select_gen_HH : didn't find two Higgs : "
+//             << std::boolalpha
+//             << "H1 :" << ei.gen_H1.is_initialized()
+//             << "H2 :" << ei.gen_H2.is_initialized()
+//             << std::noboolalpha
+//             << endl;
         all_ok = false;
     }
     return all_ok;
@@ -2878,7 +2908,7 @@ bool OfflineProducerHelper::select_gen_bb_bb (NanoAODTree& nat, EventInfo& ei)
 {
     if (!ei.gen_H1 || !ei.gen_H2)
     {
-        cout << "** [WARNING] : select_gen_bb_bb : you need to search for H1 and H2 before" << endl;
+        //cout << "** [WARNING] : select_gen_bb_bb : you need to search for H1 and H2 before" << endl;
         return false;
     }
 
@@ -2895,7 +2925,7 @@ bool OfflineProducerHelper::select_gen_bb_bb (NanoAODTree& nat, EventInfo& ei)
         if (idxMoth == ei.gen_H1_last->getIdx())
         {
             if (!assign_to_uninit(gp, {&ei.gen_H1_b1, &ei.gen_H1_b2} )) {
-                cout << "** [WARNING] : select_gen_bb_bb : more than two b from H1 found" << endl;
+                //cout << "** [WARNING] : select_gen_bb_bb : more than two b from H1 found" << endl;
                 all_ok = false;
             }
             // if      (!ei.gen_H1_b1) ei.gen_H1_b1 = gp;
@@ -2908,7 +2938,7 @@ bool OfflineProducerHelper::select_gen_bb_bb (NanoAODTree& nat, EventInfo& ei)
         else if (idxMoth == ei.gen_H2_last->getIdx())
         {
             if (!assign_to_uninit(gp, {&ei.gen_H2_b1, &ei.gen_H2_b2} )) {
-                cout << "** [WARNING] : select_gen_bb_bb : more than two b from H2 found" << endl;
+                //cout << "** [WARNING] : select_gen_bb_bb : more than two b from H2 found" << endl;
                 all_ok = false;
             }
 

@@ -84,6 +84,11 @@ void MeasureTriggerEfficiency(std::string inputFileName, std::string sampleName,
         "BTag CaloCSV p087 Triple", "DeepCSV_{3}", lineColor);
     efficiency->Write();
 
+    // efficiency = TriggerEfficiencyFitter(inputFile, sampleName, referenceTriggerName, "FirstPtOrderedJetDeepCSV", 
+    //     "SelectionForBTagDouble90Double30", "NormalizationForBTagDouble90Double30", dummyFormula, dummyParameters,
+    //     "BTag CaloCSV p087 Single", "DeepCSV", lineColor);
+    // efficiency->Write();
+
     efficiency = TriggerEfficiencyFitter(inputFile, sampleName, referenceTriggerName, "FirstJetPt", 
         "QuadPFCentralJetLooseID30AndPrevious", "BTagCaloCSVp087TripleDouble90Double30AndPrevious", dummyFormula, dummyParameters,
         "Quad PF Central Jet Loose ID 30 GeV", "p_{1}^{T}", lineColor);
@@ -135,6 +140,7 @@ void MeasureTriggerEfficiency(std::string inputFileName, std::string sampleName,
     efficiency = TriggerEfficiencyFitter(inputFile, sampleName, referenceTriggerName, "ThirdJetPt", 
         "QuadCentralJet45AndPrevious", "L1triggerQuad45AndPrevious", dummyFormula, dummyParameters,
         "Quad Central Jet 45 GeV", "p_{3}^{T}", lineColor);
+    
     efficiency->Write();
     efficiency = TriggerEfficiencyFitter(inputFile, sampleName, referenceTriggerName, "ForthJetPt", 
         "QuadCentralJet45AndPrevious", "L1triggerQuad45AndPrevious", dummyFormula, dummyParameters,
@@ -145,6 +151,11 @@ void MeasureTriggerEfficiency(std::string inputFileName, std::string sampleName,
         "BTagCaloCSVp087TripleQuad45AndPrevious", "QuadCentralJet45AndPrevious", dummyFormula, dummyParameters,
         "BTag CaloCSV p087 Triple", "DeepCSV_{3}", lineColor);
     efficiency->Write();
+
+    // efficiency = TriggerEfficiencyFitter(inputFile, sampleName, referenceTriggerName, "FirstPtOrderedJetDeepCSV", 
+    //     "SelectionForBTagQuad45", "NormalizationForBTagQuad45", dummyFormula, dummyParameters,
+    //     "BTag CaloCSV p087 Single", "DeepCSV", lineColor);
+    // efficiency->Write();
 
     efficiency = TriggerEfficiencyFitter(inputFile, sampleName, referenceTriggerName, "FirstJetPt", 
         "QuadPFCentralJetLooseID45AndPrevious", "BTagCaloCSVp087TripleQuad45AndPrevious", dummyFormula, dummyParameters,
@@ -243,7 +254,7 @@ void ProduceAllTriggerEfficiencies()
     // MeasureTriggerEfficiency("2016DataPlots_4bSelection/outPlotter.root","TTbar","HLT_IsoMu20_Matched","TriggerEfficiency_TTbar_4bSelection_IsoMu20_Matched.root",kBlue);
 
 
-   // SingleMuon
+   SingleMuon
     MeasureTriggerEfficiency("2016DataPlots_MuonPt40_ForthJetPt30_CMVAM/outPlotter.root","SingleMuon","HLT_IsoMu24","TriggerEfficiency_SingleMuon_MuonPt40_ForthJetPt30_CMVAM_IsoMu24.root",kBlue);
     MeasureTriggerEfficiency("2016DataPlots_MuonPt40_ForthJetPt30_CMVAM/outPlotter.root","SingleMuon","HLT_IsoMu24_Matched","TriggerEfficiency_SingleMuon_MuonPt40_ForthJetPt30_CMVAM_IsoMu24_Matched.root",kBlue);
     MeasureTriggerEfficiency("2016DataPlots_MuonPt40_ForthJetPt30_CMVAM/outPlotter.root","SingleMuon","HLT_IsoMu20","TriggerEfficiency_SingleMuon_MuonPt40_ForthJetPt30_CMVAM_IsoMu20.root",kBlue);
@@ -264,7 +275,7 @@ void ProduceAllTriggerEfficiencies()
     MeasureTriggerEfficiency("2016DataPlots_4bSelection/outPlotter.root","SingleMuon","HLT_IsoMu20","TriggerEfficiency_SingleMuon_4bSelection_IsoMu20.root",kBlue);
     MeasureTriggerEfficiency("2016DataPlots_4bSelection/outPlotter.root","SingleMuon","HLT_IsoMu20_Matched","TriggerEfficiency_SingleMuon_4bSelection_IsoMu20_Matched.root",kBlue);
 
-    // TTbar
+    TTbar
     MeasureTriggerEfficiency("2016DataPlots_MuonPt40_ForthJetPt30_CMVAM/outPlotter.root","TTbar","HLT_IsoMu24","TriggerEfficiency_TTbar_MuonPt40_ForthJetPt30_CMVAM_IsoMu24.root",kBlue);
     MeasureTriggerEfficiency("2016DataPlots_MuonPt40_ForthJetPt30_CMVAM/outPlotter.root","TTbar","HLT_IsoMu24_Matched","TriggerEfficiency_TTbar_MuonPt40_ForthJetPt30_CMVAM_IsoMu24_Matched.root",kBlue);
     MeasureTriggerEfficiency("2016DataPlots_MuonPt40_ForthJetPt30_CMVAM/outPlotter.root","TTbar","HLT_IsoMu20","TriggerEfficiency_TTbar_MuonPt40_ForthJetPt30_CMVAM_IsoMu20.root",kBlue);

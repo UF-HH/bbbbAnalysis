@@ -21,7 +21,7 @@ namespace po = boost::program_options;
 namespace su = SkimUtils;
 
 #include "OfflineProducerHelper.h"
-namespace oph = OfflineProducerHelper;
+// namespace oph = OfflineProducerHelper;
 
 #include "OutputTree.h"
 #include "SkimEffCounter.h"
@@ -267,7 +267,8 @@ int main(int argc, char** argv)
 
     }
 
-    oph::initializeOfflineProducerHelper(&parameterList);
+    OfflineProducerHelper oph;
+    oph.initializeOfflineProducerHelper(&parameterList);
 
     ////////////////////////////////////////////////////////////////////////
     // Prepare event loop
@@ -373,15 +374,15 @@ int main(int argc, char** argv)
 
     SkimEffCounter ec;
 
-    oph::initializeObjectsForCuts(ot);
-    oph::initializeTriggerMatching(ot);
+    oph.initializeObjectsForCuts(ot);
+    oph.initializeTriggerMatching(ot);
 
     if(!is_data)
     {
-        oph::initializeJERsmearingAndVariations(ot);
-        oph::initializeJECVariations(ot);
-        oph::initializeObjectsForEventWeight(ot,ec,opts["puWeight"].as<string>(),xs);
-        oph::initializeObjectsBJetForScaleFactors(ot);
+        oph.initializeJERsmearingAndVariations(ot);
+        oph.initializeJECVariations(ot);
+        oph.initializeObjectsForEventWeight(ot,ec,opts["puWeight"].as<string>(),xs);
+        oph.initializeObjectsBJetForScaleFactors(ot);
     }
 
     jsonLumiFilter jlf;
@@ -413,7 +414,8 @@ int main(int argc, char** argv)
         EventInfo ei;
         
         double weight = 1.;
-        if(!is_data) weight = oph::calculateEventWeight(nat, ot, ec);
+        if(!is_data) weight = oph.calculateEventWeight(nat, ei, ot, ec);
+// std::cout<<"pirla1\n";
         ec.updateProcessed(weight);
 
         std::vector<std::string> listOfPassedTriggers = nat.getTrgPassed();
@@ -422,20 +424,17 @@ int main(int argc, char** argv)
 
         ec.updateTriggered(weight);
 
-        if (!oph::select_bbbb_jets(nat, ei, ot, listOfPassedTriggers)) 
-        {
-            // std::cout<<"skipped\n";
-            continue;
-        }
+        if (!oph.select_bbbb_jets(nat, ei, ot, listOfPassedTriggers)) continue;
+// std::cout<<"pirla6\n";
 
         if (is_signal){
-            oph::select_gen_HH(nat, ei);
-            if (!oph::select_gen_bb_bb(nat, ei))
+            oph.select_gen_HH(nat, ei);
+            if (!oph.select_gen_bb_bb(nat, ei))
                 continue; 
         }
 
         if (is_VBF_sig){
-            bool got_gen_VBF = oph::select_gen_VBF_partons(nat, ei);
+            bool got_gen_VBF = oph.select_gen_VBF_partons(nat, ei);
             if (!got_gen_VBF){
                 cout << "Failed on iEv = " << iEv << " evt num = " << *(nat.event) << " run = " << *(nat.run) << endl;
                 continue;
@@ -443,14 +442,14 @@ int main(int argc, char** argv)
         }
 
 
-        oph::save_objects_for_cut(nat, ot, ei);
+        oph.save_objects_for_cut(nat, ot, ei);
 
         ec.updateSelected(weight);
         su::fill_output_tree(ot, nat, ei);
 
     }
 
-    oph::clean();
+    // oph.clean();
 
     outputFile.cd();
     ot.write();

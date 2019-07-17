@@ -84,7 +84,7 @@ parser.add_argument('--log',     dest='log', help='use log scale',  action='stor
 parser.add_argument('--logx',    dest='logx', help='use log scale on x',  action='store_true', default=False)
 # parser.add_argument('--postfit', dest='postfit', help = 'scale to postfit values', action='store_true', default=False)
 parser.add_argument('--no-data', dest='dodata', help='disable plotting data',  action='store_false', default=True)
-parser.add_argument('--no-sig',  dest='dosig',  help='disable plotting signal',  action='store_false', default=True)
+parser.add_argument('--no-sig',  dest='dosig',  help='disable plotting signal',  action='store_false', default=  True )
 parser.add_argument('--no-legend',   dest='legend',   help = 'disable drawing legend',       action='store_false', default=True)
 parser.add_argument('--div-by-binwidth', dest='binwidth', help = 'enable scaling by bin width', action='store_true', default=False)
 parser.add_argument('--ratio',    dest='ratio', help = 'do ratio plot at the botton', action='store_true', default=False)
@@ -95,7 +95,6 @@ parser.add_argument('--quit',     dest='quit', help = 'quit at the end of the sc
 parser.add_argument('--no-sr-namecompl',  dest='srnamecompl', help = 'complete the sel name with string SR if not specified by the user', action='store_false', default=True)
 parser.add_argument('--tab',      dest='tab', help = 'print table with yields', action='store_true', default=False)
 parser.add_argument('--postfit',  dest='postfit', help = 'draw postfit plots', action='store_true', default=False)
-
 
 # par list opt
 parser.add_argument('--blind-range',   dest='blindrange', type=float, nargs=2, help='start and end of blinding range', default=None)
@@ -111,6 +110,8 @@ parser.add_argument('--xmax', dest='xmax', type=float, help='max x range of plot
 parser.add_argument('--xmin', dest='xmin', type=float, help='min x range of plots', default=None)
 parser.add_argument('--sigscale', dest='sigscale', type=float, help='scale to apply to all signals', default=None)
 
+#int opt
+parser.add_argument('--DataCond',   dest='DataCond', type=int,  help='Data/MC conditions', default=None)
 args = parser.parse_args()
 
 if args.quit : ROOT.gROOT.SetBatch(True)
@@ -119,15 +120,16 @@ if args.quit : ROOT.gROOT.SetBatch(True)
 #############   read configs   ############
 ###########################################
 
-cfgName        = Tools.findInFolder  (args.dir+"/", '*main*.cfg')
+cfgName        = Tools.findInFolder  (args.dir+"/", '*plotter*.cfg')
 outplotterName = Tools.findInFolder  (args.dir+"/", 'outPlotter.root')
 # outplotterName = Tools.findInFolder  (args.dir+"/", 'analyzedOutPlotter.root')
 
 cfg = cfgr.ConfigReader (args.dir + "/" + cfgName)
 dataList = cfg.readListOption("general::data")
 # dataList = ['data_obs'] ## data are merged by hand into a single collection
-sigList  = cfg.readListOption("general::signals")
-bkgList  = cfg.readListOption("general::backgrounds")
+sigList         = cfg.readListOption("general::signals")
+#bkgList         = cfg.readListOption("general::backgrounds")
+bkgList         = cfg.readListOption("general::datadriven")
 
 if not dataList : dataList = []
 if not sigList  : sigList  = []
@@ -159,11 +161,6 @@ for name in replacements:
         thelist.remove(old)
     thelist.append(name)
 
-# if cfg.hasSection('pp_QCD') and args.srnamecompl:
-#     bkgList.append('QCD')
-# else:
-#     print "** Warning: No QCD section was found in mainCfg, was it computed?"
-
 ###########################################
 #############  retrieve plots  ############
 ###########################################
@@ -173,11 +170,9 @@ print '... opened file' , rootFile.GetName()
 sel = args.sel
 if not '_SR' in sel and args.srnamecompl: sel += '_SR'
 
-hSigs    = Tools.retrieveHistos  (rootFile, sigList,  args.var, sel) #, "sig": tags are unused now
-hBkgs    = Tools.retrieveHistos  (rootFile, bkgList,  args.var, sel) #, "bkg": tags are unused now
-hDatas   = Tools.retrieveHistos  (rootFile, dataList, args.var, sel) #, "DATA": tags are unused now
-# hQCD     = Tools.retrieveQCD     (rootFile, args.var, sel, dataList)
-
+hSigs         = Tools.retrieveHistos  (rootFile, sigList,        args.var, sel) #, "sig": tags are unused now
+hBkgs         = Tools.retrieveHistos  (rootFile, bkgList,        args.var, sel) #, "bkg": tags are unused now
+hDatas        = Tools.retrieveHistos  (rootFile, dataList,       args.var, sel) #, "DATA": tags are unused now
 
 #### FIXME: leaving some portion of the old code as example, but most likely something different is needed for postfit
 if args.postfit:
@@ -190,38 +185,6 @@ if args.postfit:
 #             hBkgs[bkg].Scale(postfitscales[bkg])
 #         else:
 #             print " ** warning: no postfit scale for ", bkg
-
-
-## scales to apply to the histos to fix the missing pieces of the xs
-scales = {
-    'VBF_HH'                :  0.00055169,
-    'VBF_HH_BSM'            :  0.0127212361335*0.58*0.58,
-    'GGF_HH'                 :  0.01125258,
-    'QCD_HT_100_200'        :  27990000,
-    'QCD_HT_200_300'        :  1547000,
-    'QCD_HT_300_500'        :  322600,
-    'QCD_HT_500_700'        :  29980,
-    'QCD_HT_700_1000'       :  6334,
-    'QCD_HT_1000_1500'      :  1088 ,
-    'QCD_HT_1500_2000'      :  99.11,
-    'QCD_HT_2000_Inf'       :  20.23,
-    'TTToSemiLeptonic'      :  365.34,
-    'TTToHadronic'          :  377.96,
-    'TTTo2L2Nu'             :  88.29,  
-}
-
-### scale the histograms by their specified scale
-## FIXME: to remove as soon as xs propagated to the event weight
-for hbg in hBkgs.keys():
-    if hbg in scales:
-        print  " >>> Scaling {:30} by   {}".format(hbg, scales[hbg])
-        hBkgs[hbg].Scale(scales[hbg])
-
-for hbg in hSigs.keys():
-    if hbg in scales:
-        print  " >>> Scaling {:30} by   {}".format(hbg, scales[hbg])
-        hSigs[hbg].Scale(scales[hbg])
-
 
 ###########################################
 ########  retrieve/compute errors  ########
@@ -251,7 +214,6 @@ sigscales = {}
 ############  read the styles  ############
 ###########################################
 
-
 linestyles = dict(plotStyles.linestyles)
 linecolors = dict(plotStyles.linecolors)
 fillcolors = dict(plotStyles.fillcolors)
@@ -259,29 +221,40 @@ titles     = dict(plotStyles.titles)
 
 ######### Things to plot ##################
 bkgToPlot = collections.OrderedDict()
-bkgToPlot['TT']      = ['TTTo2L2Nu', 'TTToHadronic', 'TTToSemiLeptonic']
-bkgToPlot['QCD']     = ['QCD_HT_100_200', 'QCD_HT_200_300', 'QCD_HT_300_500', 'QCD_HT_500_700', 'QCD_HT_700_1000', 'QCD_HT_1000_1500', 'QCD_HT_1500_2000', 'QCD_HT_2000_Inf']
-
+if args.DataCond == 2016:
+    sigToPlot = ["GGF_HH", "VBF_HH", "VBF_HH_BSM"]
+    bkgToPlot['MODEL'] = ['MODEL']  
+#    bkgToPlot['TT'] = ['TT']
+#    bkgToPlot['QCD']  = ['QCD_HT_200_300','QCD_HT_300_500', 'QCD_HT_500_700', 'QCD_HT_700_1000', 'QCD_HT_1000_1500', 'QCD_HT_1500_2000', 'QCD_HT_2000_Inf']
+elif args.DataCond == 2017:
+    bkgToPlot['MODEL'] = ['MODEL']  
+#    bkgToPlot['TT']   = ['TTTo2L2Nu', 'TTToHadronic', 'TTToSemiLeptonic']
+#    bkgToPlot['QCD']  = ['QCD_HT_300_500', 'QCD_HT_500_700', 'QCD_HT_700_1000', 'QCD_HT_1000_1500', 'QCD_HT_1500_2000', 'QCD_HT_2000_Inf']
+    sigToPlot = ["GGF_HH", "VBF_HH", "VBF_HH_BSM"]
+else:
+    bkgToPlot['MODEL'] = ['MODEL']  
+#    bkgToPlot['ZZTo4B']  = ['ZZTo4B']
+#    bkgToPlot['TT']   = ['TTTo2L2Nu', 'TTToHadronic', 'TTToSemiLeptonic']
+#    bkgToPlot['QCD']  = ['QCD_HT_300_500', 'QCD_HT_500_700', 'QCD_HT_700_1000', 'QCD_HT_1000_1500', 'QCD_HT_1500_2000', 'QCD_HT_2000_Inf']
 ### decide what to plot - a plain list of signals
-sigToPlot = ["GGF_HH", "VBF_HH", "VBF_HH_BSM"]
 
-
-# bkgToPlot['QCD_HT_100_200']   = ['QCD_HT_100_200']
-# bkgToPlot['QCD_HT_200_300']   = ['QCD_HT_200_300']
-# bkgToPlot['QCD_HT_300_500']   = ['QCD_HT_300_500']
-# bkgToPlot['QCD_HT_500_700']   = ['QCD_HT_500_700']
-# bkgToPlot['QCD_HT_700_1000']  = ['QCD_HT_700_1000']
-# bkgToPlot['QCD_HT_1000_1500'] = ['QCD_HT_1000_1500']
-# bkgToPlot['QCD_HT_1500_2000'] = ['QCD_HT_1500_2000']
-# bkgToPlot['QCD_HT_2000_Inf']  = ['QCD_HT_2000_Inf']
 
 ### check that I am not forgetting any background
 check_selected_bkg(allbkg = bkgList, chosenbkg=bkgToPlot)
 
-
 ###########################################
 ############  prepare plotter  ############
 ###########################################
+myselreg = args.sel.split("_")
+#if myselreg[0]=="Inclusive": myselreg[0]="HH-Event"
+#if myselreg[1]=="AntiBTagTotal": myselreg[1]="AntiBTag"
+#if myselreg[1]=="BTagTotal": myselreg[1]="BTag"
+if myselreg[0]=="Btag4":regionlabel="4btag"
+if myselreg[1]=="VBFcateg":myselreg[1]="VBF"
+if myselreg[1]=="GGFcateg":myselreg[1]="GGF"
+if myselreg[3]=="110":myselreg[3]=""
+if myselreg[3]=="210":myselreg[3]="^{#plus}"
+selectionlabel ="%s-%s%s"%(myselreg[1],myselreg[2],myselreg[3]) 
 
 shc = sh.SampleHistColl()
 shc.stackErrorHist = histoErr
@@ -291,9 +264,11 @@ shc.ratio      = args.ratio
 shc.sbplot     = args.sbplot
 shc.lumi       = float(cfg.readOption ("general::lumi"))/1000. # from pb to fb
 shc.chan       = 'HH #rightarrow bbbb'
+shc.selection  = None if not args.sel else '%s'%selectionlabel
+shc.region     = None if not args.sel else '%s'%regionlabel
 shc.title      = args.title
 shc.divByBW    = args.binwidth
-shc.plotData   = args.dodata
+shc.plotData   = args.dodata  
 shc.plotSig    = args.dosig
 shc.plotLegend = args.legend
 shc.ymin       = args.ymin
@@ -321,31 +296,30 @@ shc.lumiformat = '{:.1f}'
 shc.ratioxtitleoffset = 3.5
 shc.lowerpadbottommargin = 0.45
 
+if args.dosig :
+  for sig in sigToPlot:
+      if not sig in hSigs:
+          print '** Warning: signal' , sig , ' not found in the input, removing from plotting list...'
+  sigToPlot[:] = [x for x in sigToPlot if x in hSigs]  
 
-for sig in sigToPlot:
-    if not sig in hSigs:
-        print '** Warning: signal' , sig , ' not found in the input, removing from plotting list...'
-sigToPlot[:] = [x for x in sigToPlot if x in hSigs]
-
-# scale to expected sigscale before. NOTE: a second sigscale can be applied in the plotter
-for h in hSigs:
-    match = [key for key in sigscales if fnmatch.fnmatch(h, key)]
-    if len(match) == 1:
-        print " >> info: histo of sample", h, ('scaled by factor %.3g' % sigscales[match[0]])
-        hSigs[h].Scale(sigscales[match[0]])
-    shc.addHisto (hSigs[h], h, 'sig', (titles[h] if h in titles else hSigs[h].GetName()))
+  # scale to expected sigscale before. NOTE: a second sigscale can be applied in the plotter
+  for h in hSigs:
+      match = [key for key in sigscales if fnmatch.fnmatch(h, key)]
+      if len(match) == 1:
+          print " >> info: histo of sample", h, ('scaled by factor %.3g' % sigscales[match[0]])
+          hSigs[h].Scale(sigscales[match[0]])
+      shc.addHisto (hSigs[h], h, 'sig', (titles[h] if h in titles else hSigs[h].GetName()))
 
 # for h in hBkgs:
 for hname in bkgToPlot:
     for h in bkgToPlot[hname]:
         shc.addHisto (hBkgs[h], hname, 'bkg', (titles[hname] if hname in titles else hBkgs[h].GetName()))
 for h in hDatas:
-    shc.addHisto (hDatas[h], h, 'data', 'Data')
-## mu, e, for pre-mass cut
-# sigNameList = ["k_{#lambda} = 1 (SM) #times 5000"]
-# sigScale = [5000.*(0.073/1.)*33.45/1000.] # tutto a 1 pb di rpoduzione hh (tolgo il BR in bbtautau)
+    shc.addHisto (hDatas[h], h, 'data', '%s Data'%args.DataCond)
+
 shc.setListToPlot(bkgToPlot.keys(), 'bkg')
-shc.setListToPlot(reversed(sigToPlot), 'sig') # sigs instead are listed from top to bottom of the legend
+if args.dosig :
+  shc.setListToPlot(reversed(sigToPlot), 'sig') # sigs instead are listed from top to bottom of the legend
 shc.setListToPlot(dataList, 'data')
 
 shc.makePlot()
@@ -358,13 +332,12 @@ if not args.quit:
     raw_input()
 
 if args.printplot:
-    # outname = '_'.join(['plot', args.var, args.sel, args.channel])
-    outname = '_'.join(['plots/plot', args.var, args.sel])
+    outname = '_'.join(['plots/plot%s'%args.DataCond, args.var, args.sel])
     if args.log: outname += ('_'+'log')
     if args.postfit: outname += '_postfit'
-    outname += '.pdf'
+    outname += '.png'
     # print outname
-    shc.c1.Print(outname, 'pdf')
+    shc.c1.Print(outname, 'png')
 
 if args.root:
     shc.c1.SaveAs(rootname)

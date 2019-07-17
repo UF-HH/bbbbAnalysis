@@ -1,12 +1,13 @@
 import ROOT
 
 titles = {
+    'MODEL'   : 'Bkg. model',
     'QCD'   : 'Multijet',
     'TT'    : "t#bar{t}",
-    'VBF_HH'     : "VBF HH",
-    # 'VBF_HH_BSM' : "VBF HH BSM (#kappa_{#lambda}=1, C_{V}=1, C_{2V}=2)",
-    'VBF_HH_BSM' : "VBF HH BSM (C_{2V} = 2)",
-    'GGF_HH'      : "gg#rightarrowHH SM",
+    'ZZTo4B': "ZZ#rightarrow4b",
+    'VBF_HH'     : "VBF HH x100",
+    'VBF_HH_BSM' : "VBF HH (C2v=2) x100",
+    'GGF_HH'     : "GGF HH x100",
 }
 
 #########################################################################################
@@ -19,9 +20,11 @@ linestyles = {
 
 linecolors = {
     'TT'          : ROOT.kGreen+3,
+    'ZZTo4B'      : ROOT.kAzure+3,
     'QCD'         : 94,
-    'VBF_HH'      : ROOT.kBlack,
-    'VBF_HH_BSM'  : ROOT.kBlue+1,
+    'MODEL'       : ROOT.kAzure+3,
+    'VBF_HH'      : ROOT.kBlue+1,
+    'VBF_HH_BSM'  : ROOT.kBlack,
     'GGF_HH'      : ROOT.kRed,
 }
 
@@ -44,9 +47,9 @@ linecolors = {
 
 fillcolors = {
     'TT'    : 8,
+    'MODEL' : ROOT.kAzure+2,
+    'ZZTo4B' : ROOT.kAzure+2,
     'QCD'    : 92,
-    'other' : ROOT.kRed-7,
-    'QCD_HT_100_200' :   ROOT.kRed,
     'QCD_HT_200_300' :   ROOT.kRed+1,
     'QCD_HT_300_500' :   ROOT.kRed+2,
     'QCD_HT_500_700' :   ROOT.kRed+3,

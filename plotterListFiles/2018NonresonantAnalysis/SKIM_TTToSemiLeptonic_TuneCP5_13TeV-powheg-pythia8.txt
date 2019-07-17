@@ -65,7 +65,7 @@ root://cmseos.fnal.gov//store/user/guerrero/bbbb_ntuples/2018jobs/SKIM_TTToSemiL
 root://cmseos.fnal.gov//store/user/guerrero/bbbb_ntuples/2018jobs/SKIM_TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/output/bbbbNtuple_64.root
 root://cmseos.fnal.gov//store/user/guerrero/bbbb_ntuples/2018jobs/SKIM_TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/output/bbbbNtuple_65.root
 root://cmseos.fnal.gov//store/user/guerrero/bbbb_ntuples/2018jobs/SKIM_TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/output/bbbbNtuple_66.root
-#root://cmseos.fnal.gov//store/user/guerrero/bbbb_ntuples/2018jobs/SKIM_TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/output/bbbbNtuple_67.root
+root://cmseos.fnal.gov//store/user/guerrero/bbbb_ntuples/2018jobs/SKIM_TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/output/bbbbNtuple_67.root
 root://cmseos.fnal.gov//store/user/guerrero/bbbb_ntuples/2018jobs/SKIM_TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/output/bbbbNtuple_68.root
 root://cmseos.fnal.gov//store/user/guerrero/bbbb_ntuples/2018jobs/SKIM_TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/output/bbbbNtuple_69.root
 root://cmseos.fnal.gov//store/user/guerrero/bbbb_ntuples/2018jobs/SKIM_TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/output/bbbbNtuple_70.root
@@ -148,7 +148,7 @@ root://cmseos.fnal.gov//store/user/guerrero/bbbb_ntuples/2018jobs/SKIM_TTToSemiL
 root://cmseos.fnal.gov//store/user/guerrero/bbbb_ntuples/2018jobs/SKIM_TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/output/bbbbNtuple_147.root
 root://cmseos.fnal.gov//store/user/guerrero/bbbb_ntuples/2018jobs/SKIM_TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/output/bbbbNtuple_148.root
 root://cmseos.fnal.gov//store/user/guerrero/bbbb_ntuples/2018jobs/SKIM_TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/output/bbbbNtuple_149.root
-root://cmseos.fnal.gov//store/user/guerrero/bbbb_ntuples/2018jobs/SKIM_TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/output/bbbbNtuple_150.root
+#root://cmseos.fnal.gov//store/user/guerrero/bbbb_ntuples/2018jobs/SKIM_TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/output/bbbbNtuple_150.root
 root://cmseos.fnal.gov//store/user/guerrero/bbbb_ntuples/2018jobs/SKIM_TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/output/bbbbNtuple_151.root
 root://cmseos.fnal.gov//store/user/guerrero/bbbb_ntuples/2018jobs/SKIM_TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/output/bbbbNtuple_152.root
 root://cmseos.fnal.gov//store/user/guerrero/bbbb_ntuples/2018jobs/SKIM_TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/output/bbbbNtuple_153.root

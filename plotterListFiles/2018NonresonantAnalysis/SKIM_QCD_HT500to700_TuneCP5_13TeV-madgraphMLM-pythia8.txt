@@ -1,7 +1,7 @@
 root://cmseos.fnal.gov//store/user/guerrero/bbbb_ntuples/2018jobs/SKIM_QCD_HT500to700_TuneCP5_13TeV-madgraphMLM-pythia8/output/bbbbNtuple_0.root
 root://cmseos.fnal.gov//store/user/guerrero/bbbb_ntuples/2018jobs/SKIM_QCD_HT500to700_TuneCP5_13TeV-madgraphMLM-pythia8/output/bbbbNtuple_1.root
-root://cmseos.fnal.gov//store/user/guerrero/bbbb_ntuples/2018jobs/SKIM_QCD_HT500to700_TuneCP5_13TeV-madgraphMLM-pythia8/output/bbbbNtuple_2.root
-#root://cmseos.fnal.gov//store/user/guerrero/bbbb_ntuples/2018jobs/SKIM_QCD_HT500to700_TuneCP5_13TeV-madgraphMLM-pythia8/output/bbbbNtuple_3.root
+#root://cmseos.fnal.gov//store/user/guerrero/bbbb_ntuples/2018jobs/SKIM_QCD_HT500to700_TuneCP5_13TeV-madgraphMLM-pythia8/output/bbbbNtuple_2.root
+root://cmseos.fnal.gov//store/user/guerrero/bbbb_ntuples/2018jobs/SKIM_QCD_HT500to700_TuneCP5_13TeV-madgraphMLM-pythia8/output/bbbbNtuple_3.root
 root://cmseos.fnal.gov//store/user/guerrero/bbbb_ntuples/2018jobs/SKIM_QCD_HT500to700_TuneCP5_13TeV-madgraphMLM-pythia8/output/bbbbNtuple_4.root
 root://cmseos.fnal.gov//store/user/guerrero/bbbb_ntuples/2018jobs/SKIM_QCD_HT500to700_TuneCP5_13TeV-madgraphMLM-pythia8/output/bbbbNtuple_5.root
 root://cmseos.fnal.gov//store/user/guerrero/bbbb_ntuples/2018jobs/SKIM_QCD_HT500to700_TuneCP5_13TeV-madgraphMLM-pythia8/output/bbbbNtuple_6.root

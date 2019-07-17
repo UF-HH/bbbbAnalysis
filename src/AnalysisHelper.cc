@@ -112,6 +112,7 @@ void AnalysisHelper::saveOutputsToFile()
     allToSave.push_back(&data_samples_); 
     allToSave.push_back(&sig_samples_); 
     allToSave.push_back(&bkg_samples_); 
+    allToSave.push_back(&datadriven_samples_); 
     
     // nesting orderd: type of events --> sample --> selection --> variable --> systematics
 
@@ -207,9 +208,10 @@ void AnalysisHelper::saveOutputsToFile()
 
 void AnalysisHelper::readSamples()
 {
-    vector<string> dataSampleNameList = ( mainCfg_->hasOpt("general::data")        ? mainCfg_->readStringListOpt("general::data")        : vector<string>(0) );
-    vector<string> sigSampleNameList  = ( mainCfg_->hasOpt("general::signals")     ? mainCfg_->readStringListOpt("general::signals")     : vector<string>(0) );
-    vector<string> bkgSampleNameList  = ( mainCfg_->hasOpt("general::backgrounds") ? mainCfg_->readStringListOpt("general::backgrounds") : vector<string>(0) );
+    vector<string> dataSampleNameList        = ( mainCfg_->hasOpt("general::data")        ? mainCfg_->readStringListOpt("general::data")        : vector<string>(0) );
+    vector<string> sigSampleNameList         = ( mainCfg_->hasOpt("general::signals")     ? mainCfg_->readStringListOpt("general::signals")     : vector<string>(0) );
+    vector<string> bkgSampleNameList         = ( mainCfg_->hasOpt("general::backgrounds") ? mainCfg_->readStringListOpt("general::backgrounds") : vector<string>(0) );
+    vector<string> datadrivenSampleNameList  = ( mainCfg_->hasOpt("general::datadriven")  ? mainCfg_->readStringListOpt("general::datadriven")  : vector<string>(0) );
 
     cout << "@@ Samples : reading samples DATA : " << endl;       
     for (string name : dataSampleNameList)
@@ -246,6 +248,22 @@ void AnalysisHelper::readSamples()
         // cout << " " << name;
     }
     cout << endl;
+
+
+    for (string name : datadrivenSampleNameList)
+    {
+        shared_ptr<Sample> smp = openSample(name);
+        smp->setType(Sample::kDatadriven);
+        datadriven_samples_.append(name, smp);
+        if (DEBUG){
+            cout << " ..........DEBUG: read datadriven sample: " << smp->getName() << " nweights: " << smp->getWeights().size() << endl;
+            for (uint iww = 0; iww < smp->getWeights().size(); ++iww)
+                cout << " ..........DEBUG:    >> wname: " << smp->getWeights().at(iww).getName() << " nsyst: " << smp->getWeights().at(iww).getNSysts() << endl;
+        }
+        // cout << " " << name;
+    }
+    cout << endl;
+
 
     // printSamples(true);
 
@@ -383,11 +401,13 @@ void AnalysisHelper::prepareSamplesHistos()
     allToInit.push_back(&data_samples_); 
     allToInit.push_back(&sig_samples_); 
     allToInit.push_back(&bkg_samples_); 
+    allToInit.push_back(&datadriven_samples_); 
 
     vector<int> doselW;
     doselW.push_back(0); // no sel W for data!
     doselW.push_back(1);
     doselW.push_back(1);
+    doselW.push_back(0); // no sel w for datadriven!
 
     for (uint ismpc = 0; ismpc < allToInit.size(); ++ismpc) // loop on (data, sig, bkg)
     {
@@ -516,11 +536,13 @@ void AnalysisHelper::prepareSamples2DHistos()
     allToInit.push_back(&data_samples_); 
     allToInit.push_back(&sig_samples_); 
     allToInit.push_back(&bkg_samples_); 
+    allToInit.push_back(&datadriven_samples_); 
 
     vector<int> doselW;
     doselW.push_back(0); // no sel W for data!
     doselW.push_back(1);
     doselW.push_back(1);
+    doselW.push_back(0); // no sel W for datadriven!
 
     for (uint ismpc = 0; ismpc < allToInit.size(); ++ismpc) // loop on (data, sig, bkg)
     {
@@ -856,6 +878,35 @@ void AnalysisHelper::printSamples(bool printWeights, bool printSysts)
         }
     }
 
+
+    cout << "   Datadriven:" << endl;
+    for (unsigned int i = 0; i < datadriven_samples_.size(); ++i)
+    {
+        cout << "   >> " << datadriven_samples_.at(i)->getName() << endl;
+        if (printWeights)
+        {
+            cout << "       ~~~> ";
+            for (unsigned int iw = 0; iw < datadriven_samples_.at(i)->getWeights().size(); ++iw)
+            {
+                cout << datadriven_samples_.at(i)->getWeights().at(iw).getName() << " ";
+            }
+            cout << endl;
+        }
+
+        if (printSysts)
+        {
+            // syst of weights
+            for (unsigned int iw = 0; iw < selections_.at(i).getWeights().size(); ++iw)
+            {
+                cout << selections_.at(i).getWeights().at(iw).getName() << " ::: ";
+                for (int isys = 0; isys < selections_.at(i).getWeights().at(iw).getNSysts(); ++isys)
+                    cout << selections_.at(i).getWeights().at(iw).getSystName(isys) <<"="<<selections_.at(i).getWeights().at(iw).getSyst(isys) << " , ";
+                cout << endl;
+            }
+        }
+    }
+
+
     cout << "   ---------------------- " << endl;
 }
 
@@ -1027,8 +1078,24 @@ void AnalysisHelper::fillHistosSample(Sample& sample)
     for (auto it = valuesMap.begin(); it != valuesMap.end(); ++it)
     {
         TBranch* br = (TBranch*) branchList->FindObject(it->first.c_str());
-        if (!br)
-            cerr << endl << "** ERROR: AnalysisHelper::fillHistosSample : sample : " << sample.getName() << " does not have branch " << it->first << ", expect a crash..." << endl;
+        if (!br){
+            // if branch not found, check if a default version is fiven in the cfg
+            // if (sampleCfg_ -> hasOpt( Form("defaultWeight::%s",sample.getName().c_str())))
+            if (hasDefaultWeight(it->first.c_str()))
+            {
+                double def_val = getDefaultWeight(it->first.c_str());
+                cout << " >> INFO: in sample " << sample.getName() << " will use the default value of " << def_val << " for weight " << it->first.c_str() << endl;
+                it->second = def_val;
+                continue; // do not continue to set the branch address
+            }
+            else
+            {
+                // cerr << endl << "** ERROR: AnalysisHelper::fillHistosSample : sample : " << sample.getName() << " does not have branch " << it->first << ", expect a crash..." << endl;
+                cerr << endl << "** ERROR: AnalysisHelper::fillHistosSample : sample : " << sample.getName() << " does not have branch " << it->first << ", aborting to avoid a crash..." << endl;
+                cerr <<         "**        Please note that you can set a default value for a missing branch using the syntax [defaultWeight] weight_name = default_value in the selection cfg" << endl;
+                exit(1);
+            }
+        }
 
         string brName = br->GetTitle();
         if (brName.find(string("/F")) != string::npos) // F : a 32 bit floating point (Float_t)
@@ -1083,18 +1150,6 @@ void AnalysisHelper::fillHistosSample(Sample& sample)
     // if (idxsplit_ == nsplit_-1)
     //     nStop = nEvts;
 
-
-    // if copy tree enabled:
-    // TTree *newtree = tree->CloneTree(0)
-
-    // //Create a new file + a clone of old tree header. Do not copy events
-    // TFile *newfile = new TFile("small.root","recreate");
-    // TTree *newtree = oldtree->CloneTree(0);
-    // //Divert branch fH to a separate file and copy all events
-    // newtree->GetBranch("fH")->SetFile("small_fH.root");
-    // newtree->CopyEntries(oldtree);
-
-
     if (DEBUG) cout << " ..........DEBUG: AnalysisHelper : fillHistosSample : going to loop on tree entries... " << endl;
     Sample::selColl& plots = sample.plots();
     Sample::selColl2D& plots2D = sample.plots2D();
@@ -1118,8 +1173,7 @@ void AnalysisHelper::fillHistosSample(Sample& sample)
         {
 
             if (!(vTTF.at(isel)->EvalInstance())) continue;
-            // if copy tree enabled and selection = trigger selection
-            // newtree->Fill()
+
 
             double wEvSel = 1.0;
             const Selection& currSel = selections_.at(isel);
@@ -1189,11 +1243,11 @@ void AnalysisHelper::fillHistosSample(Sample& sample)
         }
     }
 
-    // newtree->AutoSave();
-
     // filling is finished, scale to the sample denominator evt sum to include acceptance
-    if (sample.getType() != Sample::kData)
+    if (sample.getType() != Sample::kData && sample.getType() != Sample::kDatadriven)
         sample.scaleAll(lumi_);
+
+
 }
 
 void AnalysisHelper::activateBranches(Sample& sample)
@@ -1223,11 +1277,16 @@ void AnalysisHelper::activateBranches(Sample& sample)
         for (uint iw = 0; iw < sample.getWeights().size(); ++iw)
         {
             const Weight& currW = sample.getWeights().at(iw);
-            tree->SetBranchStatus(currW.getName().c_str(), 1);
+
+            // this is not default weight for this sample
+            if (!hasDefaultWeight(currW.getName()))
+                tree->SetBranchStatus(currW.getName().c_str(), 1);
+            
             for (int isys = 0; isys < currW.getNSysts(); ++isys)
             {
                //currW.getSyst(isys); // <----- keep an eye on it. It happened to throw range 
-               tree->SetBranchStatus(currW.getSyst(isys).c_str(), 1); 
+                if (!hasDefaultWeight(currW.getSyst(isys)))
+                    tree->SetBranchStatus(currW.getSyst(isys).c_str(), 1); 
             }
         }
         if (DEBUG) cout << " ..........DEBUG: activated sample weights branches" << endl;
@@ -1242,10 +1301,12 @@ void AnalysisHelper::activateBranches(Sample& sample)
             for (uint iw = 0; iw < currSel.getWeights().size(); ++iw)
             {
                 const Weight& currW = currSel.getWeights().at(iw);
-                tree->SetBranchStatus(currW.getName().c_str(), 1);
+                if (!hasDefaultWeight(currW.getName()))
+                    tree->SetBranchStatus(currW.getName().c_str(), 1);
                 for (int isys = 0; isys < currW.getNSysts(); ++isys)
                 {
-                   tree->SetBranchStatus(currW.getSyst(isys).c_str(), 1); 
+                    if (!hasDefaultWeight(currW.getSyst(isys)))
+                       tree->SetBranchStatus(currW.getSyst(isys).c_str(), 1); 
                 }
             }
         }
@@ -1345,6 +1406,13 @@ void AnalysisHelper::fillHistos()
     {             
         fillHistosSample(*(bkg_samples_.at(isample)));
     }
+
+    // datadriven    
+    for (uint isample = 0; isample < datadriven_samples_.size(); ++isample) // loop on samples
+    {             
+        fillHistosSample(*(datadriven_samples_.at(isample)));
+    }
+
 }
 
 void AnalysisHelper::setSplitting (int idxsplit, int nsplit)
@@ -1376,16 +1444,17 @@ void AnalysisHelper::dump(int detail)
     cout << endl;
     
     cout << "@@@@@@@@ GENERAL @@@@@@@@" << endl;
-    cout << "@ lumi            : " << lumi_ << endl;
-    cout << "@ main cfg        : " << mainCfg_->getCfgName() << endl;
-    cout << "@ sample cfg      : " << sampleCfg_->getCfgName() << endl;
-    cout << "@ sel. cfg        : " << cutCfg_->getCfgName() << endl;
-    cout << "@ n. selections   : " << selections_.size() << endl;
-    cout << "@ n. variables    : " << variables_.size() << endl;
-    cout << "@ n. 2D variables : " << variables2D_.size() << endl;
-    cout << "@ n. data samples : " << data_samples_.size() << endl;
-    cout << "@ n. sig samples  : " << sig_samples_.size() << endl;
-    cout << "@ n. bkg samples  : " << bkg_samples_.size() << endl;
+    cout << "@ lumi                   : " << lumi_ << endl;
+    cout << "@ main cfg               : " << mainCfg_->getCfgName() << endl;
+    cout << "@ sample cfg             : " << sampleCfg_->getCfgName() << endl;
+    cout << "@ sel. cfg               : " << cutCfg_->getCfgName() << endl;
+    cout << "@ n. selections          : " << selections_.size() << endl;
+    cout << "@ n. variables           : " << variables_.size() << endl;
+    cout << "@ n. 2D variables        : " << variables2D_.size() << endl;
+    cout << "@ n. data samples        : " << data_samples_.size() << endl;
+    cout << "@ n. sig samples         : " << sig_samples_.size() << endl;
+    cout << "@ n. bkg samples         : " << bkg_samples_.size() << endl;
+    cout << "@ n. datadriven samples  : " << datadriven_samples_.size() << endl;
     cout << endl;
 
     cout << "@@@@@@@@ VARIABLES @@@@@@@@" << endl;
@@ -1428,6 +1497,11 @@ void AnalysisHelper::dump(int detail)
     for (uint is = 0; is < bkg_samples_.size(); ++is)
     {
         cout << "  " << is << " >> " << setw(25) << left << bkg_samples_.at(is)->getName() << setw(13) << " nweights: " << bkg_samples_.at(is)->getWeights().size() << endl;
+    }
+    cout << "@ datadriven sample list: " << endl;
+    for (uint is = 0; is < datadriven_samples_.size(); ++is)
+    {
+        cout << "  " << is << " >> " << setw(25) << left << datadriven_samples_.at(is)->getName() << setw(13) << " nweights: " << datadriven_samples_.at(is)->getWeights().size() << endl;
     }
     cout << endl;
     if (detail >=1)
@@ -1473,6 +1547,12 @@ void AnalysisHelper::mergeSamples()
             type = (int) Sample::kBkg;
             smaster = bkg_samples_.at(snamefirst);
             chosenMap = &bkg_samples_;
+        }
+
+        else if (datadriven_samples_.has_key(snamefirst)){
+            type = (int) Sample::kDatadriven;
+            smaster = datadriven_samples_.at(snamefirst);
+            chosenMap = &datadriven_samples_;
         }
 
         else if (sig_samples_.has_key(snamefirst)){
@@ -1594,4 +1674,16 @@ void AnalysisHelper::mergeSamples()
                 cout << "    ................ " << chosenMap->key(ii) << endl;
         }
     }
+}
+
+
+bool   AnalysisHelper::hasDefaultWeight(std::string weightName)
+{
+    return cutCfg_ -> hasOpt( Form("defaultWeight::%s",weightName.c_str()));
+}
+
+double AnalysisHelper::getDefaultWeight(std::string weightName)
+{
+    double def_val = (double) cutCfg_ -> readFloatOpt( Form("defaultWeight::%s",weightName.c_str()));
+    return def_val;
 }

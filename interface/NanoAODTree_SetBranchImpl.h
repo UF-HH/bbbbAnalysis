@@ -361,6 +361,7 @@ class NanoAODTree_SetBranchImpl {
         ReaderValuePatch<Float_t>     PV_chi2                             {chain_, "PV_chi2"};
         ReaderValuePatch<Float_t>     PV_score                            {chain_, "PV_score"};
         ReaderValuePatch<Int_t>       PV_npvs                             {chain_, "PV_npvs"};
+        ReaderValuePatch<Int_t>       PV_npvsGood                         {chain_, "PV_npvsGood"};
         ReaderValuePatch<UInt_t>      nSV                                 {chain_, "nSV"};
         ReaderArrayPatch<Float_t>     SV_dlen                             {chain_, "SV_dlen", nSV, 100};
         ReaderArrayPatch<Float_t>     SV_dlenSig                          {chain_, "SV_dlenSig", nSV, 100};

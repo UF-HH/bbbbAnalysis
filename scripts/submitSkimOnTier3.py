@@ -86,6 +86,7 @@ if "2016ResonantDiHiggs4BDataSets" in args.input : # dangerous for future
 username = getpass.getuser()
 print "... Welcome", username
 
+
 oname = args.oname
 if not oname:
     # print "A:" , args.input
@@ -93,6 +94,10 @@ if not oname:
     # print "C:" , args.input.rsplit(r'/', 1)[0].rsplit('.', 1)
     oname = args.input.rsplit(r'/', 1)[-1].rsplit('.', 1)[0]
 oname = 'SKIM_' + oname
+
+if not args.tag:
+    print "... please provide a non-empty tag name (are you using --tag=$1 without cmd line argument?)"
+    sys.exit()
 
 odir = args.odir.format(username)
 oLFN_base = formOutName(odir, args.tag, oname)

@@ -8,7 +8,6 @@
 #include <iostream>
 #include <string>
 #include <iomanip>
-#include <any>
 
 #include <boost/program_options.hpp>
 namespace po = boost::program_options;
@@ -21,7 +20,7 @@ namespace po = boost::program_options;
 namespace su = SkimUtils;
 
 #include "OfflineProducerHelper.h"
-namespace oph = OfflineProducerHelper;
+// namespace oph = OfflineProducerHelper;
 
 #include "OutputTree.h"
 #include "SkimEffCounter.h"
@@ -30,6 +29,8 @@ namespace oph = OfflineProducerHelper;
 #include "TFile.h"
 
 using namespace std;
+
+#include <any>
 
 // skim_ntuple.exe --cfg config/skim.cfg --input inputFiles/Samples_80X/VBF_HH_4b_10gen2018.txt --output test_bbbb_tree.root --xs 10 --is-signal
 
@@ -49,9 +50,13 @@ int main(int argc, char** argv)
         ("input" , po::value<string>()->required(), "input file list")
         ("output", po::value<string>()->required(), "output file LFN")
         // optional
-        ("xs"       , po::value<float>(), "cross section [pb]")
-        ("maxEvts"  , po::value<int>()->default_value(-1), "max number of events to process")
-        ("puWeight" , po::value<string>()->default_value(""), "PU weight file name")
+        ("xs"        , po::value<float>(), "cross section [pb]")
+        ("maxEvts"   , po::value<int>()->default_value(-1), "max number of events to process")
+        ("puWeight"  , po::value<string>()->default_value(""), "PU weight file name")
+        // ("kl-rew-list"  , po::value<std::vector<float>>()->multitoken()->default_value(std::vector<float>(0), "-"), "list of klambda values for reweight")
+        ("kl-rew"    , po::value<float>(),  "klambda value for reweighting")
+        ("kl-map"    , po::value<string>()->default_value(""), "klambda input map for reweighting")
+        // ("kl-histo"  , po::value<string>()->default_value("hhGenLevelDistr"), "klambda histogram name for reweighting")
         // flags
         ("is-data",    po::value<bool>()->zero_tokens()->implicit_value(true)->default_value(false), "mark as a data sample (default is false)")
         ("is-signal",  po::value<bool>()->zero_tokens()->implicit_value(true)->default_value(false), "mark as a HH signal sample (default is false)")
@@ -96,12 +101,12 @@ int main(int argc, char** argv)
     CfgParser config;
     if (!config.init(opts["cfg"].as<string>())) return 1;
     cout << "[INFO] ... using config file " << opts["cfg"].as<string>() << endl;
-    
+ 
     ////////////////////////////////////////////////////////////////////////
     // Read needed fields from config file and pass them to the oph
     ////////////////////////////////////////////////////////////////////////
 
-    std::map<std::string, std::any> parameterList;
+    std::map<std::string,std::any> parameterList;
 
     const string bbbbChoice = config.readStringOpt("parameters::bbbbChoice");
     parameterList.emplace("is_VBF_sig",is_VBF_sig);
@@ -112,6 +117,13 @@ int main(int argc, char** argv)
     }
     else if(bbbbChoice == "BothClosestToMh"){
         parameterList.emplace("HiggsMass",config.readFloatOpt("parameters::HiggsMass"));
+    }
+    else if(bbbbChoice == "BothClosestToDiagonal"){
+        parameterList.emplace("LeadingHiggsMass",config.readFloatOpt("parameters::LeadingHiggsMass"));
+        parameterList.emplace("SubleadingHiggsMass",config.readFloatOpt("parameters::SubleadingHiggsMass"));
+    }
+    else if(bbbbChoice == "MinMassDifference"){
+    //No parameters are needed
     }
     else if(bbbbChoice == "MostBackToBack"){
         parameterList.emplace("HiggsMass",config.readFloatOpt("parameters::HiggsMass"));
@@ -146,11 +158,12 @@ int main(int argc, char** argv)
         parameterList.emplace("MaxAbsEta"           ,config.readFloatOpt("parameters::MaxAbsEta"           ));
     }
     else if(preselectionCutStrategy == "VBFJetCut"){
-        parameterList.emplace("bMinDeepCSV"          ,config.readFloatOpt("parameters::bMinDeepCSV"          ));
-        parameterList.emplace("bMinPt"               ,config.readFloatOpt("parameters::bMinPt"               ));
-        parameterList.emplace("bMaxAbsEta"           ,config.readFloatOpt("parameters::bMaxAbsEta"           ));
-        parameterList.emplace("jMinPt"               ,config.readFloatOpt("parameters::jMinPt"               ));
-        parameterList.emplace("jMaxAbsEta"           ,config.readFloatOpt("parameters::jMaxAbsEta"           ));
+        parameterList.emplace("bMinDeepCSV"          ,config.readFloatOpt("parameters::bMinDeepCSV"      ));
+        parameterList.emplace("bMinPt"               ,config.readFloatOpt("parameters::bMinPt"           ));
+        parameterList.emplace("bMaxAbsEta"           ,config.readFloatOpt("parameters::bMaxAbsEta"       ));
+        parameterList.emplace("jMinPt"               ,config.readFloatOpt("parameters::jMinPt"           ));
+        parameterList.emplace("jMaxAbsEta"           ,config.readFloatOpt("parameters::jMaxAbsEta"       ));
+        parameterList.emplace("FourthAntiBTagInformation"   ,config.readBoolOpt("parameters::FourthAntiBTagInformation"));
     }
     else if(preselectionCutStrategy == "None"){
     }  
@@ -241,10 +254,12 @@ int main(int argc, char** argv)
         //     parameters fo be retreived;
         // }  
         else throw std::runtime_error("cannot recognize event choice ObjectsForCut " + JECstrategy);
-
     }
 
-    oph::initializeOfflineProducerHelper(&parameterList);
+    OfflineProducerHelper oph;
+
+    // oph::initializeOfflineProducerHelper(&parameterList);
+    oph.initializeOfflineProducerHelper(&parameterList);
 
     ////////////////////////////////////////////////////////////////////////
     // Prepare event loop
@@ -289,14 +304,26 @@ int main(int argc, char** argv)
 
     SkimEffCounter ec;
 
-    oph::initializeObjectsForCuts(ot);
+    oph.initializeObjectsForCuts(ot);
 
     if(!is_data)
     {
-        oph::initializeJERsmearingAndVariations(ot);
-        oph::initializeJECVariations(ot);
-        oph::initializeObjectsForEventWeight(ot,ec,opts["puWeight"].as<string>(),xs);
-        oph::initializeObjectsBJetForScaleFactors(ot);
+        oph.initializeJERsmearingAndVariations(ot);
+        oph.initializeJECVariations(ot);
+        oph.initializeObjectsForEventWeight(ot,ec,opts["puWeight"].as<string>(),xs);
+        oph.initializeObjectsBJetForScaleFactors(ot);
+
+        // MC reweight initialization
+        if (opts.find("kl-rew") != opts.end()) // a kl value was passed
+        {
+            float  kl_rew    = opts["kl-rew"].as<float>();  // target value
+            string kl_map    = opts["kl-map"].as<string>(); // sample map fname
+            string kl_histo  = "hhGenLevelDistr";           // sample map histo
+            string kl_coeffs = config.readStringOpt("hhreweight::coeff_file"); // coefficient file
+
+            oph.init_HH_reweighter(ot, kl_coeffs, kl_map, kl_histo);
+            oph.hhreweighter_kl_ = kl_rew;
+        }
     }
 
     jsonLumiFilter jlf;
@@ -307,7 +334,6 @@ int main(int argc, char** argv)
     vector <string> triggers;
     for (auto trg : config.readStringListOpt("triggers::makeORof"))
        triggers.push_back(trg);
-    for (unsigned p=0; p<triggers.size(); p++){ot.declareUserIntBranch(triggers[p], -1);}
     ot.declareUserFloatBranch("XS",-1);
     ////////////////////////////////////////////////////////////////////////
     // Execute event loop
@@ -331,41 +357,40 @@ int main(int argc, char** argv)
               
         ot.clear();
         EventInfo ei;
+
+        // HH reweight needs the GEN info -> keep first
+        if (is_signal){
+            oph.select_gen_HH(nat, ei);
+            oph.select_gen_bb_bb(nat, ei);            
+            if (is_VBF_sig) {
+                bool got_gen_VBF = oph.select_gen_VBF_partons(nat, ei);
+                if (!got_gen_VBF){
+                    cout << "Failed on iEv = " << iEv << " evt num = " << *(nat.event) << " run = " << *(nat.run) << endl;
+                    continue;
+                }
+            }
+        }
         
         double weight = 1.;
-        if(!is_data) weight = oph::calculateEventWeight(nat, ot, ec);
+        if(!is_data) weight = oph.calculateEventWeight(nat, ei, ot, ec);
 
+        //cout<<"The weight = "<<weight<<endl;
         ec.updateProcessed(weight);
 
         if( !nat.getTrgOr() ) continue;
 
         ec.updateTriggered(weight);
-
-        if (is_VBF_sig){
-            oph::select_gen_HH(nat, ei);
-            oph::select_gen_bb_bb(nat, ei);            
-            bool got_gen_VBF = oph::select_gen_VBF_partons(nat, ei);
-            if (!got_gen_VBF){
-                cout << "Failed on iEv = " << iEv << " evt num = " << *(nat.event) << " run = " << *(nat.run) << endl;
-                continue;
-            }
-        }
-
         
-        if (!oph::select_bbbbjj_jets(nat, ei, ot)) continue; 
-        for (unsigned p=0; p<triggers.size(); p++){
-           if (nat.triggerReader().getTrgResult(triggers[p])){ ot.userInt(triggers[p]) = 1;}
-           else{ot.userInt(triggers[p]) = 0;}
-        }
+        if (!oph.select_bbbbjj_jets(nat, ei, ot)) continue; 
         if(!is_data){ot.userFloat("XS")=xs;}
-        oph::save_objects_for_cut(nat, ot, ei);
+        oph.save_objects_for_cut(nat, ot,ei);
 
         ec.updateSelected(weight);
         su::fill_output_tree(ot, nat, ei);
 
     }
 
-    oph::clean();
+    // oph.clean();
 
     outputFile.cd();
     ot.write();

@@ -15,24 +15,36 @@ def getLog (proto, ID, silenceWarning=False):
         if not silenceWarning: print ">>> Too many logs found for job", ID, ' (resubmitted?) , returning last'
     return logs[-1]
 
-def getExitCode(fname):
+# def getExitCode(fname):
+#     f = open(fname)
+#     code = -888
+#     fileCopied = False;
+#     for line in f:
+#         if code == -888:
+#             if "*** Break *** segmentation violation" in line:
+#                 code = -666;
+#             if '... job finished with status' in line:
+#                 code = int(re.search('... job finished with status (\d+)', line).group(1))
+#         if "... copy done with status 0" in line:
+#             fileCopied = True;
+
+#     if fileCopied and not (code == 0 or code == -888):
+#         code = code - 10000
+#     if code==0 and not fileCopied:
+#         code=-777
+#     return code
+
+def getExitCode(fname, text='job ended with status'):
     f = open(fname)
     code = -888
-    fileCopied = False;
     for line in f:
-        if code == -888:
-            if "*** Break *** segmentation violation" in line:
-                code = -666;
-            if '... job finished with status' in line:
-                code = int(re.search('... job finished with status (\d+)', line).group(1))
-        if "... copy done with status 0" in line:
-            fileCopied = True;
-
-    if fileCopied and not (code == 0 or code == -888):
-        code = code - 10000
-    if code==0 and not fileCopied:
-        code=-777
+        # if not '... cmsRun finished with status' in line:
+        if not '... %s' % text in line:
+            continue
+        # code = int(re.search('... cmsRun finished with status (\d+)', line).group(1))
+        code = int(re.search('... %s (\d+)' % text, line).group(1))
     return code
+
 
 ##############################
 ##### CMD line options
@@ -71,14 +83,22 @@ logs_txt = {ID: getLog(log_proto, ID) for ID in jobs_ID if getLog(log_proto, ID,
 
 #############################
 
-exitCodes = []
+exitCodes_job  = []
+exitCodes_run  = []
+exitCodes_copy = []
 ## code -999 means no log yet (unfinished?)
 ## code -888 means no CMSSW string found (unfinished? / crash?)
 for ID in jobs_ID:
     if not ID in logs_txt:
-        exitCodes.append(-999)
+        # exitCodes.append(-999)
+        exitCodes_job.append(-999)
+        exitCodes_run.append(-999)
+        exitCodes_copy.append(-999)
     else:
-        exitCodes.append(getExitCode(logs_txt[ID]))
+        # exitCodes.append(getExitCode(logs_txt[ID]))
+        exitCodes_job.append(getExitCode(logs_txt[ID],  'job finished with status'))
+        exitCodes_run.append(getExitCode(logs_txt[ID],  'execution finished with status'))
+        exitCodes_copy.append(getExitCode(logs_txt[ID], 'copy done with status'))
 
 ###########################
 missing         = []
@@ -89,21 +109,58 @@ notCopied       = []
 failedButCopied = []
 
 
+# for idx, ID in enumerate(jobs_ID):
+#     code = exitCodes[idx]
+#     if code <=-10000:
+#         failedButCopied.append(ID)
+#         code = code + 10000
+#     if   code == -999: 
+#         missing.append((ID, code))
+#     elif code == -888: 
+#         unfinished.append((ID, code))
+#     elif code == 0:    
+#         success.append((ID, code))
+#     elif code == -777:
+#         notCopied.append((ID, code))
+#     else:              
+#         failed.append((ID, code))
+
 for idx, ID in enumerate(jobs_ID):
-    code = exitCodes[idx]
-    if code <=-10000:
-        failedButCopied.append(ID)
-        code = code + 10000
-    if   code == -999: 
+    code_run  = exitCodes_run[idx]
+    code_copy = exitCodes_copy[idx]
+    code_job  = exitCodes_job[idx]
+
+    code = code_job ## FIXME; propagate more codes?
+
+    if code_job == -999:
         missing.append((ID, code))
-    elif code == -888: 
+    elif code_job == -888:
         unfinished.append((ID, code))
-    elif code == 0:    
+    elif code_run == 0 and code_job == 0 and code_copy == 0:
         success.append((ID, code))
-    elif code == -777:
-        notCopied.append((ID, code))
-    else:              
+    else:
         failed.append((ID, code))
+
+    ## special cases
+    if code_copy == 0 and code_run != 0:
+        failedButCopied.append((ID, code))
+    if code_copy != 0:
+        notCopied.append((ID, code))
+
+    # if code <=-10000:
+    #     failedButCopied.append(ID)
+    #     code = code + 10000
+    # if   code == -999: 
+    #     missing.append((ID, code))
+    # elif code == -888: 
+    #     unfinished.append((ID, code))
+    # elif code == 0:    
+    #     success.append((ID, code))
+    # elif code == -777:
+    #     notCopied.append((ID, code))
+    # else:              
+    #     failed.append((ID, code))
+
 
 # print exitCodes
 print "\n***********************************************************"
@@ -112,7 +169,9 @@ print "** Success        : ", len(success) , "(%.1f%%)" % (100.*len(success)/len
 print "** Failed         : ", len(failed) , "(%.1f%%)" % (100.*len(failed)/len(jobs_ID))
 print "** Unfinished     : ", len(unfinished) , "(%.1f%%)" % (100.*len(unfinished)/len(jobs_ID))
 print "** Missing logs   : ", len(missing) , "(%.1f%%)" % (100.*len(missing)/len(jobs_ID))
-print "** notCopied      : ", len(notCopied) , "(%.1f%%)" % (100.*len(notCopied)/len(jobs_ID))
+print "**************************** "
+print "** not copied          : ", len(notCopied) , "(%.1f%%)" % (100.*len(notCopied)/len(jobs_ID))
+print "** failed but copied   : ", len(failedButCopied) , "(%.1f%%)" % (100.*len(failedButCopied)/len(jobs_ID))
 print "***********************************************************"
 
 if not args.short:

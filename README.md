@@ -36,3 +36,11 @@ Example:
 ```
 source do_all_plots.sh
 ````
+
+## Running combine
+Log on a CentOS 7 machine (lxplus, cmslpc-sl7) and install combine following the instructions [here](https://cms-analysis.github.io/HiggsAnalysis-CombinedLimit/#for-end-users-that-dont-need-to-commit-or-do-any-development)
+
+After compiling  CMSSW, do ``git clone https://github.com/UF-HH/bbbbAnalysis`` (NB: no need to compile the code with scram and make exe since it will only run combine).
+
+Scripts for running combine are under ``limits``.
+

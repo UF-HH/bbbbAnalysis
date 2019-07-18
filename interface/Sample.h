@@ -39,7 +39,8 @@ class Sample
         enum sType {
             kData = 0,
             kSig  = 1,
-            kBkg  = 2
+            kBkg  = 2,
+            kDatadriven  = 3
         };
 
         // standard ctor/dtor

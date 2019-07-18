@@ -78,11 +78,12 @@ args, unknown = parser.parse_known_args()
 #### root://cmseos.fnal.gov//store/user/lcadamur/bbbb_ntuples/' + TAG + '/' + ONAME
 
 ##################
-executable = 'bin/skim_ntuple_nonresonant.exe' ##If resonant analysis 'bin/skim_ntuple.exe'
+executable = 'bin/skim_ntuple_nonresonant.exe' ##if non resonant 'bin/skim_ntuple_nonresonant.exe' ##If resonant analysis 'bin/skim_ntuple.exe'
 ##################
 
 username = getpass.getuser()
 print "... Welcome", username
+
 
 oname = args.oname
 if not oname:
@@ -91,6 +92,10 @@ if not oname:
     # print "C:" , args.input.rsplit(r'/', 1)[0].rsplit('.', 1)
     oname = args.input.rsplit(r'/', 1)[-1].rsplit('.', 1)[0]
 oname = 'SKIM_' + oname
+
+if not args.tag:
+    print "... please provide a non-empty tag name (are you using --tag=$1 without cmd line argument?)"
+    sys.exit()
 
 odir = args.odir.format(username)
 oLFN_base = formOutName(odir, args.tag, oname)

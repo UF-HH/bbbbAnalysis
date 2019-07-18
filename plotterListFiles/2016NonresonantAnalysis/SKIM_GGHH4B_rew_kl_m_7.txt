@@ -1,0 +1,1 @@
+root://cmseos.fnal.gov//store/user/lcadamur/bbbb_ntuples/klambdarew_2016_8Lug2019_v2/SKIM_GGHH4B_rew_kl_m_7/output/bbbbNtuple_0.root

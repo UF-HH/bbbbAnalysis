@@ -75,22 +75,22 @@ def fitreweightermodel(original,target,original_weights,target_weights,tfactor, 
 	ws      = model.predict_weights(original,original_weights,lambda x: numpy.mean(x, axis=0))
 	weights = numpy.multiply(ws,tfactor)
 	factor  = float( float(len(target.index)) / weights.sum()  ) 
-	print "The transfer factor                                      = ",tfactor
-	print "The sum of target weights                                = ",target_weights.sum(),"+/-",math.sqrt(numpy.square(target_weights).sum() )
-	print "The sum of model weights (before reweighting)            = ",original_weights.sum(),"+/-",math.sqrt(numpy.square(original_weights).sum() )
-	print "The sum of model weights (before renormalization factor) = ",weights.sum(),"+/-",math.sqrt(numpy.square(weights).sum() )
-	print "The renormalization factor                               = ",factor
-	print "The sum of model weights (after renormalization factor)  = ",weights.sum()*factor
+	print "The transfer factor                                                 = ",tfactor
+	print "The sum of target weights                                           = ",target_weights.sum(),"+/-",math.sqrt(numpy.square(target_weights).sum() )
+	print "The sum of model weights (before reweighting)                       = ",original_weights.sum(),"+/-",math.sqrt(numpy.square(original_weights).sum() )
+	print "The sum of model weights (after reweighting, before renorm. factor) = ",weights.sum(),"+/-",math.sqrt(numpy.square(weights).sum() )
+	print "The renormalization factor                                          = ",factor
+	print "The sum of model weights (after renormalization factor)             = ",weights.sum()*factor
 	weights = numpy.multiply(weights,factor)
 	return weights,model,factor
 
 def getmodelweights(original,original_weights,model,tfactor,factor):
 	ws = model.predict_weights(original,original_weights,lambda x: numpy.mean(x, axis=0))
 	weights = numpy.multiply(ws,tfactor)
-	print "The sum of model weights (before reweighting)     = ",original_weights.sum(),"+/-",math.sqrt(numpy.square(original_weights).sum() )
-	print "The sum of model weights (before transfer factor) = ",weights.sum(),"+/-",math.sqrt(numpy.square(weights).sum() )
-	print "The renormalization factor                        = ",factor
-	print "The sum of model weights (after transfer factor)  = ",weights.sum()*factor
+	print "The sum of model weights (before reweighting)                       = ",original_weights.sum(),"+/-",math.sqrt(numpy.square(original_weights).sum() )
+	print "The sum of model weights (after reweighting, before renorm. factor) = ",weights.sum(),"+/-",math.sqrt(numpy.square(weights).sum() )
+	print "The renormalization factor                                          = ",factor
+	print "The sum of model weights (after renorm. factor)                     = ",weights.sum()*factor
 	weights = numpy.multiply(weights,factor)
 	return weights
 

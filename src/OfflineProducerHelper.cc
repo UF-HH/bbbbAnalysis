@@ -2903,6 +2903,118 @@ bool OfflineProducerHelper::select_gen_HH (NanoAODTree& nat, EventInfo& ei)
 }
 
 
+bool OfflineProducerHelper::select_gen_XYH (NanoAODTree& nat, EventInfo& ei)
+{
+    // pdgId : X = 45, Y = 35, H = 25
+
+    bool all_ok = true;
+    for (uint igp = 0; igp < *(nat.nGenPart); ++igp)
+    {
+        GenPart gp (igp, &nat);
+        int apdgId = abs(get_property(gp, GenPart_pdgId));
+        if (apdgId != 45 &&  apdgId != 35 && apdgId != 25) continue;
+        // bool isFirst = checkBit(get_property(gp, GenPart_statusFlags), 12); // 12: isFirstCopy
+        // if (!isFirst) continue;
+        if (gp.isFirstCopy())
+        {
+            switch (apdgId) {
+                case 45:
+                    if (!ei.gen_X) ei.gen_X = gp;
+                    else{
+                       cout << "** [WARNING] : select_gen_XYH : more than one X found (first copy)" << endl; 
+                       all_ok = false;
+                    }
+                    break;
+                
+                case 35:
+                    if (!ei.gen_H1) ei.gen_H1 = gp;
+                    else{
+                       cout << "** [WARNING] : select_gen_XYH : more than one Y found (first copy)" << endl; 
+                       all_ok = false;
+                    }
+                    break;
+                
+                case 25:
+                    if (!ei.gen_H2) ei.gen_H2 = gp;
+                    else{
+                       cout << "** [WARNING] : select_gen_XYH : more than one H found (first copy)" << endl; 
+                       all_ok = false;
+                    }
+                    break;
+                
+                default:
+                    cout << "** [WARNING] : select_gen_XYH : wrong gen particle pdgId handled (first copy) (should never happen) : " << apdgId << endl; 
+                    all_ok = false;
+                    break;
+            }
+        }
+        
+        if (gp.isLastCopy())
+        {
+            switch (apdgId) {
+                case 45:
+                    if (!ei.gen_X_last) ei.gen_X_last = gp;
+                    else{
+                       cout << "** [WARNING] : select_gen_XYH : more than one X found (last copy)" << endl; 
+                       all_ok = false;
+                    }
+                    break;
+                
+                case 35:
+                    if (!ei.gen_H1_last) ei.gen_H1_last = gp;
+                    else{
+                       cout << "** [WARNING] : select_gen_XYH : more than one Y found (last copy)" << endl; 
+                       all_ok = false;
+                    }
+                    break;
+                
+                case 25:
+                    if (!ei.gen_H2_last) ei.gen_H2_last = gp;
+                    else{
+                       cout << "** [WARNING] : select_gen_XYH : more than one H found (last copy)" << endl; 
+                       all_ok = false;
+                    }
+                    break;
+                
+                default:
+                    cout << "** [WARNING] : select_gen_XYH : wrong gen particle pdgId handled (last copy) (should never happen) : " << apdgId << endl; 
+                    all_ok = false;
+                    break;
+            }
+        }
+    }
+
+    if (!ei.gen_X || !ei.gen_H1 || !ei.gen_H2){
+       cout << "** [WARNING] : select_gen_XYH : didn't find the three gen cands (first copy): "
+            << std::boolalpha
+            << " X :" << ei.gen_X.is_initialized()
+            << " Y :" << ei.gen_H1.is_initialized()
+            << " H :" << ei.gen_H2.is_initialized()
+            << std::noboolalpha
+            << endl;
+        all_ok = false;
+    }
+
+    if (!ei.gen_X_last || !ei.gen_H1_last || !ei.gen_H2_last){
+       cout << "** [WARNING] : select_gen_XYH : didn't find the three gen cands (last copy): "
+            << std::boolalpha
+            << " X :" << ei.gen_X_last.is_initialized()
+            << " Y :" << ei.gen_H1_last.is_initialized()
+            << " H :" << ei.gen_H2_last.is_initialized()
+            << std::noboolalpha
+            << endl;
+        all_ok = false;
+    }
+
+    // sometimes I get a -nan mass for mX, use this to debug
+    // Solution: when the X is produced parallel to the beam line, it has pt = 0 and infinite eta
+    // --> TLV gives nonsense results
+    // --> directly access the properties from the NanoAOD with get_property
+    // if ((int) ei.gen_X->P4().M() < 0) dump_gen_part (nat, false);
+
+    return all_ok;
+}
+
 
 bool OfflineProducerHelper::select_gen_bb_bb (NanoAODTree& nat, EventInfo& ei)
 {

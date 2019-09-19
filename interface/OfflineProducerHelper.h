@@ -327,7 +327,8 @@ class OfflineProducerHelper{
             bool get_smallest = true);
 
 
-        bool select_gen_HH    (NanoAODTree& nat, EventInfo& ei);
+        bool select_gen_HH    (NanoAODTree& nat, EventInfo& ei); // for HH samples
+        bool select_gen_XYH   (NanoAODTree& nat, EventInfo& ei); // for NMSSM X->YH samples. NB: ei.gen_H1 -> Y, ei.gen_H2 -> H (same order as X->YH)
         bool select_gen_bb_bb (NanoAODTree& nat, EventInfo& ei);
         bool select_gen_VBF_partons (NanoAODTree& nat, EventInfo& ei);
 

@@ -1,5 +1,6 @@
 import re, optparse
-import os.path
+import os.path,sys
+import argparse
 from math import *
 # from ROOT import *
 import ROOT
@@ -43,35 +44,62 @@ def redrawBorder():
 #         return matches[-1]
 
 def getVals(fname):
-    fIn = ROOT.TFile.Open(fname)
-    tIn = fIn.Get('limit')
-    if tIn.GetEntries() != 5:
-        print "*** WARNING: cannot parse file", fname, "because nentries != 5"
-        raise RuntimeError('cannot parse file')
-    vals = []
-    for i in range(0, tIn.GetEntries()):
-        tIn.GetEntry(i)
-        qe = tIn.quantileExpected
-        lim = tIn.limit
-        vals.append((qe,lim))
-    return vals
+	fIn = ROOT.TFile.Open(fname)
+	tIn = fIn.Get('limit')
+	if tIn.GetEntries() != 5:
+		print "*** WARNING: cannot parse file", fname, "because nentries != 5"
+		raise RuntimeError('cannot parse file')
+	vals = []
+	for i in range(0, tIn.GetEntries()):
+		tIn.GetEntry(i)
+		qe = tIn.quantileExpected
+		lim = tIn.limit
+		vals.append((qe,lim))
+	return vals
 
 def functionGF(kl, kt, c2, cg, c2g):
-    # unused this can be extended to 5D coefficients; currently c2, cg, c2g are unused
-    # return ( A1*pow(kt,4) + A3*pow(kt,2)*pow(kl,2) + A7*kl*pow(kt,3) );
-    ## 13 TeV
-    A = [2.09078, 10.1517, 0.282307, 0.101205, 1.33191, -8.51168, -1.37309, 2.82636, 1.45767, -4.91761, -0.675197, 1.86189, 0.321422, -0.836276, -0.568156]
+	# unused this can be extended to 5D coefficients; currently c2, cg, c2g are unused
+	# return ( A1*pow(kt,4) + A3*pow(kt,2)*pow(kl,2) + A7*kl*pow(kt,3) );
+	## 13 TeV
+	A = [2.09078, 10.1517, 0.282307, 0.101205, 1.33191, -8.51168, -1.37309, 2.82636, 1.45767, -4.91761, -0.675197, 1.86189, 0.321422, -0.836276, -0.568156]
 
-    def pow (base, exp):
-        return base**exp
-    
-    val = A[0]*pow(kt,4) + A[1]*pow(c2,2) + (A[2]*pow(kt,2) + A[3]*pow(cg,2))*pow(kl,2) + A[4]*pow(c2g,2) + ( A[5]*c2 + A[6]*kt*kl )*pow(kt,2) + (A[7]*kt*kl + A[8]*cg*kl )*c2 + A[9]*c2*c2g + (A[10]*cg*kl + A[11]*c2g)*pow(kt,2)+ (A[12]*kl*cg + A[13]*c2g )*kt*kl + A[14]*cg*c2g*kl
-    return val
+	def pow (base, exp):
+		return base**exp
+	
+	val = A[0]*pow(kt,4) + A[1]*pow(c2,2) + (A[2]*pow(kt,2) + A[3]*pow(cg,2))*pow(kl,2) + A[4]*pow(c2g,2) + ( A[5]*c2 + A[6]*kt*kl )*pow(kt,2) + (A[7]*kt*kl + A[8]*cg*kl )*c2 + A[9]*c2*c2g + (A[10]*cg*kl + A[11]*c2g)*pow(kt,2)+ (A[12]*kl*cg + A[13]*c2g )*kt*kl + A[14]*cg*c2g*kl
+	return val
 
 def functionGF_kl_wrap (x, par):
-    return par[0]*functionGF(x[0], 1, 0, 0, 0)
+	return par[0]*functionGF(x[0], 1, 0, 0, 0)
 
 ################################################################################################
+###########OPTIONS
+parser = argparse.ArgumentParser(description='Command line parser of skim options')
+parser.add_argument('--dataset',      dest='dataset',  help='Year of the dataset: (1) 2016, (2) 2017, (3) 2018, (4) 2016+2017+2018',  required = True)
+args = parser.parse_args()
+###########
+###CREATE TAGS
+dataid  = args.dataset
+
+if dataid == '1':
+  folder   = 'klambda_2016'
+  outname  = 'kl_scan_2016.pdf'
+  datalumi = "35.9 fb^{-1} (13 TeV)"
+elif dataid == '2':
+  folder   = 'klambda_2017'
+  outname  = 'kl_scan_2017.pdf'
+  datalumi = "36.1 fb^{-1} (13 TeV)"
+elif dataid == '3':
+  folder   = 'klambda_2018'
+  outname  = 'kl_scan_2018.pdf'
+  datalumi = "59.7 fb^{-1} (13 TeV)"
+elif dataid == '4':
+  folder   = 'klambda_COMB'
+  outname  = 'kl_scan_COMB.pdf'
+  datalumi = "131.6 fb^{-1} (13 TeV)"
+else:
+  print "Dataset is not specified correctly! No plot is done"	
+  sys.exit()
 
 
 c1 = ROOT.TCanvas("c1", "c1", 650, 500)
@@ -87,19 +115,6 @@ mg = ROOT.TMultiGraph()
 # lambdas = [x for x in range(0, 52) if (x-20) < 0 or (x-20) > 8] # removing points in the interval scanned more finely
 lambdas = [x for x in range(-10, 11)]
 print "LAMBDA points list: ", lambdas
-
-folder = 'klambda_2016'
-outname = 'kl_scan_2016.pdf'
-
-#folder = 'klambda_2017'
-#outname = 'kl_scan_2017.pdf'
-
-#folder = 'klambda_2018'
-#outname = 'kl_scan_2018.pdf'
-
-#folder = 'klambda_COMB'
-#outname = 'kl_scan_COMB.pdf'
-
 
 ### signals are normalsed to SM xs * B (bbbb) = 0.01043 pb
 scaleToXS = 1000.*0.01043 # in fb for limit in xs of HH -> bbbb
@@ -117,31 +132,31 @@ ptsList = [] # (x, obs, exp, p2s, p1s, m1s, m2s)
 
 ### read the scan with normal width
 for ipt, lam in enumerate(lambdas):
-    # fName = 'cards_Combined_2017_03_10_lmr70/ggHH_bbtt{0}MT2/out_Asym_ggHH_bbtt{0}_noTH.log'.format(lambdas[ipt])
-    kl = '{:g}'.format(lam)
-    if not '-' in kl:
-        kl = '+' + kl
-    kl = kl.replace('-', 'm_')
-    kl = kl.replace('+', 'p_')
-    kl = kl.replace('.', 'd')
-    # print kl
-    fname = folder + '/' + 'higgsCombinekl_{kl}.AsymptoticLimits.mH120.root'.format(kl=kl)
-    vals  = getVals(fname)
-    obs   = scaleToXS*0.0 ## FIXME
-    m2s_t = scaleToXS*vals[0][1]
-    m1s_t = scaleToXS*vals[1][1]
-    exp   = scaleToXS*vals[2][1]
-    p1s_t = scaleToXS*vals[3][1]
-    p2s_t = scaleToXS*vals[4][1]
+	# fName = 'cards_Combined_2017_03_10_lmr70/ggHH_bbtt{0}MT2/out_Asym_ggHH_bbtt{0}_noTH.log'.format(lambdas[ipt])
+	kl = '{:g}'.format(lam)
+	if not '-' in kl:
+		kl = '+' + kl
+	kl = kl.replace('-', 'm_')
+	kl = kl.replace('+', 'p_')
+	kl = kl.replace('.', 'd')
+	# print kl
+	fname = folder + '/' + 'higgsCombinekl_{kl}.AsymptoticLimits.mH120.root'.format(kl=kl)
+	vals  = getVals(fname)
+	obs   = scaleToXS*0.0 ## FIXME
+	m2s_t = scaleToXS*vals[0][1]
+	m1s_t = scaleToXS*vals[1][1]
+	exp   = scaleToXS*vals[2][1]
+	p1s_t = scaleToXS*vals[3][1]
+	p2s_t = scaleToXS*vals[4][1]
 
-    ## because the other code wants +/ sigma vars as deviations, without sign, from the centeal exp value...
-    p2s = p2s_t - exp
-    p1s = p1s_t - exp
-    m2s = exp - m2s_t
-    m1s = exp - m1s_t
-    xval = lam
+	## because the other code wants +/ sigma vars as deviations, without sign, from the centeal exp value...
+	p2s = p2s_t - exp
+	p1s = p1s_t - exp
+	m2s = exp - m2s_t
+	m1s = exp - m1s_t
+	xval = lam
 
-    ptsList.append((xval, obs, exp, p2s, p1s, m1s, m2s))
+	ptsList.append((xval, obs, exp, p2s, p1s, m1s, m2s))
 
 # ### read the scan with finer width for more precision in the 0-8 region
 # lambdasfiner = [0.1*x for x in range(0, 80)] # I am removing doubly counted points
@@ -173,20 +188,20 @@ for ipt, lam in enumerate(lambdas):
 # gr2sigma.SetPointError(ipt, 0,0,m2s,p2s)
 ptsList.sort()
 for ipt, pt in enumerate(ptsList):
-    xval = pt[0]
-    obs  = pt[1]
-    exp  = pt[2]
-    p2s  = pt[3]
-    p1s  = pt[4]
-    m1s  = pt[5]
-    m2s  = pt[6]
+	xval = pt[0]
+	obs  = pt[1]
+	exp  = pt[2]
+	p2s  = pt[3]
+	p1s  = pt[4]
+	m1s  = pt[5]
+	m2s  = pt[6]
 
-    grexp.SetPoint(ipt, xval, exp)
-    grobs.SetPoint(ipt, xval, obs)
-    gr1sigma.SetPoint(ipt, xval, exp)
-    gr2sigma.SetPoint(ipt, xval, exp)
-    gr1sigma.SetPointError(ipt, 0,0,m1s,p1s)
-    gr2sigma.SetPointError(ipt, 0,0,m2s,p2s)
+	grexp.SetPoint(ipt, xval, exp)
+	grobs.SetPoint(ipt, xval, obs)
+	gr1sigma.SetPoint(ipt, xval, exp)
+	gr2sigma.SetPoint(ipt, xval, exp)
+	gr1sigma.SetPointError(ipt, 0,0,m1s,p1s)
+	gr2sigma.SetPointError(ipt, 0,0,m2s,p2s)
 
 
 ######## set styles
@@ -289,7 +304,7 @@ pt2.SetFillColor(0)
 pt2.SetTextSize(0.040)
 pt2.SetTextFont(42)
 pt2.SetFillStyle(0)
-pt2.AddText("35.9 fb^{-1} (13 TeV)")
+pt2.AddText(datalumi)
 
 pt4 = ROOT.TPaveText(0.4819196+0.036,0.7780357+0.015+0.02,0.9008929+0.036,0.8675595+0.015,"brNDC")
 pt4.SetTextAlign(12)
@@ -355,14 +370,14 @@ graph.SetLineWidth(2);
 nP = int((xmax-xmin)*10.0)
 Graph_syst_Scale =  ROOT.TGraphAsymmErrors(nP)
 for i in range(nP) : 
-    x = xmin+(i*1.)/10.
-    Graph_syst_Scale_x=(xmin+(i*1.)/10.)
-    Graph_syst_Scale_y=functionGF_kl_wrap([x], [y_theo_scale])
-    Graph_syst_Scale_x_err=(0)
-    Graph_syst_Scale_y_errup    = functionGF_kl_wrap([x], [y_theo_scale])*0.054
-    Graph_syst_Scale_y_errdown  = functionGF_kl_wrap([x], [y_theo_scale])*0.070
-    Graph_syst_Scale.SetPoint(i,Graph_syst_Scale_x,Graph_syst_Scale_y)
-    Graph_syst_Scale.SetPointError(i,Graph_syst_Scale_x_err,Graph_syst_Scale_x_err,Graph_syst_Scale_y_errup,Graph_syst_Scale_y_errdown)
+	x = xmin+(i*1.)/10.
+	Graph_syst_Scale_x=(xmin+(i*1.)/10.)
+	Graph_syst_Scale_y=functionGF_kl_wrap([x], [y_theo_scale])
+	Graph_syst_Scale_x_err=(0)
+	Graph_syst_Scale_y_errup    = functionGF_kl_wrap([x], [y_theo_scale])*0.054
+	Graph_syst_Scale_y_errdown  = functionGF_kl_wrap([x], [y_theo_scale])*0.070
+	Graph_syst_Scale.SetPoint(i,Graph_syst_Scale_x,Graph_syst_Scale_y)
+	Graph_syst_Scale.SetPointError(i,Graph_syst_Scale_x_err,Graph_syst_Scale_x_err,Graph_syst_Scale_y_errup,Graph_syst_Scale_y_errdown)
 Graph_syst_Scale.SetLineColor(ROOT.kRed)
 Graph_syst_Scale.SetFillColor(ROOT.kRed)
 Graph_syst_Scale.SetFillStyle(3001)

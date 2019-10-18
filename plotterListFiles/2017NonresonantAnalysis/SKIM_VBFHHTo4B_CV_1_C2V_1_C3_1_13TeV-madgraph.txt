@@ -1,2 +1,0 @@
-root://cmsxrootd.fnal.gov//store/user/guerrero/bbbb_ntuples/2017jobs/SKIM_VBFHHTo4B_CV_1_C2V_1_C3_1_13TeV-madgraph/output/bbbbNtuple_0.root
-root://cmsxrootd.fnal.gov//store/user/guerrero/bbbb_ntuples/2017jobs/SKIM_VBFHHTo4B_CV_1_C2V_1_C3_1_13TeV-madgraph/output/bbbbNtuple_1.root

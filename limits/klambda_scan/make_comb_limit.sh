@@ -34,8 +34,9 @@ for kl in `seq -f %g -10 1 10`; do
     #### step 1 : combine datacards
     CARDNAME_2016="klambda_2016/card_kl_${klname}.txt"
     CARDNAME_2017="klambda_2017/card_kl_${klname}.txt"
+    CARDNAME_2018="klambda_2018/card_kl_${klname}.txt"
 
-    ../../../HiggsAnalysis/CombinedLimit/scripts/combineCards.py --npp c2016=${CARDNAME_2016} c2017=${CARDNAME_2017} > ${FLDRNAME}/${CARDNAME}
+    ../../../HiggsAnalysis/CombinedLimit/scripts/combineCards.py c2016=${CARDNAME_2016} c2017=${CARDNAME_2017} c2018=${CARDNAME_2018} > ${FLDRNAME}/${CARDNAME}
 
     #### step 2 : generate workspace
     echo "... making workspace for injection of $kl ($klname)"
@@ -73,8 +74,9 @@ mkdir $FLDRNAME
 #### step 1 : combine datacards
 CARDNAME_2016="SM_2016/card_SM.txt"
 CARDNAME_2017="SM_2017/card_SM.txt"
+CARDNAME_2018="SM_2018/card_SM.txt"
 
-../../../HiggsAnalysis/CombinedLimit/scripts/combineCards.py --npp c2016=${CARDNAME_2016} c2017=${CARDNAME_2017} > ${FLDRNAME}/${CARDNAME}
+../../../HiggsAnalysis/CombinedLimit/scripts/combineCards.py c2016=${CARDNAME_2016} c2017=${CARDNAME_2017} c2018=${CARDNAME_2018} > ${FLDRNAME}/${CARDNAME}
 
 #### step 2 : generate workspace
 echo "... making workspace for injection of SM"

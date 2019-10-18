@@ -49,9 +49,8 @@ def TreeDevelopment(sample,fourthbtagscore,columns_input,case):
 	skim['nBtag'] = numpy.select([b4, b3], [4, 3], default=0)
 	return skim
 
-def MakeOutputSkims(samples,fourthbtagscore,columns,cases):
+def MakeOutputSkims(samples,fourthbtagscore,columns,case):
 	for sample in samples:
-	   for case in cases:
 		#Read Columns
 		os.system('mkdir outputskims')
 		os.system('mkdir outputskims/%s/'%case)

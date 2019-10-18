@@ -144,16 +144,12 @@ cfgparser.read('%s'%configfilename)
 print "[INFO] Getting configuration parameters . . ."
 directory   = ast.literal_eval(cfgparser.get("configuration","directory"))
 print "    -The directory:"
-print "      *",directory[0]
+print "      *",directory
 randseed    = ast.literal_eval(cfgparser.get("configuration","seed"))
 print "    -The random seed:"
 print "      *",randseed 
-minpt       = ast.literal_eval(cfgparser.get("configuration","minbjetpt"))
-print "    -The min b-jet pt (OPTION TO BE REMOVED FOR THE NEXT JOBS (changing PT>25 GeV to PT>MinPT)!):"
-print "      *",minpt 
 ##########Make microskims
 print "[INFO] Making background model . . . "
 #Get data and create panda dataframes with specific variables, a.k.a. slicing the data. Then, create background model based on control region data
-dataset      = data.root2pandas('outputskims/%s/SKIM_Data.root'%(directory[0]),'bbbbTree')
-datasetskim  = dataset[ (dataset.HH_b1_pt > minpt) & (dataset.HH_b2_pt > minpt) & (dataset.HH_b3_pt > minpt) & (dataset.HH_b4_pt > minpt) ]
-RunReweightingModel(datasetskim,directory[0],randseed)
+dataset      = data.root2pandas('outputskims/%s/SKIM_Data.root'%(directory),'bbbbTree')
+RunReweightingModel(dataset,directory,randseed)

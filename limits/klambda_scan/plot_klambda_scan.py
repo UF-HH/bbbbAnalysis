@@ -91,11 +91,14 @@ print "LAMBDA points list: ", lambdas
 folder = 'klambda_2016'
 outname = 'kl_scan_2016.pdf'
 
-# folder = 'klambda_2017'
-# outname = 'kl_scan_2017.pdf'
+#folder = 'klambda_2017'
+#outname = 'kl_scan_2017.pdf'
 
-# folder = 'klambda_COMB'
-# outname = 'kl_scan_COMB.pdf'
+#folder = 'klambda_2018'
+#outname = 'kl_scan_2018.pdf'
+
+#folder = 'klambda_COMB'
+#outname = 'kl_scan_COMB.pdf'
 
 
 ### signals are normalsed to SM xs * B (bbbb) = 0.01043 pb

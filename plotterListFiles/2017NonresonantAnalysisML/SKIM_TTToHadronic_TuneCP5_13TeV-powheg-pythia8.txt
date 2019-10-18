@@ -1,3 +1,0 @@
-mlskim/outputskims/2017case2/SKIM_TTToHadronic_TuneCP5_13TeV-powheg-pythia8.root
-
-

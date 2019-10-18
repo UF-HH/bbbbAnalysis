@@ -1,5 +1,5 @@
 ### make datacards
-YEAR=2016
+YEAR=$1
 
 for kl in `seq -f %g -10 1 10`; do
 
@@ -25,7 +25,7 @@ for kl in `seq -f %g -10 1 10`; do
     #### step 1 : generate datacards
     echo "... making card for injection of $kl ($klname)"
     python make_datacard.py \
-        --fileIn /uscms/home/lcadamur/nobackup/bbbbAnalysis_4Lug2019/CMSSW_10_2_5/src/bbbbAnalysis/Histos${YEAR}skim++/outPlotter.root \
+        --fileIn /uscms/home/guerrero/nobackup/Run2/HH2019/Fall2019/CMSSW_10_2_5/src/bbbbAnalysis/Histos${YEAR}/outPlotter.root \
         --sigs GGHH4B_rew_kl_${klname} \
         --var BDT3 --sel Btag4_GGFcateg_SR_110_Histogram \
         --cardOut ${FLDRNAME}/${CARDNAME}
@@ -58,7 +58,7 @@ mkdir $FLDRNAME
 #### step 1 : generate datacards
 echo "... making card for injection of SM"
 python make_datacard.py \
-    --fileIn /uscms/home/lcadamur/nobackup/bbbbAnalysis_4Lug2019/CMSSW_10_2_5/src/bbbbAnalysis/Histos${YEAR}skim++/outPlotter.root \
+    --fileIn /uscms/home/guerrero/nobackup/Run2/HH2019/Fall2019/CMSSW_10_2_5/src/bbbbAnalysis/Histos${YEAR}/outPlotter.root \
     --sigs GGF_HH \
     --var BDT3 --sel Btag4_GGFcateg_SR_110_Histogram \
     --cardOut ${FLDRNAME}/${CARDNAME}

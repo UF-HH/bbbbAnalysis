@@ -88,7 +88,7 @@ if dataid == '1':
 elif dataid == '2':
   folder   = 'klambda_2017'
   outname  = 'kl_scan_2017.pdf'
-  datalumi = "36.1 fb^{-1} (13 TeV)"
+  datalumi = "36.7 fb^{-1} (13 TeV)"
 elif dataid == '3':
   folder   = 'klambda_2018'
   outname  = 'kl_scan_2018.pdf'
@@ -96,7 +96,7 @@ elif dataid == '3':
 elif dataid == '4':
   folder   = 'klambda_COMB'
   outname  = 'kl_scan_COMB.pdf'
-  datalumi = "131.6 fb^{-1} (13 TeV)"
+  datalumi = "132.3 fb^{-1} (13 TeV)"
 else:
   print "Dataset is not specified correctly! No plot is done"	
   sys.exit()
@@ -113,15 +113,14 @@ c1.SetGridy()
 mg = ROOT.TMultiGraph()
 
 # lambdas = [x for x in range(0, 52) if (x-20) < 0 or (x-20) > 8] # removing points in the interval scanned more finely
-lambdas = [x for x in range(-10, 11)]
+lambdas = [x for x in range(-20, 21)]
 print "LAMBDA points list: ", lambdas
 
 ### signals are normalsed to SM xs * B (bbbb) = 0.01043 pb
-scaleToXS = 1000.*0.01043 # in fb for limit in xs of HH -> bbbb
-bbbbBR = 0.5824**2
-xs_HH  = 31.05
-y_theo_scale = bbbbBR*xs_HH
-
+scaleToXS = 1000.*0.01043/(0.58**2) # in fb for limit in xs of HH -> bbbb
+#bbbbBR = 0.58**2 #0.5824**2
+#xs_HH  = 0.01043/(0.58**2) #31.05
+y_theo_scale = 31.05 #bbbbBR*xs_HH
 
 gr2sigma = ROOT.TGraphAsymmErrors()
 gr1sigma = ROOT.TGraphAsymmErrors()
@@ -263,7 +262,7 @@ legend = ROOT.TLegend(0,0,0,0)
 # legend.SetY2(0.362-0.171+0.69)          
 
 legend.SetX1(0.17284)
-legend.SetY1(0.530526)
+legend.SetY1(0.630526)
 # legend.SetX2(0.5)
 legend.SetX2(0.520062)
 legend.SetY2(0.88)
@@ -273,7 +272,7 @@ legend.SetFillColor(ROOT.kWhite)
 legend.SetBorderSize(0)
 # legend
 legend.SetHeader('95% CL upper limits')
-legend.AddEntry(grobs,"Observed","l")
+#legend.AddEntry(grobs,"Observed","l")
 legend.AddEntry(grexp, "Median expected", "l")
 legend.AddEntry(gr1sigma, "68% expected", "f")
 legend.AddEntry(gr2sigma, "95% expected", "f")
@@ -352,8 +351,8 @@ pt4.AddText("HH #rightarrow bbbb")
 # ###### theory lines
 # xmin=-20.4
 # xmax=31.4
-xmin=-20
-xmax=31.1
+xmin=-20.4
+xmax=31.4
 yt=1
 BR = 1
 # myFunc =  ROOT.TF1("myFunc","(2.09*[0]*[0]*[0]*[0] + 0.28*[0]*[0]*x*[0]*x*[0] -1.37*[0]*[0]*[0]*x*[0])*2.44185/[1]",xmin,xmax);
@@ -416,9 +415,9 @@ Graph_syst_Scale.SetFillStyle(3001)
 # graph2.SetLineWidth(2);
 
 
-hframe = ROOT.TH1F('hframe', '', 100, -11, 11)
+hframe = ROOT.TH1F('hframe', '', 100, -20, 20)
 hframe.SetMinimum(0)
-hframe.SetMaximum(1800)
+hframe.SetMaximum(3500)
 
 hframe.GetYaxis().SetTitleSize(0.047)
 hframe.GetXaxis().SetTitleSize(0.055)
@@ -428,8 +427,9 @@ hframe.GetXaxis().SetLabelOffset(0.012)
 hframe.GetYaxis().SetTitleOffset(1.2)
 hframe.GetXaxis().SetTitleOffset(1.1)
 
-hframe.GetYaxis().SetTitle("95% CL on #sigma #times #bf{#it{#Beta}}(HH#rightarrow bbbb) [fb]")
-hframe.GetXaxis().SetTitle("#kappa_{#lambda}")
+#hframe.GetYaxis().SetTitle("95% CL on #sigma #times #bf{#it{#Beta}}(HH#rightarrow bbbb) [fb]")
+hframe.GetYaxis().SetTitle("95% CL on #sigma_{ggF}(pp#rightarrowHH) [fb]")
+hframe.GetXaxis().SetTitle("#kappa_{#lambda}=#lambda_{HHH}/#lambda_{SM}")
 
 hframe.SetStats(0)
 ROOT.gPad.SetTicky()

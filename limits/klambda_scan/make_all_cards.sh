@@ -1,7 +1,7 @@
 ### make datacards
 YEAR=$1
 
-for kl in `seq -f %g -10 1 10`; do
+for kl in `seq -f %g -20 1 20`; do
 
      klname=${kl/./d}
      if [[ $klname == *-* ]]; then

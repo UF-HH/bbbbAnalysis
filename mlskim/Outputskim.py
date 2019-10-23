@@ -47,8 +47,7 @@ def TreeDevelopment(sample,fourthbtagscore,columns_input,case):
 	b3 = skim.HH_btag_b4_deepCSV <= fourthbtagscore
 	del skim['HH_btag_b4_deepCSV']
 	skim['nBtag'] = numpy.select([b4, b3], [4, 3], default=0)
-	return skim
-
+	return skim#
 def MakeOutputSkims(samples,fourthbtagscore,columns,case):
 	for sample in samples:
 		#Read Columns
@@ -79,8 +78,7 @@ cfgparser.read('%s'%configfilename)
 print "[INFO] Getting configuration parameters . . ."
 directory   = ast.literal_eval(cfgparser.get("configuration","directory"))
 print "    -The directory:"
-for x in range(len(directory)):
-  print "      *",directory[x]
+print "      *",directory
 samples     = ast.literal_eval(cfgparser.get("configuration","samples"))
 print "    -The list of samples:"
 for x in range(len(samples)):

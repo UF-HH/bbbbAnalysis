@@ -73,7 +73,7 @@ using namespace RooFit ;
 void make_shapes(float range_lo, float range_hi, string signal, string categ, string var, string tag,int seed) {
 
     //Get File
-    TFile *file=new TFile(Form("../Histos%s/outPlotter.root",tag.c_str()));
+    TFile *file=new TFile(Form("../../Histos%s/outPlotter.root",tag.c_str()));
     //Get Signal histogram and normalization   
     TH1F *h_S=(TH1F*)file->Get( Form("%s/Btag4_%s_SR_110_Histogram/%s_Btag4_%s_SR_110_Histogram_%s",signal.c_str(), categ.c_str(), signal.c_str(),categ.c_str(),var.c_str() ));
     //Get Background histogram and normalization

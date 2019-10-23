@@ -57,9 +57,8 @@ hadd -f New2018/SKIM_VBFHHTo4B_CV_1_C2V_1_C3_2_TuneCP5_PSWeights_13TeV-madgraph-
 hadd -f New2018/SKIM_VBFHHTo4B_CV_1_C2V_2_C3_1_TuneCP5_PSWeights_13TeV-madgraph-pythia8.root           `xrdfsls -u /eos/uscms/store/user/guerrero/bbbb_ntuples/New2018/SKIM_VBFHHTo4B_CV_1_C2V_2_C3_1_TuneCP5_PSWeights_13TeV-madgraph-pythia8/output/ | grep '\.root'`
 hadd -f New2018/SKIM_VBFHHTo4B_CV_1_C2V_1_C3_1_TuneCP5_PSWeights_13TeV-madgraph-pythia8.root           `xrdfsls -u /eos/uscms/store/user/guerrero/bbbb_ntuples/New2018/SKIM_VBFHHTo4B_CV_1_C2V_1_C3_1_TuneCP5_PSWeights_13TeV-madgraph-pythia8/output/ | grep '\.root'`
 hadd -f New2018/SKIM_GluGluToHHTo4B_node_SM_TuneCP5_PSWeights_13TeV-madgraph-pythia8.root              `xrdfsls -u /eos/uscms/store/user/guerrero/bbbb_ntuples/New2018/SKIM_GluGluToHHTo4B_node_SM_TuneCP5_PSWeights_13TeV-madgraph-pythia8/output/ | grep '\.root'`
-
 ##HADD: klambda variations
-for kl in `seq -f %g -10 1 10`; do
+for kl in `seq -f %g -20 1 20`; do
      klname=${kl/./d}
      if [[ $klname == *-* ]]; then
          klname=${klname/-/m_};
@@ -69,7 +68,7 @@ for kl in `seq -f %g -10 1 10`; do
      hadd New2016/SKIM_GGHH4B_rew_kl_${klname}.root   `xrdfsls -u /eos/uscms/store/user/guerrero/bbbb_ntuples/New2016/SKIM_GGHH4B_rew_kl_${klname}/output/ | grep '\.root'`
 done
 ##HADD: klambda variations
-for kl in `seq -f %g -10 1 10`; do
+for kl in `seq -f %g -20 1 20`; do
      klname=${kl/./d}
      if [[ $klname == *-* ]]; then
          klname=${klname/-/m_};
@@ -79,7 +78,7 @@ for kl in `seq -f %g -10 1 10`; do
      hadd New2017/SKIM_GGHH4B_rew_kl_${klname}.root   `xrdfsls -u /eos/uscms/store/user/guerrero/bbbb_ntuples/New2017/SKIM_GGHH4B_rew_kl_${klname}/output/ | grep '\.root'`
 done
 ##HADD: klambda variations
-for kl in `seq -f %g -10 1 10`; do
+for kl in `seq -f %g -20 1 20`; do
      klname=${kl/./d}
      if [[ $klname == *-* ]]; then
          klname=${klname/-/m_};

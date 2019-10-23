@@ -8,7 +8,7 @@ import copy
 from  ConfigParser import *
 
 def MakeFile(directory,sample,tagname):
-	with open('plotterListFiles/%s/SKIM_%s.txt'%(tagname,sample), 'a') as the_file:
+	with open('plotterListFiles/%s/SKIM_%s.txt'%(tagname,sample), 'w') as the_file:
 		the_file.write('mlskim/outputskims/%s/SKIM_%s.root\n'%(directory,sample) )
 
 def MakePlotterFiles(directory,samples,tagname):

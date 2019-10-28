@@ -22,8 +22,22 @@ to_plot = [
     'final4b'
 ]
 
+colors = {
+    'trigger' : ROOT.kBlack,
+    'presel'  : ROOT.kGreen+1,
+    'final3b' : ROOT.kBlue,
+    'final4b' : ROOT.kRed,
+}
 
-## path prependend to all the files found in the file lists above
+legs = {
+    'trigger' : 'Trigger',
+    'presel'  : 'Preselection',
+    'final3b' : '3 b-tagged jets',
+    'final4b' : '4 b-tagged jets',
+}
+
+
+## path prependend to all the files found in the file lists
 ## needed in case files names are stored in the list in a relative way (e.g., the lines in the lists below are relative to Daniel's working folder)
 ## if nothing must be prepended, use file_abs_path = None
 file_abs_path = '/uscms/home/guerrero/nobackup/Run2/HH2019/Fall2019/CMSSW_10_2_5/src/bbbbAnalysis'
@@ -79,7 +93,6 @@ plotterCfg  = '/uscms/home/guerrero/nobackup/Run2/HH2019/Fall2019/CMSSW_10_2_5/s
 
 #############################################
 ### define the things to extract for the efficiencies
-# skim_vals_to_get = ['Ntot_w', 'Ntrg_w', 'Nsel_w']
 skim_denominator = entries['all'][0]
 skim_vals_to_get = [x[0] for x in entries.values() if x[1] == 'skim']
 sels_to_get      = [x[0] for x in entries.values() if x[1] == 'histo']
@@ -128,10 +141,9 @@ histos_effs = eut.get_yields_plots (outPlotter, plotterCfg, sigs_to_get, sels_to
 ###################################################################################
 #### build the plots
 
-graphs = []
+graphs = collections.OrderedDict()
 
 for tp in to_plot:
-
     ## FIXME: could become a TGraphAsymmErrors here
     g = ROOT.TGraph()
     for klambda in klambdas_desc.keys():
@@ -146,83 +158,40 @@ for tp in to_plot:
         else:
             raise RuntimeError('eff type must be skim or histo, but you set %s' % this_type)
         g.SetPoint(g.GetN(), x, y)
-    graphs.append(g)
+    
+    g.SetLineColor(colors[tp])
+    g.SetMarkerColor(colors[tp])
+    g.SetMarkerStyle(8)
+    g.SetMarkerSize(0.8)
+    graphs[tp] = g
 
 mg = ROOT.TMultiGraph()
-for g in graphs:
+for g in graphs.values():
     mg.Add(g, 'lp')
 
 c1 = ROOT.TCanvas('c1', 'c1', 600, 600)
+c1.SetFrameLineWidth(3)
+c1.SetLeftMargin(0.13)
+c1.SetBottomMargin(0.13)
 c1.SetLogy()
 mg.Draw('APL')
+
+mg.SetMinimum(2e-3)
+mg.SetMaximum(5)
+mg.SetTitle(';#kappa_{#lambda};#varepsilon')
+mg.GetXaxis().SetTitleSize(0.055)
+mg.GetYaxis().SetTitleSize(0.055)
+mg.GetXaxis().SetLabelSize(0.045)
+mg.GetYaxis().SetLabelSize(0.045)
+mg.GetXaxis().SetTitleOffset(1.08)
+mg.GetYaxis().SetTitleOffset(1.08)
+mg.Draw('APL')
+
+leg = ROOT.TLegend(0.5, 0.7, 0.88, 0.88)
+for name, gr in graphs.items():
+    leg.AddEntry(gr, legs[name], "pl")
+leg.SetFillStyle(0)
+leg.SetBorderSize(0)
+leg.Draw()
 c1.Print('eff_vs_klambda.pdf', 'pdf')
 
-
-
-
-
-# var_to_get  = "HH_b1_pt" ## just put whatever variable that is filled in the plotter to take its intergram
-
-# sels_to_get = ['Btag3_VBFcateg_Inclusive', 'Btag4_VBFcateg_Inclusive']
-# var_to_get  = "HH_b1_pt" ## just put whatever variable that is filled in the plotter to take its intergram
-
-# region = 'Histogram'
-# sels_to_get = [s + '_' + region for s in sels_to_get]
-
-# yields_plots = eut.get_yields_plots (outPlotter, plotterCfg, sigs_to_get, sels_to_get, var_to_get, unfold_lumi = True)
-
-
-
-# ####################################### extract the count from the skims
-
-# filelist = '/uscms/home/lcadamur/nobackup/bbbbAnalysis_fullRun2/CMSSW_10_2_5/src/bbbbAnalysis/prova_ggf.txt'
-
-# # VBF_HH       = /uscms/home/guerrero/nobackup/Run2/HH2019/Fall2019/CMSSW_10_2_5/src/bbbbAnalysis/plotterListFiles/2016NonResonantAnalysis/SKIM_VBFHHTo4B_CV_1_C2V_1_C3_1_13TeV-madgraph.txt
-# # VBF_1_2_1    = /uscms/home/guerrero/nobackup/Run2/HH2019/Fall2019/CMSSW_10_2_5/src/bbbbAnalysis/plotterListFiles/2016NonResonantAnalysis/SKIM_VBFHHTo4B_CV_1_C2V_2_C3_1_13TeV-madgraph.txt
-# # VBF_1_1_0    = /uscms/home/guerrero/nobackup/Run2/HH2019/Fall2019/CMSSW_10_2_5/src/bbbbAnalysis/plotterListFiles/2016NonResonantAnalysis/SKIM_VBFHHTo4B_CV_1_C2V_1_C3_0_13TeV-madgraph.txt
-# # VBF_1_1_2    = /uscms/home/guerrero/nobackup/Run2/HH2019/Fall2019/CMSSW_10_2_5/src/bbbbAnalysis/plotterListFiles/2016NonResonantAnalysis/SKIM_VBFHHTo4B_CV_1_C2V_1_C3_2_13TeV-madgraph.txt
-# # VBF_1p5_1_1  = /uscms/home/guerrero/nobackup/Run2/HH2019/Fall2019/CMSSW_10_2_5/src/bbbbAnalysis/plotterListFiles/2016NonResonantAnalysis/SKIM_VBFHHTo4B_CV_1_5_C2V_1_C3_1_13TeV-madgraph.txt
-# # VBF_0p5_1_1  = /uscms/home/guerrero/nobackup/Run2/HH2019/Fall2019/CMSSW_10_2_5/src/bbbbAnalysis/plotterListFiles/2016NonResonantAnalysis/SKIM_VBFHHTo4B_CV_0_5_C2V_1_C3_1_13TeV-madgraph.txt
-
-# print '... getting skim efficiencies from', filelist
-
-# vals_to_get = ['Ntot_w', 'Ntrg_w', 'Nsel_w']
-# effs_skim = eut.get_eff_skims(
-#     filelist=filelist,
-#     vals_to_get = vals_to_get
-# )
-
-# print '===== SKIM EFFS ==='
-# print effs_skim
-
-# denom = effs_skim['Ntot_w']
-
-# for step in vals_to_get:
-#     print "..... ", step, 'eff = ', effs_skim[step]/denom
-
-# ######################################## extract the count from the plotters (at various selection levels)
-# ######
-# ## NB: all the histograms are normalised to : sum(w)^selected * lumi *  xs / sum(w)^total = eff * lumi * xs
-# ## so I have to unscale the histos by the xs and the lumi to get the efficiency
-
-
-# outPlotter  = '/uscms/home/guerrero/nobackup/Run2/HH2019/Fall2019/CMSSW_10_2_5/src/bbbbAnalysis/NominalHistos/Histos2016/outPlotter.root'
-# plotterCfg  = '/uscms/home/guerrero/nobackup/Run2/HH2019/Fall2019/CMSSW_10_2_5/src/bbbbAnalysis/NominalHistos/Histos2016/plotter_2016NonResonantDiHiggs4B_skim++.cfg'
-
-# print '... getting plotter efficiencies from', outPlotter
-
-# # sigs_to_get = ['VBF_HH', 'VBF_1_2_1', 'VBF_1_1_2', 'VBF_1_1_0', 'VBF_1p5_1_1', 'VBF_0p5_1_1']
-# sigs_to_get = ['VBF_HH']
-# sigs_xs     = [0.00054]
-# sels_to_get = ['Btag3_VBFcateg_Inclusive', 'Btag4_VBFcateg_Inclusive']
-# var_to_get  = "HH_b1_pt" ## just put whatever variable that is filled in the plotter to take its intergram
-
-# region = 'Histogram'
-# sels_to_get = [s + '_' + region for s in sels_to_get]
-
-# yields_plots = eut.get_yields_plots (outPlotter, plotterCfg, sigs_to_get, sels_to_get, var_to_get, unfold_lumi = True)
-
-# for s in yields_plots.keys():
-#     print '......', s
-#     for v in yields_plots[s].keys():
-#         print '..............', v, yields_plots[s][v], yields_plots[s][v]/sigs_xs[0]

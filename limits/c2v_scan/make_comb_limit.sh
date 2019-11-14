@@ -2,7 +2,7 @@
 
 YEAR=COMB
 
-for c2v in `seq -f %.1f -5.5 0.1 7.5`; do
+for c2v in `seq -f %.1f -5.0 0.2 7.6`; do
 
      c2vname=${c2v}
      if [[ $c2vname == *-* ]]; then

@@ -6,6 +6,7 @@ import sys
 import copy
 import ROOT
 import numpy as np
+from array import array
 from  ConfigParser import *
 
 def RunOutputVariations(couplingsfile,dataset,directory,samples,histograms,tag):
@@ -24,7 +25,7 @@ def RunOutputVariations(couplingsfile,dataset,directory,samples,histograms,tag):
 		hsig3=file.Get("%s/Btag4_VBFcateg_SR_110_Histogram/%s_Btag4_VBFcateg_SR_110_Histogram_%s"%(samples[2],samples[2],histo) ) 
 		hsig4=file.Get("%s/Btag4_VBFcateg_SR_110_Histogram/%s_Btag4_VBFcateg_SR_110_Histogram_%s"%(samples[3],samples[3],histo) ) 
 		hsig6=file.Get("%s/Btag4_VBFcateg_SR_110_Histogram/%s_Btag4_VBFcateg_SR_110_Histogram_%s"%(samples[5],samples[5],histo) ) 
-        htst =file.Get("%s/Btag4_VBFcateg_SR_110_Histogram/%s_Btag4_VBFcateg_SR_110_Histogram_%s"%(samples[0],samples[0],histo) )		
+		htst =file.Get("%s/Btag4_VBFcateg_SR_110_Histogram/%s_Btag4_VBFcateg_SR_110_Histogram_%s"%(samples[0],samples[0],histo) )		
 		hbkg =file.Get("MODEL/Btag4_VBFcateg_SR_110_Histogram/MODEL_Btag4_VBFcateg_SR_110_Histogram_%s"%histo)
 		hdata=file.Get("DATA/Btag4_VBFcateg_SR_110_Histogram/DATA_Btag4_VBFcateg_SR_110_Histogram_%s"%histo)	
 		if dataset == '2017': 
@@ -83,10 +84,12 @@ def MakeOutputVariations(couplingstoscan,histos,histo,tag):
 		 histoname = "VBFHH4B_rew_c2v_%s_Btag4_VBFcateg_SR_110_Histogram_%s"%(couplingname,histo)
 		 print "      * (cv,c2v,c3) = (%s,%s,%s)"%(couplings[0],couplings[1],couplings[2])
 		 #Create template
-		 hsig  = ROOT.TH1F()
-		 hsig.SetName(histoname)
-		 hsig.SetTitle(histoname)
-		 hsig.SetBins(histos[0].GetNbinsX(),histos[0].GetBinLowEdge(1),histos[0].GetBinLowEdge(histos[0].GetNbinsX()+1))
+		 if histo!='HH_m':
+		   hsig  = ROOT.TH1F(histoname,histoname,histos[0].GetNbinsX(), histos[0].GetBinLowEdge(1),histos[0].GetBinLowEdge(histos[0].GetNbinsX()+1))
+		 else:
+		   bins=[0,250,500,1000,4000]	
+		   nbins=len(bins)-1
+		   hsig  = ROOT.TH1F(histoname,histoname,nbins,array('d',bins) ) 
 		 if factors[0] !=0: hsig.Add(hsig1)
 		 if factors[1] !=0: hsig.Add(hsig2)
 		 if factors[2] !=0: hsig.Add(hsig3)

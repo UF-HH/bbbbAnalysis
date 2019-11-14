@@ -65,6 +65,9 @@ struct EventInfo{
     boost::optional<Jet> H2_b2;
 
     //Non-resonant analysis and studies
+    boost::optional<CompositeCandidate> H1unregressed;
+    boost::optional<CompositeCandidate> H2unregressed;
+    boost::optional<CompositeCandidate> HHunregressed;
     boost::optional<int>  gen_H1_b1_matched;
     boost::optional<int>  gen_H1_b2_matched;
     boost::optional<int>  gen_H2_b1_matched;
@@ -245,16 +248,22 @@ struct EventInfo{
     boost::optional<float> hhj1_deltaEta; 
     boost::optional<float> hhj2_deltaEta; 
     boost::optional<float> hhjj_deltaEta; 
-    boost::optional<float> costh_H1_cm   ;
-    boost::optional<float> costh_H2_cm   ;
-    boost::optional<float> costh_HH_cm   ;
-    boost::optional<float> costh_JJ_cm   ;
-    boost::optional<float> costh_HH_b1_cm;
-    boost::optional<float> costh_HH_b2_cm;
-    boost::optional<float> costh_HH_b3_cm;
-    boost::optional<float> costh_HH_b4_cm;
-    boost::optional<float> costh_JJ_j1_cm;
-    boost::optional<float> costh_JJ_j2_cm;
+    boost::optional<float> costh_H1_vbfcm   ;
+    boost::optional<float> costh_H2_vbfcm   ;
+    boost::optional<float> costh_HH_vbfcm   ;
+    boost::optional<float> costh_JJ_vbfcm   ;
+    boost::optional<float> costh_HH_b1_vbfcm;
+    boost::optional<float> costh_HH_b2_vbfcm;
+    boost::optional<float> costh_HH_b3_vbfcm;
+    boost::optional<float> costh_HH_b4_vbfcm;
+    boost::optional<float> costh_JJ_j1_vbfcm;
+    boost::optional<float> costh_JJ_j2_vbfcm;
+    boost::optional<float> costh_HH_b1_ggfcm;
+    boost::optional<float> costh_HH_b2_ggfcm;
+    boost::optional<float> costh_HH_b3_ggfcm;
+    boost::optional<float> costh_HH_b4_ggfcm;
+    boost::optional<float> costh_H1_ggfcm   ;
+    boost::optional<float> costh_H2_ggfcm   ;
     boost::optional<int> NVBFCandidates;
     boost::optional<int> VBFMatchedCandidatesEtaSign;
     boost::optional<float> VBFMatchedCandidatesDeltaEta;
@@ -269,6 +278,7 @@ struct EventInfo{
     boost::optional<float> j1etaj2eta;
     boost::optional<float> maxj1etaj2eta;    
     boost::optional<int> VBFEvent;
+    boost::optional<int> nBtag;
     boost::optional<int> VBFEventLocation;
     boost::optional<int> ExtraVBFJetDecision;
     boost::optional<float> ExtraVBFJetPt;

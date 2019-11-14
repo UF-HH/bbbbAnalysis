@@ -108,10 +108,12 @@ int main(int argc, char** argv)
 
     std::map<std::string,std::any> parameterList;
 
-    const string bbbbChoice = config.readStringOpt("parameters::bbbbChoice");
+    const string bbbbChoice  = config.readStringOpt("parameters::bbbbChoice");
+    const string datasetname = config.readStringOpt("parameters::datasetname");
     parameterList.emplace("is_VBF_sig",is_VBF_sig);
 
     parameterList.emplace("bbbbChoice",bbbbChoice);
+    parameterList.emplace("datasetname",datasetname);   
     if(bbbbChoice == "OneClosestToMh"){
         parameterList.emplace("bbbbChoice""HiggsMass",config.readFloatOpt("parameters::HiggsMass"));
     }
@@ -158,12 +160,13 @@ int main(int argc, char** argv)
         parameterList.emplace("MaxAbsEta"           ,config.readFloatOpt("parameters::MaxAbsEta"           ));
     }
     else if(preselectionCutStrategy == "VBFJetCut"){
-        parameterList.emplace("bMinDeepCSV"          ,config.readFloatOpt("parameters::bMinDeepCSV"      ));
-        parameterList.emplace("bMinPt"               ,config.readFloatOpt("parameters::bMinPt"           ));
-        parameterList.emplace("bMaxAbsEta"           ,config.readFloatOpt("parameters::bMaxAbsEta"       ));
-        parameterList.emplace("jMinPt"               ,config.readFloatOpt("parameters::jMinPt"           ));
-        parameterList.emplace("jMaxAbsEta"           ,config.readFloatOpt("parameters::jMaxAbsEta"       ));
-        parameterList.emplace("FourthAntiBTagInformation"   ,config.readBoolOpt("parameters::FourthAntiBTagInformation"));
+        parameterList.emplace("bMinDeepCSV"       ,config.readFloatOpt("parameters::bMinDeepCSV"));
+        parameterList.emplace("bMinPt"            ,config.readFloatOpt("parameters::bMinPt"     ));
+        parameterList.emplace("bMaxAbsEta"        ,config.readFloatOpt("parameters::bMaxAbsEta" ));
+        parameterList.emplace("jMinPt"            ,config.readFloatOpt("parameters::jMinPt"     ));
+        parameterList.emplace("jMaxAbsEta"        ,config.readFloatOpt("parameters::jMaxAbsEta" ));
+        parameterList.emplace("FourthAntiBTagInfo",config.readBoolOpt( "parameters::FourthAntiBTagInfo"));
+        parameterList.emplace("BjetRegression"    ,config.readBoolOpt( "parameters::BjetRegression"));
     }
     else if(preselectionCutStrategy == "None"){
     }  

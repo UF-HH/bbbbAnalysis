@@ -74,6 +74,9 @@ class OutputTree {
         float HH_m_kinFit;
 
         //////////////////----- reco bs
+        DECLARE_m_pt_eta_phi_p4(H1unregressed)
+        DECLARE_m_pt_eta_phi_p4(H2unregressed)
+        DECLARE_m_pt_eta_phi_p4(HHunregressed)
         DECLARE_m_pt_ptRegressed_eta_phi_p4(H1_b1)
         float H1_b1_deepCSV;
         int H1_b1_jetId;
@@ -123,6 +126,22 @@ class OutputTree {
         int TT_nPVgood;
         int TT_nJet;                        
         /////////////////---Non-resonant analysis and studies
+        float H1_b1_bRegRes;
+        float H1_b2_bRegRes;
+        float H2_b1_bRegRes;
+        float H2_b2_bRegRes;
+        float HH_b1_bRegRes;
+        float HH_b2_bRegRes;
+        float HH_b3_bRegRes;
+        float HH_b4_bRegRes;        
+        float HH_btag_b1_bRegRes;
+        float HH_btag_b2_bRegRes;
+        float HH_btag_b3_bRegRes;
+        float HH_btag_b4_bRegRes;
+        float HH_btag_cmva_b1_bRegRes;
+        float HH_btag_cmva_b2_bRegRes;
+        float HH_btag_cmva_b3_bRegRes;
+        float HH_btag_cmva_b4_bRegRes;
         float H1_b1_genJetIdx;
         float H1_b2_genJetIdx;
         float H2_b1_genJetIdx;
@@ -261,6 +280,7 @@ class OutputTree {
         float HH_btag_cmva_b4_cmva;
 
         int VBFEvent;
+        int nBtag;
         int VBFEventLocation;
         int nPVgood;
         int nJet; 
@@ -304,16 +324,22 @@ class OutputTree {
         float ExtraVBFJetEta;  
         DECLARE_m_pt_eta_phi_p4(H1rand);
         DECLARE_m_pt_eta_phi_p4(H2rand);
-        float costh_H1_cm   ;
-        float costh_H2_cm   ;
-        float costh_HH_cm   ;
-        float costh_JJ_cm   ;
-        float costh_HH_b1_cm;
-        float costh_HH_b2_cm;
-        float costh_HH_b3_cm;
-        float costh_HH_b4_cm;
-        float costh_JJ_j1_cm;
-        float costh_JJ_j2_cm;        
+        float costh_H1_vbfcm   ;
+        float costh_H2_vbfcm   ;
+        float costh_HH_vbfcm   ;
+        float costh_JJ_vbfcm   ;
+        float costh_HH_b1_vbfcm;
+        float costh_HH_b2_vbfcm;
+        float costh_HH_b3_vbfcm;
+        float costh_HH_b4_vbfcm;
+        float costh_JJ_j1_vbfcm;
+        float costh_JJ_j2_vbfcm;        
+        float costh_HH_b1_ggfcm;
+        float costh_HH_b2_ggfcm;
+        float costh_HH_b3_ggfcm;
+        float costh_HH_b4_ggfcm;
+        float costh_H1_ggfcm   ;
+        float costh_H2_ggfcm   ;
         float H1_bb_deltaR;
         float H2_bb_deltaR;
         float H1_bb_deltaPhi;

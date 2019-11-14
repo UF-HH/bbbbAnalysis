@@ -204,6 +204,7 @@ class NanoAODTree_ReaderImpl {
         NanoReaderArray<Float_t>   Jet_rawFactor                        {fReader, "Jet_rawFactor"};
         // NanoReaderArray<Float_t>   Jet_bRegCorr                         {fReader, "Jet_bRegCorr"};
         NanoReaderArray<Float_t>   Jet_bRegCorr                         {fReader, is_2016_MC_ ? "Jet_bReg" :"Jet_bRegCorr"};
+        NanoReaderArray<Float_t>   Jet_bRegRes                          {fReader, "Jet_bRegRes"};        
         NanoReaderArray<Int_t>     Jet_electronIdx1                     {fReader, "Jet_electronIdx1"};
         NanoReaderArray<Int_t>     Jet_electronIdx2                     {fReader, "Jet_electronIdx2"};
         NanoReaderArray<Int_t>     Jet_jetId                            {fReader, "Jet_jetId"};

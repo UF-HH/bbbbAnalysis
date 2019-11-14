@@ -74,7 +74,9 @@ def fitreweightermodel(original,target,original_weights,target_weights,tfactor, 
 	model   = bdtreweighter.reweightermodel(original,target,original_weights,target_weights,model_args) 
 	ws      = model.predict_weights(original,original_weights,lambda x: numpy.mean(x, axis=0))
 	weights = numpy.multiply(ws,tfactor)
+	#weights = numpy.multiply(ws,original_weights.sum()/ws.sum())
 	factor  = float( float(len(target.index)) / weights.sum()  ) 
+	#factor = target_weights.sum()/weights.sum()
 	print "The transfer factor                                                 = ",tfactor
 	print "The sum of target weights                                           = ",target_weights.sum(),"+/-",math.sqrt(numpy.square(target_weights).sum() )
 	print "The sum of model weights (before reweighting)                       = ",original_weights.sum(),"+/-",math.sqrt(numpy.square(original_weights).sum() )
@@ -97,9 +99,9 @@ def getmodelweights(original,original_weights,model,tfactor,factor):
 def pandas2root(tree_dataframe, tree_name, rootfile_name):
 	tree_dataframe.to_root('%s'%rootfile_name, key='%s'%tree_name)
 
-def roothist2root(sample,case,hist_name, rootfile_name):
-	file = ROOT.TFile.Open('inputskims/%s/SKIM_%s.root'%(case,sample))
-	hfile =  ROOT.TFile('%s'%rootfile_name, 'RECREATE')
+def roothist2root(inputrootfile_name, hist_name, outputrootfile_name):
+	file = ROOT.TFile.Open('%s'%inputrootfile_name)
+	hfile =  ROOT.TFile('%s'%outputrootfile_name, 'RECREATE')
 	h=file.Get(hist_name)
 	h.Write()
 	hfile.Write()
@@ -128,8 +130,10 @@ def mergedata2root(treefile,histofile,rootfile_name):
 	os.system('rm %s %s'%(treefile,histofile) )
 
 def TotalMCEvents(sample):
-	file = ROOT.TFile.Open(sample)
+	file = ROOT.TFile.Open('%s'%sample)
+	h=ROOT.TH1D()
 	h=file.Get('eff_histo')
+	htmp=h.Clone()
+	w=htmp.GetBinContent(1)
 	file.Close()
-	w=h.GetBinContent(1)
 	return w

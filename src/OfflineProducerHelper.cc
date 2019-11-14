@@ -13,6 +13,7 @@
 #include "GenPart.h"
 #include "HH4b_kinFit.h"
 #include "TRandom.h"
+#include "TMath.h"
 
 #include "TMVA/GeneticAlgorithm.h"
 #include "TMVA/GeneticFitter.h"
@@ -208,6 +209,8 @@ void OfflineProducerHelper::initializeObjectsBJetForScaleFactors(OutputTree &ot)
 
     string scaleFactorsMethod = any_cast<string>(parameterList_->at("BTagScaleFactorMethod"));
 
+    string eventselection = any_cast<string>(parameterList_->at("PreselectionCut"));
+
     if(scaleFactorsMethod == "None"){
         //do nothing
     }
@@ -223,7 +226,23 @@ void OfflineProducerHelper::initializeObjectsBJetForScaleFactors(OutputTree &ot)
         ot.declareUserFloatBranch("bTagScaleFactor_lightJets_down"   , 1.);
 
         // branchesAffectedByJetEnergyVariations_["bTagScaleFactor_central"] = 1.;
-        BTagCalibration btagCalibration("DeepCSV",any_cast<string>(parameterList_->at("BJetScaleFactorsFile")));
+        string btaggingfile,btagger;
+        if(eventselection=="VBFJetCut")
+        {
+          if( any_cast<bool>(parameterList_->at("NewestBtaggingAlgorithm"))  )
+          {
+            btagger= "DeepJet";btaggingfile = any_cast<string>(parameterList_->at("BJetScaleFactorsFileAlternative"));
+          }
+          else
+          {
+            btagger= "DeepCSV";btaggingfile = any_cast<string>(parameterList_->at("BJetScaleFactorsFile"));
+          }
+        }
+        else{
+            btagger= "DeepCSV";btaggingfile = any_cast<string>(parameterList_->at("BJetScaleFactorsFile"));
+        }
+
+        BTagCalibration btagCalibration(btagger,btaggingfile);
         btagCalibrationReader_lightJets_ = new BTagCalibrationReader(BTagEntry::OP_MEDIUM,"central",{"up", "down"});
         btagCalibrationReader_cJets_     = new BTagCalibrationReader(BTagEntry::OP_MEDIUM,"central",{"up", "down"});
         btagCalibrationReader_bJets_     = new BTagCalibrationReader(BTagEntry::OP_MEDIUM,"central",{"up", "down"});
@@ -1342,12 +1361,17 @@ std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_BothClosestToDiagonal(con
     std::pair<float, float> m_13_24 = make_pair(m3,m4);
     std::pair<float, float> m_14_23 = make_pair(m5,m6);
 
-    float d12_34 = fabs( m_12_34.first - ((targetHiggsMass1/targetHiggsMass2)*m_12_34.second) );
-    float d13_24 = fabs( m_13_24.first - ((targetHiggsMass1/targetHiggsMass2)*m_13_24.second) );
-    float d14_23 = fabs( m_14_23.first - ((targetHiggsMass1/targetHiggsMass2)*m_14_23.second) );
+    float d12_34 = TMath::Sqrt(pow(m_12_34.first,2) + pow(m_12_34.second,2) )*fabs( TMath::Sin( TMath::ATan(m_12_34.second/m_12_34.first) - TMath::ATan(targetHiggsMass2/targetHiggsMass1) ) );
+    float d13_24 = TMath::Sqrt(pow(m_13_24.first,2) + pow(m_13_24.second,2) )*fabs( TMath::Sin( TMath::ATan(m_13_24.second/m_13_24.first) - TMath::ATan(targetHiggsMass2/targetHiggsMass1) ) );
+    float d14_23 = TMath::Sqrt(pow(m_14_23.first,2) + pow(m_14_23.second,2) )*fabs( TMath::Sin( TMath::ATan(m_14_23.second/m_14_23.first) - TMath::ATan(targetHiggsMass2/targetHiggsMass1) ) );
 
+    //NOTE: The formula below is equivalent (after some math-massaging =) )
+    //float d12_34_b = fabs( m_12_34.first - ((targetHiggsMass1/targetHiggsMass1)*m_12_34.second) );
+    //float d13_24_b = fabs( m_13_24.first - ((targetHiggsMass1/targetHiggsMass1)*m_13_24.second) );
+    //float d14_23_b = fabs( m_14_23.first - ((targetHiggsMass1/targetHiggsMass1)*m_14_23.second) );
+ 
     float the_min = std::min({d12_34, d13_24, d14_23});
-
+        
     std::vector<Jet> outputJets = *presel_jets;
 
     if (the_min == d12_34){
@@ -1606,7 +1630,7 @@ bool OfflineProducerHelper::select_bbbbjj_jets(NanoAODTree& nat, EventInfo& ei, 
     else{
         ordered_jets = bbbb_jets_idxs_MinMassDifference(&presel_bjets);
     }
-    //Add objects (H1,H2,HH) and angular variables (dEta,dPhi) 
+    //Add objects (H1,H2,HH) and angular variables (dEta,dPhi,etc) 
     if(presel_jets.size()==6){
         ordered_jets.push_back(presel_jets.at(4)); ordered_jets.push_back(presel_jets.at(5));
         AddInclusiveCategoryVariables(nat,ei,ordered_jets);
@@ -1660,7 +1684,7 @@ void OfflineProducerHelper::AddInclusiveCategoryVariables(NanoAODTree& nat, Even
        //HH variables
        ei.HHunregressed = CompositeCandidate(ei.H1unregressed.get(), ei.H2unregressed.get());       
        ei.HH            = CompositeCandidate(ei.H1.get(), ei.H2.get());
-       //Fill branches with selected b-jets ordered by pt (If bjetregression option is activated, they will have it)
+       //Fill branches with selected b-jets ordered by pt
        std::vector<Jet> presel_bjets, presel_bjets_btags;
        uint m=0; while(m<4)
        {
@@ -1674,21 +1698,31 @@ void OfflineProducerHelper::AddInclusiveCategoryVariables(NanoAODTree& nat, Even
        ei.HH_b2 = presel_bjets.at(1);
        ei.HH_b3 = presel_bjets.at(2);
        ei.HH_b4 = presel_bjets.at(3);
-       stable_sort(presel_bjets_btags.begin(), presel_bjets_btags.end(), [](const Jet & a, const Jet & b) -> bool
-       {return ( get_property(a, Jet_btagCMVA) > get_property(b, Jet_btagCMVA) );});
-       ei.HH_btag_cmva_b1 = presel_bjets_btags.at(0);
-       ei.HH_btag_cmva_b2 = presel_bjets_btags.at(1);
-       ei.HH_btag_cmva_b3 = presel_bjets_btags.at(2);
-       ei.HH_btag_cmva_b4 = presel_bjets_btags.at(3);
-       stable_sort(presel_bjets_btags.begin(), presel_bjets_btags.end(), [](const Jet & a, const Jet & b) -> bool
-       {return ( get_property(a, Jet_btagDeepB) > get_property(b, Jet_btagDeepB) );});
-       ei.HH_btag_b1 = presel_bjets_btags.at(0);
-       ei.HH_btag_b2 = presel_bjets_btags.at(1);
-       ei.HH_btag_b3 = presel_bjets_btags.at(2);
-       ei.HH_btag_b4 = presel_bjets_btags.at(3);
        //Is it three or four b-tags?
-       if( get_property( ei.HH_btag_b4.get() , Jet_btagDeepB ) > any_cast<float>(parameterList_->at("bMinDeepCSV") ) ){ei.nBtag=4;}
-       else{ei.nBtag=3;}
+       if( any_cast<bool>(parameterList_->at("NewestBtaggingAlgorithm")) )
+       {
+           ei.btaggerID=1;
+           stable_sort(presel_bjets_btags.begin(), presel_bjets_btags.end(), [](const Jet & a, const Jet & b) -> bool
+           {return ( get_property(a, Jet_btagDeepFlavB) > get_property(b, Jet_btagDeepFlavB) );});
+           ei.HH_btag_b1 = presel_bjets_btags.at(0);
+           ei.HH_btag_b2 = presel_bjets_btags.at(1);
+           ei.HH_btag_b3 = presel_bjets_btags.at(2);
+           ei.HH_btag_b4 = presel_bjets_btags.at(3);
+           if( get_property( ei.HH_btag_b4.get() , Jet_btagDeepFlavB ) > any_cast<float>(parameterList_->at("bMinDeepJet") ) ){ei.nBtag=4;}
+           else{ei.nBtag=3;}
+       }
+       else
+       {
+           ei.btaggerID=0;
+           stable_sort(presel_bjets_btags.begin(), presel_bjets_btags.end(), [](const Jet & a, const Jet & b) -> bool
+           {return ( get_property(a, Jet_btagDeepB) > get_property(b, Jet_btagDeepB) );});
+           ei.HH_btag_b1 = presel_bjets_btags.at(0);
+           ei.HH_btag_b2 = presel_bjets_btags.at(1);
+           ei.HH_btag_b3 = presel_bjets_btags.at(2);
+           ei.HH_btag_b4 = presel_bjets_btags.at(3);
+           if( get_property( ei.HH_btag_b4.get() , Jet_btagDeepB ) > any_cast<float>(parameterList_->at("bMinDeepCSV") ) ){ei.nBtag=4;}
+           else{ei.nBtag=3;}
+       }
        //Mass cut variables with a random swap to be sure that the m1 and m2 are simmetric when selecting the signal region
        bool swapped = (int(ei.H1->P4().Pt()*100.) % 2 == 1);
        if (!swapped){ei.H1rand = ei.H1.get();ei.H2rand = ei.H2.get();}
@@ -2226,6 +2260,7 @@ std::vector<Jet> OfflineProducerHelper::bjJets_PreselectionCut(NanoAODTree& nat,
 
 {
     float bminimumDeepCSVAccepted           = any_cast<float>(parameterList_->at("bMinDeepCSV"          ));
+    float bminimumDeepJetAccepted           = any_cast<float>(parameterList_->at("bMinDeepJet"          ));
     float bminimumPtAccepted                = any_cast<float>(parameterList_->at("bMinPt"               ));
     float bmaximumAbsEtaAccepted            = any_cast<float>(parameterList_->at("bMaxAbsEta"           ));
     float jminimumPtAccepted                = any_cast<float>(parameterList_->at("jMinPt"               ));
@@ -2258,12 +2293,21 @@ std::vector<Jet> OfflineProducerHelper::bjJets_PreselectionCut(NanoAODTree& nat,
     int MinimumNumberOfBTags=0;
     if(any_cast<bool>(parameterList_->at("FourthAntiBTagInfo"))){MinimumNumberOfBTags= 3;}
     else{MinimumNumberOfBTags= 4;}
-    //Count number of b-tagged jets. If btags < 3, then reject event (not important for us)
-    int btags=0; for (uint i=0;i<jets.size();i++ ){ if( get_property( jets.at(i) ,Jet_btagDeepB) > bminimumDeepCSVAccepted) btags++;}
+    //Count number of b-tagged jets. If btags < 3, then reject event (not important for us) and select the four most b-tagged jets
+    int btags=0;
+    if(any_cast<bool>(parameterList_->at("NewestBtaggingAlgorithm")))
+    {
+          for (uint i=0;i<jets.size();i++ ){ if( get_property( jets.at(i) ,Jet_btagDeepFlavB) > bminimumDeepJetAccepted) btags++;}
+          stable_sort(jets.begin(), jets.end(), [](const Jet & a, const Jet & b) -> bool
+          { return ( get_property(a, Jet_btagDeepFlavB) > get_property(b, Jet_btagDeepFlavB) );}); 
+    }
+    else
+    {
+          for (uint i=0;i<jets.size();i++ ){ if( get_property( jets.at(i) ,Jet_btagDeepB) > bminimumDeepCSVAccepted) btags++;}
+          stable_sort(jets.begin(), jets.end(), [](const Jet & a, const Jet & b) -> bool
+          { return ( get_property(a, Jet_btagDeepB) > get_property(b, Jet_btagDeepB) );}); 
+    }
     if(btags<MinimumNumberOfBTags) return outputJets;
-    //Select the four most b-tagged jets
-    stable_sort(jets.begin(), jets.end(), [](const Jet & a, const Jet & b) -> bool
-    { return ( get_property(a, Jet_btagDeepB) > get_property(b, Jet_btagDeepB) );});
     outputJets = {{*(jets.begin()+0),*(jets.begin()+1),*(jets.begin()+2),*(jets.begin()+3)}};
     int c=0; while (c<4){jets.erase(jets.begin());c++;}
     //Calculate the associated b-tagging scale factor depending on b-tag or anti-btag selection

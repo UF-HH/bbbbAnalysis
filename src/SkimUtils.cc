@@ -78,21 +78,25 @@ void SkimUtils::fill_output_tree(OutputTree& ot, NanoAODTree& nat, EventInfo& ei
 
     COPY_OPTIONAL_m_pt_ptRegressed_eta_phi_p4(H1_b1)
     if (ei.H1_b1) ot.H1_b1_deepCSV = get_property(ei.H1_b1.get(),Jet_btagDeepB); 
+    if (ei.H1_b1) ot.H1_b1_deepJet = get_property(ei.H1_b1.get(),Jet_btagDeepFlavB);
     if (ei.H1_b1) ot.H1_b1_bRegRes = get_property(ei.H1_b1.get(),Jet_bRegRes);
     if (ei.H1_b1) ot.H1_b1_jetId   = get_property(ei.H1_b1.get(),Jet_jetId); 
     if (ei.H1_b1) ot.H1_b1_puId    = get_property(ei.H1_b1.get(),Jet_puId);
     COPY_OPTIONAL_m_pt_ptRegressed_eta_phi_p4(H1_b2)
     if (ei.H1_b2) ot.H1_b2_deepCSV = get_property(ei.H1_b2.get(),Jet_btagDeepB);
+    if (ei.H1_b2) ot.H1_b2_deepJet = get_property(ei.H1_b2.get(),Jet_btagDeepFlavB);
     if (ei.H1_b2) ot.H1_b2_bRegRes = get_property(ei.H1_b2.get(),Jet_bRegRes);
     if (ei.H1_b2) ot.H1_b2_jetId   = get_property(ei.H1_b2.get(),Jet_jetId); 
     if (ei.H1_b2) ot.H1_b2_puId    = get_property(ei.H1_b2.get(),Jet_puId);
     COPY_OPTIONAL_m_pt_ptRegressed_eta_phi_p4(H2_b1)
     if (ei.H2_b1) ot.H2_b1_deepCSV = get_property(ei.H2_b1.get(),Jet_btagDeepB);
+    if (ei.H2_b1) ot.H2_b1_deepJet = get_property(ei.H2_b1.get(),Jet_btagDeepFlavB);
     if (ei.H2_b1) ot.H2_b1_bRegRes = get_property(ei.H2_b1.get(),Jet_bRegRes);
     if (ei.H2_b1) ot.H2_b1_jetId   = get_property(ei.H2_b1.get(),Jet_jetId); 
     if (ei.H2_b1) ot.H2_b1_puId    = get_property(ei.H2_b1.get(),Jet_puId);
     COPY_OPTIONAL_m_pt_ptRegressed_eta_phi_p4(H2_b2)
     if (ei.H2_b2) ot.H2_b2_deepCSV = get_property(ei.H2_b2.get(),Jet_btagDeepB);
+    if (ei.H2_b2) ot.H2_b2_deepJet = get_property(ei.H2_b2.get(),Jet_btagDeepFlavB);
     if (ei.H2_b2) ot.H2_b2_bRegRes = get_property(ei.H2_b2.get(),Jet_bRegRes);
     if (ei.H2_b2) ot.H2_b2_jetId   = get_property(ei.H2_b2.get(),Jet_jetId); 
     if (ei.H2_b2) ot.H2_b2_puId    = get_property(ei.H2_b2.get(),Jet_puId);
@@ -121,6 +125,7 @@ void SkimUtils::fill_output_tree(OutputTree& ot, NanoAODTree& nat, EventInfo& ei
     if(ei.TT_nPVgood) ot.TT_nPVgood  = *ei.TT_nPVgood;
     if(ei.TT_nJet) ot.TT_nJet  = *ei.TT_nJet;    
     //set the variables for non-resonant analysis and studies
+    if(ei.btaggerID) ot.btaggerID  = *ei.btaggerID;
     if(ei.H1_b1_quarkID) ot.H1_b1_quarkID  = *ei.H1_b1_quarkID;
     if(ei.H1_b2_quarkID) ot.H1_b2_quarkID  = *ei.H1_b2_quarkID;
     if(ei.H2_b1_quarkID) ot.H2_b1_quarkID  = *ei.H2_b1_quarkID;
@@ -142,9 +147,10 @@ void SkimUtils::fill_output_tree(OutputTree& ot, NanoAODTree& nat, EventInfo& ei
     if(ei.H2_b1_hadronFlavour) ot.H2_b1_hadronFlavour  = *ei.H2_b1_hadronFlavour;
     if(ei.H2_b2_hadronFlavour) ot.H2_b2_hadronFlavour  = *ei.H2_b2_hadronFlavour;
     COPY_OPTIONAL_m_pt_ptRegressed_eta_phi_p4(HH_b1)
-    if(ei.HH_b1)                ot.HH_b1_deepCSV = get_property(ei.HH_b1.get(),Jet_btagDeepB);
-    if(ei.HH_b1)                ot.HH_b1_bRegRes = get_property(ei.HH_b1.get(),Jet_bRegRes);
-    if(ei.HH_b1)                ot.HH_b1_qgl = get_property(ei.HH_b1.get(),Jet_qgl);
+    if(ei.HH_b1)                ot.HH_b1_deepCSV  = get_property(ei.HH_b1.get(),Jet_btagDeepB);
+    if(ei.HH_b1)                ot.HH_b1_deepJet  = get_property(ei.HH_b1.get(),Jet_btagDeepFlavB);
+    if(ei.HH_b1)                ot.HH_b1_bRegRes  = get_property(ei.HH_b1.get(),Jet_bRegRes);
+    if(ei.HH_b1)                ot.HH_b1_qgl      = get_property(ei.HH_b1.get(),Jet_qgl);
     if(ei.HH_b1) ot.HH_b1_jetId   = get_property(ei.HH_b1.get(),Jet_jetId); 
     if(ei.HH_b1) ot.HH_b1_puId    = get_property(ei.HH_b1.get(),Jet_puId);
     if(ei.HH_b1_rawpt) ot.HH_b1_rawpt   = *ei.HH_b1_rawpt;
@@ -154,6 +160,7 @@ void SkimUtils::fill_output_tree(OutputTree& ot, NanoAODTree& nat, EventInfo& ei
     if(ei.HH_b1_hadronFlavour)        ot.HH_b1_hadronFlavour = *ei.HH_b1_hadronFlavour; 
     COPY_OPTIONAL_m_pt_ptRegressed_eta_phi_p4(HH_b2)
     if(ei.HH_b2)                ot.HH_b2_deepCSV = get_property(ei.HH_b2.get(),Jet_btagDeepB);
+    if(ei.HH_b2)                ot.HH_b2_deepJet  = get_property(ei.HH_b2.get(),Jet_btagDeepFlavB);
     if(ei.HH_b2)                ot.HH_b2_bRegRes = get_property(ei.HH_b2.get(),Jet_bRegRes);    
     if(ei.HH_b2)                ot.HH_b2_qgl = get_property(ei.HH_b2.get(),Jet_qgl);
     if(ei.HH_b2) ot.HH_b2_jetId   = get_property(ei.HH_b2.get(),Jet_jetId); 
@@ -165,6 +172,7 @@ void SkimUtils::fill_output_tree(OutputTree& ot, NanoAODTree& nat, EventInfo& ei
     if(ei.HH_b2_hadronFlavour)        ot.HH_b2_hadronFlavour = *ei.HH_b2_hadronFlavour; 
     COPY_OPTIONAL_m_pt_ptRegressed_eta_phi_p4(HH_b3)
     if(ei.HH_b3)                ot.HH_b3_deepCSV = get_property(ei.HH_b3.get(),Jet_btagDeepB);
+    if(ei.HH_b3)                ot.HH_b3_deepJet = get_property(ei.HH_b3.get(),Jet_btagDeepFlavB);
     if(ei.HH_b3)                ot.HH_b3_bRegRes = get_property(ei.HH_b3.get(),Jet_bRegRes);
     if(ei.HH_b3)                ot.HH_b3_qgl = get_property(ei.HH_b3.get(),Jet_qgl);
     if(ei.HH_b3) ot.HH_b3_jetId   = get_property(ei.HH_b3.get(),Jet_jetId); 
@@ -176,6 +184,7 @@ void SkimUtils::fill_output_tree(OutputTree& ot, NanoAODTree& nat, EventInfo& ei
     if(ei.HH_b3_hadronFlavour)        ot.HH_b3_hadronFlavour = *ei.HH_b3_hadronFlavour;
     COPY_OPTIONAL_m_pt_ptRegressed_eta_phi_p4(HH_b4)
     if(ei.HH_b4)                ot.HH_b4_deepCSV = get_property(ei.HH_b4.get(),Jet_btagDeepB);
+    if(ei.HH_b4)                ot.HH_b4_deepJet = get_property(ei.HH_b4.get(),Jet_btagDeepFlavB);
     if(ei.HH_b4)                ot.HH_b4_bRegRes = get_property(ei.HH_b4.get(),Jet_bRegRes);
     if(ei.HH_b4)                ot.HH_b4_qgl = get_property(ei.HH_b4.get(),Jet_qgl);
     if(ei.HH_b4) ot.HH_b4_jetId   = get_property(ei.HH_b4.get(),Jet_jetId); 
@@ -186,7 +195,8 @@ void SkimUtils::fill_output_tree(OutputTree& ot, NanoAODTree& nat, EventInfo& ei
     if(ei.HH_b4_partonFlavour)        ot.HH_b4_partonFlavour = *ei.HH_b4_partonFlavour;
     if(ei.HH_b4_hadronFlavour)        ot.HH_b4_hadronFlavour = *ei.HH_b4_hadronFlavour;
     COPY_OPTIONAL_m_pt_eta_phi_p4(JJ_j1)
-    if(ei.JJ_j1)                ot.JJ_j1_deepCSV = get_property(ei.JJ_j1.get(),Jet_btagDeepB);
+    if(ei.JJ_j1)                ot.JJ_j1_deepCSV  = get_property(ei.JJ_j1.get(),Jet_btagDeepB);
+    if(ei.JJ_j1)                ot.JJ_j1_deepJet  = get_property(ei.JJ_j1.get(),Jet_btagDeepFlavB);
     if(ei.JJ_j1)                ot.JJ_j1_qgl = get_property(ei.JJ_j1.get(),Jet_qgl);
     if(ei.JJ_j1) ot.JJ_j1_jetId   = get_property(ei.JJ_j1.get(),Jet_jetId); 
     if(ei.JJ_j1) ot.JJ_j1_puId    = get_property(ei.JJ_j1.get(),Jet_puId);
@@ -198,6 +208,7 @@ void SkimUtils::fill_output_tree(OutputTree& ot, NanoAODTree& nat, EventInfo& ei
     if(ei.JJ_j1_location)        ot.JJ_j1_location = *ei.JJ_j1_location;
     COPY_OPTIONAL_m_pt_eta_phi_p4(JJ_j2)
     if(ei.JJ_j2)                ot.JJ_j2_deepCSV = get_property(ei.JJ_j2.get(),Jet_btagDeepB);
+    if(ei.JJ_j2)                ot.JJ_j2_deepJet = get_property(ei.JJ_j2.get(),Jet_btagDeepFlavB);
     if(ei.JJ_j2)                ot.JJ_j2_qgl = get_property(ei.JJ_j2.get(),Jet_qgl);
     if(ei.JJ_j2) ot.JJ_j2_jetId   = get_property(ei.JJ_j2.get(),Jet_jetId); 
     if(ei.JJ_j2) ot.JJ_j2_puId    = get_property(ei.JJ_j2.get(),Jet_puId);
@@ -210,28 +221,20 @@ void SkimUtils::fill_output_tree(OutputTree& ot, NanoAODTree& nat, EventInfo& ei
     COPY_OPTIONAL_m_pt_eta_phi_p4(JJ)
     COPY_OPTIONAL_m_pt_ptRegressed_eta_phi_p4(HH_btag_b1)
     if(ei.HH_btag_b1)                ot.HH_btag_b1_deepCSV = get_property(ei.HH_btag_b1.get(),Jet_btagDeepB);
+    if(ei.HH_btag_b1)                ot.HH_btag_b1_deepJet = get_property(ei.HH_btag_b1.get(),Jet_btagDeepFlavB);
     if(ei.HH_btag_b1)                ot.HH_btag_b1_bRegRes = get_property(ei.HH_btag_b1.get(),Jet_bRegRes);
     COPY_OPTIONAL_m_pt_ptRegressed_eta_phi_p4(HH_btag_b2)
     if(ei.HH_btag_b2)                ot.HH_btag_b2_deepCSV = get_property(ei.HH_btag_b2.get(),Jet_btagDeepB);
+    if(ei.HH_btag_b2)                ot.HH_btag_b2_deepJet = get_property(ei.HH_btag_b2.get(),Jet_btagDeepFlavB);
     if(ei.HH_btag_b2)                ot.HH_btag_b2_bRegRes = get_property(ei.HH_btag_b2.get(),Jet_bRegRes);
     COPY_OPTIONAL_m_pt_ptRegressed_eta_phi_p4(HH_btag_b3)
     if(ei.HH_btag_b3)                ot.HH_btag_b3_deepCSV = get_property(ei.HH_btag_b3.get(),Jet_btagDeepB);
+    if(ei.HH_btag_b3)                ot.HH_btag_b3_deepJet = get_property(ei.HH_btag_b3.get(),Jet_btagDeepFlavB);
     if(ei.HH_btag_b3)                ot.HH_btag_b3_bRegRes = get_property(ei.HH_btag_b3.get(),Jet_bRegRes);
     COPY_OPTIONAL_m_pt_ptRegressed_eta_phi_p4(HH_btag_b4)
     if(ei.HH_btag_b4)                ot.HH_btag_b4_deepCSV = get_property(ei.HH_btag_b4.get(),Jet_btagDeepB);
+    if(ei.HH_btag_b4)                ot.HH_btag_b4_deepJet = get_property(ei.HH_btag_b4.get(),Jet_btagDeepFlavB);
     if(ei.HH_btag_b4)                ot.HH_btag_b4_bRegRes = get_property(ei.HH_btag_b4.get(),Jet_bRegRes);
-    COPY_OPTIONAL_m_pt_ptRegressed_eta_phi_p4(HH_btag_cmva_b1)
-    if(ei.HH_btag_cmva_b1)                ot.HH_btag_cmva_b1_cmva    = get_property(ei.HH_btag_cmva_b1.get(),Jet_btagCMVA);
-    if(ei.HH_btag_cmva_b1)                ot.HH_btag_cmva_b1_bRegRes = get_property(ei.HH_btag_cmva_b1.get(),Jet_bRegRes);
-    COPY_OPTIONAL_m_pt_ptRegressed_eta_phi_p4(HH_btag_cmva_b2)
-    if(ei.HH_btag_cmva_b2)                ot.HH_btag_cmva_b2_cmva    = get_property(ei.HH_btag_cmva_b2.get(),Jet_btagCMVA);
-    if(ei.HH_btag_cmva_b2)                ot.HH_btag_cmva_b2_bRegRes = get_property(ei.HH_btag_cmva_b2.get(),Jet_bRegRes);
-    COPY_OPTIONAL_m_pt_ptRegressed_eta_phi_p4(HH_btag_cmva_b3)
-    if(ei.HH_btag_cmva_b3)                ot.HH_btag_cmva_b3_cmva    = get_property(ei.HH_btag_cmva_b3.get(),Jet_btagCMVA);
-    if(ei.HH_btag_cmva_b3)                ot.HH_btag_cmva_b3_bRegRes = get_property(ei.HH_btag_cmva_b3.get(),Jet_bRegRes);
-    COPY_OPTIONAL_m_pt_ptRegressed_eta_phi_p4(HH_btag_cmva_b4)
-    if(ei.HH_btag_cmva_b4)                ot.HH_btag_cmva_b4_cmva    = get_property(ei.HH_btag_cmva_b4.get(),Jet_btagCMVA);
-    if(ei.HH_btag_cmva_b4)                ot.HH_btag_cmva_b4_bRegRes = get_property(ei.HH_btag_cmva_b4.get(),Jet_bRegRes);
     if( ei.b1b2_deltaR) ot.b1b2_deltaR = *ei.b1b2_deltaR; 
     if( ei.b1b3_deltaR) ot.b1b3_deltaR = *ei.b1b3_deltaR; 
     if( ei.b1b4_deltaR) ot.b1b4_deltaR = *ei.b1b4_deltaR; 

@@ -160,13 +160,15 @@ int main(int argc, char** argv)
         parameterList.emplace("MaxAbsEta"           ,config.readFloatOpt("parameters::MaxAbsEta"           ));
     }
     else if(preselectionCutStrategy == "VBFJetCut"){
-        parameterList.emplace("bMinDeepCSV"       ,config.readFloatOpt("parameters::bMinDeepCSV"));
-        parameterList.emplace("bMinPt"            ,config.readFloatOpt("parameters::bMinPt"     ));
-        parameterList.emplace("bMaxAbsEta"        ,config.readFloatOpt("parameters::bMaxAbsEta" ));
-        parameterList.emplace("jMinPt"            ,config.readFloatOpt("parameters::jMinPt"     ));
-        parameterList.emplace("jMaxAbsEta"        ,config.readFloatOpt("parameters::jMaxAbsEta" ));
-        parameterList.emplace("FourthAntiBTagInfo",config.readBoolOpt( "parameters::FourthAntiBTagInfo"));
-        parameterList.emplace("BjetRegression"    ,config.readBoolOpt( "parameters::BjetRegression"));
+        parameterList.emplace("bMinDeepCSV"             ,config.readFloatOpt("parameters::bMinDeepCSV"));
+        parameterList.emplace("bMinDeepJet"             ,config.readFloatOpt("parameters::bMinDeepJet"));
+        parameterList.emplace("bMinPt"                  ,config.readFloatOpt("parameters::bMinPt"     ));
+        parameterList.emplace("bMaxAbsEta"              ,config.readFloatOpt("parameters::bMaxAbsEta" ));
+        parameterList.emplace("jMinPt"                  ,config.readFloatOpt("parameters::jMinPt"     ));
+        parameterList.emplace("jMaxAbsEta"              ,config.readFloatOpt("parameters::jMaxAbsEta" ));       
+        parameterList.emplace("FourthAntiBTagInfo"      ,config.readBoolOpt( "parameters::FourthAntiBTagInfo"));
+        parameterList.emplace("BjetRegression"          ,config.readBoolOpt( "parameters::BjetRegression"));
+        parameterList.emplace("NewestBtaggingAlgorithm" ,config.readBoolOpt( "parameters::NewestBtaggingAlgorithm")); 
     }
     else if(preselectionCutStrategy == "None"){
     }  
@@ -200,7 +202,8 @@ int main(int argc, char** argv)
         const string bTagscaleFactorMethod = config.readStringOpt("parameters::BTagScaleFactorMethod");
         parameterList.emplace("BTagScaleFactorMethod",bTagscaleFactorMethod);
         if(bTagscaleFactorMethod == "FourBtag_ScaleFactor"){
-            parameterList.emplace("BJetScaleFactorsFile"    ,config.readStringOpt("parameters::BJetScaleFactorsFile"    ));
+            parameterList.emplace("BJetScaleFactorsFile"               ,config.readStringOpt("parameters::BJetScaleFactorsFile"    ));
+            parameterList.emplace("BJetScaleFactorsFileAlternative"    ,config.readStringOpt("parameters::BJetScaleFactorsFileAlternative"));
         }
         else if(bTagscaleFactorMethod == "None"){
         }  

@@ -79,18 +79,22 @@ class OutputTree {
         DECLARE_m_pt_eta_phi_p4(HHunregressed)
         DECLARE_m_pt_ptRegressed_eta_phi_p4(H1_b1)
         float H1_b1_deepCSV;
+        float H1_b1_deepJet;
         int H1_b1_jetId;
         int H1_b1_puId;
         DECLARE_m_pt_ptRegressed_eta_phi_p4(H1_b2)
         float H1_b2_deepCSV;
+        float H1_b2_deepJet;
         int H1_b2_jetId;
         int H1_b2_puId;
         DECLARE_m_pt_ptRegressed_eta_phi_p4(H2_b1)
         float H2_b1_deepCSV;
+        float H2_b1_deepJet;
         int H2_b1_jetId;
         int H2_b1_puId;
         DECLARE_m_pt_ptRegressed_eta_phi_p4(H2_b2)
         float H2_b2_deepCSV;
+        float H2_b2_deepJet;
         int H2_b2_jetId;
         int H2_b2_puId;
         //////////////////----- gen level
@@ -126,6 +130,7 @@ class OutputTree {
         int TT_nPVgood;
         int TT_nJet;                        
         /////////////////---Non-resonant analysis and studies
+        int btaggerID;
         float H1_b1_bRegRes;
         float H1_b2_bRegRes;
         float H2_b1_bRegRes;
@@ -138,10 +143,6 @@ class OutputTree {
         float HH_btag_b2_bRegRes;
         float HH_btag_b3_bRegRes;
         float HH_btag_b4_bRegRes;
-        float HH_btag_cmva_b1_bRegRes;
-        float HH_btag_cmva_b2_bRegRes;
-        float HH_btag_cmva_b3_bRegRes;
-        float HH_btag_cmva_b4_bRegRes;
         float H1_b1_genJetIdx;
         float H1_b2_genJetIdx;
         float H2_b1_genJetIdx;
@@ -200,6 +201,7 @@ class OutputTree {
         int H2_b2_hadronFlavour;
         DECLARE_m_pt_ptRegressed_eta_phi_p4(HH_b1)
         float HH_b1_deepCSV;
+        float HH_b1_deepJet;
         float HH_b1_qgl;
         float HH_b1_rawpt;
         int HH_b1_jetId;
@@ -210,6 +212,7 @@ class OutputTree {
         int HH_b1_hadronFlavour;
         DECLARE_m_pt_ptRegressed_eta_phi_p4(HH_b2)
         float HH_b2_deepCSV;
+        float HH_b2_deepJet;
         float HH_b2_qgl;        
         float HH_b2_rawpt;
         int HH_b2_jetId;
@@ -220,6 +223,7 @@ class OutputTree {
         int HH_b2_hadronFlavour;        
         DECLARE_m_pt_ptRegressed_eta_phi_p4(HH_b3)
         float HH_b3_deepCSV;
+        float HH_b3_deepJet;
         float HH_b3_qgl;
         float HH_b3_rawpt;
         int HH_b3_jetId;
@@ -230,6 +234,7 @@ class OutputTree {
         int HH_b3_hadronFlavour; 
         DECLARE_m_pt_ptRegressed_eta_phi_p4(HH_b4)
         float HH_b4_deepCSV;
+        float HH_b4_deepJet;
         float HH_b4_qgl;
         float HH_b4_rawpt;
         int HH_b4_jetId;
@@ -240,6 +245,7 @@ class OutputTree {
         int HH_b4_hadronFlavour; 
         DECLARE_m_pt_eta_phi_p4(JJ_j1)
         float JJ_j1_deepCSV;
+        float JJ_j1_deepJet;
         float JJ_j1_qgl;
         float JJ_j1_rawpt;
         int JJ_j1_jetId;
@@ -251,6 +257,7 @@ class OutputTree {
         int JJ_j1_location;
         DECLARE_m_pt_eta_phi_p4(JJ_j2)
         float JJ_j2_deepCSV;
+        float JJ_j2_deepJet;
         float JJ_j2_qgl;
         float JJ_j2_rawpt;
         int JJ_j2_jetId;
@@ -263,21 +270,16 @@ class OutputTree {
         DECLARE_m_pt_eta_phi_p4(JJ)
         DECLARE_m_pt_ptRegressed_eta_phi_p4(HH_btag_b1)
         float HH_btag_b1_deepCSV;
+        float HH_btag_b1_deepJet;
         DECLARE_m_pt_ptRegressed_eta_phi_p4(HH_btag_b2)
         float HH_btag_b2_deepCSV;
+        float HH_btag_b2_deepJet;
         DECLARE_m_pt_ptRegressed_eta_phi_p4(HH_btag_b3)
         float HH_btag_b3_deepCSV;
+        float HH_btag_b3_deepJet;
         DECLARE_m_pt_ptRegressed_eta_phi_p4(HH_btag_b4)
         float HH_btag_b4_deepCSV;
-
-        DECLARE_m_pt_ptRegressed_eta_phi_p4(HH_btag_cmva_b1)
-        float HH_btag_cmva_b1_cmva;
-        DECLARE_m_pt_ptRegressed_eta_phi_p4(HH_btag_cmva_b2)
-        float HH_btag_cmva_b2_cmva;
-        DECLARE_m_pt_ptRegressed_eta_phi_p4(HH_btag_cmva_b3)
-        float HH_btag_cmva_b3_cmva;
-        DECLARE_m_pt_ptRegressed_eta_phi_p4(HH_btag_cmva_b4)
-        float HH_btag_cmva_b4_cmva;
+        float HH_btag_b4_deepJet;
 
         int VBFEvent;
         int nBtag;

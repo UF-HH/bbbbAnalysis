@@ -53,24 +53,28 @@ void OutputTree::init_branches()
     // reco b jets
     BRANCH_m_pt_ptRegressed_eta_phi_p4(H1_b1)
     tree_->Branch("H1_b1_deepCSV", &H1_b1_deepCSV);
+    tree_->Branch("H1_b1_deepJet", &H1_b1_deepJet);
     tree_->Branch("H1_b1_bRegRes", &H1_b1_bRegRes);
     tree_->Branch("H1_b1_puId", &H1_b1_puId);
     tree_->Branch("H1_b1_jetId", &H1_b1_jetId);
     tree_->Branch("H1_b1_rawpt", &H1_b1_rawpt);
     BRANCH_m_pt_ptRegressed_eta_phi_p4(H1_b2)
     tree_->Branch("H1_b2_deepCSV", &H1_b2_deepCSV);
+    tree_->Branch("H1_b2_deepJet", &H1_b2_deepJet);
     tree_->Branch("H1_b2_bRegRes", &H1_b2_bRegRes);
     tree_->Branch("H1_b2_puId", &H1_b2_puId);
     tree_->Branch("H1_b2_jetId", &H1_b2_jetId);
     tree_->Branch("H1_b2_rawpt", &H1_b2_rawpt);
     BRANCH_m_pt_ptRegressed_eta_phi_p4(H2_b1)
     tree_->Branch("H2_b1_deepCSV", &H2_b1_deepCSV);
+    tree_->Branch("H2_b1_deepJet", &H2_b1_deepJet);
     tree_->Branch("H2_b1_bRegRes", &H2_b1_bRegRes);
     tree_->Branch("H2_b1_puId", &H2_b1_puId);
     tree_->Branch("H2_b1_jetId", &H2_b1_jetId);
     tree_->Branch("H2_b1_rawpt", &H2_b1_rawpt);
     BRANCH_m_pt_ptRegressed_eta_phi_p4(H2_b2)
     tree_->Branch("H2_b2_deepCSV", &H2_b2_deepCSV);
+    tree_->Branch("H2_b2_deepJet", &H2_b2_deepJet);    
     tree_->Branch("H2_b2_bRegRes", &H2_b2_bRegRes);
     tree_->Branch("H2_b2_puId", &H2_b2_puId);
     tree_->Branch("H2_b2_jetId", &H2_b2_jetId);
@@ -86,6 +90,7 @@ void OutputTree::init_branches()
     tree_->Branch("HH_m_kinFit", &HH_m_kinFit);
 
     // Non-resonant analysis and studies
+    tree_->Branch("btaggerID", &btaggerID);
     BRANCH_m_pt_eta_phi_p4(H1unregressed)
     BRANCH_m_pt_eta_phi_p4(H2unregressed)
     BRANCH_m_pt_eta_phi_p4(HHunregressed)
@@ -103,6 +108,7 @@ void OutputTree::init_branches()
     tree_->Branch("H2_b2_hadronFlavour", &H2_b2_hadronFlavour);
     BRANCH_m_pt_ptRegressed_eta_phi_p4(HH_b1)
     tree_->Branch("HH_b1_deepCSV", &HH_b1_deepCSV);
+    tree_->Branch("HH_b1_deepJet", &HH_b1_deepJet);
     tree_->Branch("HH_b1_bRegRes", &HH_b1_bRegRes);
     tree_->Branch("HH_b1_puId", &HH_b1_puId);
     tree_->Branch("HH_b1_jetId", &HH_b1_jetId);
@@ -114,6 +120,7 @@ void OutputTree::init_branches()
     tree_->Branch("HH_b1_hadronFlavour", &HH_b1_hadronFlavour);
     BRANCH_m_pt_ptRegressed_eta_phi_p4(HH_b2)
     tree_->Branch("HH_b2_deepCSV", &HH_b2_deepCSV);
+    tree_->Branch("HH_b2_deepJet", &HH_b2_deepJet);
     tree_->Branch("HH_b2_bRegRes", &HH_b2_bRegRes);
     tree_->Branch("HH_b2_puId", &HH_b2_puId);
     tree_->Branch("HH_b2_jetId", &HH_b2_jetId);
@@ -125,6 +132,7 @@ void OutputTree::init_branches()
     tree_->Branch("HH_b2_hadronFlavour", &HH_b2_hadronFlavour);       
     BRANCH_m_pt_ptRegressed_eta_phi_p4(HH_b3)
     tree_->Branch("HH_b3_deepCSV", &HH_b3_deepCSV);
+    tree_->Branch("HH_b3_deepJet", &HH_b3_deepJet);
     tree_->Branch("HH_b3_bRegRes", &HH_b3_bRegRes);
     tree_->Branch("HH_b3_puId", &HH_b3_puId);
     tree_->Branch("HH_b3_jetId", &HH_b3_jetId);
@@ -136,6 +144,7 @@ void OutputTree::init_branches()
     tree_->Branch("HH_b3_hadronFlavour", &HH_b3_hadronFlavour);
     BRANCH_m_pt_ptRegressed_eta_phi_p4(HH_b4)
     tree_->Branch("HH_b4_deepCSV", &HH_b4_deepCSV);
+    tree_->Branch("HH_b4_deepJet", &HH_b4_deepJet);
     tree_->Branch("HH_b4_bRegRes", &HH_b4_bRegRes);
     tree_->Branch("HH_b4_puId", &HH_b4_puId);
     tree_->Branch("HH_b4_jetId", &HH_b4_jetId);
@@ -147,32 +156,24 @@ void OutputTree::init_branches()
     tree_->Branch("HH_b4_hadronFlavour", &HH_b4_hadronFlavour);
     BRANCH_m_pt_ptRegressed_eta_phi_p4(HH_btag_b1)
     tree_->Branch("HH_btag_b1_deepCSV", &HH_btag_b1_deepCSV);
+    tree_->Branch("HH_btag_b1_deepJet", &HH_btag_b1_deepJet);
     tree_->Branch("HH_btag_b1_bRegRes", &HH_btag_b1_bRegRes);
     BRANCH_m_pt_ptRegressed_eta_phi_p4(HH_btag_b2)
     tree_->Branch("HH_btag_b2_deepCSV", &HH_btag_b2_deepCSV);
+    tree_->Branch("HH_btag_b2_deepJet", &HH_btag_b2_deepJet);
     tree_->Branch("HH_btag_b2_bRegRes", &HH_btag_b2_bRegRes); 
     BRANCH_m_pt_ptRegressed_eta_phi_p4(HH_btag_b3)
     tree_->Branch("HH_btag_b3_deepCSV", &HH_btag_b3_deepCSV);
+    tree_->Branch("HH_btag_b3_deepJet", &HH_btag_b3_deepJet);
     tree_->Branch("HH_btag_b3_bRegRes", &HH_btag_b3_bRegRes);
     BRANCH_m_pt_ptRegressed_eta_phi_p4(HH_btag_b4)
     tree_->Branch("HH_btag_b4_deepCSV", &HH_btag_b4_deepCSV);       
+    tree_->Branch("HH_btag_b4_deepJet", &HH_btag_b4_deepJet); 
     tree_->Branch("HH_btag_b4_bRegRes", &HH_btag_b4_bRegRes);
-
-    BRANCH_m_pt_ptRegressed_eta_phi_p4(HH_btag_cmva_b1)
-    tree_->Branch("HH_btag_cmva_b1_cmva", &HH_btag_cmva_b1_cmva);
-    tree_->Branch("HH_btag_cmva_b1_bRegRes", &HH_btag_cmva_b1_bRegRes);
-    BRANCH_m_pt_ptRegressed_eta_phi_p4(HH_btag_cmva_b2)
-    tree_->Branch("HH_btag_cmva_b2_cmva", &HH_btag_cmva_b2_cmva);
-    tree_->Branch("HH_btag_cmva_b2_bRegRes", &HH_btag_cmva_b2_bRegRes);
-    BRANCH_m_pt_ptRegressed_eta_phi_p4(HH_btag_cmva_b3)
-    tree_->Branch("HH_btag_cmva_b3_cmva", &HH_btag_cmva_b3_cmva);
-    tree_->Branch("HH_btag_cmva_b3_bRegRes", &HH_btag_cmva_b3_bRegRes);
-    BRANCH_m_pt_ptRegressed_eta_phi_p4(HH_btag_cmva_b4)
-    tree_->Branch("HH_btag_cmva_b4_cmva", &HH_btag_cmva_b4_cmva);
-    tree_->Branch("HH_btag_cmva_b4_bRegRes", &HH_btag_cmva_b4_bRegRes);
 
     BRANCH_m_pt_eta_phi_p4(JJ_j1)
     tree_->Branch("JJ_j1_deepCSV", &JJ_j1_deepCSV);
+    tree_->Branch("JJ_j1_deepJet", &JJ_j1_deepJet);
     tree_->Branch("JJ_j1_puId", &JJ_j1_puId);
     tree_->Branch("JJ_j1_jetId", &JJ_j1_jetId);
     tree_->Branch("JJ_j1_rawpt", &JJ_j1_rawpt);
@@ -184,6 +185,7 @@ void OutputTree::init_branches()
     tree_->Branch("JJ_j1_location", &JJ_j1_location);
     BRANCH_m_pt_eta_phi_p4(JJ_j2)
     tree_->Branch("JJ_j2_deepCSV", &JJ_j2_deepCSV);
+    tree_->Branch("JJ_j2_deepJet", &JJ_j2_deepJet);
     tree_->Branch("JJ_j2_puId", &JJ_j2_puId);
     tree_->Branch("JJ_j2_jetId", &JJ_j2_jetId);
     tree_->Branch("JJ_j2_rawpt", &JJ_j2_rawpt);
@@ -413,15 +415,19 @@ void OutputTree::clear()
 
     CLEAR_m_pt_ptRegressed_eta_phi_p4(H1_b1)
     H1_b1_deepCSV = 0.;
+    H1_b1_deepJet = 0.;
     H1_b1_bRegRes = 0.;
     CLEAR_m_pt_ptRegressed_eta_phi_p4(H1_b2)
     H1_b2_deepCSV = 0.;
+    H1_b2_deepJet = 0.;
     H1_b2_bRegRes = 0.;
     CLEAR_m_pt_ptRegressed_eta_phi_p4(H2_b1)
     H2_b1_deepCSV = 0.;
+    H2_b1_deepJet = 0.;
     H2_b1_bRegRes = 0.;
     CLEAR_m_pt_ptRegressed_eta_phi_p4(H2_b2)
     H2_b2_deepCSV = 0.;
+    H2_b2_deepJet = 0.;
     H2_b2_bRegRes = 0.;
 
     CLEAR_m_pt_eta_phi_p4(H1)
@@ -448,16 +454,21 @@ void OutputTree::clear()
     TT_nPVgood=0;
     TT_nJet=0;           
     //Non-resonant analysis and studies
+    btaggerID = -1;
     H1_b1_deepCSV = 0.;
+    H1_b1_deepJet = 0.;
     H1_b1_rawpt = 0.;
     H1_b1_quarkID = -1.;
     H1_b2_deepCSV = 0.;
+    H1_b2_deepJet = 0.;
     H1_b2_rawpt = 0.;
     H1_b2_quarkID = -1.;
     H2_b1_deepCSV = 0.;
+    H2_b1_deepJet = 0.;
     H2_b1_quarkID = -1.;
     H2_b1_rawpt = 0.;
     H2_b2_deepCSV = 0.;
+    H2_b2_deepJet = 0.;
     H2_b2_quarkID = -1.;
     H2_b2_rawpt = 0.;
     H1_b1_genJetIdx = -2;
@@ -466,6 +477,7 @@ void OutputTree::clear()
     H2_b2_genJetIdx = -2;
     CLEAR_m_pt_ptRegressed_eta_phi_p4(HH_b1)
     HH_b1_deepCSV = 0;
+    HH_b1_deepJet = 0;
     HH_b1_bRegRes = 0.;
     HH_b1_qgl = -1;
     HH_b1_rawpt = 0;
@@ -473,6 +485,7 @@ void OutputTree::clear()
     HH_b1_genJetIdx = -2;
     CLEAR_m_pt_ptRegressed_eta_phi_p4(HH_b2)
     HH_b2_deepCSV = 0;
+    HH_b2_deepJet = 0;
     HH_b2_bRegRes = 0.;
     HH_b2_qgl = -1;   
     HH_b2_rawpt = 0;
@@ -480,6 +493,7 @@ void OutputTree::clear()
     HH_b3_genJetIdx = -2;
     CLEAR_m_pt_ptRegressed_eta_phi_p4(HH_b3)
     HH_b3_deepCSV = 0;
+    HH_b3_deepJet = 0;
     HH_b3_bRegRes = 0.;
     HH_b3_rawpt = 0;
     HH_b3_qgl = -1;
@@ -487,6 +501,7 @@ void OutputTree::clear()
     HH_b3_genJetIdx = -2;
     CLEAR_m_pt_ptRegressed_eta_phi_p4(HH_b4)
     HH_b4_deepCSV = 0;
+    HH_b4_deepJet = 0;
     HH_b4_bRegRes = 0.;
     HH_b4_rawpt = 0;
     HH_b4_qgl = -1;
@@ -494,6 +509,7 @@ void OutputTree::clear()
     HH_b4_genJetIdx = -2;  
     CLEAR_m_pt_eta_phi_p4(JJ_j1)
     JJ_j1_deepCSV = 0.;
+    JJ_j1_deepJet = 0.;
     JJ_j1_qgl = -1;
     JJ_j1_rawpt = 0;
     JJ_j1_quarkID = -1;
@@ -501,6 +517,7 @@ void OutputTree::clear()
     JJ_j1_location = 0;
     CLEAR_m_pt_eta_phi_p4(JJ_j2)
     JJ_j2_deepCSV = 0.;    
+    JJ_j2_deepJet = 0.;
     JJ_j2_qgl = -1;  
     JJ_j2_rawpt = 0;
     JJ_j2_quarkID = -1;
@@ -509,29 +526,20 @@ void OutputTree::clear()
     CLEAR_m_pt_eta_phi_p4(JJ)
     CLEAR_m_pt_ptRegressed_eta_phi_p4(HH_btag_b1)
     HH_btag_b1_deepCSV = 0;
+    HH_btag_b1_deepJet = 0;
     HH_btag_b1_bRegRes = 0.;
     CLEAR_m_pt_ptRegressed_eta_phi_p4(HH_btag_b2)
     HH_btag_b2_deepCSV = 0;
+    HH_btag_b2_deepJet = 0;
     HH_btag_b2_bRegRes = 0.;
     CLEAR_m_pt_ptRegressed_eta_phi_p4(HH_btag_b3)
     HH_btag_b3_deepCSV = 0;
+    HH_btag_b3_deepJet = 0;
     HH_btag_b3_bRegRes = 0.;
     CLEAR_m_pt_ptRegressed_eta_phi_p4(HH_btag_b4)
     HH_btag_b4_deepCSV = 0;
+    HH_btag_b4_deepJet = 0;
     HH_btag_b4_bRegRes = 0.;
-
-    CLEAR_m_pt_ptRegressed_eta_phi_p4(HH_btag_cmva_b1)
-    HH_btag_cmva_b1_cmva = 0;
-    HH_btag_cmva_b1_bRegRes = 0.;
-    CLEAR_m_pt_ptRegressed_eta_phi_p4(HH_btag_cmva_b2)
-    HH_btag_cmva_b2_cmva = 0;
-    HH_btag_cmva_b2_bRegRes = 0.;
-    CLEAR_m_pt_ptRegressed_eta_phi_p4(HH_btag_cmva_b3)
-    HH_btag_cmva_b3_cmva = 0;
-    HH_btag_cmva_b3_bRegRes = 0.;
-    CLEAR_m_pt_ptRegressed_eta_phi_p4(HH_btag_cmva_b4)
-    HH_btag_cmva_b4_cmva = 0;
-    HH_btag_cmva_b4_bRegRes = 0.;
 
     nJetbarrel = -1.;
     nJetendcap = -1.;

@@ -65,6 +65,7 @@ struct EventInfo{
     boost::optional<Jet> H2_b2;
 
     //Non-resonant analysis and studies
+    boost::optional<int>  btaggerID;
     boost::optional<CompositeCandidate> H1unregressed;
     boost::optional<CompositeCandidate> H2unregressed;
     boost::optional<CompositeCandidate> HHunregressed;
@@ -168,11 +169,7 @@ struct EventInfo{
     boost::optional<Jet> HH_btag_b1;
     boost::optional<Jet> HH_btag_b2;
     boost::optional<Jet> HH_btag_b3;
-    boost::optional<Jet> HH_btag_b4;    
-    boost::optional<Jet> HH_btag_cmva_b1;
-    boost::optional<Jet> HH_btag_cmva_b2;
-    boost::optional<Jet> HH_btag_cmva_b3;
-    boost::optional<Jet> HH_btag_cmva_b4; 
+    boost::optional<Jet> HH_btag_b4;     
     boost::optional<float> b1b2_deltaR; 
     boost::optional<float> b1b3_deltaR; 
     boost::optional<float> b1b4_deltaR; 

@@ -1,4 +1,4 @@
-OperatingPoint, measurementType, sysType, jetFlavor, etaMin, etaMax, ptMin, ptMax, discrMin, discrMax, formula 
+DeepJet;OperatingPoint, measurementType, sysType, jetFlavor, etaMin, etaMax, ptMin, ptMax, discrMin, discrMax, formula 
 0, comb, central, 1, -2.5, 2.5, 20, 1000, 0, 1, "0.873139+(0.00420739*(log(x+19)*(log(x+18)*(3-(0.380932*log(x+18))))))" 
 0, comb, central, 0, -2.5, 2.5, 20, 1000, 0, 1, "0.873139+(0.00420739*(log(x+19)*(log(x+18)*(3-(0.380932*log(x+18))))))" 
 0, comb, down, 1, -2.5, 2.5, 20, 30, 0, 1, "0.873139+((0.00420739*(log(x+19)*(log(x+18)*(3-(0.380932*log(x+18))))))-0.11263331770896912)" 

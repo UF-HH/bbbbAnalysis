@@ -1,0 +1,2 @@
+### HH xs : 31.05, H->bb BR = 0.5824 --> xs * BR(bbbb) = 10.53
+skim_for_das.exe --input inputFiles/CMSDAS/Samples2016/gg_HH_bbbb_SM.txt --output gg_HH_bbbb.root --xs 10.53 --is-signal --cfg config/skim_CMSDAS_2016DatMC.cfg

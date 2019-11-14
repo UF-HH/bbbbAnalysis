@@ -46,6 +46,7 @@ void SkimEffCounter::createHisto()
         return;
     }
     eff_histo_ = std::unique_ptr<TH1D> (new TH1D("eff_histo", "eff_histo", binMap_.size(), 0, binMap_.size()));
+    eff_histo_->SetDirectory(0);
 
     for( const auto & element : binMap_)
     {

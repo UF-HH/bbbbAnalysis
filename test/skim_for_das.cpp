@@ -153,6 +153,10 @@ int main(int argc, char** argv)
 
     const float deepB_WPmedium = config.readFloatOpt("btagDeepB::WPmedium");
 
+    jsonLumiFilter jlf;
+    if (is_data)
+        jlf.loadJSON(config.readStringOpt("data::lumimask")); // just read the info for data, so if I just skim MC I'm not forced to parse a JSON
+
     ////////////////////////////////////////////////////////////////////////
     // Prepare the output
     ////////////////////////////////////////////////////////////////////////
@@ -469,6 +473,11 @@ int main(int argc, char** argv)
 
         if (!nat.Next()) break;
         if (iEv % 10000 == 0) cout << "... processing event " << iEv << endl;
+
+        // aply json filter to data
+        if (is_data && !jlf.isValid(*nat.run, *nat.luminosityBlock)){
+            continue; // not a valid lumi
+        }
               
         EventInfo ei;
 

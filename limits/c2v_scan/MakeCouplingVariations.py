@@ -84,12 +84,16 @@ def MakeOutputVariations(couplingstoscan,histos,histo,tag):
 		 histoname = "VBFHH4B_rew_c2v_%s_Btag4_VBFcateg_SR_110_Histogram_%s"%(couplingname,histo)
 		 print "      * (cv,c2v,c3) = (%s,%s,%s)"%(couplings[0],couplings[1],couplings[2])
 		 #Create template
-		 if histo!='HH_m':
-		   hsig  = ROOT.TH1F(histoname,histoname,histos[0].GetNbinsX(), histos[0].GetBinLowEdge(1),histos[0].GetBinLowEdge(histos[0].GetNbinsX()+1))
-		 else:
+		 if histo=='HH_m':
 		   bins=[0,250,500,1000,4000]	
 		   nbins=len(bins)-1
 		   hsig  = ROOT.TH1F(histoname,histoname,nbins,array('d',bins) ) 
+		 elif histo=='JJ_m':
+		   bins=[0,250,500,750,1000,1250,1500,1750,2000,2250,2500,2750,3000,3250,3500,3750,4000,4250,4500,5000,6000,7000,8000]	
+		   nbins=len(bins)-1
+		   hsig  = ROOT.TH1F(histoname,histoname,nbins,array('d',bins) ) 
+		 else:
+		   hsig  = ROOT.TH1F(histoname,histoname,histos[0].GetNbinsX(), histos[0].GetBinLowEdge(1),histos[0].GetBinLowEdge(histos[0].GetNbinsX()+1))
 		 if factors[0] !=0: hsig.Add(hsig1)
 		 if factors[1] !=0: hsig.Add(hsig2)
 		 if factors[2] !=0: hsig.Add(hsig3)

@@ -37,19 +37,20 @@ Example:
 source do_all_plots.sh
 ````
 
-## Machine learning skims using pandas dataframes
-All developments (background modeling and bdt/dnn discriminator training) take place inside mlskim directory. For Run 2 we have three groups of data and MC samples (2016, 2017 & 2018). Therefore, after producing the ntuples for each year, it is convenient to put them under the same directory in eos. For instance, I put my 2016 bbbb_ntuples as "New2016" in /eos/uscms/store/user/guerrero/bbbb_ntuples/FullNtuples/ directory. Similarly, this is done for the other years. Next, we merge (hadd!) the bbbbntuple files associated to each MC process or data in a single file. This is done by running the script in the inputskims folder:
+## Machine learning for background modeling and discriminator training using pandas dataframes
+After we produced the bbbb_ntuple skims of data and simulation, the next step is to use machine learning techniques to train a discriminator (e.g. BDT or DNN) or create a data-driven estimation of the HH backgrounds. These techniques are developed and executed inside mlskim directory. The two main python scripts inside mlskim folder are Outputskim.py, DataBackgroundModel.py and MCBackgroundModel.py. 
+
+We have three groups of data and MC samples for Run 2 data analysis (2016, 2017 & 2018). Therefore, after producing the ntuples for each year, it is convenient to place them under the same directory in eos. For instance, we put my 2016 bbbb_ntuples as "New2016" in /eos/uscms/store/user/guerrero/bbbb_ntuples/FullNtuples/ directory, and the same for the other years. Moreover, for convenience, we merge (hadd!) the bbbbntuple files associated to each MC process or data in a single file. This is done by running the script in the inputskims. Note that the script should be adapted to eos location, username, etc.
 ```
 cd mlskim/inputskims
-source haddsamples.sh {eosname} ### In my case eosname is FullNtuples
-
+source haddsamples.sh {eosname} ### In our case eosname is FullNtuples
 ````
-Next, one finds two main python scripts inside mlskim folder: Outputskim.py and DataBackgroundModel.py. The Outputskim.py code is able to skim over the inputskims files in data and MC samples using panda dataframes. It takes only the branches that we are interested in for the developments. The branches are specified in the config files in the folder config. It can also create new branches if needed. To execute the outputskims one runs the script:
+The Outputskim.py code is able to process the inputskims files in data and MC samples using panda dataframes. It can take only the branches that we are interested in for the developments. These branches of interest are specified as 'variables' in the config files outputskim_201*.cfg in the folder config, and the inputskims of interest are specified as 'samples'. One can also create new branches if needed by editing the Outputskim.py script. To execute this process simply run the script:
 ```
 source runOutputskim.sh
 
 ````
-Then, the DataBackgroundModel.py code creates a data-driven background model taking as input the control region information in 3-btag and 4 -btag data. The parameters of the BDT-reweighter are defined in the config files. The script creates four weights (Weight_210_GGF,Weight_210_VBF,Weight_110_GGF,Weight_110_VBF) as branches in the output file (SKIM_MODEL_BKG.root). To run the background modeling:
+The DataBackgroundModel.py code creates a data-driven background model taking as input the control region information in 3-btag and 4 -btag data. This method is based on the BDT-reweighter method. The regions to be used for the training as defined in modules/selections.py. The parameters of the BDT-reweighter are defined in the respective config files. The script creates four weights: Weight_AnaGGF, Weight_AnaVBF, Weight_ValGGF and Weight_ValVBF, where Ana=AnalysisRegion and Val=ValidationRegion. These weights are stored as branches in the output file (SKIM_MODEL_BKG.root). To run the background modeling:
 ```
 source runDataBkgModel.sh
 

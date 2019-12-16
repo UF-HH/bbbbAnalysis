@@ -53,6 +53,7 @@ int main(int argc, char** argv)
         ("xs"        , po::value<float>(), "cross section [pb]")
         ("maxEvts"   , po::value<int>()->default_value(-1), "max number of events to process")
         ("puWeight"  , po::value<string>()->default_value(""), "PU weight file name")
+        ("seed"      , po::value<int>()->default_value(-1), "seed to be used in systematic uncertainties such as JEC, JER,etc")
         // ("kl-rew-list"  , po::value<std::vector<float>>()->multitoken()->default_value(std::vector<float>(0), "-"), "list of klambda values for reweight")
         ("kl-rew"    , po::value<float>(),  "klambda value for reweighting")
         ("kl-map"    , po::value<string>()->default_value(""), "klambda input map for reweighting")
@@ -164,8 +165,13 @@ int main(int argc, char** argv)
         parameterList.emplace("bMinDeepJet"             ,config.readFloatOpt("parameters::bMinDeepJet"));
         parameterList.emplace("bMinPt"                  ,config.readFloatOpt("parameters::bMinPt"     ));
         parameterList.emplace("bMaxAbsEta"              ,config.readFloatOpt("parameters::bMaxAbsEta" ));
+        parameterList.emplace("bJetId"                  ,config.readIntOpt("parameters::bJetId"     ));
+        parameterList.emplace("bPUId"                   ,config.readIntOpt("parameters::bPUId"     ));
         parameterList.emplace("jMinPt"                  ,config.readFloatOpt("parameters::jMinPt"     ));
         parameterList.emplace("jMaxAbsEta"              ,config.readFloatOpt("parameters::jMaxAbsEta" ));       
+        parameterList.emplace("jJetId"                  ,config.readIntOpt("parameters::jJetId"     ));
+        parameterList.emplace("jPUId"                   ,config.readIntOpt("parameters::jPUId"     ));
+        parameterList.emplace("jEENoiseVeto"            ,config.readBoolOpt( "parameters::jEENoiseVeto"));
         parameterList.emplace("FourthAntiBTagInfo"      ,config.readBoolOpt( "parameters::FourthAntiBTagInfo"));
         parameterList.emplace("BjetRegression"          ,config.readBoolOpt( "parameters::BjetRegression"));
         parameterList.emplace("NewestBtaggingAlgorithm" ,config.readBoolOpt( "parameters::NewestBtaggingAlgorithm")); 
@@ -188,6 +194,24 @@ int main(int argc, char** argv)
         parameterList.emplace("MuonMaxDxy"          ,config.readFloatOpt("parameters::MuonMaxDxy"          ));
         parameterList.emplace("MuonMaxDz"           ,config.readFloatOpt("parameters::MuonMaxDz"           ));
     }
+    else if(objectsForCut == "IsolatedLeptons"){
+        parameterList.emplace("ElectronMinPt"        ,config.readFloatOpt("parameters::ElectronMinPt"       ));
+        parameterList.emplace("ElectronMaxAbsEta"    ,config.readFloatOpt("parameters::ElectronMaxAbsEta"   ));
+        parameterList.emplace("ElectronMaxPfIso"     ,config.readFloatOpt("parameters::ElectronMaxPfIso"    ));
+        parameterList.emplace("ElectronMaxBarrelDxy" ,config.readFloatOpt("parameters::ElectronMaxBarrelDxy"));
+        parameterList.emplace("ElectronMaxBarrelDz"  ,config.readFloatOpt("parameters::ElectronMaxBarrelDz" ));
+        parameterList.emplace("ElectronMaxEndcapDxy" ,config.readFloatOpt("parameters::ElectronMaxEndcapDxy" ));
+        parameterList.emplace("ElectronMaxEndcapDz"  ,config.readFloatOpt("parameters::ElectronMaxEndcapDz"  ));
+        parameterList.emplace("ElectronID"             ,config.readIntOpt("parameters::ElectronID"          ));
+        parameterList.emplace("MuonMinPt"            ,config.readFloatOpt("parameters::MuonMinPt"           ));
+        parameterList.emplace("MuonMaxAbsEta"        ,config.readFloatOpt("parameters::MuonMaxAbsEta"       ));
+        parameterList.emplace("MuonMaxPfIso"         ,config.readFloatOpt("parameters::MuonMaxPfIso"        ));
+        parameterList.emplace("MuonMaxBarrelDxy"     ,config.readFloatOpt("parameters::MuonMaxBarrelDxy"    ));
+        parameterList.emplace("MuonMaxBarrelDz"      ,config.readFloatOpt("parameters::MuonMaxBarrelDz"     ));
+        parameterList.emplace("MuonMaxEndcapDxy"     ,config.readFloatOpt("parameters::MuonMaxEndcapDxy"     ));
+        parameterList.emplace("MuonMaxEndcapDz"      ,config.readFloatOpt("parameters::MuonMaxEndcapDz"      ));
+        parameterList.emplace("MuonID"                 ,config.readIntOpt("parameters::MuonID"              ));
+    }
     else if(objectsForCut == "None"){
     }  
     // else if(other selection type){
@@ -197,6 +221,10 @@ int main(int argc, char** argv)
 
     // MC only procedures
     if(!is_data){
+
+        //Define a new random seed if needed and supplied
+        const int randomseed = opts["seed"].as<int>();
+        cout<<"[INFO] ... random seed to be used in MC corrections: "<<randomseed<<endl;
 
         //Btag Scale factors
         const string bTagscaleFactorMethod = config.readStringOpt("parameters::BTagScaleFactorMethod");
@@ -229,17 +257,23 @@ int main(int argc, char** argv)
         // }  
         else throw std::runtime_error("cannot recognize event choice WeightMethod " + weightMethod);
 
-
         //JER 
         const string JERstrategy = config.readStringOpt("parameters::JetEnergyResolution");
         parameterList.emplace("JetEnergyResolution",JERstrategy);
         if(JERstrategy == "StandardJER"){
+            cout << "[INFO] ... Standard JER correction is applied to the jets in MC sample" << endl; 
             parameterList.emplace("JERComputeVariations" ,config.readBoolOpt  ("parameters::JERComputeVariations" ));
-            parameterList.emplace("RandomGeneratorSeed"  ,config.readIntOpt   ("parameters::RandomGeneratorSeed"  ));
-            parameterList.emplace("JERResolutionFile"    ,config.readStringOpt("parameters::JERResolutionFile"    ));
-            parameterList.emplace("JERScaleFactorFile"   ,config.readStringOpt("parameters::JERScaleFactorFile"    ));
+            if(randomseed>0) 
+                parameterList.emplace("RandomGeneratorSeed"  ,randomseed);
+            else
+                parameterList.emplace("RandomGeneratorSeed"  ,config.readIntOpt   ("parameters::RandomGeneratorSeed"  ));                
+            parameterList.emplace("JERResolutionFile"        ,config.readStringOpt("parameters::JERResolutionFile"    ));
+            parameterList.emplace("JERScaleFactorFile"       ,config.readStringOpt("parameters::JERScaleFactorFile"   ));
+            //parameterList.emplace("BregJERResolution"        ,config.readStringOpt("parameters::BregJERResolution"    ));
+            //parameterList.emplace("BregJERScaleFactor"       ,config.readStringOpt("parameters::BregJERScaleFactor"   ));            
         }
         else if(JERstrategy == "None"){
+            cout << "[INFO] ... No JER correction is applied to the jets" << endl;
         }  
         // else if(other selection type){
         //     parameters fo be retreived;

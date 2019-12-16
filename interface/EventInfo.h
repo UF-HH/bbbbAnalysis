@@ -66,6 +66,7 @@ struct EventInfo{
 
     //Non-resonant analysis and studies
     boost::optional<int>  btaggerID;
+    boost::optional<int>  EventCount;
     boost::optional<CompositeCandidate> H1unregressed;
     boost::optional<CompositeCandidate> H2unregressed;
     boost::optional<CompositeCandidate> HHunregressed;
@@ -170,6 +171,14 @@ struct EventInfo{
     boost::optional<Jet> HH_btag_b2;
     boost::optional<Jet> HH_btag_b3;
     boost::optional<Jet> HH_btag_b4;     
+    boost::optional<float> HH_btag_b1_bscore;
+    boost::optional<float> HH_btag_b2_bscore;
+    boost::optional<float> HH_btag_b3_bscore;
+    boost::optional<float> HH_btag_b4_bscore; 
+    boost::optional<float> HH_btag_b1_bres;
+    boost::optional<float> HH_btag_b2_bres;
+    boost::optional<float> HH_btag_b3_bres;
+    boost::optional<float> HH_btag_b4_bres; 
     boost::optional<float> b1b2_deltaR; 
     boost::optional<float> b1b3_deltaR; 
     boost::optional<float> b1b4_deltaR; 
@@ -269,9 +278,8 @@ struct EventInfo{
     boost::optional<float> VBFGeneratedDeltaEta;
     boost::optional<int> VBFGeneratedEtaSign;
     boost::optional<int> nJet;
-    boost::optional<int> nJetbarrel;
-    boost::optional<int> nJetendcap;
-    boost::optional<int> nJethf;
+    boost::optional<int> nJet_ec;
+    boost::optional<int> nJet_hf;
     boost::optional<float> j1etaj2eta;
     boost::optional<float> maxj1etaj2eta;    
     boost::optional<int> VBFEvent;

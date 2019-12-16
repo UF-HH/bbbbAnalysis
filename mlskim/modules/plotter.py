@@ -18,17 +18,21 @@ def Draw1DHistosComparison(original, target, variables, original_weights, norm, 
 	  hist_settings = {'bins': 10, 'density': None, 'alpha': 0.5}
 	#Create figure on matplotlib
 	matplotlib.rcParams.update({'font.size': 35})
-	plt.figure(figsize=[70, 40], dpi=100)
+	plt.figure(figsize=[80, 60], dpi=50)
+	ksresults=[]
+	i = 0
 	for id, column in enumerate(variables, 1):
 		xlim = numpy.percentile(numpy.hstack([target[column]]), [0.01, 99.99])
-		plt.subplot(2, 5, id)
-		plt.hist(original[column],label='3 btag (model)', weights=original_weights, range=xlim, **hist_settings)
-		plt.hist(target[column],  label='4 btag (target)', range=xlim, **hist_settings)
+		plt.subplot(4, 3, id)
+		plt.hist(original[column],label='Bkg. Model', weights=original_weights, range=xlim, **hist_settings)
+		plt.hist(target[column],  label='4 btag (Target)', range=xlim, **hist_settings)
 		plt.legend(loc='best')
-		plt.title(column,fontsize=40) 
-		#print('KS over ', column, ' = ', ks_2samp_weighted(original[column], target[column], 
-		#                                 weights1=original_weights, weights2=numpy.ones(len(target), dtype=float)))
-	plt.savefig("myplots/distibutions_%s.png"%tag) 
+		plt.title(column,fontsize=40)
+		ks =  ks_2samp_weighted(original[column], target[column], weights1=original_weights, weights2=numpy.ones(len(target), dtype=float))
+		ksresults.append(ks)
+		i+=1
+	plt.savefig("myplots/distibutions_%s.png"%tag)
+	return ksresults 
 
 def DrawDNNScoreComparison(yhat,y, norm, tag):
 	#Normalize or not?
@@ -99,8 +103,6 @@ def DrawDNNScoreComparison(yhat_train,y_train,yhat_test,y_test, norm, tag):
 	ratiobin = [ float(binwidth)/2 + (x*binwidth) for x in range(0,int(nbins)  )]
 	print dnnbin
 	print ratiobin 
-	#dnnbin = [0,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95,1]
-	#ratiobin = [0.025,0.075,0.125,0.175,0.225,0.275,0.325,0.375,0.425,0.475,0.525,0.575,0.625,0.675,0.725,0.775,0.825,0.875,0.925,0.975]
 	#KS TEST
 	sig_d,sig_p = stats.ks_2samp(datatrain_signal['DNN'], datatest_signal['DNN'])
 	bkg_d,bkg_p = stats.ks_2samp(datatrain_background['DNN'], datatest_background['DNN'])

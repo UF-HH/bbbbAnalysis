@@ -115,7 +115,9 @@ class NanoAODTree_ReaderImpl {
         NanoReaderArray<Bool_t>    Electron_mvaSpring16GP_WP80          {fReader, "Electron_mvaSpring16GP_WP80"};
         NanoReaderArray<Bool_t>    Electron_mvaSpring16GP_WP90          {fReader, "Electron_mvaSpring16GP_WP90"};
         NanoReaderArray<Bool_t>    Electron_mvaSpring16HZZ_WPL          {fReader, "Electron_mvaSpring16HZZ_WPL"};
-
+        NanoReaderArray<Bool_t>    Electron_mvaFall17V2Iso_WPL          {fReader, "Electron_mvaFall17V2Iso_WPL"};
+        NanoReaderArray<Bool_t>    Electron_mvaFall17V2Iso_WP90         {fReader, "Electron_mvaFall17V2Iso_WP90"};
+        NanoReaderArray<Bool_t>    Electron_mvaFall17V2Iso_WP80         {fReader, "Electron_mvaFall17V2Iso_WP80"};
         // NanoReaderArray<Int_t>     Electron_genPartIdx                  {fReader, "Electron_genPartIdx"};
         // NanoReaderArray<UChar_t>   Electron_genPartFlav                 {fReader, "Electron_genPartFlav"};
         NanoReaderArray<Int_t>     Electron_genPartIdx                   {fReader, "Electron_genPartIdx"};
@@ -287,6 +289,7 @@ class NanoAODTree_ReaderImpl {
         NanoReaderArray<Bool_t>    Muon_mediumId                        {fReader, "Muon_mediumId"};
         NanoReaderArray<Bool_t>    Muon_softId                          {fReader, "Muon_softId"};
         NanoReaderArray<Bool_t>    Muon_tightId                         {fReader, "Muon_tightId"};
+        NanoReaderArray<Bool_t>    Muon_looseId                         {fReader, "Muon_looseId"};
         
         NanoReaderValue<UInt_t>    nPhoton                              {fReader, "nPhoton"};
         NanoReaderArray<Float_t>   Photon_eCorr                         {fReader, "Photon_eCorr"};

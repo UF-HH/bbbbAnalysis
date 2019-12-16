@@ -110,6 +110,7 @@ outScriptNameProto     = (jobsDir + '/' + outScriptNameBareProto)
 EOSfilelistBase        = oLFN_base + '/filelist'
 EOSfilelistProto       = EOSfilelistBase + '/' + outListNameBareProto
 outFileNameProto       = 'bbbbNtuple_{0}.root'
+randomSeedProto        = '1{0}'
 
 cmssw_base    = os.environ['CMSSW_BASE']
 cmssw_version = os.environ['CMSSW_VERSION']
@@ -148,6 +149,7 @@ commands = [
     executable,
     '--input %s'  % outListNameBareProto,
     '--output %s' % outFileNameProto,
+    '--seed %s' % randomSeedProto,   
     ]
 
 full_command = ' '.join(commands)

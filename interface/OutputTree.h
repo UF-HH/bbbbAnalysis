@@ -131,6 +131,7 @@ class OutputTree {
         int TT_nJet;                        
         /////////////////---Non-resonant analysis and studies
         int btaggerID;
+        int EventCount;
         float H1_b1_bRegRes;
         float H1_b2_bRegRes;
         float H2_b1_bRegRes;
@@ -269,26 +270,24 @@ class OutputTree {
         int JJ_j2_location;
         DECLARE_m_pt_eta_phi_p4(JJ)
         DECLARE_m_pt_ptRegressed_eta_phi_p4(HH_btag_b1)
-        float HH_btag_b1_deepCSV;
-        float HH_btag_b1_deepJet;
+        float HH_btag_b1_bscore;
+        float HH_btag_b1_bres;
         DECLARE_m_pt_ptRegressed_eta_phi_p4(HH_btag_b2)
-        float HH_btag_b2_deepCSV;
-        float HH_btag_b2_deepJet;
+        float HH_btag_b2_bscore;
+        float HH_btag_b2_bres;
         DECLARE_m_pt_ptRegressed_eta_phi_p4(HH_btag_b3)
-        float HH_btag_b3_deepCSV;
-        float HH_btag_b3_deepJet;
+        float HH_btag_b3_bscore;
+        float HH_btag_b3_bres;
         DECLARE_m_pt_ptRegressed_eta_phi_p4(HH_btag_b4)
-        float HH_btag_b4_deepCSV;
-        float HH_btag_b4_deepJet;
-
+        float HH_btag_b4_bscore;
+        float HH_btag_b4_bres;
         int VBFEvent;
         int nBtag;
         int VBFEventLocation;
         int nPVgood;
         int nJet; 
-        int nJetbarrel;
-        int nJetendcap;
-        int nJethf;
+        int nJet_ec;
+        int nJet_hf;
         int NVBFCandidates;
         float j1etaj2eta;
         float maxj1etaj2eta;

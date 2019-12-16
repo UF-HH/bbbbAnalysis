@@ -28,21 +28,22 @@ def TreeDevelopment(sample,columns_input,case,directory):
     #Common branches
 	skim  = data.root2pandas('inputskims/%s/%s/SKIM_%s.root'%(case,directory,sample),'bbbbTree', branches=columns)
 	value  = numpy.ones(dtype='float64',shape=len(skim))
-	skim['Weight_110_GGF'] = value
-	skim['Weight_210_GGF'] = value
-	skim['Weight_110_VBF'] = value
-	skim['Weight_210_VBF'] = value		 	
-	skim['Weight_110_GGF_tfactor'] = value
-	skim['Weight_210_GGF_tfactor'] = value
-	skim['Weight_110_VBF_tfactor'] = value
-	skim['Weight_210_VBF_tfactor'] = value	
+	skim['Weight_ValGGF'] = value
+	skim['Weight_AnaGGF'] = value
+	skim['Weight_ValVBF'] = value
+	skim['Weight_AnaVBF'] = value		 	
+	skim['Weight_ValGGF_tfactor'] = value
+	skim['Weight_AnaGGF_tfactor'] = value
+	skim['Weight_ValVBF_tfactor'] = value
+	skim['Weight_AnaVBF_tfactor'] = value
+	skim['Weight_MVA'] = value		
 	##Branches for data only
 	if "Data" in sample:
 		 skim['bTagScaleFactor_central'] = value
 		 skim['genWeight'] = value		 
 		 skim['PUWeight']  = value
 		 skim['XS'] = value		     	 
-	return skim#
+	return skim
 def MakeOutputSkims(samples,columns,case,directory):
 	for sample in samples:
 		#Read Columns

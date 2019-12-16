@@ -122,9 +122,13 @@ class OfflineProducerHelper{
             "H2_m",
             "HH_m",
             "h1h2_deltaEta",
+            "H1_bb_deltaR",
+            "H2_bb_deltaR",
+            "abs_costh_HH_b1_cm:=abs(costh_HH_b1_ggfcm)",
+            "HH_btag_b3_bscore", 
+            "HH_btag_b3_bres",           
         };            
-
-
+ 
 
         void init_BDT_evals();
         void init_HH_reweighter(OutputTree& ot, std::string coeffFile, std::string hhreweighterInputMap, std::string histoName);
@@ -194,7 +198,9 @@ class OfflineProducerHelper{
         void save_TriggerObjects (NanoAODTree& nat, OutputTree &ot, EventInfo& ei);
         // Calculate trigger map
         void calculateTriggerMatching(const std::vector< std::unique_ptr<Candidate> > &candidateList, NanoAODTree& nat);
-
+        // save good isolated leptons
+        void save_IsolatedLeptons (NanoAODTree& nat, OutputTree &ot, EventInfo& ei);
+ 
         //Initialize trigger Matching variables
         void initializeTriggerMatching(OutputTree &ot);
         //Function to check that the selected objects are the one that fired at list one of the triggers
@@ -249,6 +255,8 @@ class OfflineProducerHelper{
         BTagCalibrationReader *btagCalibrationReader_lightJets_;
         BTagCalibrationReader *btagCalibrationReader_cJets_;
         BTagCalibrationReader *btagCalibrationReader_bJets_;
+        //Functions to be applied in the bjetregression scores
+        float Get_bRegRes(NanoAODTree& nat, EventInfo& ei, Jet jet);
         //functions fo apply preselection cuts:
         void bJets_PreselectionCut(std::vector<Jet> &jets);
         std::vector<Jet> bjJets_PreselectionCut(NanoAODTree& nat, EventInfo& ei, OutputTree &ot, std::vector<Jet> jets);

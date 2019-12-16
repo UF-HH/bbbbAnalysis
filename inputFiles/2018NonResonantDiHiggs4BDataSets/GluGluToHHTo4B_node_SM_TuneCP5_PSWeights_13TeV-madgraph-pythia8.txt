@@ -1,2 +1,3 @@
-root://cms-xrd-global.cern.ch//store/mc/RunIIAutumn18NanoAODv5/GluGluToHHTo4B_node_SM_TuneCP5_PSWeights_13TeV-madgraph-pythia8/NANOAODSIM/Nano1June2019_102X_upgrade2018_realistic_v19-v1/130000/4A33603E-8E8E-9C40-8086-C3345E752BE0.root
+#root://cms-xrd-global.cern.ch//store/mc/RunIIAutumn18NanoAODv5/GluGluToHHTo4B_node_SM_TuneCP5_PSWeights_13TeV-madgraph-pythia8/NANOAODSIM/Nano1June2019_102X_upgrade2018_realistic_v19-v1/130000/4A33603E-8E8E-9C40-8086-C3345E752BE0.root
+root://cmsxrootd.fnal.gov//store/user/guerrero/bbbb_ntuples/NANOAOD/4A33603E-8E8E-9C40-8086-C3345E752BE0.root
 root://cms-xrd-global.cern.ch//store/mc/RunIIAutumn18NanoAODv5/GluGluToHHTo4B_node_SM_TuneCP5_PSWeights_13TeV-madgraph-pythia8/NANOAODSIM/Nano1June2019_102X_upgrade2018_realistic_v19-v1/260000/623DC2B0-8CF4-094E-818C-749C996BA5BB.root

@@ -18,15 +18,15 @@ def  RunTraining(dataset,optimization):
 	 factory = TMVA.Factory('TMVAClassification%s%s'%(dataset,optimization), output,
 			 '!V:!Silent:Color:DrawProgressBar:Transformations=I:AnalysisType=Classification')
 	 #Locate and add data files
-	 file_GGF_HH_2016  = "../BregBDT1/New2016/SKIM_GluGluToHHTo4B_node_SM_13TeV-madgraph_PM.root"
-	 file_VBF_HH_2016  = "../BregBDT1/New2016/SKIM_VBFHHTo4B_CV_1_C2V_1_C3_1_13TeV-madgraph_PM.root"
-	 file_VBF2_HH_2016 = "../BregBDT1/New2016/SKIM_VBFHHTo4B_CV_1_C2V_2_C3_1_13TeV-madgraph_PM.root"
-	 file_GGF_HH_2017  = "../BregBDT1/New2017/SKIM_GluGluToHHTo4B_node_SM_13TeV-madgraph_correctedcfg_PM.root"
-	 file_VBF_HH_2017  = "../BregBDT1/New2017/SKIM_VBFHHTo4B_CV_1_C2V_1_C3_1_13TeV-madgraph_PM.root"
-	 file_VBF2_HH_2017 = "../BregBDT1/New2017/SKIM_VBFHHTo4B_CV_1_C2V_2_C3_1_13TeV-madgraph_PM.root"
-	 file_GGF_HH_2018  = "../BregBDT1/New2018/SKIM_GluGluToHHTo4B_node_SM_TuneCP5_PSWeights_13TeV-madgraph-pythia8_PM.root"
-	 file_VBF_HH_2018  = "../BregBDT1/New2018/SKIM_VBFHHTo4B_CV_1_C2V_1_C3_1_TuneCP5_PSWeights_13TeV-madgraph-pythia8_PM.root"
-	 file_VBF2_HH_2018 = "../BregBDT1/New2018/SKIM_VBFHHTo4B_CV_1_C2V_2_C3_1_TuneCP5_PSWeights_13TeV-madgraph-pythia8_PM.root"
+	 file_GGF_HH_2016  = "../TrainingSamples/New2016/SKIM_GluGluToHHTo4B_node_SM_13TeV-madgraph_PM.root"
+	 file_VBF_HH_2016  = "../TrainingSamples/New2016/SKIM_VBFHHTo4B_CV_1_C2V_1_C3_1_13TeV-madgraph_PM.root"
+	 file_VBF2_HH_2016 = "../TrainingSamples/New2016/SKIM_VBFHHTo4B_CV_1_C2V_2_C3_1_13TeV-madgraph_PM.root"
+	 file_GGF_HH_2017  = "../TrainingSamples/New2017/SKIM_GluGluToHHTo4B_node_SM_13TeV-madgraph_correctedcfg_PM.root"
+	 file_VBF_HH_2017  = "../TrainingSamples/New2017/SKIM_VBFHHTo4B_CV_1_C2V_1_C3_1_13TeV-madgraph_PM.root"
+	 file_VBF2_HH_2017 = "../TrainingSamples/New2017/SKIM_VBFHHTo4B_CV_1_C2V_2_C3_1_13TeV-madgraph_PM.root"
+	 file_GGF_HH_2018  = "../TrainingSamples/New2018/SKIM_GluGluToHHTo4B_node_SM_TuneCP5_PSWeights_13TeV-madgraph-pythia8_PM.root"
+	 file_VBF_HH_2018  = "../TrainingSamples/New2018/SKIM_VBFHHTo4B_CV_1_C2V_1_C3_1_TuneCP5_PSWeights_13TeV-madgraph-pythia8_PM.root"
+	 file_VBF2_HH_2018 = "../TrainingSamples/New2018/SKIM_VBFHHTo4B_CV_1_C2V_2_C3_1_TuneCP5_PSWeights_13TeV-madgraph-pythia8_PM.root"
 	 #Add the data files
 	 ch_sig = TChain("bbbbTree")
 	 ch_bkg = TChain("bbbbTree")
@@ -54,18 +54,21 @@ def  RunTraining(dataset,optimization):
 			ch_bkg.AddFile(file_GGF_HH_2017)	       	    	       
 			ch_sig.AddFile(file_VBF_HH_2018)
 			ch_bkg.AddFile(file_GGF_HH_2018)
-	 else:
-		 seed=2019 
+	 else: 
 		 if dataset=='2016':
+			seed=2019
 			ch_sig.AddFile(file_VBF2_HH_2016)
 			ch_bkg.AddFile(file_GGF_HH_2016)
 		 elif dataset=='2017':
+			seed=2020
 			ch_sig.AddFile(file_VBF2_HH_2017)
 			ch_bkg.AddFile(file_GGF_HH_2017)
 		 elif dataset=='2018':
+			seed=2021
 			ch_sig.AddFile(file_VBF2_HH_2018)
 			ch_bkg.AddFile(file_GGF_HH_2018)
 		 elif dataset=='20172018':
+			seed=2020
 			ch_sig.AddFile(file_VBF2_HH_2017)
 			ch_bkg.AddFile(file_GGF_HH_2017)
 			ch_sig.AddFile(file_VBF2_HH_2018)
@@ -106,10 +109,8 @@ def  RunTraining(dataset,optimization):
 		 dataloader.AddVariable("h1j2_deltaR")
 		 dataloader.AddVariable("h2j1_deltaR")
 		 dataloader.AddVariable("h2j2_deltaR")
-		 #dataloader.AddVariable("abs_j1etaj2eta:=abs(j1etaj2eta)")
 		 dataloader.AddVariable("abs_costh_JJ_j1_vbfcm:=abs(costh_JJ_j1_vbfcm)")
 		 dataloader.AddVariable("abs_costh_JJ_j2_vbfcm:=abs(costh_JJ_j2_vbfcm)")
-		 #dataloader.AddVariable("j1j2_deltaEta")
 		 dataloader.AddVariable("JJ_m")     	 
 	 trainingsamplefraction = 0.50
 	 nTrain_Signal          = int(ch_sig.GetEntries('VBFEvent==1')*trainingsamplefraction) 
@@ -128,7 +129,7 @@ def  RunTraining(dataset,optimization):
 			 nTrees =[200]
 			 nCuts = [200]
 			 nDepth = [2]
-		 elif dataset=='20172018':
+		 elif dataset=='2017':
 			 nTrees =[250]
 			 nCuts = [200]
 			 nDepth = [2]
@@ -139,11 +140,15 @@ def  RunTraining(dataset,optimization):
 	 else:
 		 #best option for BSM
 		 if dataset=='2016':
-			 nTrees =[160]
-			 nCuts = [160]
-			 nDepth = [3]
-		 elif dataset=='20172018':
-			 nTrees =[160]
+			 nTrees =[200]
+			 nCuts = [250]
+			 nDepth = [2]
+		 elif dataset=='2017':
+			 nTrees =[250]
+			 nCuts = [250]
+			 nDepth = [2]
+		 elif dataset=='2018':
+			 nTrees =[200]
 			 nCuts = [200]
 			 nDepth = [2]
 		 else:

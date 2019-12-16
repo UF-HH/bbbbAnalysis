@@ -281,8 +281,8 @@ class SampleHistColl:
 
         self.lowerpadbottommargin = 0.35
 
-        self.ratioymin = 0
-        self.ratioymax = 2
+        self.ratioymin = 0.5
+        self.ratioymax = 1.5
         self.sbymin = 0
         self.sbymax = 5
 
@@ -302,7 +302,7 @@ class SampleHistColl:
 
     def addHisto(self, histo, name, htype, title='histoTitle'):
         # print "@@ adding histo", histo.GetName(), "to", name , '( type:', htype ,')'
-        print "@@ adding histo {:80} to {:15} ( type: {:4})".format(histo.GetName(), name, htype)
+        #print "@@ adding histo {:80} to {:15} ( type: {:4})".format(histo.GetName(), name, htype)
         mycoll = None
         if   htype == 'sig':
             mycoll = self.sigs
@@ -363,7 +363,7 @@ class SampleHistColl:
             legymax = self.legcoords[3]
         self.legend = ROOT.TLegend (legxmin, legymin, legxmax, legymax)
         self.legend.SetFillStyle(0)
-        self.legend.SetNColumns(2)
+        self.legend.SetNColumns(1)
         self.legend.SetBorderSize(0)
         self.legend.SetTextFont(self.textfont)
         self.legend.SetTextSize(self.legtextsize)

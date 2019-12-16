@@ -91,6 +91,7 @@ void OutputTree::init_branches()
 
     // Non-resonant analysis and studies
     tree_->Branch("btaggerID", &btaggerID);
+    tree_->Branch("EventCount", &EventCount);
     BRANCH_m_pt_eta_phi_p4(H1unregressed)
     BRANCH_m_pt_eta_phi_p4(H2unregressed)
     BRANCH_m_pt_eta_phi_p4(HHunregressed)
@@ -155,22 +156,17 @@ void OutputTree::init_branches()
     tree_->Branch("HH_b4_partonFlavour", &HH_b4_partonFlavour);
     tree_->Branch("HH_b4_hadronFlavour", &HH_b4_hadronFlavour);
     BRANCH_m_pt_ptRegressed_eta_phi_p4(HH_btag_b1)
-    tree_->Branch("HH_btag_b1_deepCSV", &HH_btag_b1_deepCSV);
-    tree_->Branch("HH_btag_b1_deepJet", &HH_btag_b1_deepJet);
-    tree_->Branch("HH_btag_b1_bRegRes", &HH_btag_b1_bRegRes);
+    tree_->Branch("HH_btag_b1_bscore", &HH_btag_b1_bscore);       
+    tree_->Branch("HH_btag_b1_bres",   &HH_btag_b1_bres);
     BRANCH_m_pt_ptRegressed_eta_phi_p4(HH_btag_b2)
-    tree_->Branch("HH_btag_b2_deepCSV", &HH_btag_b2_deepCSV);
-    tree_->Branch("HH_btag_b2_deepJet", &HH_btag_b2_deepJet);
-    tree_->Branch("HH_btag_b2_bRegRes", &HH_btag_b2_bRegRes); 
+    tree_->Branch("HH_btag_b2_bscore", &HH_btag_b2_bscore);       
+    tree_->Branch("HH_btag_b2_bres",   &HH_btag_b2_bres); 
     BRANCH_m_pt_ptRegressed_eta_phi_p4(HH_btag_b3)
-    tree_->Branch("HH_btag_b3_deepCSV", &HH_btag_b3_deepCSV);
-    tree_->Branch("HH_btag_b3_deepJet", &HH_btag_b3_deepJet);
-    tree_->Branch("HH_btag_b3_bRegRes", &HH_btag_b3_bRegRes);
+    tree_->Branch("HH_btag_b3_bscore", &HH_btag_b3_bscore);       
+    tree_->Branch("HH_btag_b3_bres",   &HH_btag_b3_bres);
     BRANCH_m_pt_ptRegressed_eta_phi_p4(HH_btag_b4)
-    tree_->Branch("HH_btag_b4_deepCSV", &HH_btag_b4_deepCSV);       
-    tree_->Branch("HH_btag_b4_deepJet", &HH_btag_b4_deepJet); 
-    tree_->Branch("HH_btag_b4_bRegRes", &HH_btag_b4_bRegRes);
-
+    tree_->Branch("HH_btag_b4_bscore", &HH_btag_b4_bscore);       
+    tree_->Branch("HH_btag_b4_bres",   &HH_btag_b4_bres);
     BRANCH_m_pt_eta_phi_p4(JJ_j1)
     tree_->Branch("JJ_j1_deepCSV", &JJ_j1_deepCSV);
     tree_->Branch("JJ_j1_deepJet", &JJ_j1_deepJet);
@@ -279,10 +275,9 @@ void OutputTree::init_branches()
     tree_->Branch("ExtraVBFJetPt", &ExtraVBFJetPt);
     tree_->Branch("ExtraVBFJetEta", &ExtraVBFJetEta);    
     tree_->Branch("nPVgood", &nPVgood);
-    tree_->Branch("nJet", &nJet);
-    tree_->Branch("nJetbarrel", &nJetbarrel);
-    tree_->Branch("nJetendcap", &nJetendcap);
-    tree_->Branch("nJethf", &nJethf);
+    tree_->Branch("nJet",    &nJet);
+    tree_->Branch("nJet_ec", &nJet_ec);
+    tree_->Branch("nJet_hf", &nJet_hf);
     tree_->Branch("j1etaj2eta", &j1etaj2eta); 
     tree_->Branch("maxj1etaj2eta", &maxj1etaj2eta);    
     tree_->Branch("BDT1", &BDT1);
@@ -455,6 +450,7 @@ void OutputTree::clear()
     TT_nJet=0;           
     //Non-resonant analysis and studies
     btaggerID = -1;
+    EventCount = -1;
     H1_b1_deepCSV = 0.;
     H1_b1_deepJet = 0.;
     H1_b1_rawpt = 0.;
@@ -525,26 +521,21 @@ void OutputTree::clear()
     JJ_j2_location = 0; 
     CLEAR_m_pt_eta_phi_p4(JJ)
     CLEAR_m_pt_ptRegressed_eta_phi_p4(HH_btag_b1)
-    HH_btag_b1_deepCSV = 0;
-    HH_btag_b1_deepJet = 0;
-    HH_btag_b1_bRegRes = 0.;
+    HH_btag_b1_bscore = 0;
+    HH_btag_b1_bres = 0;
     CLEAR_m_pt_ptRegressed_eta_phi_p4(HH_btag_b2)
-    HH_btag_b2_deepCSV = 0;
-    HH_btag_b2_deepJet = 0;
-    HH_btag_b2_bRegRes = 0.;
+    HH_btag_b2_bscore = 0;
+    HH_btag_b2_bres = 0;
     CLEAR_m_pt_ptRegressed_eta_phi_p4(HH_btag_b3)
-    HH_btag_b3_deepCSV = 0;
-    HH_btag_b3_deepJet = 0;
-    HH_btag_b3_bRegRes = 0.;
+    HH_btag_b3_bscore = 0;
+    HH_btag_b3_bres = 0;
     CLEAR_m_pt_ptRegressed_eta_phi_p4(HH_btag_b4)
-    HH_btag_b4_deepCSV = 0;
-    HH_btag_b4_deepJet = 0;
-    HH_btag_b4_bRegRes = 0.;
+    HH_btag_b4_bscore = 0;
+    HH_btag_b4_bres = 0;
 
-    nJetbarrel = -1.;
-    nJetendcap = -1.;
-    nJethf = -1.;
-    nJet   = -1.;
+    nJet_ec = -1.;
+    nJet_hf = -1.;
+    nJet    = -1.;
     VBFEvent =-1.;
     nBtag =-1.;
     VBFEventLocation = 0;

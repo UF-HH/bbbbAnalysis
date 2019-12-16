@@ -32,18 +32,18 @@ def BuildReweightingModel(data_3b, data_4b,category,tag,seed):
 	##Let's slice data one more time to have the inputs for the bdt reweighting#700/600/300/200
 	############################################################################
 	if category =='GGF':
-		 variablescr = ['H1_pt', 'H2_pt','H1_m', 'H2_m', 'HH_m','h1h2_deltaEta','H1_bb_deltaR','H2_bb_deltaR','H1_bb_deltaPhi','H2_bb_deltaPhi']
-		 modelargs= [55,0.1,2,50,0.5,seed] #BSM: 2016-2017 with bin0=45, 2018 with bin0=55 #SM all bin0=40
+		 variablescr = ['nJet_ec','H1_pt','H2_pt','H1_m','H2_m', 'HH_m','h1h2_deltaEta','H1_bb_deltaR','H2_bb_deltaR','costh_HH_b1_ggfcm','costh_HH_b2_ggfcm']
+		 modelargs= [55,0.1,2,50,0.5,seed] 
 	else:
 		 variablescr = ['H1_pt', 'H2_pt','H1_eta', 'H2_eta']  	
 		 modelargs= [50,0.1,5,100,0.5,seed]
 	originalcr,targetcr,originalcr_weights,targetcr_weights,transferfactor = data.preparedataformodel(data_3b,data_4b,variablescr)
-	#plotter.Draw1DHistosComparison(originalcr, targetcr, variablescr, originalcr_weights,True,"original_%s"%tag)
+	plotter.Draw1DHistosComparison(originalcr, targetcr, variablescr, originalcr_weights,True,"original_%s"%tag)
 	#######################################
 	##Folding Gradient Boosted Reweighter
 	#######################################
 	foldingcr_weights,reweightermodel,renormtransferfactor = data.fitreweightermodel(originalcr,targetcr,originalcr_weights,targetcr_weights,transferfactor,modelargs)  
-	#plotter.Draw1DHistosComparison(originalcr, targetcr, variablescr, foldingcr_weights,True,"model_%s"%tag)
+	plotter.Draw1DHistosComparison(originalcr, targetcr, variablescr, foldingcr_weights,True,"model_%s"%tag)
 	########################################
 	##GB ROC AUC
 	########################################
@@ -58,11 +58,11 @@ def CreatePredictionModel(reweightermodel,transferfactor,renormtransferfactor,da
 	##Let's slice data one more time to have the inputs for the bdt reweighting#
 	############################################################################
 	if category =='GGF':
-		 variables = ['H1_pt', 'H2_pt','H1_m', 'H2_m', 'HH_m','h1h2_deltaEta','H1_bb_deltaR','H2_bb_deltaR','H1_bb_deltaPhi','H2_bb_deltaPhi']
+		 variables = ['nJet_ec','H1_pt','H2_pt','H1_m','H2_m', 'HH_m','h1h2_deltaEta','H1_bb_deltaR','H2_bb_deltaR','costh_HH_b1_ggfcm','costh_HH_b2_ggfcm']
 	elif category == 'VBF':
-		 variables = ['H1_pt', 'H2_pt','H1_eta', 'H2_eta','HH_m','JJ_m','j1j2_deltaEta']
+		 variables = ['H1_pt', 'H2_pt','H1_eta','H2_eta']
 	else:
-		 variables = ['H1_pt', 'H2_pt','H1_eta', 'H2_eta']          
+		 variables = ['H1_pt', 'H2_pt']          
 	original,original_weights = data.preparedataforprediction(data_3b,transferfactor,variables)
 	########################################3############
 	##Folding Gradient Boosted Reweighter (and DQM plots)
@@ -142,7 +142,7 @@ def RunSignalSelection(signalsamples,case,directory,tag):
 		restefficiency  = float (len(data_rest_4b_categ) / data.TotalMCEvents('outputskims/%s/%s/SKIM_%s.root'%(case,directory,mcsample)))
 		print "[INFO] Adding efficiency branch to the dataframes"
 		data_sr_4b_categ["SelEff"]        = srefficiency 
-		data_cr_4b_categ["SelEff"]        = crefficiency 			 
+		data_cr_4b_categ["SelEff"]        = crefficiency			 
 		#Merge (concatenate) them
 		print "[INFO] Saving mc signal sample for background rejection"
 		dataset = pandas.concat( (data_cr_4b_categ,data_sr_4b_categ,data_rest_4b_categ), ignore_index=True   )
@@ -162,6 +162,28 @@ def RunSignalSelection(signalsamples,case,directory,tag):
 		print "[INFO] Saving mc signal sample for background rejection"
 		data.pandas2root(data_4b_prevbf_categ,'bbbbTree', 'trainingbdts/%s/%s/SKIM_%s_PM.root'%(case,directory,mcsample)  )
 		del data_4b_prevbf_categ       
+
+def RunBkgModelSelection(bkgmodel,case,directory,tag):
+	os.system('mkdir trainingbdts')
+	os.system('mkdir trainingbdts/%s'%case)
+	os.system('mkdir trainingbdts/%s/%s'%(case,directory) )	
+	#First prepare data to train for background rejection
+	#Get data and create panda dataframes with specific variables, a.k.a. slicing the data. Then, create background model based on control region data
+	sampleframe = data.root2pandas('outputskims/%s/%s/SKIM_%s.root'%(case,directory,bkgmodel),'bbbbTree')
+	#Slice the data sample to take only events with three/four b-tags among the two categories
+	data_cr_4b_categ,data_sr_4b_categ,data_rest_4b_categ = SelectRegionforBackgroundRejectionTraining(sampleframe,'3b','GGF',False)
+	#Add the weights to the CR & the rest
+	print "[INFO] Adding branches to the dataframes"	 
+	data_sr_4b_categ['Weight_SR_GGF']   = 1
+	data_sr_4b_categ["GGFSignalRegion"] = 1
+	#Compute the sample efficiency
+	print "[INFO] Adding efficiency branch to the dataframes"
+	data_sr_4b_categ["SelEff"]          = 1 		 
+	data_sr_4b_categ["XS"]              = 1
+	#Merge (concatenate) them
+	print "[INFO] Saving mc signal sample for background rejection"
+	data.pandas2root(data_sr_4b_categ,'bbbbTree', 'trainingbdts/%s/%s/SKIM_%s_BR.root'%(case,directory,bkgmodel)  )
+	del sampleframe 
 
 #############COMMAND CODE IS BELOW ######################
 
@@ -194,23 +216,23 @@ qcdsamples     = ast.literal_eval(cfgparser.get("configuration","qcdsamples"))
 print "    -The list of qcd samples:"
 for x in range(len(qcdsamples)):
   print "      *",qcdsamples[x]
+bdtbkgsamples  = ast.literal_eval(cfgparser.get("configuration","bdtbkgsamples"))
+print "    -The list of bdtbkg samples:"
+print "      *",bdtbkgsamples[0] 
 tag         = ast.literal_eval(cfgparser.get("configuration","tag"))
 print "    -The tag:"
 print "      *",tag  
 ##########Make samples to train
 if sampletorun=='2':
-   print "[INFO] Making MC background model"
-   #Create background sample with bdt weights model in signal region
-   RunReweightingModel(qcdsamples,case,directory,tag,randseed)
-   print "[INFO] Making MC signal model"
+   print "[INFO] Preparing bdt-background model"
    #Create signal sample in signal region
-   RunSignalSelection(signalsamples,case,directory,tag)
+   RunBkgModelSelection(bdtbkgsamples[0],case,directory,tag)
 elif sampletorun=='1':
-   print "[INFO] Making MC background model"
+   print "[INFO] Preparing MC background model"
    #Create background sample with bdt weights model in signal region
    RunReweightingModel(qcdsamples,case,directory,tag,randseed)
 elif sampletorun=='0':   
-   print "[INFO] Making MC signal model"
+   print "[INFO] Preparing MC signal model"
    #Create signal sample in signal region
    RunSignalSelection(signalsamples,case,directory,tag)
 else:

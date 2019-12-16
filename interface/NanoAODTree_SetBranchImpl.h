@@ -79,6 +79,9 @@ class NanoAODTree_SetBranchImpl {
         ReaderArrayPatch<Float_t>     Electron_mass                       {chain_, "Electron_mass", nElectron, 100};
         ReaderArrayPatch<Float_t>     Electron_miniPFRelIso_all           {chain_, "Electron_miniPFRelIso_all", nElectron, 100};
         ReaderArrayPatch<Float_t>     Electron_miniPFRelIso_chg           {chain_, "Electron_miniPFRelIso_chg", nElectron, 100};
+        ReaderArrayPatch<Float_t>     Electron_mvaFall17V2Iso_WPL         {chain_, "Electron_mvaFall17V2Iso_WPL", nElectron, 100};
+        ReaderArrayPatch<Float_t>     Electron_mvaFall17V2Iso_WP90        {chain_, "Electron_mvaFall17V2Iso_WP90", nElectron, 100};
+        ReaderArrayPatch<Float_t>     Electron_mvaFall17V2Iso_WP80        {chain_, "Electron_mvaFall17V2Iso_WP80", nElectron, 100};
         ReaderArrayPatch<Float_t>     Electron_mvaSpring16GP              {chain_, "Electron_mvaSpring16GP", nElectron, 100};
         ReaderArrayPatch<Float_t>     Electron_mvaSpring16HZZ             {chain_, "Electron_mvaSpring16HZZ", nElectron, 100};
         ReaderArrayPatch<Float_t>     Electron_pfRelIso03_all             {chain_, "Electron_pfRelIso03_all", nElectron, 100};
@@ -238,6 +241,7 @@ class NanoAODTree_SetBranchImpl {
         ReaderArrayPatch<Int_t>       Muon_tightCharge                    {chain_, "Muon_tightCharge", nMuon, 100};
         ReaderArrayPatch<UChar_t>     Muon_highPtId                       {chain_, "Muon_highPtId", nMuon, 100};
         ReaderArrayPatch<Bool_t>      Muon_isPFcand                       {chain_, "Muon_isPFcand", nMuon, 100};
+        ReaderArrayPatch<Bool_t>      Muon_looseId                        {chain_, "Muon_looseId", nMuon, 100};
         ReaderArrayPatch<Bool_t>      Muon_mediumId                       {chain_, "Muon_mediumId", nMuon, 100};
         ReaderArrayPatch<Bool_t>      Muon_softId                         {chain_, "Muon_softId", nMuon, 100};
         ReaderArrayPatch<Bool_t>      Muon_tightId                        {chain_, "Muon_tightId", nMuon, 100};

@@ -71,7 +71,8 @@ def eventselection(data,btagregion=None,category=None,massregion=None,validation
 	else: massname='%s'%massregion
 	if validation==False: valname='anareg'
 	else: valname='valreg'
-	selectionname="%s/%s/%s/%s"%(btagname,categname,massname,valname) 
+	selectionname="%s/%s/%s/%s"%(btagname,categname,massname,valname)
+	blindname    ="%s/%s/%s"%(btagname,massname,valname)  
 
 	databtagregionselected,databtagregionrejected = eventbtagregion(data,btagregion)
 	datacategoryselected,datacategoryrejected     = eventcategory(databtagregionselected,category) 
@@ -84,7 +85,7 @@ def eventselection(data,btagregion=None,category=None,massregion=None,validation
 	del datarejected12,datamassregionrejected
 	print "[INFO] DATAFRAME SLICING FOR %s"%selectionname   
 	print "   -Number of events in dataset (before) = ",len(data) 
-	print "   -Number of selected events            = ",len(dataselected)  
-	print "   -Number of rejected events            = ",len(datarejected)
+	if blindname != '4b/SR/anareg': print "   -Number of selected events            = ",len(dataselected)  
+	if blindname != '4b/SR/anareg': print "   -Number of rejected events            = ",len(datarejected)
 	print "   -Number of events in dataset (after)  = ",int(len(dataselected)+len(datarejected))
 	return dataselected,datarejected

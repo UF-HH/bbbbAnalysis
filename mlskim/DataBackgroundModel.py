@@ -49,8 +49,8 @@ def BuildReweightingModel(data_3b, data_4b,category,tag,bkgparams,bkgclassifierp
 	## KS Test (as the developers do) / GB ROC AUC Test Study (Very slow, needs to train a classifier in cross-validation)
 	########################################
 	bdtreweighter.ks_measurement(variablescr,ksresult_original,ksresult_model)
-	#Not currently used for optimization###bdtreweighter.discrimination_measurement(originalcr,targetcr,originalcr_weights,bkgclassifierparams,"%s"%tag,"original")
-	#Not currently used for optimization###bdtreweighter.discrimination_measurement(originalcr,targetcr,foldingcr_weights,bkgclassifierparams,"%s"%tag,"model")
+	##Not currently used for optimization###bdtreweighter.discrimination_measurement(originalcr,targetcr,originalcr_weights,bkgclassifierparams,"%s"%tag,"original")
+	##Not currently used for optimization###bdtreweighter.discrimination_measurement(originalcr,targetcr,foldingcr_weights,bkgclassifierparams,"%s"%tag,"model")
 	########################################
 	##Update 3b dataframe for modeling
 	########################################
@@ -80,11 +80,11 @@ def AddModelWeight(dataset,bkgparams,bkgclassifierparams,weightname,categ,valfla
 	del dataset
 	data_cr_4b_categ,data_sr_4b_categ,data_rest_4b_categ = SelectRegions(data_rest_3b_categ,'4b',categ,valflag)
 	#Get weights ,model, transferfactor for CR data
-	print "[INFO] Building BDT-reweighting model for %s in the CR data"%weightname
+	print "[INFO] Building BDT-reweighting model for %s using the 3b/4b CR data"%weightname
 	weights_cr_categ,reweightermodel_categ,transferfactor_categ,renormtransferfactor_categ=BuildReweightingModel(data_cr_3b_categ,data_cr_4b_categ,categ,'%s_%s_%sCR'%(tag,weightname,categ),bkgparams,bkgclassifierparams)
 	del data_cr_4b_categ,data_sr_4b_categ,data_rest_4b_categ
 	#Get weights for the dataset
-	print "[INFO] Calculating BDT-reweighting model prediction %s in the rest of the data"%weightname
+	print "[INFO] Calculating BDT-reweighting model prediction %s in the 3b SR data"%weightname
 	weights_sr_categ=CreatePredictionModel(reweightermodel_categ,transferfactor_categ,renormtransferfactor_categ,data_sr_3b_categ,categ)		
 	print "[INFO] Calculating BDT-reweighting model prediction %s in the rest of the data"%weightname
 	weights_rest_categ=CreatePredictionModel(reweightermodel_categ,transferfactor_categ,renormtransferfactor_categ,data_rest_3b_categ,categ)
@@ -157,16 +157,16 @@ vbfbkgparams = ast.literal_eval(cfgparser.get("configuration","vbfbkgparams"))
 print "    -The vbf-hh background parameters (trees, learning rate, max depth, min sample leaf, subsample, randomseed):"
 print "      *",vbfbkgparams
 ggfanaclassifierparams = ast.literal_eval(cfgparser.get("configuration","ggfanaclassifierparams"))
-print "    -The ggf-hh ana classifier parameters (trees, learning rate, subsample, randomseed):"
+print "    -The ggf-hh ana classifier parameters (trees, learning rate, max depth, min sample leaf, subsample, randomseed):"
 print "      *",ggfanaclassifierparams
 vbfanaclassifierparams = ast.literal_eval(cfgparser.get("configuration","vbfanaclassifierparams"))
-print "    -The vbf-hh ana classifier parameters (trees, learning rate, subsample, randomseed):"
+print "    -The vbf-hh ana classifier parameters (trees, learning rate, max depth, min sample leaf, subsample, randomseed):"
 print "      *",vbfanaclassifierparams
 ggfvalclassifierparams  = ast.literal_eval(cfgparser.get("configuration","ggfvalclassifierparams"))
-print "    -The ggf-hh val classifier parameters (trees, learning rate, subsample, randomseed):"
+print "    -The ggf-hh val classifier parameters (trees, learning rate, max depth, min sample leaf, subsample, randomseed):"
 print "      *",ggfvalclassifierparams
 vbfvalclassifierparams = ast.literal_eval(cfgparser.get("configuration","vbfvalclassifierparams"))
-print "    -The vbf-hh val classifier parameters (trees, learning rate, subsample, randomseed):"
+print "    -The vbf-hh val classifier parameters (trees, learning rate, max depth, min sample leaf, subsample, randomseed):"
 print "      *",vbfvalclassifierparams
 tag         = ast.literal_eval(cfgparser.get("configuration","tag"))
 print "    -The tag name:"

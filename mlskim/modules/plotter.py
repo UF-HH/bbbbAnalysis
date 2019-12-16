@@ -11,6 +11,8 @@ from hep_ml.metrics_utils import ks_2samp_weighted
 from scipy import stats
 
 def Draw1DHistosComparison(original, target, variables, original_weights, norm, tag):
+	#Create folder for plots
+	os.system("mkdir myplots")
 	#Normalize or not?
 	if norm is True:
 	  hist_settings = {'bins': 10, 'density': True, 'alpha': 0.5}

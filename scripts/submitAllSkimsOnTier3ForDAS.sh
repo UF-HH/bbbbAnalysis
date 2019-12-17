@@ -1,0 +1,28 @@
+TAG="ntuples_11Dic2019_v6"
+OUTDIR="root://cmseos.fnal.gov//store/user/{0}/bbbb_ntuples_CMSDAS/"
+
+python scripts/submitSkimOnTier3.py --outputDir ${OUTDIR} --tag=$TAG --input inputFiles/CMSDAS/Samples2016/gg_HH_bbbb_SM.txt              --xs 10.53 --is-signal --cfg config/skim_CMSDAS_2016DatMC.cfg --puWeight weights/2016/GluGluToHHTo4B_node_SM_13TeV-madgraph_PUweights.root --njobs 10
+
+python scripts/submitSkimOnTier3.py --outputDir ${OUTDIR} --tag=$TAG --no-tar --no-xrdcp-tar --input inputFiles/CMSDAS/Samples2016/data_BTagCSV_Run2016_ALL.txt  --is-data --cfg config/skim_CMSDAS_2016DatMC.cfg --njobs 200
+
+# do not do single periods, just a common one
+# python scripts/submitSkimOnTier3.py --outputDir ${OUTDIR} --tag=$TAG --no-tar --no-xrdcp-tar --input inputFiles/CMSDAS/Samples2016/data_BTagCSV_Run2016B_ver1.txt  --is-data --cfg config/skim_CMSDAS_2016DatMC.cfg --njobs 200
+# python scripts/submitSkimOnTier3.py --outputDir ${OUTDIR} --tag=$TAG --no-tar --no-xrdcp-tar --input inputFiles/CMSDAS/Samples2016/data_BTagCSV_Run2016B_ver2.txt  --is-data --cfg config/skim_CMSDAS_2016DatMC.cfg --njobs 200
+# python scripts/submitSkimOnTier3.py --outputDir ${OUTDIR} --tag=$TAG --no-tar --no-xrdcp-tar --input inputFiles/CMSDAS/Samples2016/data_BTagCSV_Run2016C.txt       --is-data --cfg config/skim_CMSDAS_2016DatMC.cfg --njobs 200
+# python scripts/submitSkimOnTier3.py --outputDir ${OUTDIR} --tag=$TAG --no-tar --no-xrdcp-tar --input inputFiles/CMSDAS/Samples2016/data_BTagCSV_Run2016D.txt       --is-data --cfg config/skim_CMSDAS_2016DatMC.cfg --njobs 200
+# python scripts/submitSkimOnTier3.py --outputDir ${OUTDIR} --tag=$TAG --no-tar --no-xrdcp-tar --input inputFiles/CMSDAS/Samples2016/data_BTagCSV_Run2016E.txt       --is-data --cfg config/skim_CMSDAS_2016DatMC.cfg --njobs 200
+# python scripts/submitSkimOnTier3.py --outputDir ${OUTDIR} --tag=$TAG --no-tar --no-xrdcp-tar --input inputFiles/CMSDAS/Samples2016/data_BTagCSV_Run2016F.txt       --is-data --cfg config/skim_CMSDAS_2016DatMC.cfg --njobs 200
+# python scripts/submitSkimOnTier3.py --outputDir ${OUTDIR} --tag=$TAG --no-tar --no-xrdcp-tar --input inputFiles/CMSDAS/Samples2016/data_BTagCSV_Run2016G.txt       --is-data --cfg config/skim_CMSDAS_2016DatMC.cfg --njobs 200
+# python scripts/submitSkimOnTier3.py --outputDir ${OUTDIR} --tag=$TAG --no-tar --no-xrdcp-tar --input inputFiles/CMSDAS/Samples2016/data_BTagCSV_Run2016H.txt       --is-data --cfg config/skim_CMSDAS_2016DatMC.cfg --njobs 200
+
+### NB :I dont have weights for QCD 100-200 but should all be the same
+python scripts/submitSkimOnTier3.py --outputDir ${OUTDIR} --tag=$TAG --no-tar --no-xrdcp-tar --input inputFiles/CMSDAS/Samples2016/QCD_HT100to200_TuneCUETP8M1_13TeV-madgraphMLM-pythia8.txt      --cfg  config/skim_CMSDAS_2016DatMC.cfg --xs 28060000 --puWeight=weights/2016/QCD_HT200to300_TuneCUETP8M1_13TeV-madgraphMLM-pythia8_PUweights.root    --njobs 200
+python scripts/submitSkimOnTier3.py --outputDir ${OUTDIR} --tag=$TAG --no-tar --no-xrdcp-tar --input inputFiles/CMSDAS/Samples2016/QCD_HT200to300_TuneCUETP8M1_13TeV-madgraphMLM-pythia8.txt      --cfg  config/skim_CMSDAS_2016DatMC.cfg --xs 1710000  --puWeight=weights/2016/QCD_HT200to300_TuneCUETP8M1_13TeV-madgraphMLM-pythia8_PUweights.root    --njobs 200
+python scripts/submitSkimOnTier3.py --outputDir ${OUTDIR} --tag=$TAG --no-tar --no-xrdcp-tar --input inputFiles/CMSDAS/Samples2016/QCD_HT300to500_TuneCUETP8M1_13TeV-madgraphMLM-pythia8.txt      --cfg  config/skim_CMSDAS_2016DatMC.cfg --xs 347500   --puWeight=weights/2016/QCD_HT300to500_TuneCUETP8M1_13TeV-madgraphMLM-pythia8_PUweights.root    --njobs 200
+python scripts/submitSkimOnTier3.py --outputDir ${OUTDIR} --tag=$TAG --no-tar --no-xrdcp-tar --input inputFiles/CMSDAS/Samples2016/QCD_HT500to700_TuneCUETP8M1_13TeV-madgraphMLM-pythia8.txt      --cfg  config/skim_CMSDAS_2016DatMC.cfg --xs 32060    --puWeight=weights/2016/QCD_HT500to700_TuneCUETP8M1_13TeV-madgraphMLM-pythia8_PUweights.root    --njobs 200
+python scripts/submitSkimOnTier3.py --outputDir ${OUTDIR} --tag=$TAG --no-tar --no-xrdcp-tar --input inputFiles/CMSDAS/Samples2016/QCD_HT700to1000_TuneCUETP8M1_13TeV-madgraphMLM-pythia8.txt     --cfg  config/skim_CMSDAS_2016DatMC.cfg --xs 6829     --puWeight=weights/2016/QCD_HT700to1000_TuneCUETP8M1_13TeV-madgraphMLM-pythia8_PUweights.root   --njobs 200
+python scripts/submitSkimOnTier3.py --outputDir ${OUTDIR} --tag=$TAG --no-tar --no-xrdcp-tar --input inputFiles/CMSDAS/Samples2016/QCD_HT1000to1500_TuneCUETP8M1_13TeV-madgraphMLM-pythia8.txt    --cfg  config/skim_CMSDAS_2016DatMC.cfg --xs 1207     --puWeight=weights/2016/QCD_HT1000to1500_TuneCUETP8M1_13TeV-madgraphMLM-pythia8_PUweights.root  --njobs 200
+python scripts/submitSkimOnTier3.py --outputDir ${OUTDIR} --tag=$TAG --no-tar --no-xrdcp-tar --input inputFiles/CMSDAS/Samples2016/QCD_HT1500to2000_TuneCUETP8M1_13TeV-madgraphMLM-pythia8.txt    --cfg  config/skim_CMSDAS_2016DatMC.cfg --xs 120      --puWeight=weights/2016/QCD_HT1500to2000_TuneCUETP8M1_13TeV-madgraphMLM-pythia8_PUweights.root  --njobs 200
+python scripts/submitSkimOnTier3.py --outputDir ${OUTDIR} --tag=$TAG --no-tar --no-xrdcp-tar --input inputFiles/CMSDAS/Samples2016/QCD_HT2000toInf_TuneCUETP8M1_13TeV-madgraphMLM-pythia8.txt     --cfg  config/skim_CMSDAS_2016DatMC.cfg --xs 25.25    --puWeight=weights/2016/QCD_HT2000toInf_TuneCUETP8M1_13TeV-madgraphMLM-pythia8_PUweights.root   --njobs 200
+
+python scripts/submitSkimOnTier3.py --outputDir ${OUTDIR} --tag=$TAG --no-tar --no-xrdcp-tar --input inputFiles/CMSDAS/Samples2016/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8.txt                     --cfg  config/skim_CMSDAS_2016DatMC.cfg --xs=831.76   --puWeight=weights/2016/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8_PUweights.root                   --njobs 200

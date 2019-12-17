@@ -419,6 +419,11 @@ int main(int argc, char** argv)
     float gen_H2_b2_phi_;
     float gen_H2_b2_m_;
 
+    // random numbers, that can be useful for selection of events etc
+    float rndm_1_;
+    float rndm_2_;
+    float rndm_3_;
+
     tOut->Branch("run",              &run_);
     tOut->Branch("luminosityBlock",  &luminosityBlock_);
     tOut->Branch("event",            &event_);
@@ -580,6 +585,10 @@ int main(int argc, char** argv)
         tOut->Branch("gen_H2_b2_phi", &gen_H2_b2_phi_);
     }
 
+    tOut->Branch("rndm_1", &rndm_1_);
+    tOut->Branch("rndm_2", &rndm_2_);
+    tOut->Branch("rndm_3", &rndm_3_);
+
     xs_ = (is_data ? -999 : opts["xs"].as<float>() );
 
     ////////////////////////////////////////////////////////////////////////
@@ -590,6 +599,8 @@ int main(int argc, char** argv)
     if (maxEvts >= 0)
         cout << "[INFO] ... running on : " << maxEvts << " events" << endl;
 
+    TRandom3 rndm_engine(0);
+
     for (int iEv = 0; true; ++iEv)
     {
         if (maxEvts >= 0 && iEv >= maxEvts)
@@ -597,6 +608,9 @@ int main(int argc, char** argv)
 
         if (!nat.Next()) break;
         if (iEv % 10000 == 0) cout << "... processing event " << iEv << endl;
+
+        // set the seed to the first event found, for reproducibility
+        rndm_engine.SetSeed(*(nat.event));
 
         // aply json filter to data
         if (is_data && !jlf.isValid(*nat.run, *nat.luminosityBlock)){
@@ -851,7 +865,6 @@ int main(int argc, char** argv)
             // genjet4_partonFlavour_  = (has_gj4 ? nat.GenJet_partonFlavour .At(igj4) : -999);
             genjet4_hadronFlavour_  = (has_gj4 ? nat.GenJet_hadronFlavour .At(igj4) : -999);
 
-
             // /////// cross check association
             // //// result: cases where my hand done match finds something and the NanoAOD does not, or viceversa, are below 0.5%
             // std::vector<GenJet> all_gen_jets;
@@ -907,6 +920,10 @@ int main(int argc, char** argv)
 
 
         }
+
+        rndm_1_ = rndm_engine.Rndm();
+        rndm_2_ = rndm_engine.Rndm();
+        rndm_3_ = rndm_engine.Rndm();
 
         tOut->Fill();
     }

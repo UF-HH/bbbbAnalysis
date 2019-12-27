@@ -48,9 +48,10 @@ def writeln(f, line):
 ###########
 
 parser = argparse.ArgumentParser(description='Command line parser of skim options')
-parser.add_argument('--input'     ,  dest = 'input'     ,  help = 'input filelist'           ,  required = True        )
-parser.add_argument('--tag'       ,  dest = 'tag'       ,  help = 'production tag'           ,  required = True        )
-parser.add_argument('--njobs'     ,  dest = 'njobs'     ,  help = 'njobs'                    ,  type     = int         ,   default = 500    )
+parser.add_argument('--executable',  dest = 'executable',  help = 'executable to be submitted',  required = False       , default = "bin/skim_for_das.exe" )
+parser.add_argument('--input'     ,  dest = 'input'     ,  help = 'input filelist'            ,  required = True        )
+parser.add_argument('--tag'       ,  dest = 'tag'       ,  help = 'production tag'            ,  required = True        )
+parser.add_argument('--njobs'     ,  dest = 'njobs'     ,  help = 'njobs'                     ,  type     = int         , default = 500                    )
 ##
 ############################################################
 ## all the following are for "expert" use, not meant to be used by default
@@ -78,7 +79,7 @@ args, unknown = parser.parse_known_args()
 #### root://cmseos.fnal.gov//store/user/lcadamur/bbbb_ntuples/' + TAG + '/' + ONAME
 
 ##################
-executable = 'bin/skim_for_das.exe' ##if non resonant 'bin/skim_ntuple_nonresonant.exe' ##If resonant analysis 'bin/skim_ntuple.exe'
+executable = args.executable ##if non resonant 'bin/skim_ntuple_nonresonant.exe' ##If resonant analysis 'bin/skim_ntuple.exe'
 ##################
 
 username = getpass.getuser()

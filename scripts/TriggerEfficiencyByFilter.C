@@ -12,10 +12,10 @@
 std::shared_ptr<TGraphAsymmErrors> TriggerEfficiencyByFilter(std::string inputFileName, std::string filterCut, std::string variable, std::string normalizationCut, std::string plotName, int nBins, float xMin, float xMax)
 {
 
-    TFile* inputFile = new TFile(inputFileName.data());
+    TFile* inputFile = TFile::Open(inputFileName.data());
     if(inputFile == nullptr)
     {
-        std::cout << "File " << inputFileName << " dose not exist. Aborting..." << std::endl;
+        std::cout << "File " << inputFileName << " does not exist. Aborting..." << std::endl;
         return shared_ptr<TGraphAsymmErrors>(nullptr);
     }
 

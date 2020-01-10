@@ -138,6 +138,8 @@ int main(int argc, char** argv)
         ("xs"       , po::value<float>(), "cross section [pb]")
         ("maxEvts"  , po::value<int>()->default_value(-1), "max number of events to process")
         ("puWeight" , po::value<string>()->default_value(""), "PU weight file name")
+        ("kl-rew"   , po::value<float>(),  "klambda value for reweighting")
+        ("kl-map"   , po::value<string>()->default_value(""), "klambda input map for reweighting")
         // flags
         ("is-data",    po::value<bool>()->zero_tokens()->implicit_value(true)->default_value(false), "mark as a data sample (default is false)")
         ("is-signal",  po::value<bool>()->zero_tokens()->implicit_value(true)->default_value(false), "mark as a HH signal sample (default is false)")
@@ -236,6 +238,9 @@ int main(int argc, char** argv)
     std::unique_ptr<BTagCalibration> btagCalibration;
     std::unique_ptr<BTagCalibrationReader> btcr;
 
+    std::unique_ptr<HHReweight5D> hhreweighter_;
+    float  kl_rew = -999;
+
     if (!is_data)
     {
         cout << "[INFO] : b tag SF file : " << config.readStringOpt("parameters::BJetScaleFactorsFile") << endl;
@@ -244,6 +249,22 @@ int main(int argc, char** argv)
         btcr->load(*btagCalibration, BTagEntry::FLAV_UDSG, "incl"  );
         btcr->load(*btagCalibration, BTagEntry::FLAV_C   , "mujets");
         btcr->load(*btagCalibration, BTagEntry::FLAV_B   , "mujets");
+
+        // MC reweight initialization
+        if (opts.find("kl-rew") != opts.end()) // a kl value was passed
+        {
+            kl_rew           = opts["kl-rew"].as<float>();  // target value
+            string kl_map    = opts["kl-map"].as<string>(); // sample map fname
+            string kl_histo  = "hhGenLevelDistr";           // sample map histo
+            string kl_coeffs = config.readStringOpt("hhreweight::coeff_file"); // coefficient file
+
+            // oph.init_HH_reweighter(ot, kl_coeffs, kl_map, kl_histo);
+            // oph.hhreweighter_kl_ = kl_rew;
+            TFile* fIn = TFile::Open(kl_map.c_str());
+            TH2D*  hIn = (TH2D*) fIn->Get(kl_histo.c_str());
+            hhreweighter_ = std::unique_ptr<HHReweight5D> (new HHReweight5D (kl_coeffs, hIn));
+            fIn->Close();
+        }
     }
 
     ////////////////////////////////////////////////////////////////////////
@@ -680,8 +701,24 @@ int main(int argc, char** argv)
 
         // calculate here weights used for the analysis
         float w_PU   = (is_data ? 1    : computePUweight(histo_pileup, *(nat.Pileup_nTrueInt)));
-        float genWeight = (is_data ? 1 : *(nat.genWeight));
-        weight_ = w_PU * genWeight;
+        float genWeight  = (is_data ? 1 : *(nat.genWeight));
+        float HH_weight = 1.0;
+       
+        if (hhreweighter_)
+        {
+            TLorentzVector vSum = ei.gen_H1->P4() + ei.gen_H2->P4();
+            
+            // boost to CM
+            TLorentzVector vH1_cm = ei.gen_H1->P4();
+            vH1_cm.Boost(-vSum.BoostVector());
+
+            float gen_mHH          = vSum.M();
+            float gen_costh_H1_cm  = vH1_cm.CosTheta();
+
+            HH_weight = hhreweighter_->getWeight(kl_rew, 1.0, gen_mHH, gen_costh_H1_cm);
+        }
+
+        weight_ = w_PU * genWeight * HH_weight;
 
         // if(!is_data) weight = oph.calculateEventWeight(nat, ei, ot, ec); // FIXME!
         

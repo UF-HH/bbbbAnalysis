@@ -83,26 +83,26 @@ dataid  = args.dataset
 
 if dataid == '1':
   folder   = 'klambda_2016'
-  outname  = 'kl_scan_2016.pdf'
+  outname  = 'kl_scan_2016'
   datalumi = "35.9 fb^{-1} (13 TeV)"
 elif dataid == '2':
   folder   = 'klambda_2017'
-  outname  = 'kl_scan_2017.pdf'
-  datalumi = "36.7 fb^{-1} (13 TeV)"
+  outname  = 'kl_scan_2017'
+  datalumi = "41.5 fb^{-1} (13 TeV)"
 elif dataid == '3':
   folder   = 'klambda_2018'
-  outname  = 'kl_scan_2018.pdf'
+  outname  = 'kl_scan_2018'
   datalumi = "59.7 fb^{-1} (13 TeV)"
 elif dataid == '4':
   folder   = 'klambda_COMB'
-  outname  = 'kl_scan_COMB.pdf'
-  datalumi = "132.3 fb^{-1} (13 TeV)"
+  outname  = 'kl_scan_COMB'
+  datalumi = "137.1 fb^{-1} (13 TeV)"
 else:
   print "Dataset is not specified correctly! No plot is done"	
   sys.exit()
 
 
-c1 = ROOT.TCanvas("c1", "c1", 650, 500)
+c1 = ROOT.TCanvas("c1", "c1", 1300, 1000)
 c1.SetFrameLineWidth(3)
 c1.SetBottomMargin (0.15)
 c1.SetRightMargin (0.05)
@@ -417,7 +417,7 @@ Graph_syst_Scale.SetFillStyle(3001)
 
 hframe = ROOT.TH1F('hframe', '', 100, -20, 20)
 hframe.SetMinimum(0)
-hframe.SetMaximum(3500)
+hframe.SetMaximum(2000)
 
 hframe.GetYaxis().SetTitleSize(0.047)
 hframe.GetXaxis().SetTitleSize(0.055)
@@ -459,8 +459,8 @@ pt4.Draw()
 # pt5.Draw()
 c1.Update()
 # raw_input()
-
-c1.Print(outname, 'pdf')
+c1.SaveAs("%s.png"%outname)
+#c1.Print(outname, 'pdf')
 
 
 # smXS = 33.53*0.073

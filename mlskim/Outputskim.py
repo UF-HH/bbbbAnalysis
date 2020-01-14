@@ -17,7 +17,7 @@ import modules.plotter as plotter
 import modules.bdtreweighter as bdtreweighter
 import modules.selections as selector
 
-def TreeDevelopment(sample,fourthbtagscore,columns_input,case):
+def TreeDevelopment(sample,columns_input,case,directory):
 	#Correct acccording to the type of data
 	columns = copy.copy(columns_input)
 	if "GGHH4B" not in sample: columns.remove('HH_reweight')
@@ -26,50 +26,49 @@ def TreeDevelopment(sample,fourthbtagscore,columns_input,case):
 		 columns.remove('genWeight')
 		 columns.remove('PUWeight') 
     #Common branches
-	skim  = data.root2pandas('inputskims/%s/SKIM_%s.root'%(case,sample),'bbbbTree', branches=columns)
+	skim  = data.root2pandas('inputskims/%s/%s/SKIM_%s.root'%(case,directory,sample),'bbbbTree', branches=columns)
 	value  = numpy.ones(dtype='float64',shape=len(skim))
-	skim['Weight_110_GGF'] = value
-	skim['Weight_210_GGF'] = value
-	skim['Weight_110_VBF'] = value
-	skim['Weight_210_VBF'] = value		 	
-	skim['Weight_110_GGF_tfactor'] = value
-	skim['Weight_210_GGF_tfactor'] = value
-	skim['Weight_110_VBF_tfactor'] = value
-	skim['Weight_210_VBF_tfactor'] = value	
+	skim['Weight_ValGGF'] = value
+	skim['Weight_AnaGGF'] = value
+	skim['Weight_ValVBF'] = value
+	skim['Weight_AnaVBF'] = value		 	
+	skim['Weight_ValGGF_tfactor'] = value
+	skim['Weight_AnaGGF_tfactor'] = value
+	skim['Weight_ValVBF_tfactor'] = value
+	skim['Weight_AnaVBF_tfactor'] = value
+	skim['Weight_MVA'] = value		
 	##Branches for data only
 	if "Data" in sample:
 		 skim['bTagScaleFactor_central'] = value
 		 skim['genWeight'] = value		 
 		 skim['PUWeight']  = value
 		 skim['XS'] = value		     	 
-	#Create btagging flag for convenience
-	b4 = skim.HH_btag_b4_deepCSV >  fourthbtagscore
-	b3 = skim.HH_btag_b4_deepCSV <= fourthbtagscore
-	del skim['HH_btag_b4_deepCSV']
-	skim['nBtag'] = numpy.select([b4, b3], [4, 3], default=0)
-	return skim#
-def MakeOutputSkims(samples,fourthbtagscore,columns,case):
+	return skim
+def MakeOutputSkims(samples,columns,case,directory):
 	for sample in samples:
 		#Read Columns
 		os.system('mkdir outputskims')
 		os.system('mkdir outputskims/%s/'%case)
+		os.system('mkdir outputskims/%s/%s'%(case,directory))
 		#Create eventweight = Lumi*XS*bTagSF/TotalMCEvents
-		skim = TreeDevelopment(sample,fourthbtagscore,columns,case) 
+		skim = TreeDevelopment(sample,columns,case,directory) 
 		#Save it in a root file (bbbbtree)
-		data.pandas2root(skim,'bbbbTree','outputskims/%s/SKIM_%s_tree.root'%(case,sample)  )
+		data.pandas2root(skim,'bbbbTree','outputskims/%s/%s/SKIM_%s_tree.root'%(case,directory,sample)  )
 		#Save it in a root file (eff_histo) 
-		data.roothist2root(sample,case,'eff_histo','outputskims/%s/SKIM_%s_hist.root'%(case,sample))
+		data.roothist2root('inputskims/%s/%s/SKIM_%s.root'%(case,directory,sample),'eff_histo','outputskims/%s/%s/SKIM_%s_hist.root'%(case,directory,sample))
 		#Merge tree and efficiency histos in root file
-		data.mergedata2root('outputskims/%s/SKIM_%s_tree.root'%(case,sample), 'outputskims/%s/SKIM_%s_hist.root'%(case,sample), 'outputskims/%s/SKIM_%s.root'%(case,sample))
+		data.mergedata2root('outputskims/%s/%s/SKIM_%s_tree.root'%(case,directory,sample), 'outputskims/%s/%s/SKIM_%s_hist.root'%(case,directory,sample), 'outputskims/%s/%s/SKIM_%s.root'%(case,directory,sample))
 		print '[INFO] Saving output skim for',sample,' in ',case
 		
 #############COMMAND CODE IS BELOW ######################
 
 ###########OPTIONS
 parser = argparse.ArgumentParser(description='Command line parser of skim options')
-parser.add_argument('--config', dest='cfgfile',  help='Name of config file',   required = True)
+parser.add_argument('--config' , dest='cfgfile',  help='Name of config file',   required = True)
+parser.add_argument('--casename',    dest='case',  help='Name of ntuples case',   required = True)
 args = parser.parse_args()
 configfilename = args.cfgfile
+casename       = args.case
 ###########Read Config file
 print "[INFO] Reading skim configuration file . . ."
 cfgparser = ConfigParser()
@@ -87,7 +86,8 @@ variables   = ast.literal_eval(cfgparser.get("configuration","variables"))
 print "    -The list of variables:"
 for x in range(len(variables)):
   print "      *",variables[x]
-btaggingcut = ast.literal_eval(cfgparser.get("configuration","btagcut"))
+print "    -The case:"
+print "      *",casename
 ##########Make microskims
 print "[INFO] Making skims . . . "
-MakeOutputSkims(samples,btaggingcut,variables,directory)
+MakeOutputSkims(samples,variables,casename,directory)

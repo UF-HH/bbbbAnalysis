@@ -74,7 +74,7 @@ c1.SetGridy()
 mg = ROOT.TMultiGraph()
 
 #lambdas = [x for x in range(-10, 11)]
-lambdas = [ -5.5 + (x*0.1) for x in range(0,131)]  
+lambdas = [ -5.0 + (x*0.2) for x in range(0,64)]  
 print "C2V points list: ", lambdas
 
 ### signals are normalsed to SM xs * B (bbbb) = 0.01043 pb

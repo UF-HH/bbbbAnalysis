@@ -36,26 +36,26 @@ ROOT.PyConfig.IgnoreCommandLineOptions = True
 #     return (scales, errors)
 
 def check_selected_bkg(allbkg, chosenbkg):
-    """ check that all the elements in allbkg appear once, and just once, in chosenbkg """
-    
-    chosen_list = []
-    for key in chosenbkg.keys():
-        chosen_list += chosenbkg[key]
+		""" check that all the elements in allbkg appear once, and just once, in chosenbkg """
+		
+		chosen_list = []
+		for key in chosenbkg.keys():
+				chosen_list += chosenbkg[key]
 
-    ## 1 : check for doubles
-    duplicates = [item for item, count in collections.Counter(chosen_list).items() if count > 1]
+		## 1 : check for doubles
+		duplicates = [item for item, count in collections.Counter(chosen_list).items() if count > 1]
 
-    if len(duplicates) > 0:
-        print "\n*** WARNING: these samples are listed multiple times to be plotted, please check if it is intentional"
-        print duplicates
-        print ""
+		if len(duplicates) > 0:
+				print "\n*** WARNING: these samples are listed multiple times to be plotted, please check if it is intentional"
+				print duplicates
+				print ""
 
-    ## 2 : check for missing
-    missing = [x for x in allbkg if x not in chosen_list]
-    if len(missing) > 0:
-        print "\n*** WARNING: these samples have been processed but not listed to be plotted, please check if it is intentional"
-        print missing
-        print ""
+		## 2 : check for missing
+		missing = [x for x in allbkg if x not in chosen_list]
+		if len(missing) > 0:
+				print "\n*** WARNING: these samples have been processed but not listed to be plotted, please check if it is intentional"
+				print missing
+				print ""
 
 ######################################################################################
 ######################################################################################
@@ -128,8 +128,8 @@ cfg = cfgr.ConfigReader (args.dir + "/" + cfgName)
 dataList = cfg.readListOption("general::data")
 # dataList = ['data_obs'] ## data are merged by hand into a single collection
 sigList         = cfg.readListOption("general::signals")
-#bkgList         = cfg.readListOption("general::backgrounds")
-bkgList         = cfg.readListOption("general::datadriven")
+bkgList         = cfg.readListOption("general::backgrounds")
+#bkgList         = cfg.readListOption("general::datadriven")
 
 if not dataList : dataList = []
 if not sigList  : sigList  = []
@@ -139,27 +139,27 @@ if not bkgList  : bkgList  = []
 replacements = {}
 secname = 'pp_merge'
 if cfg.hasSection(secname) and cfg.config[secname]:
-    for name in cfg.config[secname]:
-        replacements[name] = cfg.readListOption(secname+'::'+name)
+		for name in cfg.config[secname]:
+				replacements[name] = cfg.readListOption(secname+'::'+name)
 secname = 'merge'
 if cfg.hasSection(secname) and cfg.config[secname]:
-    for name in cfg.config[secname]:
-        replacements[name] = cfg.readListOption(secname+'::'+name)
+		for name in cfg.config[secname]:
+				replacements[name] = cfg.readListOption(secname+'::'+name)
 
 for name in replacements:
-    thelist = None
-    if replacements[name][0] in dataList:
-        thelist = dataList
-    elif replacements[name][0] in bkgList:
-        thelist = bkgList
-    elif replacements[name][0] in sigList:
-        thelist = sigList
-    else:
-        print "** WARNING: I cannot find the name", replacements[name][0], "to replace"
-    
-    for old in replacements[name]:
-        thelist.remove(old)
-    thelist.append(name)
+		thelist = None
+		if replacements[name][0] in dataList:
+				thelist = dataList
+		elif replacements[name][0] in bkgList:
+				thelist = bkgList
+		elif replacements[name][0] in sigList:
+				thelist = sigList
+		else:
+				print "** WARNING: I cannot find the name", replacements[name][0], "to replace"
+		
+		for old in replacements[name]:
+				thelist.remove(old)
+		thelist.append(name)
 
 ###########################################
 #############  retrieve plots  ############
@@ -176,7 +176,7 @@ hDatas        = Tools.retrieveHistos  (rootFile, dataList,       args.var, sel) 
 
 #### FIXME: leaving some portion of the old code as example, but most likely something different is needed for postfit
 if args.postfit:
-    raise RuntimeError("Postfit plots are not yet implemented")    
+		raise RuntimeError("Postfit plots are not yet implemented")    
 #     print "** INFO: going to scale to postfit yields"
 #     postfitscales, postfiterrors = parsePostiftFile(pfyieldfilename, chtransl[(chnumber, categnumber)])
 #     for bkg in hBkgs:
@@ -200,7 +200,7 @@ uh = uhe.UserHistoError(systFile)
 ## restriction to implement when the 
 uh.histos = dict (hBkgs)
 if args.postfit:
-  uh.externalDict = dict(postfiterrors)
+	uh.externalDict = dict(postfiterrors)
 histoErr = uh.getErrorEnvelope()
 
 ########## Signal scales ##########
@@ -222,17 +222,24 @@ titles     = dict(plotStyles.titles)
 ######### Things to plot ##################
 bkgToPlot = collections.OrderedDict()
 if args.DataCond == 2016:
-    sigToPlot = ["GGF_HH", "VBF_HH", "VBF_HH_BSM"]
-    bkgToPlot['MODEL'] = ['MODEL']  
-#    bkgToPlot['TT'] = ['TT']
+		sigToPlot = ["GGF_HH","VBF_HH"]#["GGHH4B_rew_kl_p_1","GGHH4B_rew_kl_m_5","VBF_HH","VBF_1_2_1"]
+		#bkgToPlot['MODEL'] = ['MODEL']
+		bkgToPlot['TT'] = ['TT']
+
 #    bkgToPlot['QCD']  = ['QCD_HT_200_300','QCD_HT_300_500', 'QCD_HT_500_700', 'QCD_HT_700_1000', 'QCD_HT_1000_1500', 'QCD_HT_1500_2000', 'QCD_HT_2000_Inf']
 elif args.DataCond == 2017:
-    bkgToPlot['MODEL'] = ['MODEL']  
+		#bkgToPlot['MODEL'] = ['MODEL']  
+		sigToPlot = ["GGF_HH","VBF_HH"]
+		bkgToPlot['TT']   = ['TTTo2L2Nu', 'TTToHadronic', 'TTToSemiLeptonic']
+#    sigToPlot = ["GGHH4B_rew_kl_p_1","GGHH4B_rew_kl_m_5","VBF_HH","VBF_1_2_1"]
 #    bkgToPlot['TT']   = ['TTTo2L2Nu', 'TTToHadronic', 'TTToSemiLeptonic']
 #    bkgToPlot['QCD']  = ['QCD_HT_300_500', 'QCD_HT_500_700', 'QCD_HT_700_1000', 'QCD_HT_1000_1500', 'QCD_HT_1500_2000', 'QCD_HT_2000_Inf']
-    sigToPlot = ["GGF_HH", "VBF_HH", "VBF_HH_BSM"]
+
 else:
-    bkgToPlot['MODEL'] = ['MODEL']  
+		#bkgToPlot['MODEL'] = ['MODEL']  
+		sigToPlot = ["GGF_HH","VBF_HH"]
+		bkgToPlot['TT']   = ['TTTo2L2Nu', 'TTToHadronic', 'TTToSemiLeptonic']
+#    sigToPlot = ["GGHH4B_rew_kl_p_1","GGHH4B_rew_kl_m_5","VBF_HH","VBF_1_2_1"]
 #    bkgToPlot['ZZTo4B']  = ['ZZTo4B']
 #    bkgToPlot['TT']   = ['TTTo2L2Nu', 'TTToHadronic', 'TTToSemiLeptonic']
 #    bkgToPlot['QCD']  = ['QCD_HT_300_500', 'QCD_HT_500_700', 'QCD_HT_700_1000', 'QCD_HT_1000_1500', 'QCD_HT_1500_2000', 'QCD_HT_2000_Inf']
@@ -249,11 +256,13 @@ myselreg = args.sel.split("_")
 #if myselreg[0]=="Inclusive": myselreg[0]="HH-Event"
 #if myselreg[1]=="AntiBTagTotal": myselreg[1]="AntiBTag"
 #if myselreg[1]=="BTagTotal": myselreg[1]="BTag"
-if myselreg[0]=="Btag4":regionlabel="4btag"
+if myselreg[0]=="Btag4":regionlabel="4-btag"
 if myselreg[1]=="VBFcateg":myselreg[1]="VBF"
+if myselreg[1]=="VBFcateg1":myselreg[1]="VBF1"
+if myselreg[1]=="VBFcateg2":myselreg[1]="VBF2"
 if myselreg[1]=="GGFcateg":myselreg[1]="GGF"
-if myselreg[3]=="110":myselreg[3]=""
-if myselreg[3]=="210":myselreg[3]="^{#plus}"
+if myselreg[3]=="110":myselreg[3]="^{ANA}"
+if myselreg[3]=="210":myselreg[3]="^{VAL}"
 selectionlabel ="%s-%s%s"%(myselreg[1],myselreg[2],myselreg[3]) 
 
 shc = sh.SampleHistColl()
@@ -297,29 +306,29 @@ shc.ratioxtitleoffset = 3.5
 shc.lowerpadbottommargin = 0.45
 
 if args.dosig :
-  for sig in sigToPlot:
-      if not sig in hSigs:
-          print '** Warning: signal' , sig , ' not found in the input, removing from plotting list...'
-  sigToPlot[:] = [x for x in sigToPlot if x in hSigs]  
+	for sig in sigToPlot:
+			if not sig in hSigs:
+					print '** Warning: signal' , sig , ' not found in the input, removing from plotting list...'
+	sigToPlot[:] = [x for x in sigToPlot if x in hSigs]  
 
-  # scale to expected sigscale before. NOTE: a second sigscale can be applied in the plotter
-  for h in hSigs:
-      match = [key for key in sigscales if fnmatch.fnmatch(h, key)]
-      if len(match) == 1:
-          print " >> info: histo of sample", h, ('scaled by factor %.3g' % sigscales[match[0]])
-          hSigs[h].Scale(sigscales[match[0]])
-      shc.addHisto (hSigs[h], h, 'sig', (titles[h] if h in titles else hSigs[h].GetName()))
+	# scale to expected sigscale before. NOTE: a second sigscale can be applied in the plotter
+	for h in hSigs:
+			match = [key for key in sigscales if fnmatch.fnmatch(h, key)]
+			if len(match) == 1:
+					print " >> info: histo of sample", h, ('scaled by factor %.3g' % sigscales[match[0]])
+					hSigs[h].Scale(sigscales[match[0]])
+			shc.addHisto (hSigs[h], h, 'sig', (titles[h] if h in titles else hSigs[h].GetName()))
 
 # for h in hBkgs:
 for hname in bkgToPlot:
-    for h in bkgToPlot[hname]:
-        shc.addHisto (hBkgs[h], hname, 'bkg', (titles[hname] if hname in titles else hBkgs[h].GetName()))
+		for h in bkgToPlot[hname]:
+				shc.addHisto (hBkgs[h], hname, 'bkg', (titles[hname] if hname in titles else hBkgs[h].GetName()))
 for h in hDatas:
-    shc.addHisto (hDatas[h], h, 'data', '%s Data'%args.DataCond)
+		shc.addHisto (hDatas[h], h, 'data', '%s Data'%args.DataCond)
 
 shc.setListToPlot(bkgToPlot.keys(), 'bkg')
 if args.dosig :
-  shc.setListToPlot(reversed(sigToPlot), 'sig') # sigs instead are listed from top to bottom of the legend
+	shc.setListToPlot(reversed(sigToPlot), 'sig') # sigs instead are listed from top to bottom of the legend
 shc.setListToPlot(dataList, 'data')
 
 shc.makePlot()
@@ -329,15 +338,15 @@ shc.c1.Update()
 if args.tab: shc.printTable(floatFormat='.6', printMCstat=True)
 
 if not args.quit:
-    raw_input()
+		raw_input()
 
 if args.printplot:
-    outname = '_'.join(['plots/plot%s'%args.DataCond, args.var, args.sel])
-    if args.log: outname += ('_'+'log')
-    if args.postfit: outname += '_postfit'
-    outname += '.png'
-    # print outname
-    shc.c1.Print(outname, 'png')
+		outname = '_'.join(['plots/plot%s'%args.DataCond, args.var, args.sel])
+		if args.log: outname += ('_'+'log')
+		if args.postfit: outname += '_postfit'
+		outname += '.png'
+		# print outname
+		shc.c1.Print(outname, 'png')
 
 if args.root:
-    shc.c1.SaveAs(rootname)
+		shc.c1.SaveAs(rootname)

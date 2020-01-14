@@ -8,23 +8,29 @@ void Jet::buildP4(){
 
 void Jet::buildP4Regressed()
 {
-//    std::cout<<"Step1"<<std::endl;
+
+    float corr=get_property((*this),Jet_bRegCorr);
+    float res =get_property((*this),Jet_bRegRes);
+
+    //The condition below needs to check in every NANOAOD release. 
+    //It is not implemmented in NANOAODv5. A similar condition for bRegRes is implemented on the OfflineProducerHelper as "Get_bRegRes"
+    if (  !( (corr>0.1) && (corr<2) && (res>0.005) && (res<0.9) ) ) {
+         corr = 1.;
+    }
+    else if( get_property((*this),Jet_pt) < 20 ){
+    	corr = 1.;
+    }
+    else
+    {
+    	//Do nothing, use the NANOAOD correction value
+    }
+    
 	if(p4_.Pt()==0.) this->buildP4();
-//    std::cout<<"Step2"<<std::endl;
-//    std::cout<<this->getNanoAODTree()<<std::endl;
-//    std::cout<<"Step2.1"<<std::endl;
-//    std::cout<<this->getNanoAODTree()->Jet_bRegCorr.GetSize()<<std::endl;
-//    std::cout<<"Step2.2"<<std::endl;
-//    std::cout<<this->getIdx()<<std::endl;
-//    std::cout<<"Step2.3"<<std::endl;
-//    auto x = get_property((*this),Jet_bRegCorr);
-//    std::cout<<"Step2.4: "<<x<<std::endl;
-	p4Regressed_.SetPtEtaPhiM(
-            p4_.Pt()*get_property((*this),Jet_bRegCorr),
+	p4Regressed_.SetPtEtaPhiE(
+            p4_.Pt()*corr,
             p4_.Eta(),
             p4_.Phi(),
-            p4_.M()
+            p4_.E()*corr
         );
-//    std::cout<<"Step3"<<std::endl;
 }
 

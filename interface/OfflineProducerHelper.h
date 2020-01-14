@@ -86,21 +86,19 @@ class OfflineProducerHelper{
         // -------------------------------------------------------------------------------
         // helpers for the BDT evaluation
         std::vector<std::string> float_varlist_BDT1 = {
-            "abs_H1_eta:=abs(H1_eta)",
-            "abs_H2_eta:=abs(H2_eta)",
             "H1_pt",
             "H2_pt",
             "JJ_j1_pt",
             "JJ_j2_pt",
             "abs_JJ_eta:=abs(JJ_eta)",
-            "h1h2_deltaEta",
+            "h1h2_deltaR",
             "h1j1_deltaR",
             "h1j2_deltaR",
             "h2j1_deltaR",
             "h2j2_deltaR",
-            "abs_j1etaj2eta:=abs(j1etaj2eta)",
-            "abs_costh_HH_b1_cm:=abs(costh_HH_b1_cm)",
-            "abs_costh_HH_b2_cm:=abs(costh_HH_b2_cm)",
+            "abs_costh_JJ_j1_vbfcm:=abs(costh_JJ_j1_vbfcm)",
+            "abs_costh_JJ_j2_vbfcm:=abs(costh_JJ_j2_vbfcm)",
+            "JJ_m",
         };
 
         std::vector<std::string> float_varlist_BDT2 = {
@@ -117,20 +115,20 @@ class OfflineProducerHelper{
             "abs_costh_JJ_j1_cm:=abs(costh_JJ_j1_cm)",
         };
 
-        std::vector<std::string> float_varlist_BDT3 = {
-            "HH_b3_pt",
-            "HH_b4_pt",
-            "abs_HH_b3_eta:=abs(HH_b3_eta)",
-            "abs_HH_b4_eta:=abs(HH_b4_eta)",
+        std::vector<std::string> float_varlist_BDT3= {
+            "H1_pt",
+            "H2_pt",
             "H1_m",
             "H2_m",
+            "HH_m",
+            "h1h2_deltaEta",
             "H1_bb_deltaR",
             "H2_bb_deltaR",
-            "H1_bb_deltaPhi",
-            "H2_bb_deltaPhi",
-            "abs_costh_HH_b1_cm:=abs(costh_HH_b1_cm)",
-            "abs_costh_HH_b2_cm:=abs(costh_HH_b2_cm)",
-        };
+            "abs_costh_HH_b1_cm:=abs(costh_HH_b1_ggfcm)",
+            "HH_btag_b3_bscore", 
+            "HH_btag_b3_bres",           
+        };            
+ 
 
         void init_BDT_evals();
         void init_HH_reweighter(OutputTree& ot, std::string coeffFile, std::string hhreweighterInputMap, std::string histoName);
@@ -200,7 +198,9 @@ class OfflineProducerHelper{
         void save_TriggerObjects (NanoAODTree& nat, OutputTree &ot, EventInfo& ei);
         // Calculate trigger map
         void calculateTriggerMatching(const std::vector< std::unique_ptr<Candidate> > &candidateList, NanoAODTree& nat);
-
+        // save good isolated leptons
+        void save_IsolatedLeptons (NanoAODTree& nat, OutputTree &ot, EventInfo& ei);
+ 
         //Initialize trigger Matching variables
         void initializeTriggerMatching(OutputTree &ot);
         //Function to check that the selected objects are the one that fired at list one of the triggers
@@ -255,6 +255,8 @@ class OfflineProducerHelper{
         BTagCalibrationReader *btagCalibrationReader_lightJets_;
         BTagCalibrationReader *btagCalibrationReader_cJets_;
         BTagCalibrationReader *btagCalibrationReader_bJets_;
+        //Functions to be applied in the bjetregression scores
+        float Get_bRegRes(NanoAODTree& nat, EventInfo& ei, Jet jet);
         //functions fo apply preselection cuts:
         void bJets_PreselectionCut(std::vector<Jet> &jets);
         std::vector<Jet> bjJets_PreselectionCut(NanoAODTree& nat, EventInfo& ei, OutputTree &ot, std::vector<Jet> jets);
@@ -291,6 +293,7 @@ class OfflineProducerHelper{
         std::vector<Jet> bbbb_jets_idxs_MinMassDifference(const std::vector<Jet> *presel_jets);
 
         //Additional kinematic variables
+        void ApplyBjetRegression(std::vector<Jet> bjets);
         void CalculateBtagScaleFactor(const std::vector<Jet> presel_bjets,NanoAODTree& nat,OutputTree &ot);
         void AddVBFCategoryVariables(NanoAODTree& nat, EventInfo& ei,std::vector<Jet> ordered_jets);
         void AddInclusiveCategoryVariables(NanoAODTree& nat, EventInfo& ei,std::vector<Jet> ordered_jets);    

@@ -1,7 +1,7 @@
 ### make datacards
 YEAR=$1
 
-for c2v in `seq -f %.1f -5.5 0.1 7.5`; do
+for c2v in `seq -f %.1f -5.0 0.2 7.6`; do
 
      c2vname=${c2v}
      if [[ $c2vname == *-* ]]; then
@@ -27,7 +27,7 @@ for c2v in `seq -f %.1f -5.5 0.1 7.5`; do
     python make_datacard.py \
         --fileIn /uscms/home/guerrero/nobackup/Run2/HH2019/Fall2019/CMSSW_10_2_5/src/bbbbAnalysis/limits/c2v_scan/c2v_${YEAR}/outPlotter.root \
         --sigs VBFHH4B_rew_c2v_${c2vname} \
-        --var BDT2 --sel Btag4_VBFcateg_SR_110_Histogram \
+        --var HH_m --sel Btag4_VBFcateg_SR_110_Histogram \
         --cardOut ${FLDRNAME}/${CARDNAME}
 
     #### step 2 : generate workspace
@@ -60,7 +60,7 @@ echo "... making card for injection of SM"
 python make_datacard.py \
     --fileIn /uscms/home/guerrero/nobackup/Run2/HH2019/Fall2019/CMSSW_10_2_5/src/bbbbAnalysis/limits/c2v_scan/c2v_${YEAR}/outPlotter.root \
     --sigs VBF_HH \
-    --var BDT2 --sel Btag4_VBFcateg_SR_110_Histogram \
+    --var HH_m --sel Btag4_VBFcateg_SR_110_Histogram \
     --cardOut ${FLDRNAME}/${CARDNAME}
 
 #### step 2 : generate workspace

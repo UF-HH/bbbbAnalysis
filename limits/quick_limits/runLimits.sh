@@ -1,10 +1,10 @@
 mkdir CLs_$1
 #calculate shapes
-root -q -b -l 'make_shapes.C(-1,1,"GGF_HH","GGFcateg","BDT3","2016",100)'
+root -q -b -l 'make_shapes.C(-1,1,"GGHH4B_rew_kl_p_1","GGFcateg","BDT3","2016",100)'
 root -q -b -l 'make_shapes.C(-1,1,"VBF_HH","VBFcateg","BDT2","2016",100)'
-root -q -b -l 'make_shapes.C(-1,1,"GGF_HH","GGFcateg","BDT3","2017",100)'
+root -q -b -l 'make_shapes.C(-1,1,"GGHH4B_rew_kl_p_1","GGFcateg","BDT3","2017",100)'
 root -q -b -l 'make_shapes.C(-1,1,"VBF_HH","VBFcateg","BDT2","2017",100)'
-root -q -b -l 'make_shapes.C(-1,1,"GGF_HH","GGFcateg","BDT3","2018",100)'
+root -q -b -l 'make_shapes.C(-1,1,"GGHH4B_rew_kl_p_1","GGFcateg","BDT3","2018",100)'
 root -q -b -l 'make_shapes.C(-1,1,"VBF_HH","VBFcateg","BDT2","2018",100)'
 #Calculate limits
 combine -M AsymptoticLimits --freezeParameters allConstrainedNuisances datacard_GGF_HH_GGFcateg_2016.txt     --run blind &> CLs_$1/GGF_HH_GGFcateg_2016_asymptoticCLs.out

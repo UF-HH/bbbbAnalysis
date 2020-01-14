@@ -13,6 +13,7 @@
 #include "GenPart.h"
 #include "HH4b_kinFit.h"
 #include "TRandom.h"
+#include "TMath.h"
 
 #include "TMVA/GeneticAlgorithm.h"
 #include "TMVA/GeneticFitter.h"
@@ -63,10 +64,120 @@ void OfflineProducerHelper::initializeObjectsForCuts(OutputTree &ot){
         ot.declareUserFloatBranch("SmallestMuonJetDeltaR", -1.);
 
     }
+    else if(objectsForCut == "IsolatedLeptons"){
+        save_objects_for_cut = [=](NanoAODTree& nat, OutputTree &ot, EventInfo& ei) -> void {this -> save_IsolatedLeptons(nat, ot, ei);};
+        ot.declareUserIntBranch("IsolatedElectron_Multiplicity", -1.);
+        ot.declareUserFloatBranch("IsolatedElectron1_pt", -1.);
+        ot.declareUserFloatBranch("IsolatedElectron1_MaxPfIso", -1.);
+        ot.declareUserIntBranch("IsolatedElectron1_looseID", -1.);
+        ot.declareUserIntBranch("IsolatedElectron1_mediumID",-1.);
+        ot.declareUserIntBranch("IsolatedElectron1_tightID", -1.); 
+        ot.declareUserFloatBranch("IsolatedElectron2_pt", -1.);
+        ot.declareUserFloatBranch("IsolatedElectron2_MaxPfIso", -1.);
+        ot.declareUserIntBranch("IsolatedElectron2_looseID", -1.);
+        ot.declareUserIntBranch("IsolatedElectron2_mediumID",-1.);
+        ot.declareUserIntBranch("IsolatedElectron2_tightID", -1.);
+        ot.declareUserIntBranch("IsolatedMuon_Multiplicity", -1.);
+        ot.declareUserFloatBranch("IsolatedMuon1_pt", -1.);
+        ot.declareUserFloatBranch("IsolatedMuon1_MaxPfIso", -1.);
+        ot.declareUserIntBranch("IsolatedMuon1_looseID", -1.);
+        ot.declareUserIntBranch("IsolatedMuon1_mediumID",-1.);
+        ot.declareUserIntBranch("IsolatedMuon1_tightID", -1.);  
+        ot.declareUserFloatBranch("IsolatedMuon2_pt", -1.);
+        ot.declareUserFloatBranch("IsolatedMuon2_MaxPfIso", -1.);
+        ot.declareUserIntBranch("IsolatedMuon2_looseID", -1.);
+        ot.declareUserIntBranch("IsolatedMuon2_mediumID",-1.);
+        ot.declareUserIntBranch("IsolatedMuon2_tightID", -1.);      
+    }
 
     return;
 
 }
+
+// reject events with leptons that may come from W and Z decays
+void OfflineProducerHelper::save_IsolatedLeptons (NanoAODTree& nat, OutputTree &ot, EventInfo& ei){
+
+    std::vector<Electron> IsolatedElectrons;
+    IsolatedElectrons.reserve(*(nat.nElectron));
+    std::vector<Muon> IsolatedMuons;
+    IsolatedMuons.reserve(*(nat.nMuon));
+
+    //Look for the good electrons in the event. 
+    for (uint eIt = 0; eIt < *(nat.nElectron); ++eIt){
+        Electron IsolatedElectron(eIt, &nat);
+        if( abs(get_property(IsolatedElectron,Electron_eta)) < 1.2 && abs(get_property(IsolatedElectron,Electron_dz))   > any_cast<float>(parameterList_->at("ElectronMaxBarrelDz"))  ) continue;
+        if( abs(get_property(IsolatedElectron,Electron_eta)) < 1.2 && abs(get_property(IsolatedElectron,Electron_dxy))  > any_cast<float>(parameterList_->at("ElectronMaxBarrelDxy")) ) continue;
+        if( abs(get_property(IsolatedElectron,Electron_eta)) < 2.4 && abs(get_property(IsolatedElectron,Electron_dz))   > any_cast<float>(parameterList_->at("ElectronMaxEndcapDz"))  ) continue;
+        if( abs(get_property(IsolatedElectron,Electron_eta)) < 2.4 && abs(get_property(IsolatedElectron,Electron_dxy))  > any_cast<float>(parameterList_->at("ElectronMaxEndcapDxy")) ) continue;
+        if(     get_property(IsolatedElectron,Electron_pt)   < any_cast<float>(parameterList_->at("ElectronMinPt"))     ) continue;
+        if( abs(get_property(IsolatedElectron,Electron_eta)) > any_cast<float>(parameterList_->at("ElectronMaxAbsEta")) ) continue;
+        if( any_cast<int>(parameterList_->at("ElectronID"))==0 && !get_property(IsolatedElectron,Electron_mvaFall17V2Iso_WPL) ) continue;
+        if( any_cast<int>(parameterList_->at("ElectronID"))==1 && !get_property(IsolatedElectron,Electron_mvaFall17V2Iso_WP90) ) continue;
+        if( any_cast<int>(parameterList_->at("ElectronID"))==2 && !get_property(IsolatedElectron,Electron_mvaFall17V2Iso_WP80) ) continue;
+        if(  get_property(IsolatedElectron,Electron_pfRelIso03_all    ) > any_cast<float>(parameterList_->at("ElectronMaxPfIso"))  ) continue;
+        IsolatedElectrons.emplace_back(IsolatedElectron);
+    }
+    //Look for the good muons in the event. 
+    for (uint eIt = 0; eIt < *(nat.nMuon); ++eIt){
+        Muon IsolatedMuon(eIt, &nat);
+        if( abs(get_property(IsolatedMuon,Muon_eta)) < 1.2 && abs(get_property(IsolatedMuon,Muon_dz))   > any_cast<float>(parameterList_->at("MuonMaxBarrelDz"))  ) continue;
+        if( abs(get_property(IsolatedMuon,Muon_eta)) < 1.2 && abs(get_property(IsolatedMuon,Muon_dxy))  > any_cast<float>(parameterList_->at("MuonMaxBarrelDxy")) ) continue;
+        if( abs(get_property(IsolatedMuon,Muon_eta)) < 2.4 && abs(get_property(IsolatedMuon,Muon_dz))   > any_cast<float>(parameterList_->at("MuonMaxEndcapDz"))  ) continue;
+        if( abs(get_property(IsolatedMuon,Muon_eta)) < 2.4 && abs(get_property(IsolatedMuon,Muon_dxy))  > any_cast<float>(parameterList_->at("MuonMaxEndcapDxy")) ) continue;
+        if(     get_property(IsolatedMuon,Muon_pt)    < any_cast<float>(parameterList_->at("MuonMinPt")) ) continue;
+        if( abs(get_property(IsolatedMuon,Muon_eta))  > any_cast<float>(parameterList_->at("MuonMaxAbsEta")) ) continue;
+        if( any_cast<int>(parameterList_->at("MuonID"))==0 && !get_property(IsolatedMuon,Muon_looseId)  ) continue;
+        if( any_cast<int>(parameterList_->at("MuonID"))==1 && !get_property(IsolatedMuon,Muon_mediumId) ) continue;
+        if( any_cast<int>(parameterList_->at("MuonID"))==2 && !get_property(IsolatedMuon,Muon_tightId)  ) continue;
+        if( get_property(IsolatedMuon,Muon_pfRelIso04_all    ) > any_cast<float>(parameterList_->at("MuonMaxPfIso"))  ) continue;
+        IsolatedMuons.emplace_back(IsolatedMuon);
+    }
+
+    //Save good electron properties
+    ot.userInt("IsolatedElectron_Multiplicity")=IsolatedElectrons.size();
+    if(IsolatedElectrons.size()>0){
+        stable_sort(IsolatedElectrons.begin(), IsolatedElectrons.end(), [](const Electron & a, const Electron & b) -> bool
+        {
+            return ( a.P4().Pt() > b.P4().Pt() );
+        });
+        ot.userFloat("IsolatedElectron1_pt")=IsolatedElectrons.at(0).P4().Pt();
+        ot.userFloat("IsolatedElectron1_MaxPfIso")=get_property(IsolatedElectrons.at(0),Electron_pfRelIso03_all);
+        ot.userInt( "IsolatedElectron1_looseID")  = get_property(IsolatedElectrons.at(0),Electron_mvaFall17V2Iso_WPL        );
+        ot.userInt( "IsolatedElectron1_mediumID") = get_property(IsolatedElectrons.at(0),Electron_mvaFall17V2Iso_WP90       );
+        ot.userInt( "IsolatedElectron1_tightID")  = get_property(IsolatedElectrons.at(0),Electron_mvaFall17V2Iso_WP80       );
+        if(IsolatedElectrons.size()>1){
+             ot.userFloat("IsolatedElectron2_pt")=IsolatedElectrons.at(1).P4().Pt();
+             ot.userFloat("IsolatedElectron2_MaxPfIso")=get_property(IsolatedElectrons.at(1),Electron_pfRelIso03_all);
+             ot.userInt( "IsolatedElectron2_looseID")  = get_property(IsolatedElectrons.at(1),Electron_mvaFall17V2Iso_WPL        );
+             ot.userInt( "IsolatedElectron2_mediumID") = get_property(IsolatedElectrons.at(1),Electron_mvaFall17V2Iso_WP90       );
+             ot.userInt( "IsolatedElectron2_tightID")  = get_property(IsolatedElectrons.at(1),Electron_mvaFall17V2Iso_WP80       );
+        }
+    }
+    //Save good muons properties
+    ot.userInt("IsolatedMuon_Multiplicity")=IsolatedMuons.size();
+    if(IsolatedMuons.size()>0){
+        stable_sort(IsolatedMuons.begin(), IsolatedMuons.end(), [](const Muon & a, const Muon & b) -> bool
+        {
+            return ( a.P4().Pt() > b.P4().Pt() );
+        }); 
+        ot.userFloat("IsolatedMuon1_pt")       = IsolatedMuons.at(0).P4().Pt();
+        ot.userFloat("IsolatedMuon1_MaxPfIso") = get_property(IsolatedMuons.at(0),Muon_pfRelIso04_all );
+        ot.userInt( "IsolatedMuon1_looseID")  = get_property(IsolatedMuons.at(0),Muon_looseId        );
+        ot.userInt( "IsolatedMuon1_mediumID") = get_property(IsolatedMuons.at(0),Muon_mediumId       );
+        ot.userInt( "IsolatedMuon1_tightID")  = get_property(IsolatedMuons.at(0),Muon_tightId        );
+        if(IsolatedMuons.size()>1){
+             ot.userFloat("IsolatedMuon2_pt")       = IsolatedMuons.at(1).P4().Pt();
+             ot.userFloat("IsolatedMuon2_MaxPfIso") = get_property(IsolatedMuons.at(1),Muon_pfRelIso04_all );
+             ot.userInt( "IsolatedMuon2_looseID")   = get_property(IsolatedMuons.at(1),Muon_looseId        );
+             ot.userInt( "IsolatedMuon2_mediumID")  = get_property(IsolatedMuons.at(1),Muon_mediumId       );
+             ot.userInt( "IsolatedMuon2_tightID")   = get_property(IsolatedMuons.at(1),Muon_tightId        );
+        }
+    }
+
+}
+
+
+
 
 // reject events with leptons that may come from W and Z decays
 void OfflineProducerHelper::save_WAndZLeptonDecays (NanoAODTree& nat, OutputTree &ot, EventInfo& ei){
@@ -208,6 +319,8 @@ void OfflineProducerHelper::initializeObjectsBJetForScaleFactors(OutputTree &ot)
 
     string scaleFactorsMethod = any_cast<string>(parameterList_->at("BTagScaleFactorMethod"));
 
+    string eventselection = any_cast<string>(parameterList_->at("PreselectionCut"));
+
     if(scaleFactorsMethod == "None"){
         //do nothing
     }
@@ -223,13 +336,29 @@ void OfflineProducerHelper::initializeObjectsBJetForScaleFactors(OutputTree &ot)
         ot.declareUserFloatBranch("bTagScaleFactor_lightJets_down"   , 1.);
 
         // branchesAffectedByJetEnergyVariations_["bTagScaleFactor_central"] = 1.;
-        BTagCalibration btagCalibration("DeepCSV",any_cast<string>(parameterList_->at("BJetScaleFactorsFile")));
+        string btaggingfile,btagger;
+        if(eventselection=="VBFJetCut")
+        {
+          if( any_cast<bool>(parameterList_->at("NewestBtaggingAlgorithm"))  )
+          {
+            btagger= "DeepJet";btaggingfile = any_cast<string>(parameterList_->at("BJetScaleFactorsFileAlternative"));
+          }
+          else
+          {
+            btagger= "DeepCSV";btaggingfile = any_cast<string>(parameterList_->at("BJetScaleFactorsFile"));
+          }
+        }
+        else{
+            btagger= "DeepCSV";btaggingfile = any_cast<string>(parameterList_->at("BJetScaleFactorsFile"));
+        }
+
+        BTagCalibration btagCalibration(btagger,btaggingfile);
         btagCalibrationReader_lightJets_ = new BTagCalibrationReader(BTagEntry::OP_MEDIUM,"central",{"up", "down"});
         btagCalibrationReader_cJets_     = new BTagCalibrationReader(BTagEntry::OP_MEDIUM,"central",{"up", "down"});
         btagCalibrationReader_bJets_     = new BTagCalibrationReader(BTagEntry::OP_MEDIUM,"central",{"up", "down"});
         btagCalibrationReader_lightJets_->load(btagCalibration, BTagEntry::FLAV_UDSG, "incl"  );
-        btagCalibrationReader_cJets_    ->load(btagCalibration, BTagEntry::FLAV_C   , "mujets");
-        btagCalibrationReader_bJets_    ->load(btagCalibration, BTagEntry::FLAV_B   , "mujets");
+        btagCalibrationReader_cJets_    ->load(btagCalibration, BTagEntry::FLAV_C   , "comb");//mujets is for top physics in dilepton channel
+        btagCalibrationReader_bJets_    ->load(btagCalibration, BTagEntry::FLAV_B   , "comb");//mujets is for top physics in dilepton channel 
 
     }
 
@@ -556,7 +685,7 @@ void OfflineProducerHelper::initializeJERsmearingAndVariations(OutputTree &ot)
         jetResolution_            = new JME::JetResolution           (any_cast<string>(parameterList_->at("JERResolutionFile" )));
         gRandom->SetSeed(any_cast<int>(parameterList_->at("RandomGeneratorSeed")));
 
-        //set up variations
+        //set up variations-> TODO: Consider the BregJERsmearing in the variations
         if(any_cast<bool>(parameterList_->at("JERComputeVariations")))
         {
             mapJERNamesAndVariation_["JER_up"  ] = Variation::UP  ;
@@ -638,9 +767,11 @@ std::vector<Jet> OfflineProducerHelper::applyJERsmearing(NanoAODTree& nat, std::
             smearFactor = MIN_JET_ENERGY / iJet.P4().Energy();
         }
 
+        //Let's smear the "standard" jets as needs to be done w.r.t. "NANOAOD" jet pt
         iJet.setP4(iJet.P4()*smearFactor);
+        //Build pT regressed on top of the smeared jets (not optimal but just for now)
         iJet.buildP4Regressed();
-
+        //FIXME: Make appropiate smearing for bregressed jets for final result
     }
 
 
@@ -1287,19 +1418,25 @@ std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_HighestCSVandClosestToMh(
     return output_jets;
 }
 
-// Minimizes distance to the diagonal (a la ATLAS)
+// Minimizes distance to the diagonal (alla ATLAS)
 std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_BothClosestToDiagonal(const std::vector<Jet> *presel_jets)
 {
 
+    //Do you add b-jet regression into the pairing?
+    bool breg = any_cast<bool>(parameterList_->at("BjetRegression"));
+
     float targetHiggsMass1 = any_cast<float>(parameterList_->at("LeadingHiggsMass"));
     float targetHiggsMass2 = any_cast<float>(parameterList_->at("SubleadingHiggsMass"));
-
     std::vector<TLorentzVector> p4s;
 
     for (uint i = 0; i < presel_jets->size(); ++i)
         for (uint j = i+1; j < presel_jets->size(); ++j)
         {
-            TLorentzVector p4sum = (presel_jets->at(i).P4() + presel_jets->at(j).P4());
+            TLorentzVector p4sum;
+            if (breg) 
+               p4sum= (presel_jets->at(i).P4Regressed() + presel_jets->at(j).P4Regressed());
+            else
+               p4sum= (presel_jets->at(i).P4() + presel_jets->at(j).P4());
             p4s.emplace_back(p4sum);
         }
 
@@ -1336,12 +1473,17 @@ std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_BothClosestToDiagonal(con
     std::pair<float, float> m_13_24 = make_pair(m3,m4);
     std::pair<float, float> m_14_23 = make_pair(m5,m6);
 
-    float d12_34 = fabs( m_12_34.first - ((targetHiggsMass1/targetHiggsMass2)*m_12_34.second) );
-    float d13_24 = fabs( m_13_24.first - ((targetHiggsMass1/targetHiggsMass2)*m_13_24.second) );
-    float d14_23 = fabs( m_14_23.first - ((targetHiggsMass1/targetHiggsMass2)*m_14_23.second) );
+    float d12_34 = TMath::Sqrt(pow(m_12_34.first,2) + pow(m_12_34.second,2) )*fabs( TMath::Sin( TMath::ATan(m_12_34.second/m_12_34.first) - TMath::ATan(targetHiggsMass2/targetHiggsMass1) ) );
+    float d13_24 = TMath::Sqrt(pow(m_13_24.first,2) + pow(m_13_24.second,2) )*fabs( TMath::Sin( TMath::ATan(m_13_24.second/m_13_24.first) - TMath::ATan(targetHiggsMass2/targetHiggsMass1) ) );
+    float d14_23 = TMath::Sqrt(pow(m_14_23.first,2) + pow(m_14_23.second,2) )*fabs( TMath::Sin( TMath::ATan(m_14_23.second/m_14_23.first) - TMath::ATan(targetHiggsMass2/targetHiggsMass1) ) );
 
+    //NOTE: The formula below is equivalent (after some massaging :-) )
+    //float d12_34_b = fabs( m_12_34.first - ((targetHiggsMass1/targetHiggsMass2)*m_12_34.second) );
+    //float d13_24_b = fabs( m_13_24.first - ((targetHiggsMass1/targetHiggsMass2)*m_13_24.second) );
+    //float d14_23_b = fabs( m_14_23.first - ((targetHiggsMass1/targetHiggsMass2)*m_14_23.second) );
+ 
     float the_min = std::min({d12_34, d13_24, d14_23});
-
+        
     std::vector<Jet> outputJets = *presel_jets;
 
     if (the_min == d12_34){
@@ -1374,12 +1516,20 @@ std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_BothClosestToDiagonal(con
 // Minimizes mass difference (2016 Published Analysis)
 std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_MinMassDifference(const std::vector<Jet> *presel_jets)
 {
+ 
+    //Do you add b-jet regression into the pairing?
+    bool breg = any_cast<bool>(parameterList_->at("BjetRegression"));
+
     std::vector<float> mHs;
 
     for (uint i = 0; i < presel_jets->size(); ++i)
         for (uint j = i+1; j < presel_jets->size(); ++j)
         {
-            TLorentzVector p4sum = (presel_jets->at(i).P4() + presel_jets->at(j).P4());
+            TLorentzVector p4sum;
+            if(breg)
+              p4sum = (presel_jets->at(i).P4Regressed() + presel_jets->at(j).P4Regressed());
+            else    
+              p4sum = (presel_jets->at(i).P4() + presel_jets->at(j).P4());
             mHs.emplace_back(p4sum.Mag());
         }
 
@@ -1572,33 +1722,1005 @@ void OfflineProducerHelper::CalculateBtagScaleFactor(const std::vector<Jet> pres
 
 bool OfflineProducerHelper::select_bbbbjj_jets(NanoAODTree& nat, EventInfo& ei, OutputTree &ot)
 {
-    //Get jet collection
-    std::vector<Jet> jets;
-    jets.reserve(*(nat.nJet));
-    for (uint ij = 0; ij < *(nat.nJet); ++ij){jets.emplace_back(Jet(ij, &nat));}
-    //Preselect four most b-tagged jets (pt, eta, btagging) & 'two vbfjets'(pt,eta,deltaEta). Note: BTagSF is calculated for events with 3 or 4 b-tags
-    std::vector<Jet> presel_jets = bjJets_PreselectionCut(nat,ei,ot,jets); //TO BE RETURNED bjJets_PreselectionCut/bjJets_2016_PreselectionCut
+    //Get the jet collection
+    std::vector<Jet> unsmearedjets,jets;
+    unsmearedjets.reserve(*(nat.nJet));jets.reserve(*(nat.nJet));
+    for (uint ij = 0; ij < *(nat.nJet); ++ij){unsmearedjets.emplace_back(Jet(ij, &nat));}
+    //If MC sample, then obtain the jet energy resolution correction strategy and apply it before any selection.
+    if(parameterList_->find("JetEnergyResolution") != parameterList_->end())
+    {   //It is MC
+        jets = JERsmearing(nat,unsmearedjets);
+    }
+    else
+    {   //It is data
+        jets = unsmearedjets;
+    }    
+    //Preselect four most b-tagged jets (pt, eta, btagging) & 'VBF-jet pair'(pt,eta,deltaEta). Note: BTagSF is calculated for events with 3 & 4 b-tags
+    std::vector<Jet> presel_jets = bjJets_PreselectionCut(nat,ei,ot,jets);
     if(presel_jets.size()<4) return false;
-    //Pick up the four preselected b-jets, pair them, ordered them into a new vector
+    //Pick up the four preselected b-jets
     std::vector<Jet> presel_bjets={{*(presel_jets.begin()+0),*(presel_jets.begin()+1),*(presel_jets.begin()+2),*(presel_jets.begin()+3)}};
+    //Do the Higgs pairing based on bbbbChoice
     std::vector<Jet> ordered_jets;
     if(any_cast<string>(parameterList_->at("bbbbChoice"))=="BothClosestToMh"){
         ordered_jets = bbbb_jets_idxs_BothClosestToMh(&presel_bjets);
     }
-    else if(any_cast<string>(parameterList_->at("bbbbChoice"))=="MinMassDifference"){
-        ordered_jets = bbbb_jets_idxs_MinMassDifference(&presel_bjets);
-    }
-    else{
+    else if(any_cast<string>(parameterList_->at("bbbbChoice"))=="BothClosestToDiagonal"){
         ordered_jets = bbbb_jets_idxs_BothClosestToDiagonal(&presel_bjets);
     }
-    if(presel_jets.size()==6){ordered_jets.push_back(presel_jets.at(4)); ordered_jets.push_back(presel_jets.at(5));}
-    //Add objects (H1,H2,HH) and variables (dEta,dPhi) that are common for both GGF and VBF Categories
-    AddInclusiveCategoryVariables(nat,ei,ordered_jets);
-    //If the VBF jet pair exists, then create the VBF category variables
-    if(presel_jets.size()==6){AddVBFCategoryVariables(nat,ei,ordered_jets);}
-    return true;
+    else{
+        ordered_jets = bbbb_jets_idxs_MinMassDifference(&presel_bjets);
+    }
+    //Add objects (H1,H2,HH) and angular variables (dEta,dPhi,etc) 
+    if(presel_jets.size()==6){
+        ordered_jets.push_back(presel_jets.at(4)); ordered_jets.push_back(presel_jets.at(5));
+        AddInclusiveCategoryVariables(nat,ei,ordered_jets);
+        AddVBFCategoryVariables(nat,ei,ordered_jets);
+    }
+    else
+    {
+        AddInclusiveCategoryVariables(nat,ei,ordered_jets);
+    }
+
+    return true; 
 }
 
+void OfflineProducerHelper::AddInclusiveCategoryVariables(NanoAODTree& nat, EventInfo& ei,std::vector<Jet> ordered_jets){
+       //Event variables
+       ei.Run = *(nat.run);
+       ei.LumiSec = *(nat.luminosityBlock);
+       ei.Event = *(nat.event);
+       ei.nPVgood=*(nat.PV_npvsGood);
+       ei.EventCount = 1;
+       if(ordered_jets.size()==6){ ei.VBFEvent = 1;}
+       else{ei.VBFEvent = 0;}
+       // order H1, H2 by pT: pT(H1) > pT (H2)
+       bool breg = any_cast<bool>(parameterList_->at("BjetRegression"));
+       order_by_pT(ordered_jets.at(0), ordered_jets.at(1));
+       order_by_pT(ordered_jets.at(2), ordered_jets.at(3));
+       CompositeCandidate H1 = CompositeCandidate(ordered_jets.at(0), ordered_jets.at(1) );
+       CompositeCandidate H2 = CompositeCandidate(ordered_jets.at(2), ordered_jets.at(3) );
+       CompositeCandidate H1unregressed = CompositeCandidate(ordered_jets.at(0), ordered_jets.at(1) );
+       CompositeCandidate H2unregressed = CompositeCandidate(ordered_jets.at(2), ordered_jets.at(3) );
+       //Do you add b-jet regression into Higgs reconstruction?
+       ei.H1unregressed=H1unregressed;
+       ei.H2unregressed=H2unregressed;
+       order_by_pT(ei.H1unregressed.get(), ei.H2unregressed.get());
+       if(breg)
+       {
+           H1.rebuildP4UsingRegressedPt(true,true); 
+           H2.rebuildP4UsingRegressedPt(true,true);
+       }
+       ei.H1=H1;
+       ei.H2=H2;
+       bool swapped0 = order_by_pT(ei.H1.get(), ei.H2.get());
+       if (!swapped0)
+       {
+           ei.H1_b1 = ordered_jets.at(0);ei.H1_b2 = ordered_jets.at(1);
+           ei.H2_b1 = ordered_jets.at(2);ei.H2_b2 = ordered_jets.at(3);
+       }
+       else
+       {
+           ei.H1_b1 = ordered_jets.at(2);ei.H1_b2 = ordered_jets.at(3);
+           ei.H2_b1 = ordered_jets.at(0);ei.H2_b2 = ordered_jets.at(1);
+       }
+       //HH variables
+       ei.HHunregressed = CompositeCandidate(ei.H1unregressed.get(), ei.H2unregressed.get());       
+       ei.HH            = CompositeCandidate(ei.H1.get(), ei.H2.get());
+       //Fill branches with selected b-jets ordered by pt
+       std::vector<Jet> presel_bjets, presel_bjets_btags;
+       uint m=0; while(m<4)
+       {
+        presel_bjets.push_back(ordered_jets.at(m));
+        presel_bjets_btags.push_back(ordered_jets.at(m)); 
+        m++;
+       }
+       stable_sort(presel_bjets.begin(), presel_bjets.end(), [](const Jet & a, const Jet & b) -> bool
+       {return ( a.P4().Pt() > b.P4().Pt() );});
+       ei.HH_b1 = presel_bjets.at(0);
+       ei.HH_b2 = presel_bjets.at(1);
+       ei.HH_b3 = presel_bjets.at(2);
+       ei.HH_b4 = presel_bjets.at(3);
+       //Is it three or four b-tags?
+       if( any_cast<bool>(parameterList_->at("NewestBtaggingAlgorithm")) )
+       {
+           ei.btaggerID=1;
+           stable_sort(presel_bjets_btags.begin(), presel_bjets_btags.end(), [](const Jet & a, const Jet & b) -> bool
+           {return ( get_property(a, Jet_btagDeepFlavB) > get_property(b, Jet_btagDeepFlavB) );});
+           ei.HH_btag_b1 = presel_bjets_btags.at(0);
+           ei.HH_btag_b2 = presel_bjets_btags.at(1);
+           ei.HH_btag_b3 = presel_bjets_btags.at(2);
+           ei.HH_btag_b4 = presel_bjets_btags.at(3);
+           ei.HH_btag_b1_bscore = get_property( presel_bjets_btags.at(0) , Jet_btagDeepFlavB );
+           ei.HH_btag_b2_bscore = get_property( presel_bjets_btags.at(1) , Jet_btagDeepFlavB );
+           ei.HH_btag_b3_bscore = get_property( presel_bjets_btags.at(2) , Jet_btagDeepFlavB );
+           ei.HH_btag_b4_bscore = get_property( presel_bjets_btags.at(3) , Jet_btagDeepFlavB );           
+           ei.HH_btag_b1_bres = Get_bRegRes(nat, ei, presel_bjets_btags.at(0) ); 
+           ei.HH_btag_b2_bres = Get_bRegRes(nat, ei, presel_bjets_btags.at(1) );
+           ei.HH_btag_b3_bres = Get_bRegRes(nat, ei, presel_bjets_btags.at(2) );
+           ei.HH_btag_b4_bres = Get_bRegRes(nat, ei, presel_bjets_btags.at(3) );
+           if( get_property( ei.HH_btag_b4.get() , Jet_btagDeepFlavB ) > any_cast<float>(parameterList_->at("bMinDeepJet") ) ){ei.nBtag=4;}
+           else{ei.nBtag=3;}
+       }
+       else
+       {
+           ei.btaggerID=0;
+           stable_sort(presel_bjets_btags.begin(), presel_bjets_btags.end(), [](const Jet & a, const Jet & b) -> bool
+           {return ( get_property(a, Jet_btagDeepB) > get_property(b, Jet_btagDeepB) );});
+           ei.HH_btag_b1 = presel_bjets_btags.at(0);
+           ei.HH_btag_b2 = presel_bjets_btags.at(1);
+           ei.HH_btag_b3 = presel_bjets_btags.at(2);
+           ei.HH_btag_b4 = presel_bjets_btags.at(3);
+           ei.HH_btag_b1_bscore = get_property( presel_bjets_btags.at(0) , Jet_btagDeepB );
+           ei.HH_btag_b2_bscore = get_property( presel_bjets_btags.at(1) , Jet_btagDeepB );
+           ei.HH_btag_b3_bscore = get_property( presel_bjets_btags.at(2) , Jet_btagDeepB );
+           ei.HH_btag_b4_bscore = get_property( presel_bjets_btags.at(3) , Jet_btagDeepB );           
+           ei.HH_btag_b1_bres = Get_bRegRes(nat, ei, presel_bjets_btags.at(0) );
+           ei.HH_btag_b2_bres = Get_bRegRes(nat, ei, presel_bjets_btags.at(1) );
+           ei.HH_btag_b3_bres = Get_bRegRes(nat, ei, presel_bjets_btags.at(2) );
+           ei.HH_btag_b4_bres = Get_bRegRes(nat, ei, presel_bjets_btags.at(3) );
+           if( get_property( ei.HH_btag_b4.get() , Jet_btagDeepB ) > any_cast<float>(parameterList_->at("bMinDeepCSV") ) ){ei.nBtag=4;}
+           else{ei.nBtag=3;}
+       }
+       //Mass cut variables with a random swap to be sure that the m1 and m2 are simmetric when selecting the signal region
+       bool swapped = (int(ei.H1->P4().Pt()*100.) % 2 == 1);
+       if (!swapped){ei.H1rand = ei.H1.get();ei.H2rand = ei.H2.get();}
+       else{ei.H1rand = ei.H2.get();ei.H2rand = ei.H1.get();}
+       float mHHcenter;
+       if(any_cast<string>(parameterList_->at("bbbbChoice"))=="BothClosestToDiagonal")
+            mHHcenter = (any_cast<float>(parameterList_->at("LeadingHiggsMass")) + any_cast<float>(parameterList_->at("SubleadingHiggsMass")) ) / 2;
+       else
+            mHHcenter = 120;
+       ei.HH_2DdeltaM  = pow(ei.H1rand->P4().M() - mHHcenter,2) + pow(ei.H2rand->P4().M() - mHHcenter,2);
+       //dR,dPhi and dEta between pair b's
+       ei.H1_bb_deltaR = ei.H1_b1->P4().DeltaR(ei.H1_b2->P4());
+       ei.H1_bb_deltaPhi = ei.H1_b1->P4().DeltaPhi(ei.H1_b2->P4());
+       ei.H1_bb_deltaEta = abs(ei.H1_b1->P4().Eta() - ei.H1_b2->P4().Eta() );
+       ei.H2_bb_deltaR = ei.H2_b1->P4().DeltaR(ei.H2_b2->P4());
+       ei.H2_bb_deltaPhi = ei.H2_b1->P4().DeltaPhi(ei.H2_b2->P4());
+       ei.H2_bb_deltaEta = abs(ei.H2_b1->P4().Eta() - ei.H2_b2->P4().Eta() );
+       //Special variables:deltaR between jets
+       ei.b1b2_deltaR = ei.HH_b1->P4().DeltaR(ei.HH_b2->P4());
+       ei.b1b3_deltaR = ei.HH_b1->P4().DeltaR(ei.HH_b3->P4());
+       ei.b1b4_deltaR = ei.HH_b1->P4().DeltaR(ei.HH_b4->P4());
+       ei.b2b3_deltaR = ei.HH_b2->P4().DeltaR(ei.HH_b3->P4());
+       ei.b2b4_deltaR = ei.HH_b2->P4().DeltaR(ei.HH_b4->P4());
+       ei.b3b4_deltaR = ei.HH_b3->P4().DeltaR(ei.HH_b4->P4());
+       ei.b1b2_deltaPhi = ei.HH_b1->P4().DeltaPhi(ei.HH_b2->P4());
+       ei.b1b3_deltaPhi = ei.HH_b1->P4().DeltaPhi(ei.HH_b3->P4());
+       ei.b1b4_deltaPhi = ei.HH_b1->P4().DeltaPhi(ei.HH_b4->P4());
+       ei.b2b3_deltaPhi = ei.HH_b2->P4().DeltaPhi(ei.HH_b3->P4());
+       ei.b2b4_deltaPhi = ei.HH_b2->P4().DeltaPhi(ei.HH_b4->P4());
+       ei.b3b4_deltaPhi = ei.HH_b3->P4().DeltaPhi(ei.HH_b4->P4());
+       ei.b1b2_deltaEta = abs(ei.HH_b1->P4().Eta() - ei.HH_b2->P4().Eta() );
+       ei.b1b3_deltaEta = abs(ei.HH_b1->P4().Eta() - ei.HH_b3->P4().Eta() );
+       ei.b1b4_deltaEta = abs(ei.HH_b1->P4().Eta() - ei.HH_b4->P4().Eta() );
+       ei.b2b3_deltaEta = abs(ei.HH_b2->P4().Eta() - ei.HH_b3->P4().Eta() );
+       ei.b2b4_deltaEta = abs(ei.HH_b2->P4().Eta() - ei.HH_b4->P4().Eta() );
+       ei.b3b4_deltaEta = abs(ei.HH_b3->P4().Eta() - ei.HH_b4->P4().Eta() );
+       //Special variables between Higgses
+       ei.h1h2_deltaR = ei.H1->P4().DeltaR(ei.H2->P4());
+       ei.h1h2_deltaPhi = abs(ei.H1->P4().DeltaPhi(ei.H2->P4())) ;
+       ei.h1h2_deltaEta = abs( ei.H1->P4().Eta() - ei.H2->P4().Eta());
+       //Number of jets (bMinPt,bMaxAbsEta)
+       int njec=0,njhf=0;
+       int njtot=*(nat.nJet);
+       for (uint ij = 0; ij < *(nat.nJet); ++ij)
+       {
+        if ( get_property(Jet(ij, &nat), Jet_pt) >= any_cast<float>(parameterList_->at("bMinPt")) && abs(get_property(Jet(ij, &nat), Jet_eta)) <= any_cast<float>(parameterList_->at("bMaxAbsEta")) ) njec++;
+        if ( get_property(Jet(ij, &nat), Jet_pt) >= any_cast<float>(parameterList_->at("jMinPt")) && abs(get_property(Jet(ij, &nat), Jet_eta)) <= any_cast<float>(parameterList_->at("jMaxAbsEta")) ) njhf++;
+       }
+       ei.nJet_ec = njec;
+       ei.nJet_hf = njhf;
+       ei.nJet    = njtot;
+       //Raw pt
+       ei.HH_b1_rawpt = get_property(presel_bjets.at(0), Jet_pt) * (1-get_property(presel_bjets.at(0), Jet_rawFactor));
+       ei.HH_b2_rawpt = get_property(presel_bjets.at(1), Jet_pt) * (1-get_property(presel_bjets.at(1), Jet_rawFactor));
+       ei.HH_b3_rawpt = get_property(presel_bjets.at(2), Jet_pt) * (1-get_property(presel_bjets.at(2), Jet_rawFactor));
+       ei.HH_b4_rawpt = get_property(presel_bjets.at(3), Jet_pt) * (1-get_property(presel_bjets.at(3), Jet_rawFactor));
+       ei.H1_b1_rawpt = get_property( ei.H1_b1.get(), Jet_pt) * (1 - get_property(ei.H1_b1.get(), Jet_rawFactor) );
+       ei.H1_b2_rawpt = get_property( ei.H1_b2.get(), Jet_pt) * (1 - get_property(ei.H1_b2.get(), Jet_rawFactor) );
+       ei.H2_b1_rawpt = get_property( ei.H2_b1.get(), Jet_pt) * (1 - get_property(ei.H2_b1.get(), Jet_rawFactor) );
+       ei.H2_b2_rawpt = get_property( ei.H2_b2.get(), Jet_pt) * (1 - get_property(ei.H2_b2.get(), Jet_rawFactor) );
+       //COSTHETA VARIABLES in CM FRAME
+       TLorentzVector Sum = ei.H1->P4() + ei.H2->P4();
+       auto boost_vctr = Sum.BoostVector();
+       TLorentzVector H1_cm,H2_cm,HH_b1_cm,HH_b2_cm,HH_b3_cm,HH_b4_cm;
+       H1_cm = ei.H1->P4(); H1_cm.Boost(-boost_vctr);
+       H2_cm = ei.H2->P4(); H2_cm.Boost(-boost_vctr);
+       if( any_cast<bool>(parameterList_->at("BjetRegression")) ){
+           HH_b1_cm = ei.HH_b1->P4Regressed(); HH_b1_cm.Boost(-boost_vctr);
+           HH_b2_cm = ei.HH_b2->P4Regressed(); HH_b2_cm.Boost(-boost_vctr);
+           HH_b3_cm = ei.HH_b3->P4Regressed(); HH_b3_cm.Boost(-boost_vctr);
+           HH_b4_cm = ei.HH_b4->P4Regressed(); HH_b4_cm.Boost(-boost_vctr);
+       }
+       else{
+           HH_b1_cm = ei.HH_b1->P4(); HH_b1_cm.Boost(-boost_vctr);
+           HH_b2_cm = ei.HH_b2->P4(); HH_b2_cm.Boost(-boost_vctr);
+           HH_b3_cm = ei.HH_b3->P4(); HH_b3_cm.Boost(-boost_vctr);
+           HH_b4_cm = ei.HH_b4->P4(); HH_b4_cm.Boost(-boost_vctr);
+       }
+       ei.costh_H1_ggfcm    = H1_cm.CosTheta();
+       ei.costh_H2_ggfcm    = H2_cm.CosTheta();
+       ei.costh_HH_b1_ggfcm = HH_b1_cm.CosTheta();
+       ei.costh_HH_b2_ggfcm = HH_b2_cm.CosTheta();
+       ei.costh_HH_b3_ggfcm = HH_b3_cm.CosTheta();
+       ei.costh_HH_b4_ggfcm = HH_b4_cm.CosTheta();
+       //GGF-QCDKiller
+       ei.BDT3 = GetBDT3Score(ei);
+       return;
+}
+
+void OfflineProducerHelper::AddVBFCategoryVariables(NanoAODTree& nat, EventInfo& ei,std::vector<Jet> presel_jets){
+       ei.JJ_j1 = presel_jets.at(4);
+       ei.JJ_j2 = presel_jets.at(5);
+       ei.JJ = CompositeCandidate(ei.JJ_j1.get(), ei.JJ_j2.get());
+       //Special variables:deltaR between jets
+       ei.b1j1_deltaR = ei.HH_b1->P4().DeltaR(ei.JJ_j1->P4());
+       ei.b1j2_deltaR = ei.HH_b1->P4().DeltaR(ei.JJ_j2->P4());
+       ei.b2j1_deltaR = ei.HH_b2->P4().DeltaR(ei.JJ_j1->P4());
+       ei.b2j2_deltaR = ei.HH_b2->P4().DeltaR(ei.JJ_j2->P4());
+       ei.b3j1_deltaR = ei.HH_b3->P4().DeltaR(ei.JJ_j1->P4());
+       ei.b3j2_deltaR = ei.HH_b3->P4().DeltaR(ei.JJ_j2->P4());
+       ei.b4j1_deltaR = ei.HH_b4->P4().DeltaR(ei.JJ_j1->P4());
+       ei.b4j2_deltaR = ei.HH_b4->P4().DeltaR(ei.JJ_j2->P4());
+       ei.j1j2_deltaR = ei.JJ_j1->P4().DeltaR(ei.JJ_j2->P4());
+       //Special variables:deltaPhi between jets
+       ei.b1j1_deltaPhi = ei.HH_b1->P4().DeltaPhi(ei.JJ_j1->P4());
+       ei.b1j2_deltaPhi = ei.HH_b1->P4().DeltaPhi(ei.JJ_j2->P4());
+       ei.b2j1_deltaPhi = ei.HH_b2->P4().DeltaPhi(ei.JJ_j1->P4());
+       ei.b2j2_deltaPhi = ei.HH_b2->P4().DeltaPhi(ei.JJ_j2->P4());
+       ei.b3j1_deltaPhi = ei.HH_b3->P4().DeltaPhi(ei.JJ_j1->P4());
+       ei.b3j2_deltaPhi = ei.HH_b3->P4().DeltaPhi(ei.JJ_j2->P4());
+       ei.b4j1_deltaPhi = ei.HH_b4->P4().DeltaPhi(ei.JJ_j1->P4());
+       ei.b4j2_deltaPhi = ei.HH_b4->P4().DeltaPhi(ei.JJ_j2->P4());
+       ei.j1j2_deltaPhi = ei.JJ_j1->P4().DeltaPhi(ei.JJ_j2->P4());
+       //Special variables:deltaEta between jets
+       ei.b1j1_deltaEta = abs(ei.HH_b1->P4().Eta() - ei.JJ_j1->P4().Eta() );
+       ei.b1j2_deltaEta = abs(ei.HH_b1->P4().Eta() - ei.JJ_j2->P4().Eta() );
+       ei.b2j1_deltaEta = abs(ei.HH_b2->P4().Eta() - ei.JJ_j1->P4().Eta() );
+       ei.b2j2_deltaEta = abs(ei.HH_b2->P4().Eta() - ei.JJ_j2->P4().Eta() );
+       ei.b3j1_deltaEta = abs(ei.HH_b3->P4().Eta() - ei.JJ_j1->P4().Eta() );
+       ei.b3j2_deltaEta = abs(ei.HH_b3->P4().Eta() - ei.JJ_j2->P4().Eta() );
+       ei.b4j1_deltaEta = abs(ei.HH_b4->P4().Eta() - ei.JJ_j1->P4().Eta() );
+       ei.b4j2_deltaEta = abs(ei.HH_b4->P4().Eta() - ei.JJ_j2->P4().Eta() );
+       ei.j1j2_deltaEta = abs(ei.JJ_j1->P4().Eta() - ei.JJ_j2->P4().Eta() );
+       ei.VBFSelectedDeltaEta = abs(ei.JJ_j1->P4().Eta() - ei.JJ_j2->P4().Eta()) ;
+       ei.VBFSelectedEtaSign = (ei.JJ_j1->P4().Eta() * ei.JJ_j2->P4().Eta())/ abs( ei.JJ_j1->P4().Eta() * ei.JJ_j2->P4().Eta()  ) ;
+       //Special variables: deltaR between h1,h2,j1,j2,HH,JJ
+       ei.h1j1_deltaR = ei.H1->P4().DeltaR(ei.JJ_j1->P4());
+       ei.h1j2_deltaR = ei.H1->P4().DeltaR(ei.JJ_j2->P4());
+       ei.h2j1_deltaR = ei.H2->P4().DeltaR(ei.JJ_j1->P4());
+       ei.h2j2_deltaR = ei.H2->P4().DeltaR(ei.JJ_j2->P4());
+       ei.h1jj_deltaR = ei.H1->P4().DeltaR(ei.JJ->P4());
+       ei.h2jj_deltaR = ei.H2->P4().DeltaR(ei.JJ->P4());
+       ei.hhj1_deltaR = ei.HH->P4().DeltaR(ei.JJ_j1->P4());
+       ei.hhj2_deltaR = ei.HH->P4().DeltaR(ei.JJ_j2->P4());
+       ei.hhjj_deltaR = ei.HH->P4().DeltaR(ei.JJ->P4());
+       //Special variables: deltaPhi between h1,h2,j1,j2,HH,JJ
+       ei.h1j1_deltaPhi = ei.H1->P4().DeltaPhi(ei.JJ_j1->P4());
+       ei.h1j2_deltaPhi = ei.H1->P4().DeltaPhi(ei.JJ_j2->P4());
+       ei.h2j1_deltaPhi = ei.H2->P4().DeltaPhi(ei.JJ_j1->P4());
+       ei.h2j2_deltaPhi = ei.H2->P4().DeltaPhi(ei.JJ_j2->P4());
+       ei.h1jj_deltaPhi = ei.H1->P4().DeltaPhi(ei.JJ->P4());
+       ei.h2jj_deltaPhi = ei.H2->P4().DeltaPhi(ei.JJ->P4());
+       ei.hhj1_deltaPhi = ei.HH->P4().DeltaPhi(ei.JJ_j1->P4());
+       ei.hhj2_deltaPhi = ei.HH->P4().DeltaPhi(ei.JJ_j2->P4());
+       ei.hhjj_deltaPhi = ei.HH->P4().DeltaPhi(ei.JJ->P4());
+       //Special variables: deltaEta between h1,h2,j1,j2,HH,JJ
+       ei.h1j1_deltaEta = abs( ei.H1->P4().Eta() - ei.JJ_j1->P4().Eta());
+       ei.h1j2_deltaEta = abs( ei.H1->P4().Eta() - ei.JJ_j2->P4().Eta());
+       ei.h2j1_deltaEta = abs( ei.H2->P4().Eta() - ei.JJ_j1->P4().Eta());
+       ei.h2j2_deltaEta = abs( ei.H2->P4().Eta() - ei.JJ_j2->P4().Eta());
+       ei.h1jj_deltaEta = abs( ei.H1->P4().Eta() - ei.JJ->P4().Eta());
+       ei.h2jj_deltaEta = abs( ei.H2->P4().Eta() - ei.JJ->P4().Eta());
+       ei.hhj1_deltaEta = abs( ei.HH->P4().Eta() - ei.JJ_j1->P4().Eta());
+       ei.hhj2_deltaEta = abs( ei.HH->P4().Eta() - ei.JJ_j2->P4().Eta());
+       ei.hhjj_deltaEta = abs( ei.HH->P4().Eta() - ei.JJ->P4().Eta());
+       //VBF-jet location categories
+       if ( abs( ei.JJ_j1->P4().Eta()) < 1.4){ei.JJ_j1_location=1;}
+       else if ( abs( ei.JJ_j1->P4().Eta()) >= 1.4 && abs( ei.JJ_j1->P4().Eta()) < 2.4){ei.JJ_j1_location=2;}
+       else{ei.JJ_j1_location=3;}
+       if ( abs( ei.JJ_j2->P4().Eta()) < 1.4){ei.JJ_j2_location=1;}
+       else if ( abs( ei.JJ_j2->P4().Eta()) >= 1.4 && abs( ei.JJ_j2->P4().Eta()) < 2.4){ei.JJ_j2_location=2;}
+       else{ei.JJ_j2_location=3;}
+       //VBF Event location categories
+       if(     ei.JJ_j1_location==1 && ei.JJ_j2_location==1){ei.VBFEventLocation=1;}
+       else if(ei.JJ_j1_location==2 && ei.JJ_j2_location==2){ei.VBFEventLocation=2;}
+       else if(ei.JJ_j1_location==3 && ei.JJ_j2_location==3){ei.VBFEventLocation=3;}
+       else if(ei.JJ_j1_location==1 && ei.JJ_j2_location==2){ei.VBFEventLocation=4;}
+       else if(ei.JJ_j1_location==2 && ei.JJ_j2_location==1){ei.VBFEventLocation=4;}
+       else if(ei.JJ_j1_location==1 && ei.JJ_j2_location==3){ei.VBFEventLocation=5;}
+       else if(ei.JJ_j1_location==3 && ei.JJ_j2_location==1){ei.VBFEventLocation=5;}
+       else {ei.VBFEventLocation=6;}
+       //Extra and special variables
+       ei.j1etaj2eta = ei.JJ_j1->P4().Eta()*ei.JJ_j2->P4().Eta();
+       ei.maxj1etaj2eta = max( abs(ei.JJ_j1->P4().Eta() ), abs(ei.JJ_j2->P4().Eta() ) );
+       ei.JJ_j1_rawpt = get_property(ei.JJ_j1.get(), Jet_pt) * (1-get_property(ei.JJ_j1.get(), Jet_rawFactor));
+       ei.JJ_j2_rawpt = get_property(ei.JJ_j2.get(), Jet_pt) * (1-get_property(ei.JJ_j2.get(), Jet_rawFactor));
+       //COSTHETA VARIABLES in CM FRAME
+       TLorentzVector Sum = ei.H1->P4() + ei.H2->P4() + ei.JJ_j1->P4() + ei.JJ_j2->P4();
+       auto boost_vctr = Sum.BoostVector();
+       TLorentzVector H1_cm = ei.H1->P4(); H1_cm.Boost(-boost_vctr);
+       TLorentzVector H2_cm = ei.H2->P4(); H2_cm.Boost(-boost_vctr);
+       TLorentzVector HH_cm = ei.HH->P4(); HH_cm.Boost(-boost_vctr);
+       TLorentzVector JJ_cm = ei.JJ->P4(); JJ_cm.Boost(-boost_vctr);
+       TLorentzVector HH_b1_cm,HH_b2_cm,HH_b3_cm,HH_b4_cm;
+       if( any_cast<bool>(parameterList_->at("BjetRegression")) ){
+           HH_b1_cm = ei.HH_b1->P4Regressed(); HH_b1_cm.Boost(-boost_vctr);
+           HH_b2_cm = ei.HH_b2->P4Regressed(); HH_b2_cm.Boost(-boost_vctr);
+           HH_b3_cm = ei.HH_b3->P4Regressed(); HH_b3_cm.Boost(-boost_vctr);
+           HH_b4_cm = ei.HH_b4->P4Regressed(); HH_b4_cm.Boost(-boost_vctr);
+       }
+       else{
+           HH_b1_cm = ei.HH_b1->P4(); HH_b1_cm.Boost(-boost_vctr);
+           HH_b2_cm = ei.HH_b2->P4(); HH_b2_cm.Boost(-boost_vctr);
+           HH_b3_cm = ei.HH_b3->P4(); HH_b3_cm.Boost(-boost_vctr);
+           HH_b4_cm = ei.HH_b4->P4(); HH_b4_cm.Boost(-boost_vctr);
+       }       
+       TLorentzVector JJ_j1_cm = ei.JJ_j1->P4(); JJ_j1_cm.Boost(-boost_vctr);
+       TLorentzVector JJ_j2_cm = ei.JJ_j2->P4(); JJ_j2_cm.Boost(-boost_vctr);
+       ei.costh_H1_vbfcm    = H1_cm.CosTheta();
+       ei.costh_H2_vbfcm    = H2_cm.CosTheta();
+       ei.costh_HH_vbfcm    = HH_cm.CosTheta();
+       ei.costh_JJ_vbfcm    = JJ_cm.CosTheta();
+       ei.costh_HH_b1_vbfcm = HH_b1_cm.CosTheta();
+       ei.costh_HH_b2_vbfcm = HH_b2_cm.CosTheta();
+       ei.costh_HH_b3_vbfcm = HH_b3_cm.CosTheta();
+       ei.costh_HH_b4_vbfcm = HH_b4_cm.CosTheta();
+       ei.costh_JJ_j1_vbfcm = JJ_j1_cm.CosTheta();
+       ei.costh_JJ_j2_vbfcm = JJ_j2_cm.CosTheta();  
+       // //The BDT always at the end, so the variables are defined for the calculation
+       ei.BDT1 = GetBDT1Score(ei);
+       //VBF-QCDKiller(We changed our mind, maybe for Run3 :-/ )
+       ei.BDT2 = 1;// GetBDT2Score(ei);
+
+       return;
+}
+
+float OfflineProducerHelper::Get_bRegRes(NanoAODTree& nat, EventInfo& ei, Jet jet){
+    float corr = get_property(jet,Jet_bRegCorr);
+    float res  = get_property(jet,Jet_bRegRes);
+    float pt   = get_property(jet,Jet_pt);
+    //The condition below needs to be checked in every NANOAOD release. It is not implemmented in NANOAODv5.
+    if (  !( (corr>0.1) && (corr<2) && (res>0.005) && (res<0.9) ) ) {
+        res = 0.2;
+    }
+    else if( pt < 20 ){
+        res = 0.2;
+    }
+    else
+    {
+        //do nothing
+    }    
+    
+    return res;
+}
+
+void OfflineProducerHelper::init_BDT_evals()
+{
+   // string strategy = any_cast<string>(parameterList_->at("bbbbChoice"));
+   // string weights_BDT1 = "weights/TMVAClassification_BDT_GGFKiller_case1.weights.xml";    // FIXME: OK as default?
+   // string weights_BDT2 = "weights/TMVAClassification_BDT_VBFQCDKiller_case1.weights.xml"; // FIXME: OK as default?
+   // string weights_BDT3 = "weights/TMVAClassification_BDT_GGFQCDKiller_case1.weights.xml"; // FIXME: OK as default?
+   
+   // // GGF-HHKiller
+   // if(strategy=="BothClosestToMh")
+   //     weights_BDT1 = "weights/TMVAClassification_BDT_GGFKiller_case1.weights.xml";
+   // else if(strategy=="BothClosestToDiagonal")
+   //     weights_BDT1 = "weights/TMVAClassification_BDT_GGFKiller_case2.weights.xml";
+   // else if(strategy=="MinMassDifference")
+   //     string weights_BDT1 = "weights/TMVAClassification_BDT_GGFKiller_case2.weights.xml";
+   // // else
+   //      // some fallback?
+
+   // //VBF-QCDKiller
+   // if(strategy=="BothClosestToMh")
+   //     weights_BDT2 = "weights/TMVAClassification_BDT_VBFQCDKiller_case1.weights.xml";
+   // else if(strategy=="BothClosestToDiagonal")
+   //     weights_BDT2 = "weights/TMVAClassification_BDT_VBFQCDKiller_case2.weights.xml";
+   // else if(strategy=="MinMassDifference")
+   //     weights_BDT2 = "weights/TMVAClassification_BDT_VBFQCDKiller_case2.weights.xml";
+   // // else
+   //      // some fallback?
+
+   // //GGF-QCDKiller
+   // if(strategy=="BothClosestToMh")
+   //     weights_BDT3 = "weights/TMVAClassification_BDT_GGFQCDKiller_case1.weights.xml";
+   // else if(strategy=="BothClosestToDiagonal")
+   //     weights_BDT3 = "weights/TMVAClassification_BDT_GGFQCDKiller_case2.weights.xml";
+   // else if(strategy=="MinMassDifference")
+   //     weights_BDT3 = "weights/TMVAClassification_BDT_GGFQCDKiller_case2.weights.xml";
+   // // else
+   //      // some fallback?
+
+   string strategy = any_cast<string>(parameterList_->at("bbbbChoice"));
+   string dataset  = any_cast<string>(parameterList_->at("datasetname"));
+
+   string method = "BDT method";
+
+   string weights_BDT1 = "weights/TMVAClassification2016BSM_BDT1_breg.weights.xml"; // FIXME: OK as default?
+   string weights_BDT2 = "weights/TMVAClassification_BDT2_placeholder.weights.xml"; // FIXME: OK as default?
+   string weights_BDT3 = "weights/TMVAClassification2016BSM_BDT3_breg.weights.xml"; // FIXME: OK as default?
+   
+    // GGF-HHKiller weights
+    if(strategy=="BothClosestToMh"){
+        //Define weights here if needed
+    }
+    else if(strategy=="BothClosestToDiagonal"){
+        if (dataset=="2016")
+        {
+           weights_BDT1 = "weights/TMVAClassification2016BSM_BDT1_breg.weights.xml"; 
+           weights_BDT3 = "weights/TMVAClassification2016BSM_BDT3_breg.weights.xml";
+        }
+        else if (dataset=="2017")
+        {
+           weights_BDT1 = "weights/TMVAClassification2017BSM_BDT1_breg.weights.xml";
+           weights_BDT3 = "weights/TMVAClassification2017BSM_BDT3_breg.weights.xml";
+        }
+        else{
+           weights_BDT1 = "weights/TMVAClassification2018BSM_BDT1_breg.weights.xml";
+           weights_BDT3 = "weights/TMVAClassification2018BSM_BDT3_breg.weights.xml";
+        }
+    }
+    else if(strategy=="MinMassDifference"){
+        //Define weights here if needed
+    }
+    // else
+        // some fallback?
+
+    //std::cout << "[INFO] ... initialising BDT evals" << std::endl;
+    //std::cout << "   - BDT 1 . method : " << method << ", weight_file : " << weights_BDT1 << std::endl;
+    //std::cout << "   - BDT 2 . method : " << method << ", weight_file : " << weights_BDT2 << std::endl;
+    //std::cout << "   - BDT 3 . method : " << method << ", weight_file : " << weights_BDT3 << std::endl;
+
+    eval_BDT1_->init(method, weights_BDT1);
+    eval_BDT2_->init(method, weights_BDT2);
+    eval_BDT3_->init(method, weights_BDT3);
+}
+
+
+void OfflineProducerHelper::init_HH_reweighter(OutputTree& ot, std::string coeffFile, std::string hhreweighterInputMap, std::string histoName)
+{
+    // initialise the reweighter
+    //std::cout << "[INFO] ... initialising HH reweighter" << std::endl;
+    //std::cout << "   - coefficient file       : " << coeffFile            << std::endl;
+    //std::cout << "   - input sample map file  : " << hhreweighterInputMap << std::endl;
+    //std::cout << "   - input sample map hisot : " << histoName            << std::endl;
+
+    TFile* fIn = TFile::Open(hhreweighterInputMap.c_str());
+    TH2D*  hIn = (TH2D*) fIn->Get(histoName.c_str());
+    hhreweighter_ = std::unique_ptr<HHReweight5D> (new HHReweight5D (coeffFile, hIn));
+    fIn->Close();
+
+    // create the needed branches for the reweigh
+    ot.declareUserFloatBranch("HH_reweight", 1.0);
+}
+
+// float OfflineProducerHelper::GetBDT1Score(EventInfo& ei, string weights){
+float OfflineProducerHelper::GetBDT1Score(EventInfo& ei){
+
+       // TMVA::Reader *reader0 = new TMVA::Reader( "!Color:Silent" );
+       // float abs_H1_eta_bdt=abs(ei.H1->P4().Eta());
+       // float abs_H2_eta_bdt=abs(ei.H2->P4().Eta());
+       // float H1_pt_bdt=ei.H1->P4().Pt();
+       // float H2_pt_bdt=ei.H2->P4().Pt();
+       // float JJ_j1_pt_bdt=ei.JJ_j1->P4().Pt();
+       // float JJ_j2_pt_bdt=ei.JJ_j2->P4().Pt();
+       // float abs_JJ_eta_bdt = abs(ei.JJ->P4().Eta());
+       // float h1h2_deltaEta_bdt = ei.h1h2_deltaEta.get();
+       // float h1j1_deltaR_bdt = ei.h1j1_deltaR.get();
+       // float h1j2_deltaR_bdt = ei.h1j2_deltaR.get();
+       // float h2j1_deltaR_bdt = ei.h2j1_deltaR.get();
+       // float h2j2_deltaR_bdt = ei.h2j2_deltaR.get();
+       // float abs_j1etaj2eta_bdt = abs( ei.j1etaj2eta.get() );
+       // float abs_costh_HH_b1_cm_bdt = abs(ei.costh_HH_b1_cm.get());
+       // float abs_costh_HH_b2_cm_bdt = abs(ei.costh_HH_b2_cm.get());
+       // reader0->AddVariable("abs_H1_eta:=abs(H1_eta)", &(abs_H1_eta_bdt) );
+       // reader0->AddVariable("abs_H2_eta:=abs(H2_eta)", &(abs_H2_eta_bdt) );
+       // reader0->AddVariable("H1_pt", &(H1_pt_bdt) );
+       // reader0->AddVariable("H2_pt", &(H2_pt_bdt) );
+       // reader0->AddVariable("JJ_j1_pt", &(JJ_j1_pt_bdt) );
+       // reader0->AddVariable("JJ_j2_pt", &(JJ_j2_pt_bdt) );
+       // reader0->AddVariable("abs_JJ_eta:=abs(JJ_eta)", &(abs_JJ_eta_bdt));
+       // reader0->AddVariable("h1h2_deltaEta", &(h1h2_deltaEta_bdt));
+       // reader0->AddVariable("h1j1_deltaR", &(h1j1_deltaR_bdt));
+       // reader0->AddVariable("h1j2_deltaR", &(h1j2_deltaR_bdt));
+       // reader0->AddVariable("h2j1_deltaR", &(h2j1_deltaR_bdt));
+       // reader0->AddVariable("h2j2_deltaR", &(h2j2_deltaR_bdt));
+       // reader0->AddVariable("abs_j1etaj2eta:=abs(j1etaj2eta)", &(abs_j1etaj2eta_bdt));
+       // reader0->AddVariable("abs_costh_HH_b1_cm:=abs(costh_HH_b1_cm)", &(abs_costh_HH_b1_cm_bdt));
+       // reader0->AddVariable("abs_costh_HH_b2_cm:=abs(costh_HH_b2_cm)", &(abs_costh_HH_b2_cm_bdt));
+       // TString method =  "BDT method";
+       // reader0->BookMVA( "BDT method", Form("%s",weights.c_str()) );
+       // float BDT = reader0->EvaluateMVA(method);
+       // delete reader0;
+       // return BDT;
+
+        float H1_pt_bdt                       = ei.H1->P4().Pt();
+        float H2_pt_bdt                       = ei.H2->P4().Pt();
+        float JJ_j1_pt_bdt                    = ei.JJ_j1->P4().Pt();
+        float JJ_j2_pt_bdt                    = ei.JJ_j2->P4().Pt();
+        float abs_JJ_eta_bdt                  = abs(ei.JJ->P4().Eta());
+        float h1h2_deltaR_bdt                 = ei.h1h2_deltaR.get();
+        float h1j1_deltaR_bdt                 = ei.h1j1_deltaR.get();
+        float h1j2_deltaR_bdt                 = ei.h1j2_deltaR.get();
+        float h2j1_deltaR_bdt                 = ei.h2j1_deltaR.get();
+        float h2j2_deltaR_bdt                 = ei.h2j2_deltaR.get();
+        float abs_costh_JJ_j1_vbfcm_bdt          = abs(ei.costh_JJ_j1_vbfcm.get());
+        float abs_costh_JJ_j2_vbfcm_bdt          = abs(ei.costh_JJ_j2_vbfcm.get());
+        float JJ_m_bdt                           = ei.JJ->P4().M();
+
+        eval_BDT1_ -> floatVarsMap["H1_pt"]                                          = H1_pt_bdt;
+        eval_BDT1_ -> floatVarsMap["H2_pt"]                                          = H2_pt_bdt;
+        eval_BDT1_ -> floatVarsMap["JJ_j1_pt"]                                       = JJ_j1_pt_bdt;
+        eval_BDT1_ -> floatVarsMap["JJ_j2_pt"]                                       = JJ_j2_pt_bdt;
+        eval_BDT1_ -> floatVarsMap["abs_JJ_eta:=abs(JJ_eta)"]                        = abs_JJ_eta_bdt;
+        eval_BDT1_ -> floatVarsMap["h1h2_deltaR"]                                    = h1h2_deltaR_bdt;
+        eval_BDT1_ -> floatVarsMap["h1j1_deltaR"]                                    = h1j1_deltaR_bdt;
+        eval_BDT1_ -> floatVarsMap["h1j2_deltaR"]                                    = h1j2_deltaR_bdt;
+        eval_BDT1_ -> floatVarsMap["h2j1_deltaR"]                                    = h2j1_deltaR_bdt;
+        eval_BDT1_ -> floatVarsMap["h2j2_deltaR"]                                    = h2j2_deltaR_bdt;
+        eval_BDT1_ -> floatVarsMap["abs_costh_JJ_j1_vbfcm:=abs(costh_JJ_j1_vbfcm)"]  = abs_costh_JJ_j1_vbfcm_bdt;
+        eval_BDT1_ -> floatVarsMap["abs_costh_JJ_j2_vbfcm:=abs(costh_JJ_j2_vbfcm)"]  = abs_costh_JJ_j2_vbfcm_bdt;
+        eval_BDT1_ -> floatVarsMap["JJ_m"]                                           = JJ_m_bdt;
+
+        return eval_BDT1_ -> eval();
+}
+
+float OfflineProducerHelper::GetBDT2Score(EventInfo& ei){
+       // TMVA::Reader *reader0 = new TMVA::Reader( "!Color:Silent" );
+       // float HH_b3_pt_bdt=ei.HH_b3->P4().Pt();
+       // float HH_b4_pt_bdt=ei.HH_b4->P4().Pt();
+       // float JJ_j1_qgl_bdt = get_property(ei.JJ_j1.get(), Jet_qgl);
+       // float JJ_j2_qgl_bdt = get_property(ei.JJ_j2.get(), Jet_qgl);
+       // float H1_m_bdt = ei.H1->P4().M();
+       // float H2_m_bdt = ei.H2->P4().M();
+       // float H1_bb_deltaR_bdt = ei.H1_bb_deltaR.get();
+       // float H2_bb_deltaR_bdt = ei.H2_bb_deltaR.get();
+       // float JJ_m_bdt = ei.JJ->P4().M();
+       // float j1j2_deltaEta_bdt = ei.j1j2_deltaEta.get();
+       // float abs_costh_JJ_j1_cm_bdt = abs(ei.costh_JJ_j1_cm.get());
+       // reader0->AddVariable("HH_b3_pt", &(HH_b3_pt_bdt));
+       // reader0->AddVariable("HH_b4_pt", &(HH_b4_pt_bdt));
+       // reader0->AddVariable("JJ_j1_qgl", &(JJ_j1_qgl_bdt));
+       // reader0->AddVariable("JJ_j2_qgl", &(JJ_j2_qgl_bdt));
+       // reader0->AddVariable("H1_m",&(H1_m_bdt));
+       // reader0->AddVariable("H2_m",&(H2_m_bdt));
+       // reader0->AddVariable("H1_bb_deltaR",&(H1_bb_deltaR_bdt));
+       // reader0->AddVariable("H2_bb_deltaR",&(H2_bb_deltaR_bdt));
+       // reader0->AddVariable("JJ_m",&(JJ_m_bdt));
+       // reader0->AddVariable("j1j2_deltaEta",&(j1j2_deltaEta_bdt));
+       // reader0->AddVariable("abs_costh_JJ_j1_cm:=abs(costh_JJ_j1_cm)",&(abs_costh_JJ_j1_cm_bdt));
+       // TString method =  "BDT method";
+       // reader0->BookMVA( "BDT method", Form("%s",weights.c_str()) );
+       // float BDT = reader0->EvaluateMVA(method);
+       // delete reader0;
+       // return BDT;
+    
+       float HH_b3_pt_bdt               = ei.HH_b3->P4().Pt();
+       float HH_b4_pt_bdt               = ei.HH_b4->P4().Pt();
+       float JJ_j1_qgl_bdt              = get_property(ei.JJ_j1.get(), Jet_qgl);
+       float JJ_j2_qgl_bdt              = get_property(ei.JJ_j2.get(), Jet_qgl);
+       float H1_m_bdt                   = ei.H1->P4().M();
+       float H2_m_bdt                   = ei.H2->P4().M();
+       float H1_bb_deltaR_bdt           = ei.H1_bb_deltaR.get();
+       float H2_bb_deltaR_bdt           = ei.H2_bb_deltaR.get();
+       float JJ_m_bdt                   = ei.JJ->P4().M();
+       float j1j2_deltaEta_bdt          = ei.j1j2_deltaEta.get();
+       float abs_costh_JJ_j1_cm_bdt     = abs(ei.costh_JJ_j1_vbfcm.get());
+
+        eval_BDT2_ -> floatVarsMap["HH_b3_pt"]                                = HH_b3_pt_bdt;
+        eval_BDT2_ -> floatVarsMap["HH_b4_pt"]                                = HH_b4_pt_bdt;
+        eval_BDT2_ -> floatVarsMap["JJ_j1_qgl"]                               = JJ_j1_qgl_bdt;
+        eval_BDT2_ -> floatVarsMap["JJ_j2_qgl"]                               = JJ_j2_qgl_bdt;
+        eval_BDT2_ -> floatVarsMap["H1_m"]                                    = H1_m_bdt;
+        eval_BDT2_ -> floatVarsMap["H2_m"]                                    = H2_m_bdt;
+        eval_BDT2_ -> floatVarsMap["H1_bb_deltaR"]                            = H1_bb_deltaR_bdt;
+        eval_BDT2_ -> floatVarsMap["H2_bb_deltaR"]                            = H2_bb_deltaR_bdt;
+        eval_BDT2_ -> floatVarsMap["JJ_m"]                                    = JJ_m_bdt;
+        eval_BDT2_ -> floatVarsMap["j1j2_deltaEta"]                           = j1j2_deltaEta_bdt;
+        eval_BDT2_ -> floatVarsMap["abs_costh_JJ_j1_cm:=abs(costh_JJ_j1_cm)"] = abs_costh_JJ_j1_cm_bdt;
+
+        return eval_BDT2_ -> eval();
+}
+
+float OfflineProducerHelper::GetBDT3Score(EventInfo& ei){
+       // TMVA::Reader *reader0 = new TMVA::Reader( "!Color:Silent" );
+       // float HH_b3_pt_bdt=ei.HH_b3->P4().Pt();
+       // float HH_b4_pt_bdt=ei.HH_b4->P4().Pt();
+       // float abs_HH_b3_eta_bdt=abs(ei.HH_b3->P4().Eta());
+       // float abs_HH_b4_eta_bdt=abs(ei.HH_b4->P4().Eta());
+       // float H1_m_bdt = ei.H1->P4().M();
+       // float H2_m_bdt = ei.H2->P4().M();
+       // float H1_bb_deltaR_bdt = ei.H1_bb_deltaR.get();
+       // float H2_bb_deltaR_bdt = ei.H2_bb_deltaR.get();
+       // float H1_bb_deltaPhi_bdt = ei.H1_bb_deltaPhi.get();
+       // float H2_bb_deltaPhi_bdt = ei.H2_bb_deltaPhi.get();
+       // float abs_costh_HH_b1_cm_bdt = abs(ei.costh_HH_b1_cm.get());
+       // float abs_costh_HH_b2_cm_bdt = abs(ei.costh_HH_b2_cm.get());
+       // reader0->AddVariable("HH_b3_pt", &(HH_b3_pt_bdt));
+       // reader0->AddVariable("HH_b4_pt", &(HH_b4_pt_bdt));
+       // reader0->AddVariable("abs_HH_b3_eta:=abs(HH_b3_eta)", &(abs_HH_b3_eta_bdt));
+       // reader0->AddVariable("abs_HH_b4_eta:=abs(HH_b4_eta)", &(abs_HH_b4_eta_bdt));
+       // reader0->AddVariable("H1_m",&(H1_m_bdt));
+       // reader0->AddVariable("H2_m",&(H2_m_bdt));
+       // reader0->AddVariable("H1_bb_deltaR",&(H1_bb_deltaR_bdt));
+       // reader0->AddVariable("H2_bb_deltaR",&(H2_bb_deltaR_bdt));
+       // reader0->AddVariable("H1_bb_deltaPhi",&(H1_bb_deltaPhi_bdt));
+       // reader0->AddVariable("H2_bb_deltaPhi",&(H2_bb_deltaPhi_bdt));
+       // reader0->AddVariable("abs_costh_HH_b1_cm:=abs(costh_HH_b1_cm)",&(abs_costh_HH_b1_cm_bdt));
+       // reader0->AddVariable("abs_costh_HH_b2_cm:=abs(costh_HH_b2_cm)",&(abs_costh_HH_b2_cm_bdt));
+       // TString method =  "BDT method";
+       // reader0->BookMVA( "BDT method", Form("%s",weights.c_str()) );
+       // float BDT = reader0->EvaluateMVA(method);
+       // delete reader0;
+       // return BDT;
+
+        string dataset  = any_cast<string>(parameterList_->at("datasetname"));
+
+        float H1_pt_bdt              =  ei.H1->P4().Pt();
+        float H2_pt_bdt              =  ei.H2->P4().Pt();
+        float H1_m_bdt               =  ei.H1->P4().M();
+        float H2_m_bdt               =  ei.H2->P4().M();
+        float HH_m_bdt               =  ei.HH->P4().M();        
+        float h1h2_deltaEta_bdt      =  ei.h1h2_deltaEta.get();
+        float H1_bb_deltaR_bdt       =  ei.H1_bb_deltaR.get();
+        float H2_bb_deltaR_bdt       =  ei.H2_bb_deltaR.get();        
+        float abs_costh_HH_b1_cm_bdt =  abs(ei.costh_HH_b1_ggfcm.get());
+        float HH_btag_b3_bscore_bdt  =  ei.HH_btag_b3_bscore.get();
+        float HH_btag_b3_bres_bdt    =  ei.HH_btag_b3_bres.get();
+        eval_BDT3_ -> floatVarsMap["H1_pt"]                                       = H1_pt_bdt;
+        eval_BDT3_ -> floatVarsMap["H2_pt"]                                       = H2_pt_bdt;
+        eval_BDT3_ -> floatVarsMap["H1_m"]                                        = H1_m_bdt;
+        eval_BDT3_ -> floatVarsMap["H2_m"]                                        = H2_m_bdt;
+        eval_BDT3_ -> floatVarsMap["HH_m"]                                        = HH_m_bdt;
+        eval_BDT3_ -> floatVarsMap["h1h2_deltaEta"]                               = h1h2_deltaEta_bdt;
+        eval_BDT3_ -> floatVarsMap["H1_bb_deltaR"]                                = H1_bb_deltaR_bdt;
+        eval_BDT3_ -> floatVarsMap["H2_bb_deltaR"]                                = H2_bb_deltaR_bdt;
+        eval_BDT3_ -> floatVarsMap["abs_costh_HH_b1_cm:=abs(costh_HH_b1_ggfcm)"]  = abs_costh_HH_b1_cm_bdt; 
+        eval_BDT3_ -> floatVarsMap["HH_btag_b3_bscore"]                           = HH_btag_b3_bscore_bdt;
+        eval_BDT3_ -> floatVarsMap["HH_btag_b3_bres"]                             = HH_btag_b3_bres_bdt;
+
+
+        return eval_BDT3_ -> eval();
+}
+
+bool checkBit(int number, int bitpos)
+{
+    return (number & (1 << bitpos));
+}
+
+std::vector<Jet> OfflineProducerHelper::bjJets_PreselectionCut(NanoAODTree& nat, EventInfo& ei,OutputTree &ot,std::vector<Jet> jets)
+
+{
+    float bminimumDeepCSVAccepted           = any_cast<float>(parameterList_->at("bMinDeepCSV"  ));
+    float bminimumDeepJetAccepted           = any_cast<float>(parameterList_->at("bMinDeepJet"  ));
+    float bminimumPtAccepted                = any_cast<float>(parameterList_->at("bMinPt"       ));
+    float bmaximumAbsEtaAccepted            = any_cast<float>(parameterList_->at("bMaxAbsEta"   ));
+    int   bJetIdAccepted                    = any_cast<int>(parameterList_->at("bJetId"         ));
+    int   bPUIdAccepted                     = any_cast<int>(parameterList_->at("bPUId"          ));
+    float jminimumPtAccepted                = any_cast<float>(parameterList_->at("jMinPt"       ));
+    float jmaximumAbsEtaAccepted            = any_cast<float>(parameterList_->at("jMaxAbsEta"   ));
+    int   jJetIdAccepted                    = any_cast<int>(parameterList_->at("jJetId"         ));
+    int   jPUIdAccepted                     = any_cast<int>(parameterList_->at("jPUId"          ));
+    bool  jEENoiseVeto                      = any_cast<bool>(parameterList_->at("jEENoiseVeto"  ));
+    std::vector<Jet> nobjets,outputJets,btaggedjets;
+
+    /////////////--------Select four b-jet candidates
+    ///////////// Apply PT, ETA, jetid, puid requirements
+    auto it = jets.begin();
+    while (it != jets.end()){
+        if(bminimumPtAccepted>0.){
+            if( (*it).P4().Pt() < bminimumPtAccepted){
+                nobjets.emplace_back(*it);
+                it=jets.erase(it);
+                continue;
+            }
+        }
+        if(bmaximumAbsEtaAccepted>0.){
+            if(abs(get_property( (*it),Jet_eta))>bmaximumAbsEtaAccepted){
+                nobjets.emplace_back(*it);
+                it=jets.erase(it);
+                continue;
+            }
+        }
+        if(bJetIdAccepted>=0.){
+            if( ! checkBit(get_property( (*it),Jet_jetId), bJetIdAccepted) ){
+                nobjets.emplace_back(*it);
+                it=jets.erase(it);
+                continue;
+            }
+        }
+        if(bPUIdAccepted>=0.){
+            if( !checkBit(get_property( (*it),Jet_puId), bPUIdAccepted) && get_property( (*it),Jet_pt) < 50 ){
+                nobjets.emplace_back(*it);
+                it=jets.erase(it);
+                continue;
+            }
+        }
+        ++it;
+    }
+    if(jets.size() < 4) return outputJets;
+    ///////////// Apply BTAGGING requirements
+    //Do we want antibtag information or not?
+    int MinimumNumberOfBTags=0;
+    if(any_cast<bool>(parameterList_->at("FourthAntiBTagInfo"))){MinimumNumberOfBTags= 3;}
+    else{MinimumNumberOfBTags= 4;}
+    //Count number of b-tagged jets. If btags < 3, then reject event (not important for us) and select the four most b-tagged jets
+    int btags=0;
+    if(any_cast<bool>(parameterList_->at("NewestBtaggingAlgorithm")))
+    {
+          for (uint i=0;i<jets.size();i++ ){ if( get_property( jets.at(i) ,Jet_btagDeepFlavB) > bminimumDeepJetAccepted) btags++;}
+          stable_sort(jets.begin(), jets.end(), [](const Jet & a, const Jet & b) -> bool
+          { return ( get_property(a, Jet_btagDeepFlavB) > get_property(b, Jet_btagDeepFlavB) );}); 
+    }
+    else
+    {
+          for (uint i=0;i<jets.size();i++ ){ if( get_property( jets.at(i) ,Jet_btagDeepB) > bminimumDeepCSVAccepted) btags++;}
+          stable_sort(jets.begin(), jets.end(), [](const Jet & a, const Jet & b) -> bool
+          { return ( get_property(a, Jet_btagDeepB) > get_property(b, Jet_btagDeepB) );}); 
+    }
+    if(btags<MinimumNumberOfBTags) return outputJets;
+    outputJets = {{*(jets.begin()+0),*(jets.begin()+1),*(jets.begin()+2),*(jets.begin()+3)}};
+    int c=0; while (c<4){jets.erase(jets.begin());c++;}
+    //Calculate the associated b-tagging scale factor depending on b-tag or anti-btag selection
+    if(btags==3){btaggedjets={{*(outputJets.begin()+0),*(outputJets.begin()+1),*(outputJets.begin()+2)}};CalculateBtagScaleFactor(btaggedjets,nat,ot);}
+    else{btaggedjets={{*(outputJets.begin()+0),*(outputJets.begin()+1),*(outputJets.begin()+2),*(outputJets.begin()+3)}};CalculateBtagScaleFactor(btaggedjets,nat,ot);}
+    /////////////--------Done selecting b-jets------------------------------------
+
+    /////////////--------Select two VBF-jet candidates based on PT and ETA1*ETA2<0
+    ///////////// Apply PT and ETA requirements
+    jets.insert(jets.end(), nobjets.begin(), nobjets.end());
+    auto jt = jets.begin();
+    while (jt != jets.end()){
+        if(jminimumPtAccepted>0.){
+            if( (*jt).P4().Pt() < jminimumPtAccepted){
+                jt=jets.erase(jt);
+                continue;
+            }
+        }
+        if(jmaximumAbsEtaAccepted>0.){
+            if(abs(get_property( (*jt),Jet_eta))>jmaximumAbsEtaAccepted){
+                jt=jets.erase(jt);
+                continue;
+            }
+        }
+        if(jJetIdAccepted>=0.){
+            if( ! checkBit(get_property( (*jt),Jet_jetId), jJetIdAccepted) ){
+                jt=jets.erase(jt);
+                continue;
+            }
+        }
+        if(jPUIdAccepted>=0.){
+            if( !checkBit(get_property( (*jt),Jet_puId), jPUIdAccepted) && get_property( (*jt), Jet_pt) < 50 ){
+                jt=jets.erase(jt);
+                continue;
+            }
+        }
+        if(jEENoiseVeto){
+            if( (abs(get_property( (*jt), Jet_eta)) > 2.650) &&
+                (abs(get_property( (*jt), Jet_eta)) < 3.139) &&
+                ( (get_property( (*jt), Jet_pt)) * (1-get_property( (*jt), Jet_rawFactor)) < 50) ){
+                jt=jets.erase(jt);
+                continue;
+            }
+        }
+
+        ++jt;
+    }
+    if(jets.size() < 2) return outputJets;
+    //Check if event has at least two VBF-jet candidates (OppositeEtaJetPair), otherwise returns only b-jets candidates
+    std::vector<Jet> VBFjets = OppositeEtaJetPair(jets);
+    if(VBFjets.size() < 2)return outputJets;
+    /////////////--------Fill information of preselected jets: outputJets = (4 b-jets, 2 VBF jets) and return it
+    outputJets.insert(outputJets.end(),VBFjets.begin(),VBFjets.end());
+    return outputJets;
+}
+
+std::vector<Jet> OfflineProducerHelper::bjJets_2016_PreselectionCut(NanoAODTree& nat, EventInfo& ei,OutputTree &ot,std::vector<Jet> jets)
+
+{
+    float bminimumDeepCSVAccepted           = any_cast<float>(parameterList_->at("bMinDeepCSV"          ));
+    float bminimumPtAccepted                = any_cast<float>(parameterList_->at("bMinPt"               ));
+    float bmaximumAbsEtaAccepted            = any_cast<float>(parameterList_->at("bMaxAbsEta"           ));
+    float jminimumPtAccepted                = any_cast<float>(parameterList_->at("jMinPt"               ));
+    float jmaximumAbsEtaAccepted            = any_cast<float>(parameterList_->at("jMaxAbsEta"           ));
+    std::vector<Jet> nobjets,outputJets,btaggedjets;
+
+    /////////////--------Select four b-jet candidates
+    ///////////// Apply PT and ETA requirements
+    auto it = jets.begin();
+    while (it != jets.end()){
+        if(bminimumPtAccepted>0.){
+            if(get_property( (*it),Jet_pt)<bminimumPtAccepted){
+                nobjets.emplace_back(*it);
+                it=jets.erase(it);
+                continue;
+            }
+        }
+        if(bmaximumAbsEtaAccepted>0.){
+            if(abs(get_property( (*it),Jet_eta))>bmaximumAbsEtaAccepted){
+                nobjets.emplace_back(*it);
+                it=jets.erase(it);
+                continue;
+            }
+        }
+        ++it;
+    }
+    if(jets.size() < 4) return outputJets;
+    ///////////// Apply BTAGGING requirements
+    //Do we want antibtag information or not?
+    int MinimumNumberOfBTags=0;
+    if(any_cast<bool>(parameterList_->at("FourthAntiBTagInfo"))){MinimumNumberOfBTags= 3;}
+    else{MinimumNumberOfBTags= 4;}
+    //Count number of b-tagged jets. If btags < 3, then reject event (not important for us)
+    int btags=0; for (uint i=0;i<jets.size();i++ ){ if( get_property( jets.at(i) ,Jet_btagCMVA) > bminimumDeepCSVAccepted) btags++;}
+    if(btags<MinimumNumberOfBTags) return outputJets;
+    //Select the four most b-tagged
+    stable_sort(jets.begin(), jets.end(), [](const Jet & a, const Jet & b) -> bool
+    { return ( get_property(a, Jet_btagCMVA) > get_property(b, Jet_btagCMVA) );});
+    outputJets = {{*(jets.begin()+0),*(jets.begin()+1),*(jets.begin()+2),*(jets.begin()+3)}};
+    int c=0; while (c<4){jets.erase(jets.begin());c++;}
+    //Calculate the associated b-tagging scale factor depending on b-tag or anti-btag selection
+    if(btags==3){btaggedjets={{*(outputJets.begin()+0),*(outputJets.begin()+1),*(outputJets.begin()+2)}};CalculateBtagScaleFactor(btaggedjets,nat,ot);}
+    else{btaggedjets={{*(outputJets.begin()+0),*(outputJets.begin()+1),*(outputJets.begin()+2),*(outputJets.begin()+3)}};CalculateBtagScaleFactor(btaggedjets,nat,ot);}
+
+    /////////////--------Select two VBF-jet candidates based on PT and ETA1*ETA2<0
+    ///////////// Apply PT and ETA requirements
+    jets.insert(jets.end(), nobjets.begin(), nobjets.end());
+    auto jt = jets.begin();
+    while (jt != jets.end()){
+        if(jminimumPtAccepted>0.){
+            if(get_property( (*jt),Jet_pt)<jminimumPtAccepted){
+                jt=jets.erase(jt);
+                continue;
+            }
+        }
+        if(jmaximumAbsEtaAccepted>0.){
+            if(abs(get_property( (*jt),Jet_eta))>jmaximumAbsEtaAccepted){
+                jt=jets.erase(jt);
+                continue;
+            }
+        }
+        ++jt;
+    }
+    if(jets.size() < 2) return outputJets;
+    //Check if event has at least two VBF-jet candidates (OppositeEtaJetPair), otherwise returns only b-jets candidates
+    std::vector<Jet> VBFjets = OppositeEtaJetPair(jets);
+    if(VBFjets.size() < 2)return outputJets;
+    /////////////--------Fill information of preselected jets: outputJets = (4 b-jets, 2 VBF jets) and return it
+    outputJets.insert(outputJets.end(),VBFjets.begin(),VBFjets.end());
+    return outputJets;
+}
+
+std::vector<Jet> OfflineProducerHelper::ExternalEtaJetPair(std::vector<Jet> jets, std::vector<Jet> bjets){
+//Check Max abs(Eta) among the b-jets
+std::vector<Jet> outputJets;
+float maxbEta=-1;
+for (uint i=0;i<bjets.size();i++ )
+{
+        float Eta = abs(bjets.at(i).P4().Eta());
+        if(Eta>maxbEta){maxbEta=Eta;}
+}
+//Remove VBF-jet candidates with abs(eta) lower than the bjets abs(eta)
+auto jt = jets.begin();
+while (jt != jets.end()){
+        if(abs(get_property( (*jt),Jet_eta))<maxbEta){
+            jt=jets.erase(jt);
+            continue;
+        }
+        ++jt;
+}
+//Ordered the VBF candidates by pt. Ff there are not two VBF-candidates, then return empty
+if(jets.size()<2) return outputJets;
+stable_sort(jets.begin(), jets.end(), [](const Jet & a, const Jet & b) -> bool
+{ return ( a.P4().Pt()  >  b.P4().Pt()  );});
+outputJets = {{*(jets.begin()+0),*(jets.begin()+1)}}; return outputJets;
+}
+
+std::vector<int> OfflineProducerHelper::AddGenMatchingInfo(NanoAODTree& nat, EventInfo& ei, std::vector<Jet> jets)
+{
+    //OUTPUT: Vector of quarkIDs for the jets
+    //QuarkId: (0) Others, (1) gen_H1_b1, (2) gen_H1_b2, (3) gen_H2_b1, (4) gen_H2_b2, (5) gen_j1_out, (6) gen_j2_outs
+    //Order the generator level information by specific PT
+    order_by_pT(ei.gen_H1_b1.get(), ei.gen_H1_b2.get());
+    order_by_pT(ei.gen_H2_b1.get(), ei.gen_H2_b2.get());
+    order_by_pT(ei.gen_q1_out.get(), ei.gen_q2_out.get());
+    std::vector<GenPart> bs = {{*(ei.gen_H1_b1),*(ei.gen_H1_b2),*(ei.gen_H2_b1),*(ei.gen_H2_b2)}};
+    bool swapped = order_by_pT(ei.gen_H1.get(), ei.gen_H2.get());
+    if (!swapped)
+    {
+        ei.gen_H1_b1 = bs.at(0);
+        ei.gen_H1_b2 = bs.at(1);
+        ei.gen_H2_b1 = bs.at(2);
+        ei.gen_H2_b2 = bs.at(3);
+    }
+    else
+    {
+        ei.gen_H1_b1 = bs.at(2);
+        ei.gen_H1_b2 = bs.at(3);
+        ei.gen_H2_b1 = bs.at(0);
+        ei.gen_H2_b2 = bs.at(1);
+    }
+    //Define a vector with the six ordered quarks
+    std::vector<GenPart> quarks = {{
+        *(ei.gen_H1_b1),*(ei.gen_H1_b2),
+        *(ei.gen_H2_b1),*(ei.gen_H2_b2), *(ei.gen_q1_out),*(ei.gen_q2_out)}};
+    std::vector<int> output = QuarkToJetMatcher(quarks,jets);
+    return output;
+ }
+
+std::vector<int> OfflineProducerHelper::QuarkToJetMatcher(const std::vector<GenPart> quarks,const std::vector<Jet> jets){
+// OUTPUT is a vector with nJet entries filled the QuarkId, ordered by jets index
+//----QuarkId: (1) gen_H1_b1, (2) gen_H1_b2, (3) gen_H2_b1, (4) gen_H2_b2, (5) gen_j1_out, (6) gen_j2_out, (0) Others
+//----JetId: Index of the jets in the input vector 'jets'
+//Define and initialize variables
+std::vector<std::tuple<TLorentzVector,int>> jetsinfo,quarksinfo;
+std::vector<std::tuple<int,int>> quark_jet_link; uint id;
+std::vector<int> output;
+float dR=0.4, maxDeltaR, DeltaR; bool matched = false;
+uint m=0; while(m<quarks.size()){quarksinfo.emplace_back( make_tuple(quarks.at(m).P4(), m)); m++;}
+uint n=0; while(n<jets.size()  ){jetsinfo.emplace_back( make_tuple(jets.at(n).P4(), n)    ); n++;}
+//Create all possible combinations and find the jet set that minimize the deltaR
+for (uint x=0;x < quarksinfo.size();x++ )
+{
+ maxDeltaR = dR;
+ for (uint y=0;y < jetsinfo.size(); y++ ){
+      DeltaR = get<0>(quarksinfo[x]).DeltaR( get<0>(jetsinfo[y]) );
+      if(DeltaR < maxDeltaR){maxDeltaR=DeltaR; matched=true; id = y ;}
+ }
+ if(matched) {quark_jet_link.emplace_back( make_tuple(x,get<1>(jetsinfo[id]))); jetsinfo.erase(jetsinfo.begin()+id);}
+ else {quark_jet_link.emplace_back( make_tuple(x,-1) );}
+ matched = false;
+}
+//Create output with QuarkID
+bool found; int foundy;
+for (uint x=0; x < jets.size(); x++ ){
+      uint jetid=x;
+      found = false;
+      //Check if there is a quark that is linked to this jet
+      for (uint y=0; y < quark_jet_link.size(); y++ ){
+      uint m = get<1>(quark_jet_link[y]);
+      if(jetid == m ){found = true; foundy=y;}
+      }
+      //Load jet information to the output: QuarkID
+      if(found){output.emplace_back(get<0>(quark_jet_link[foundy])+1);}
+      else{output.emplace_back(0);}
+}
+return output;
+}
+
+std::vector<Jet> OfflineProducerHelper::OppositeEtaJetPair(std::vector<Jet> jets){
+//Initialize DEta
+int id;
+float Eta1Eta2= 0; bool foundpair=false;
+std::vector<Jet> outputJets;
+//Order the jets py pt
+stable_sort(jets.begin(), jets.end(), [](const Jet & a, const Jet & b) -> bool
+{ return ( a.P4().Pt() >  b.P4().Pt()  );});
+//Find the j1 (highest pt jet) and j2 (the jet with highest pt and opposite eta sign)
+for (uint y=1;y<jets.size();y++ )
+{
+        Eta1Eta2 = jets.at(0).P4().Eta()*jets.at(y).P4().Eta();
+        if (Eta1Eta2<0)
+        {
+            id = y; foundpair=true;
+        }
+        if(foundpair) break;
+}
+if(!foundpair) return outputJets;
+outputJets = {{*(jets.begin()+0),*(jets.begin()+id)}}; return outputJets;
+}
+
+std::vector<Jet> OfflineProducerHelper::HighestPtJetPair(std::vector<Jet> jets){
+std::vector<Jet> outputJets;
+//Order the jets py pt
+stable_sort(jets.begin(), jets.end(), [](const Jet & a, const Jet & b) -> bool
+{ return ( a.P4().Pt() >  b.P4().Pt() );});
+//Find the j1 (highest pt jet) and j2 (the jet with highest pt and opposite eta sign)
+outputJets = {{*(jets.begin()+0),*(jets.begin()+1)}}; return outputJets;
+}
 
 float OfflineProducerHelper::MindRToAJet(const GenPart quark,const std::vector<Jet> jets)
 {
@@ -1635,7 +2757,6 @@ for (uint x=0; x < jets.size(); x++ )
 
 return ptratio;
 }
-
 
 
 void OfflineProducerHelper::AddVBFGenMatchVariables(NanoAODTree& nat, EventInfo& ei)
@@ -1710,7 +2831,7 @@ ei.JJ_j2_hadronFlavour = get_property(ei.JJ_j2.get(),Jet_hadronFlavour);
 //Fill branches with selected b-jets ordered by pt and also their quarkID flag
 std::vector<Jet> presel_bjets={{*(ei.H1_b1),*(ei.H1_b2),*(ei.H2_b1),*(ei.H2_b2)}};
 stable_sort(presel_bjets.begin(), presel_bjets.end(), [](const Jet & a, const Jet & b) -> bool
-{return ( get_property(a, Jet_pt) > get_property(b, Jet_pt) );});
+{return ( a.P4().Pt() > b.P4().Pt() );});
 ei.HH_b1_quarkID = quarkID.at(presel_bjets.at(0).getIdx());
 ei.HH_b2_quarkID = quarkID.at(presel_bjets.at(1).getIdx());
 ei.HH_b3_quarkID = quarkID.at(presel_bjets.at(2).getIdx());
@@ -1822,888 +2943,6 @@ ei.JJ_2wflag  =  jj_2wflag;
 ei.HHJJ_quality = hhjj_flag;
 
 return;
-}
-
-void OfflineProducerHelper::AddInclusiveCategoryVariables(NanoAODTree& nat, EventInfo& ei,std::vector<Jet> ordered_jets){
-       //Event variables
-       ei.Run = *(nat.run);
-       ei.LumiSec = *(nat.luminosityBlock);
-       ei.Event = *(nat.event);
-       ei.nPVgood=*(nat.PV_npvsGood);
-       if(ordered_jets.size()==6){ ei.VBFEvent = 1;}
-       else{ei.VBFEvent = 0;}
-       // order H1, H2 by pT: pT(H1) > pT (H2)
-       order_by_pT(ordered_jets.at(0), ordered_jets.at(1));
-       order_by_pT(ordered_jets.at(2), ordered_jets.at(3));
-       CompositeCandidate H1 = CompositeCandidate(ordered_jets.at(0), ordered_jets.at(1) );
-       CompositeCandidate H2 = CompositeCandidate(ordered_jets.at(2), ordered_jets.at(3) );
-       ei.H1=H1;
-       ei.H2=H2;
-       bool swapped0 = order_by_pT(ei.H1.get(), ei.H2.get());
-       if (!swapped0)
-       {
-           ei.H1_b1 = ordered_jets.at(0);ei.H1_b2 = ordered_jets.at(1);
-           ei.H2_b1 = ordered_jets.at(2);ei.H2_b2 = ordered_jets.at(3);
-       }
-       else
-       {
-           ei.H1_b1 = ordered_jets.at(2);ei.H1_b2 = ordered_jets.at(3);
-           ei.H2_b1 = ordered_jets.at(0);ei.H2_b2 = ordered_jets.at(1);
-       }
-       //cout<<" H1 pt "<<ei.H1.get().P4().Pt()<<" H2 pt "<<ei.H2.get().P4().Pt()<<endl;
-       //HH variables
-       ei.HH = CompositeCandidate(ei.H1.get(), ei.H2.get());
-       //Fill branches with selected b-jets ordered by pt
-       std::vector<Jet> presel_bjets, presel_bjets_btags;
-       uint m=0; while(m<4){presel_bjets.push_back(ordered_jets.at(m));presel_bjets_btags.push_back(ordered_jets.at(m)); m++;}
-       stable_sort(presel_bjets.begin(), presel_bjets.end(), [](const Jet & a, const Jet & b) -> bool
-       {return ( get_property(a, Jet_pt) > get_property(b, Jet_pt) );});
-       ei.HH_b1 = presel_bjets.at(0);
-       ei.HH_b2 = presel_bjets.at(1);
-       ei.HH_b3 = presel_bjets.at(2);
-       ei.HH_b4 = presel_bjets.at(3);
-       stable_sort(presel_bjets_btags.begin(), presel_bjets_btags.end(), [](const Jet & a, const Jet & b) -> bool
-       {return ( get_property(a, Jet_btagCMVA) > get_property(b, Jet_btagCMVA) );});
-       ei.HH_btag_cmva_b1 = presel_bjets_btags.at(0);
-       ei.HH_btag_cmva_b2 = presel_bjets_btags.at(1);
-       ei.HH_btag_cmva_b3 = presel_bjets_btags.at(2);
-       ei.HH_btag_cmva_b4 = presel_bjets_btags.at(3);
-       stable_sort(presel_bjets_btags.begin(), presel_bjets_btags.end(), [](const Jet & a, const Jet & b) -> bool
-       {return ( get_property(a, Jet_btagDeepB) > get_property(b, Jet_btagDeepB) );});
-       ei.HH_btag_b1 = presel_bjets_btags.at(0);
-       ei.HH_btag_b2 = presel_bjets_btags.at(1);
-       ei.HH_btag_b3 = presel_bjets_btags.at(2);
-       ei.HH_btag_b4 = presel_bjets_btags.at(3);
-       //Mass cut variables with a random swap to be sure that the m1 and m2 are simmetric when selecting the signal region
-       bool swapped = (int(ei.H1->P4().Pt()*100.) % 2 == 1);
-       if (!swapped){ei.H1rand = ei.H1.get();ei.H2rand = ei.H2.get();}
-       else{ei.H1rand = ei.H2.get();ei.H2rand = ei.H1.get();}
-       //dR,dPhi and dEta between pair b's
-       ei.H1_bb_deltaR = ei.H1_b1->P4().DeltaR(ei.H1_b2->P4());
-       ei.H1_bb_deltaPhi = ei.H1_b1->P4().DeltaPhi(ei.H1_b2->P4());
-       ei.H1_bb_deltaEta = abs(ei.H1_b1->P4().Eta() - ei.H1_b2->P4().Eta() );
-       ei.H2_bb_deltaR = ei.H2_b1->P4().DeltaR(ei.H2_b2->P4());
-       ei.H2_bb_deltaPhi = ei.H2_b1->P4().DeltaPhi(ei.H2_b2->P4());
-       ei.H2_bb_deltaEta = abs(ei.H2_b1->P4().Eta() - ei.H2_b2->P4().Eta() );
-       //Special variables:deltaR between jets
-       ei.b1b2_deltaR = ei.HH_b1->P4().DeltaR(ei.HH_b2->P4());
-       ei.b1b3_deltaR = ei.HH_b1->P4().DeltaR(ei.HH_b3->P4());
-       ei.b1b4_deltaR = ei.HH_b1->P4().DeltaR(ei.HH_b4->P4());
-       ei.b2b3_deltaR = ei.HH_b2->P4().DeltaR(ei.HH_b3->P4());
-       ei.b2b4_deltaR = ei.HH_b2->P4().DeltaR(ei.HH_b4->P4());
-       ei.b3b4_deltaR = ei.HH_b3->P4().DeltaR(ei.HH_b4->P4());
-       ei.b1b2_deltaPhi = ei.HH_b1->P4().DeltaPhi(ei.HH_b2->P4());
-       ei.b1b3_deltaPhi = ei.HH_b1->P4().DeltaPhi(ei.HH_b3->P4());
-       ei.b1b4_deltaPhi = ei.HH_b1->P4().DeltaPhi(ei.HH_b4->P4());
-       ei.b2b3_deltaPhi = ei.HH_b2->P4().DeltaPhi(ei.HH_b3->P4());
-       ei.b2b4_deltaPhi = ei.HH_b2->P4().DeltaPhi(ei.HH_b4->P4());
-       ei.b3b4_deltaPhi = ei.HH_b3->P4().DeltaPhi(ei.HH_b4->P4());
-       ei.b1b2_deltaEta = abs(ei.HH_b1->P4().Eta() - ei.HH_b2->P4().Eta() );
-       ei.b1b3_deltaEta = abs(ei.HH_b1->P4().Eta() - ei.HH_b3->P4().Eta() );
-       ei.b1b4_deltaEta = abs(ei.HH_b1->P4().Eta() - ei.HH_b4->P4().Eta() );
-       ei.b2b3_deltaEta = abs(ei.HH_b2->P4().Eta() - ei.HH_b3->P4().Eta() );
-       ei.b2b4_deltaEta = abs(ei.HH_b2->P4().Eta() - ei.HH_b4->P4().Eta() );
-       ei.b3b4_deltaEta = abs(ei.HH_b3->P4().Eta() - ei.HH_b4->P4().Eta() );
-       //Special variables between Higgses
-       ei.h1h2_deltaR = ei.H1->P4().DeltaR(ei.H2->P4());
-       ei.h1h2_deltaPhi = ei.H1->P4().DeltaPhi(ei.H2->P4());
-       ei.h1h2_deltaEta = abs( ei.H1->P4().Eta() - ei.H2->P4().Eta());
-       //Number of jets
-       int njall=0,njbarrel=0,njendcap=0,njhf=0;
-       for (uint ij = 0; ij < *(nat.nJet); ++ij)
-       {
-        if ( abs(get_property(Jet(ij, &nat), Jet_pt)) < 25) continue;
-        if ( abs(get_property(Jet(ij, &nat), Jet_eta)) < 5){njall++;}
-        if ( abs(get_property(Jet(ij, &nat), Jet_eta)) < 1.2){njbarrel++;}
-        if ( abs(get_property(Jet(ij, &nat), Jet_eta)) >= 1.2 && abs(get_property(Jet(ij, &nat), Jet_eta)) < 2.4){njendcap++;}
-        if ( abs(get_property(Jet(ij, &nat), Jet_eta)) >= 2.4 && abs(get_property(Jet(ij, &nat), Jet_eta)) < 5){njhf++;}
-       }
-       ei.nJet = njall;
-       ei.nJetbarrel = njbarrel;
-       ei.nJetendcap = njendcap;
-       ei.nJethf = njhf;
-       //Raw pt
-       ei.HH_b1_rawpt = get_property(presel_bjets.at(0), Jet_pt) * (1-get_property(presel_bjets.at(0), Jet_rawFactor));
-       ei.HH_b2_rawpt = get_property(presel_bjets.at(1), Jet_pt) * (1-get_property(presel_bjets.at(1), Jet_rawFactor));
-       ei.HH_b3_rawpt = get_property(presel_bjets.at(2), Jet_pt) * (1-get_property(presel_bjets.at(2), Jet_rawFactor));
-       ei.HH_b4_rawpt = get_property(presel_bjets.at(3), Jet_pt) * (1-get_property(presel_bjets.at(3), Jet_rawFactor));
-       ei.H1_b1_rawpt = get_property( ei.H1_b1.get(), Jet_pt) * (1 - get_property(ei.H1_b1.get(), Jet_rawFactor) );
-       ei.H1_b2_rawpt = get_property( ei.H1_b2.get(), Jet_pt) * (1 - get_property(ei.H1_b2.get(), Jet_rawFactor) );
-       ei.H2_b1_rawpt = get_property( ei.H2_b1.get(), Jet_pt) * (1 - get_property(ei.H2_b1.get(), Jet_rawFactor) );
-       ei.H2_b2_rawpt = get_property( ei.H2_b2.get(), Jet_pt) * (1 - get_property(ei.H2_b2.get(), Jet_rawFactor) );
-       //COSTHETA VARIABLES in CM FRAME
-       TLorentzVector Sum = ei.HH_b1->P4() + ei.HH_b2->P4() + ei.HH_b3->P4() + ei.HH_b4->P4();
-       auto boost_vctr = Sum.BoostVector();
-       TLorentzVector H1_cm = ei.H1->P4(); H1_cm.Boost(-boost_vctr);
-       TLorentzVector H2_cm = ei.H2->P4(); H2_cm.Boost(-boost_vctr);
-       TLorentzVector HH_b1_cm = ei.HH_b1->P4(); HH_b1_cm.Boost(-boost_vctr);
-       TLorentzVector HH_b2_cm = ei.HH_b2->P4(); HH_b2_cm.Boost(-boost_vctr);
-       TLorentzVector HH_b3_cm = ei.HH_b3->P4(); HH_b3_cm.Boost(-boost_vctr);
-       TLorentzVector HH_b4_cm = ei.HH_b4->P4(); HH_b4_cm.Boost(-boost_vctr);
-       ei.costh_H1_cm = H1_cm.CosTheta();
-       ei.costh_H2_cm = H2_cm.CosTheta();
-       ei.costh_HH_b1_cm = HH_b1_cm.CosTheta();
-       ei.costh_HH_b2_cm = HH_b2_cm.CosTheta();
-       ei.costh_HH_b3_cm = HH_b3_cm.CosTheta();
-       ei.costh_HH_b4_cm = HH_b4_cm.CosTheta();
-       
-       //GGF-QCDKiller
-       ei.BDT3 = GetBDT3Score(ei);
-
-       // string strategy = any_cast<string>(parameterList_->at("bbbbChoice"));
-       // if(strategy=="BothClosestToMh")
-       // {
-       // string weights= "weights/TMVAClassification_BDT_GGFQCDKiller_case1.weights.xml";
-       // ei.BDT3 = GetBDT3Score(ei,weights);
-       // }
-       // else if(strategy=="BothClosestToDiagonal")
-       // {
-       // string weights= "weights/TMVAClassification_BDT_GGFQCDKiller_case2.weights.xml";
-       // ei.BDT3 = GetBDT3Score(ei,weights);
-       // }
-       // else if(strategy=="MinMassDifference")
-       // {
-       // string weights= "weights/TMVAClassification_BDT_GGFQCDKiller_case2.weights.xml";
-       // ei.BDT3 = GetBDT3Score(ei,weights);
-       // }
-       // else
-       // {
-       // ei.BDT3 = 0;
-       // }
-       return;
-}
-
-void OfflineProducerHelper::AddVBFCategoryVariables(NanoAODTree& nat, EventInfo& ei,std::vector<Jet> presel_jets)
-{
-       ei.JJ_j1 = presel_jets.at(4);
-       ei.JJ_j2 = presel_jets.at(5);
-       ei.JJ = CompositeCandidate(ei.JJ_j1.get(), ei.JJ_j2.get());
-       //Special variables:deltaR between jets
-       ei.b1j1_deltaR = ei.HH_b1->P4().DeltaR(ei.JJ_j1->P4());
-       ei.b1j2_deltaR = ei.HH_b1->P4().DeltaR(ei.JJ_j2->P4());
-       ei.b2j1_deltaR = ei.HH_b2->P4().DeltaR(ei.JJ_j1->P4());
-       ei.b2j2_deltaR = ei.HH_b2->P4().DeltaR(ei.JJ_j2->P4());
-       ei.b3j1_deltaR = ei.HH_b3->P4().DeltaR(ei.JJ_j1->P4());
-       ei.b3j2_deltaR = ei.HH_b3->P4().DeltaR(ei.JJ_j2->P4());
-       ei.b4j1_deltaR = ei.HH_b4->P4().DeltaR(ei.JJ_j1->P4());
-       ei.b4j2_deltaR = ei.HH_b4->P4().DeltaR(ei.JJ_j2->P4());
-       ei.j1j2_deltaR = ei.JJ_j1->P4().DeltaR(ei.JJ_j2->P4());
-       //Special variables:deltaPhi between jets
-       ei.b1j1_deltaPhi = ei.HH_b1->P4().DeltaPhi(ei.JJ_j1->P4());
-       ei.b1j2_deltaPhi = ei.HH_b1->P4().DeltaPhi(ei.JJ_j2->P4());
-       ei.b2j1_deltaPhi = ei.HH_b2->P4().DeltaPhi(ei.JJ_j1->P4());
-       ei.b2j2_deltaPhi = ei.HH_b2->P4().DeltaPhi(ei.JJ_j2->P4());
-       ei.b3j1_deltaPhi = ei.HH_b3->P4().DeltaPhi(ei.JJ_j1->P4());
-       ei.b3j2_deltaPhi = ei.HH_b3->P4().DeltaPhi(ei.JJ_j2->P4());
-       ei.b4j1_deltaPhi = ei.HH_b4->P4().DeltaPhi(ei.JJ_j1->P4());
-       ei.b4j2_deltaPhi = ei.HH_b4->P4().DeltaPhi(ei.JJ_j2->P4());
-       ei.j1j2_deltaPhi = ei.JJ_j1->P4().DeltaPhi(ei.JJ_j2->P4());
-       //Special variables:deltaEta between jets
-       ei.b1j1_deltaEta = abs(ei.HH_b1->P4().Eta() - ei.JJ_j1->P4().Eta() );
-       ei.b1j2_deltaEta = abs(ei.HH_b1->P4().Eta() - ei.JJ_j2->P4().Eta() );
-       ei.b2j1_deltaEta = abs(ei.HH_b2->P4().Eta() - ei.JJ_j1->P4().Eta() );
-       ei.b2j2_deltaEta = abs(ei.HH_b2->P4().Eta() - ei.JJ_j2->P4().Eta() );
-       ei.b3j1_deltaEta = abs(ei.HH_b3->P4().Eta() - ei.JJ_j1->P4().Eta() );
-       ei.b3j2_deltaEta = abs(ei.HH_b3->P4().Eta() - ei.JJ_j2->P4().Eta() );
-       ei.b4j1_deltaEta = abs(ei.HH_b4->P4().Eta() - ei.JJ_j1->P4().Eta() );
-       ei.b4j2_deltaEta = abs(ei.HH_b4->P4().Eta() - ei.JJ_j2->P4().Eta() );
-       ei.j1j2_deltaEta = abs(ei.JJ_j1->P4().Eta() - ei.JJ_j2->P4().Eta() );
-       ei.VBFSelectedDeltaEta = abs(ei.JJ_j1->P4().Eta() - ei.JJ_j2->P4().Eta()) ;
-       ei.VBFSelectedEtaSign = (ei.JJ_j1->P4().Eta() * ei.JJ_j2->P4().Eta())/ abs( ei.JJ_j1->P4().Eta() * ei.JJ_j2->P4().Eta()  ) ;
-       //Special variables: deltaR between h1,h2,j1,j2,HH,JJ
-       ei.h1j1_deltaR = ei.H1->P4().DeltaR(ei.JJ_j1->P4());
-       ei.h1j2_deltaR = ei.H1->P4().DeltaR(ei.JJ_j2->P4());
-       ei.h2j1_deltaR = ei.H2->P4().DeltaR(ei.JJ_j1->P4());
-       ei.h2j2_deltaR = ei.H2->P4().DeltaR(ei.JJ_j2->P4());
-       ei.h1jj_deltaR = ei.H1->P4().DeltaR(ei.JJ->P4());
-       ei.h2jj_deltaR = ei.H2->P4().DeltaR(ei.JJ->P4());
-       ei.hhj1_deltaR = ei.HH->P4().DeltaR(ei.JJ_j1->P4());
-       ei.hhj2_deltaR = ei.HH->P4().DeltaR(ei.JJ_j2->P4());
-       ei.hhjj_deltaR = ei.HH->P4().DeltaR(ei.JJ->P4());
-       //Special variables: deltaPhi between h1,h2,j1,j2,HH,JJ
-       ei.h1j1_deltaPhi = ei.H1->P4().DeltaPhi(ei.JJ_j1->P4());
-       ei.h1j2_deltaPhi = ei.H1->P4().DeltaPhi(ei.JJ_j2->P4());
-       ei.h2j1_deltaPhi = ei.H2->P4().DeltaPhi(ei.JJ_j1->P4());
-       ei.h2j2_deltaPhi = ei.H2->P4().DeltaPhi(ei.JJ_j2->P4());
-       ei.h1jj_deltaPhi = ei.H1->P4().DeltaPhi(ei.JJ->P4());
-       ei.h2jj_deltaPhi = ei.H2->P4().DeltaPhi(ei.JJ->P4());
-       ei.hhj1_deltaPhi = ei.HH->P4().DeltaPhi(ei.JJ_j1->P4());
-       ei.hhj2_deltaPhi = ei.HH->P4().DeltaPhi(ei.JJ_j2->P4());
-       ei.hhjj_deltaPhi = ei.HH->P4().DeltaPhi(ei.JJ->P4());
-       //Special variables: deltaEta between h1,h2,j1,j2,HH,JJ
-       ei.h1j1_deltaEta = abs( ei.H1->P4().Eta() - ei.JJ_j1->P4().Eta());
-       ei.h1j2_deltaEta = abs( ei.H1->P4().Eta() - ei.JJ_j2->P4().Eta());
-       ei.h2j1_deltaEta = abs( ei.H2->P4().Eta() - ei.JJ_j1->P4().Eta());
-       ei.h2j2_deltaEta = abs( ei.H2->P4().Eta() - ei.JJ_j2->P4().Eta());
-       ei.h1jj_deltaEta = abs( ei.H1->P4().Eta() - ei.JJ->P4().Eta());
-       ei.h2jj_deltaEta = abs( ei.H2->P4().Eta() - ei.JJ->P4().Eta());
-       ei.hhj1_deltaEta = abs( ei.HH->P4().Eta() - ei.JJ_j1->P4().Eta());
-       ei.hhj2_deltaEta = abs( ei.HH->P4().Eta() - ei.JJ_j2->P4().Eta());
-       ei.hhjj_deltaEta = abs( ei.HH->P4().Eta() - ei.JJ->P4().Eta());
-       //VBF-jet location categories
-       if ( abs( ei.JJ_j1->P4().Eta()) < 1.4){ei.JJ_j1_location=1;}
-       else if ( abs( ei.JJ_j1->P4().Eta()) >= 1.4 && abs( ei.JJ_j1->P4().Eta()) < 2.4){ei.JJ_j1_location=2;}
-       else{ei.JJ_j1_location=3;}
-       if ( abs( ei.JJ_j2->P4().Eta()) < 1.4){ei.JJ_j2_location=1;}
-       else if ( abs( ei.JJ_j2->P4().Eta()) >= 1.4 && abs( ei.JJ_j2->P4().Eta()) < 2.4){ei.JJ_j2_location=2;}
-       else{ei.JJ_j2_location=3;}
-       //VBF Event location categories
-       if(     ei.JJ_j1_location==1 && ei.JJ_j2_location==1){ei.VBFEventLocation=1;}
-       else if(ei.JJ_j1_location==2 && ei.JJ_j2_location==2){ei.VBFEventLocation=2;}
-       else if(ei.JJ_j1_location==3 && ei.JJ_j2_location==3){ei.VBFEventLocation=3;}
-       else if(ei.JJ_j1_location==1 && ei.JJ_j2_location==2){ei.VBFEventLocation=4;}
-       else if(ei.JJ_j1_location==2 && ei.JJ_j2_location==1){ei.VBFEventLocation=4;}
-       else if(ei.JJ_j1_location==1 && ei.JJ_j2_location==3){ei.VBFEventLocation=5;}
-       else if(ei.JJ_j1_location==3 && ei.JJ_j2_location==1){ei.VBFEventLocation=5;}
-       else {ei.VBFEventLocation=6;}
-       //Extra and special variables
-       ei.j1etaj2eta = ei.JJ_j1->P4().Eta()*ei.JJ_j2->P4().Eta();
-       ei.maxj1etaj2eta = max( abs(ei.JJ_j1->P4().Eta() ), abs(ei.JJ_j2->P4().Eta() ) );
-       ei.JJ_j1_rawpt = get_property(ei.JJ_j1.get(), Jet_pt) * (1-get_property(ei.JJ_j1.get(), Jet_rawFactor));
-       ei.JJ_j2_rawpt = get_property(ei.JJ_j2.get(), Jet_pt) * (1-get_property(ei.JJ_j2.get(), Jet_rawFactor));
-       //COSTHETA VARIABLES in CM FRAME
-       TLorentzVector Sum = ei.HH_b1->P4() + ei.HH_b2->P4() + ei.HH_b3->P4() + ei.HH_b4->P4() + ei.JJ_j1->P4() + ei.JJ_j2->P4();
-       auto boost_vctr = Sum.BoostVector();
-       TLorentzVector H1_cm = ei.H1->P4(); H1_cm.Boost(-boost_vctr);
-       TLorentzVector H2_cm = ei.H2->P4(); H2_cm.Boost(-boost_vctr);
-       TLorentzVector HH_cm = ei.HH->P4(); HH_cm.Boost(-boost_vctr);
-       TLorentzVector JJ_cm = ei.JJ->P4(); JJ_cm.Boost(-boost_vctr);
-       TLorentzVector HH_b1_cm = ei.HH_b1->P4(); HH_b1_cm.Boost(-boost_vctr);
-       TLorentzVector HH_b2_cm = ei.HH_b2->P4(); HH_b2_cm.Boost(-boost_vctr);
-       TLorentzVector HH_b3_cm = ei.HH_b3->P4(); HH_b3_cm.Boost(-boost_vctr);
-       TLorentzVector HH_b4_cm = ei.HH_b4->P4(); HH_b4_cm.Boost(-boost_vctr);
-       TLorentzVector JJ_j1_cm = ei.JJ_j1->P4(); JJ_j1_cm.Boost(-boost_vctr);
-       TLorentzVector JJ_j2_cm = ei.JJ_j2->P4(); JJ_j2_cm.Boost(-boost_vctr);
-       ei.costh_H1_cm = H1_cm.CosTheta();
-       ei.costh_H2_cm = H2_cm.CosTheta();
-       ei.costh_HH_cm = HH_cm.CosTheta();
-       ei.costh_JJ_cm = JJ_cm.CosTheta();
-       ei.costh_HH_b1_cm = HH_b1_cm.CosTheta();
-       ei.costh_HH_b2_cm = HH_b2_cm.CosTheta();
-       ei.costh_HH_b3_cm = HH_b3_cm.CosTheta();
-       ei.costh_HH_b4_cm = HH_b4_cm.CosTheta();
-       ei.costh_JJ_j1_cm = JJ_j1_cm.CosTheta();
-       ei.costh_JJ_j2_cm = JJ_j2_cm.CosTheta();
-       
-       // //The BDT always at the end, so the variables are defined for the calculation
-       ei.BDT1 = GetBDT1Score(ei);
-
-       // string strategy = any_cast<string>(parameterList_->at("bbbbChoice"));
-       // // GGF-HHKiller
-       // if(strategy=="BothClosestToMh")
-       // {
-       //     string weights= "weights/TMVAClassification_BDT_GGFKiller_case1.weights.xml";
-       //     // ei.BDT1 = GetBDT1Score(ei,weights);
-       //     ei.BDT1 = GetBDT1Score(ei);
-       // }
-       // else if(strategy=="BothClosestToDiagonal")
-       // {
-       //     string weights= "weights/TMVAClassification_BDT_GGFKiller_case2.weights.xml";
-       //     // ei.BDT1 = GetBDT1Score(ei,weights); // GGF-HHKiller
-       //     ei.BDT1 = GetBDT1Score(ei); // GGF-HHKiller
-       // }
-       // else if(strategy=="MinMassDifference")
-       // {
-       //     string weights= "weights/TMVAClassification_BDT_GGFKiller_case2.weights.xml";
-       //     // ei.BDT1 = GetBDT1Score(ei,weights); // GGF-HHKiller
-       //     ei.BDT1 = GetBDT1Score(ei); // GGF-HHKiller
-       // }
-       // else
-       // {
-       //     ei.BDT1 = 0;
-       // }
-
-       //VBF-QCDKiller
-       ei.BDT2 = GetBDT2Score(ei);
-
-       // if(strategy=="BothClosestToMh")
-       // {
-       //     string weights= "weights/TMVAClassification_BDT_VBFQCDKiller_case1.weights.xml";
-       //     ei.BDT2 = GetBDT2Score(ei,weights);
-       // }
-       // else if(strategy=="BothClosestToDiagonal")
-       // {
-       //     string weights= "weights/TMVAClassification_BDT_VBFQCDKiller_case2.weights.xml";
-       //     ei.BDT2 = GetBDT2Score(ei,weights); // GGF-HHKiller
-       // }
-       // else if(strategy=="MinMassDifference")
-       // {
-       //     string weights= "weights/TMVAClassification_BDT_VBFQCDKiller_case2.weights.xml";
-       //     ei.BDT2 = GetBDT2Score(ei,weights); // GGF-HHKiller
-       // }
-       // else
-       // {
-       //     ei.BDT2 = 0;
-       // }
-       // //If VBF-HH Signal MC, then fill branches with information for gen-level studies
-       // if(any_cast<bool>(parameterList_->at("is_VBF_sig")) ) AddVBFGenMatchVariables(nat, ei);
-
-       return;
-}
-
-void OfflineProducerHelper::init_BDT_evals()
-{
-   // string strategy = any_cast<string>(parameterList_->at("bbbbChoice"));
-   // string weights_BDT1 = "weights/TMVAClassification_BDT_GGFKiller_case1.weights.xml";    // FIXME: OK as default?
-   // string weights_BDT2 = "weights/TMVAClassification_BDT_VBFQCDKiller_case1.weights.xml"; // FIXME: OK as default?
-   // string weights_BDT3 = "weights/TMVAClassification_BDT_GGFQCDKiller_case1.weights.xml"; // FIXME: OK as default?
-   
-   // // GGF-HHKiller
-   // if(strategy=="BothClosestToMh")
-   //     weights_BDT1 = "weights/TMVAClassification_BDT_GGFKiller_case1.weights.xml";
-   // else if(strategy=="BothClosestToDiagonal")
-   //     weights_BDT1 = "weights/TMVAClassification_BDT_GGFKiller_case2.weights.xml";
-   // else if(strategy=="MinMassDifference")
-   //     string weights_BDT1 = "weights/TMVAClassification_BDT_GGFKiller_case2.weights.xml";
-   // // else
-   //      // some fallback?
-
-   // //VBF-QCDKiller
-   // if(strategy=="BothClosestToMh")
-   //     weights_BDT2 = "weights/TMVAClassification_BDT_VBFQCDKiller_case1.weights.xml";
-   // else if(strategy=="BothClosestToDiagonal")
-   //     weights_BDT2 = "weights/TMVAClassification_BDT_VBFQCDKiller_case2.weights.xml";
-   // else if(strategy=="MinMassDifference")
-   //     weights_BDT2 = "weights/TMVAClassification_BDT_VBFQCDKiller_case2.weights.xml";
-   // // else
-   //      // some fallback?
-
-   // //GGF-QCDKiller
-   // if(strategy=="BothClosestToMh")
-   //     weights_BDT3 = "weights/TMVAClassification_BDT_GGFQCDKiller_case1.weights.xml";
-   // else if(strategy=="BothClosestToDiagonal")
-   //     weights_BDT3 = "weights/TMVAClassification_BDT_GGFQCDKiller_case2.weights.xml";
-   // else if(strategy=="MinMassDifference")
-   //     weights_BDT3 = "weights/TMVAClassification_BDT_GGFQCDKiller_case2.weights.xml";
-   // // else
-   //      // some fallback?
-
-   string strategy = any_cast<string>(parameterList_->at("bbbbChoice"));
-
-   string method = "BDT method";
-
-   string weights_BDT1 = "weights/TMVAClassification_BDT_GGFKiller_case1.weights.xml";    // FIXME: OK as default?
-   string weights_BDT2 = "weights/TMVAClassification_BDT_VBFQCDKiller_case1.weights.xml"; // FIXME: OK as default?
-   string weights_BDT3 = "weights/TMVAClassification_BDT_GGFQCDKiller_case1.weights.xml"; // FIXME: OK as default?
-   
-    // GGF-HHKiller
-    if(strategy=="BothClosestToMh"){
-        weights_BDT1 = "weights/TMVAClassification_BDT_GGFKiller_case1.weights.xml";
-        weights_BDT2 = "weights/TMVAClassification_BDT_VBFQCDKiller_case1.weights.xml";
-        weights_BDT3 = "weights/TMVAClassification_BDT_GGFQCDKiller_case1.weights.xml";
-    }
-    else if(strategy=="BothClosestToDiagonal"){
-        weights_BDT1 = "weights/TMVAClassification_BDT_GGFKiller_case2.weights.xml";
-        weights_BDT2 = "weights/TMVAClassification_BDT_VBFQCDKiller_case2.weights.xml";
-        weights_BDT3 = "weights/TMVAClassification_BDT_GGFQCDKiller_case2.weights.xml";
-    }
-    else if(strategy=="MinMassDifference"){
-       weights_BDT1 = "weights/TMVAClassification_BDT_GGFKiller_case2.weights.xml";
-       weights_BDT2 = "weights/TMVAClassification_BDT_VBFQCDKiller_case2.weights.xml";
-       weights_BDT3 = "weights/TMVAClassification_BDT_GGFQCDKiller_case2.weights.xml";
-    }
-    // else
-        // some fallback?
-
-    //std::cout << "[INFO] ... initialising BDT evals" << std::endl;
-    //std::cout << "   - BDT 1 . method : " << method << ", weight_file : " << weights_BDT1 << std::endl;
-    //std::cout << "   - BDT 2 . method : " << method << ", weight_file : " << weights_BDT2 << std::endl;
-    //std::cout << "   - BDT 3 . method : " << method << ", weight_file : " << weights_BDT3 << std::endl;
-
-    eval_BDT1_->init(method, weights_BDT1);
-    eval_BDT2_->init(method, weights_BDT2);
-    eval_BDT3_->init(method, weights_BDT3);
-}
-
-
-void OfflineProducerHelper::init_HH_reweighter(OutputTree& ot, std::string coeffFile, std::string hhreweighterInputMap, std::string histoName)
-{
-    // initialise the reweighter
-    //std::cout << "[INFO] ... initialising HH reweighter" << std::endl;
-    //std::cout << "   - coefficient file       : " << coeffFile            << std::endl;
-    //std::cout << "   - input sample map file  : " << hhreweighterInputMap << std::endl;
-    //std::cout << "   - input sample map hisot : " << histoName            << std::endl;
-
-    TFile* fIn = TFile::Open(hhreweighterInputMap.c_str());
-    TH2D*  hIn = (TH2D*) fIn->Get(histoName.c_str());
-    hhreweighter_ = std::unique_ptr<HHReweight5D> (new HHReweight5D (coeffFile, hIn));
-    fIn->Close();
-
-    // create the needed branches for the reweigh
-    ot.declareUserFloatBranch("HH_reweight", 1.0);
-}
-
-// float OfflineProducerHelper::GetBDT1Score(EventInfo& ei, string weights){
-float OfflineProducerHelper::GetBDT1Score(EventInfo& ei){
-
-       // TMVA::Reader *reader0 = new TMVA::Reader( "!Color:Silent" );
-       // float abs_H1_eta_bdt=abs(ei.H1->P4().Eta());
-       // float abs_H2_eta_bdt=abs(ei.H2->P4().Eta());
-       // float H1_pt_bdt=ei.H1->P4().Pt();
-       // float H2_pt_bdt=ei.H2->P4().Pt();
-       // float JJ_j1_pt_bdt=ei.JJ_j1->P4().Pt();
-       // float JJ_j2_pt_bdt=ei.JJ_j2->P4().Pt();
-       // float abs_JJ_eta_bdt = abs(ei.JJ->P4().Eta());
-       // float h1h2_deltaEta_bdt = ei.h1h2_deltaEta.get();
-       // float h1j1_deltaR_bdt = ei.h1j1_deltaR.get();
-       // float h1j2_deltaR_bdt = ei.h1j2_deltaR.get();
-       // float h2j1_deltaR_bdt = ei.h2j1_deltaR.get();
-       // float h2j2_deltaR_bdt = ei.h2j2_deltaR.get();
-       // float abs_j1etaj2eta_bdt = abs( ei.j1etaj2eta.get() );
-       // float abs_costh_HH_b1_cm_bdt = abs(ei.costh_HH_b1_cm.get());
-       // float abs_costh_HH_b2_cm_bdt = abs(ei.costh_HH_b2_cm.get());
-       // reader0->AddVariable("abs_H1_eta:=abs(H1_eta)", &(abs_H1_eta_bdt) );
-       // reader0->AddVariable("abs_H2_eta:=abs(H2_eta)", &(abs_H2_eta_bdt) );
-       // reader0->AddVariable("H1_pt", &(H1_pt_bdt) );
-       // reader0->AddVariable("H2_pt", &(H2_pt_bdt) );
-       // reader0->AddVariable("JJ_j1_pt", &(JJ_j1_pt_bdt) );
-       // reader0->AddVariable("JJ_j2_pt", &(JJ_j2_pt_bdt) );
-       // reader0->AddVariable("abs_JJ_eta:=abs(JJ_eta)", &(abs_JJ_eta_bdt));
-       // reader0->AddVariable("h1h2_deltaEta", &(h1h2_deltaEta_bdt));
-       // reader0->AddVariable("h1j1_deltaR", &(h1j1_deltaR_bdt));
-       // reader0->AddVariable("h1j2_deltaR", &(h1j2_deltaR_bdt));
-       // reader0->AddVariable("h2j1_deltaR", &(h2j1_deltaR_bdt));
-       // reader0->AddVariable("h2j2_deltaR", &(h2j2_deltaR_bdt));
-       // reader0->AddVariable("abs_j1etaj2eta:=abs(j1etaj2eta)", &(abs_j1etaj2eta_bdt));
-       // reader0->AddVariable("abs_costh_HH_b1_cm:=abs(costh_HH_b1_cm)", &(abs_costh_HH_b1_cm_bdt));
-       // reader0->AddVariable("abs_costh_HH_b2_cm:=abs(costh_HH_b2_cm)", &(abs_costh_HH_b2_cm_bdt));
-       // TString method =  "BDT method";
-       // reader0->BookMVA( "BDT method", Form("%s",weights.c_str()) );
-       // float BDT = reader0->EvaluateMVA(method);
-       // delete reader0;
-       // return BDT;
-
-        float abs_H1_eta_bdt                  = abs(ei.H1->P4().Eta());
-        float abs_H2_eta_bdt                  = abs(ei.H2->P4().Eta());
-        float H1_pt_bdt                       = ei.H1->P4().Pt();
-        float H2_pt_bdt                       = ei.H2->P4().Pt();
-        float JJ_j1_pt_bdt                    = ei.JJ_j1->P4().Pt();
-        float JJ_j2_pt_bdt                    = ei.JJ_j2->P4().Pt();
-        float abs_JJ_eta_bdt                  = abs(ei.JJ->P4().Eta());
-        float h1h2_deltaEta_bdt               = ei.h1h2_deltaEta.get();
-        float h1j1_deltaR_bdt                 = ei.h1j1_deltaR.get();
-        float h1j2_deltaR_bdt                 = ei.h1j2_deltaR.get();
-        float h2j1_deltaR_bdt                 = ei.h2j1_deltaR.get();
-        float h2j2_deltaR_bdt                 = ei.h2j2_deltaR.get();
-        float abs_j1etaj2eta_bdt              = abs( ei.j1etaj2eta.get() );
-        float abs_costh_HH_b1_cm_bdt          = abs(ei.costh_HH_b1_cm.get());
-        float abs_costh_HH_b2_cm_bdt          = abs(ei.costh_HH_b2_cm.get());
-
-        eval_BDT1_ -> floatVarsMap["abs_H1_eta:=abs(H1_eta)"]                  = abs_H1_eta_bdt;
-        eval_BDT1_ -> floatVarsMap["abs_H2_eta:=abs(H2_eta)"]                  = abs_H2_eta_bdt;
-        eval_BDT1_ -> floatVarsMap["H1_pt"]                                    = H1_pt_bdt;
-        eval_BDT1_ -> floatVarsMap["H2_pt"]                                    = H2_pt_bdt;
-        eval_BDT1_ -> floatVarsMap["JJ_j1_pt"]                                 = JJ_j1_pt_bdt;
-        eval_BDT1_ -> floatVarsMap["JJ_j2_pt"]                                 = JJ_j2_pt_bdt;
-        eval_BDT1_ -> floatVarsMap["abs_JJ_eta:=abs(JJ_eta)"]                  = abs_JJ_eta_bdt;
-        eval_BDT1_ -> floatVarsMap["h1h2_deltaEta"]                            = h1h2_deltaEta_bdt;
-        eval_BDT1_ -> floatVarsMap["h1j1_deltaR"]                              = h1j1_deltaR_bdt;
-        eval_BDT1_ -> floatVarsMap["h1j2_deltaR"]                              = h1j2_deltaR_bdt;
-        eval_BDT1_ -> floatVarsMap["h2j1_deltaR"]                              = h2j1_deltaR_bdt;
-        eval_BDT1_ -> floatVarsMap["h2j2_deltaR"]                              = h2j2_deltaR_bdt;
-        eval_BDT1_ -> floatVarsMap["abs_j1etaj2eta:=abs(j1etaj2eta)"]          = abs_j1etaj2eta_bdt;
-        eval_BDT1_ -> floatVarsMap["abs_costh_HH_b1_cm:=abs(costh_HH_b1_cm)"]  = abs_costh_HH_b1_cm_bdt;
-        eval_BDT1_ -> floatVarsMap["abs_costh_HH_b2_cm:=abs(costh_HH_b2_cm)"]  = abs_costh_HH_b2_cm_bdt;
-
-        return eval_BDT1_ -> eval();
-}
-
-float OfflineProducerHelper::GetBDT2Score(EventInfo& ei){
-       // TMVA::Reader *reader0 = new TMVA::Reader( "!Color:Silent" );
-       // float HH_b3_pt_bdt=ei.HH_b3->P4().Pt();
-       // float HH_b4_pt_bdt=ei.HH_b4->P4().Pt();
-       // float JJ_j1_qgl_bdt = get_property(ei.JJ_j1.get(), Jet_qgl);
-       // float JJ_j2_qgl_bdt = get_property(ei.JJ_j2.get(), Jet_qgl);
-       // float H1_m_bdt = ei.H1->P4().M();
-       // float H2_m_bdt = ei.H2->P4().M();
-       // float H1_bb_deltaR_bdt = ei.H1_bb_deltaR.get();
-       // float H2_bb_deltaR_bdt = ei.H2_bb_deltaR.get();
-       // float JJ_m_bdt = ei.JJ->P4().M();
-       // float j1j2_deltaEta_bdt = ei.j1j2_deltaEta.get();
-       // float abs_costh_JJ_j1_cm_bdt = abs(ei.costh_JJ_j1_cm.get());
-       // reader0->AddVariable("HH_b3_pt", &(HH_b3_pt_bdt));
-       // reader0->AddVariable("HH_b4_pt", &(HH_b4_pt_bdt));
-       // reader0->AddVariable("JJ_j1_qgl", &(JJ_j1_qgl_bdt));
-       // reader0->AddVariable("JJ_j2_qgl", &(JJ_j2_qgl_bdt));
-       // reader0->AddVariable("H1_m",&(H1_m_bdt));
-       // reader0->AddVariable("H2_m",&(H2_m_bdt));
-       // reader0->AddVariable("H1_bb_deltaR",&(H1_bb_deltaR_bdt));
-       // reader0->AddVariable("H2_bb_deltaR",&(H2_bb_deltaR_bdt));
-       // reader0->AddVariable("JJ_m",&(JJ_m_bdt));
-       // reader0->AddVariable("j1j2_deltaEta",&(j1j2_deltaEta_bdt));
-       // reader0->AddVariable("abs_costh_JJ_j1_cm:=abs(costh_JJ_j1_cm)",&(abs_costh_JJ_j1_cm_bdt));
-       // TString method =  "BDT method";
-       // reader0->BookMVA( "BDT method", Form("%s",weights.c_str()) );
-       // float BDT = reader0->EvaluateMVA(method);
-       // delete reader0;
-       // return BDT;
-    
-       float HH_b3_pt_bdt               = ei.HH_b3->P4().Pt();
-       float HH_b4_pt_bdt               = ei.HH_b4->P4().Pt();
-       float JJ_j1_qgl_bdt              = get_property(ei.JJ_j1.get(), Jet_qgl);
-       float JJ_j2_qgl_bdt              = get_property(ei.JJ_j2.get(), Jet_qgl);
-       float H1_m_bdt                   = ei.H1->P4().M();
-       float H2_m_bdt                   = ei.H2->P4().M();
-       float H1_bb_deltaR_bdt           = ei.H1_bb_deltaR.get();
-       float H2_bb_deltaR_bdt           = ei.H2_bb_deltaR.get();
-       float JJ_m_bdt                   = ei.JJ->P4().M();
-       float j1j2_deltaEta_bdt          = ei.j1j2_deltaEta.get();
-       float abs_costh_JJ_j1_cm_bdt     = abs(ei.costh_JJ_j1_cm.get());
-
-        eval_BDT2_ -> floatVarsMap["HH_b3_pt"]                                = HH_b3_pt_bdt;
-        eval_BDT2_ -> floatVarsMap["HH_b4_pt"]                                = HH_b4_pt_bdt;
-        eval_BDT2_ -> floatVarsMap["JJ_j1_qgl"]                               = JJ_j1_qgl_bdt;
-        eval_BDT2_ -> floatVarsMap["JJ_j2_qgl"]                               = JJ_j2_qgl_bdt;
-        eval_BDT2_ -> floatVarsMap["H1_m"]                                    = H1_m_bdt;
-        eval_BDT2_ -> floatVarsMap["H2_m"]                                    = H2_m_bdt;
-        eval_BDT2_ -> floatVarsMap["H1_bb_deltaR"]                            = H1_bb_deltaR_bdt;
-        eval_BDT2_ -> floatVarsMap["H2_bb_deltaR"]                            = H2_bb_deltaR_bdt;
-        eval_BDT2_ -> floatVarsMap["JJ_m"]                                    = JJ_m_bdt;
-        eval_BDT2_ -> floatVarsMap["j1j2_deltaEta"]                           = j1j2_deltaEta_bdt;
-        eval_BDT2_ -> floatVarsMap["abs_costh_JJ_j1_cm:=abs(costh_JJ_j1_cm)"] = abs_costh_JJ_j1_cm_bdt;
-
-        return eval_BDT2_ -> eval();
-}
-
-float OfflineProducerHelper::GetBDT3Score(EventInfo& ei){
-       // TMVA::Reader *reader0 = new TMVA::Reader( "!Color:Silent" );
-       // float HH_b3_pt_bdt=ei.HH_b3->P4().Pt();
-       // float HH_b4_pt_bdt=ei.HH_b4->P4().Pt();
-       // float abs_HH_b3_eta_bdt=abs(ei.HH_b3->P4().Eta());
-       // float abs_HH_b4_eta_bdt=abs(ei.HH_b4->P4().Eta());
-       // float H1_m_bdt = ei.H1->P4().M();
-       // float H2_m_bdt = ei.H2->P4().M();
-       // float H1_bb_deltaR_bdt = ei.H1_bb_deltaR.get();
-       // float H2_bb_deltaR_bdt = ei.H2_bb_deltaR.get();
-       // float H1_bb_deltaPhi_bdt = ei.H1_bb_deltaPhi.get();
-       // float H2_bb_deltaPhi_bdt = ei.H2_bb_deltaPhi.get();
-       // float abs_costh_HH_b1_cm_bdt = abs(ei.costh_HH_b1_cm.get());
-       // float abs_costh_HH_b2_cm_bdt = abs(ei.costh_HH_b2_cm.get());
-       // reader0->AddVariable("HH_b3_pt", &(HH_b3_pt_bdt));
-       // reader0->AddVariable("HH_b4_pt", &(HH_b4_pt_bdt));
-       // reader0->AddVariable("abs_HH_b3_eta:=abs(HH_b3_eta)", &(abs_HH_b3_eta_bdt));
-       // reader0->AddVariable("abs_HH_b4_eta:=abs(HH_b4_eta)", &(abs_HH_b4_eta_bdt));
-       // reader0->AddVariable("H1_m",&(H1_m_bdt));
-       // reader0->AddVariable("H2_m",&(H2_m_bdt));
-       // reader0->AddVariable("H1_bb_deltaR",&(H1_bb_deltaR_bdt));
-       // reader0->AddVariable("H2_bb_deltaR",&(H2_bb_deltaR_bdt));
-       // reader0->AddVariable("H1_bb_deltaPhi",&(H1_bb_deltaPhi_bdt));
-       // reader0->AddVariable("H2_bb_deltaPhi",&(H2_bb_deltaPhi_bdt));
-       // reader0->AddVariable("abs_costh_HH_b1_cm:=abs(costh_HH_b1_cm)",&(abs_costh_HH_b1_cm_bdt));
-       // reader0->AddVariable("abs_costh_HH_b2_cm:=abs(costh_HH_b2_cm)",&(abs_costh_HH_b2_cm_bdt));
-       // TString method =  "BDT method";
-       // reader0->BookMVA( "BDT method", Form("%s",weights.c_str()) );
-       // float BDT = reader0->EvaluateMVA(method);
-       // delete reader0;
-       // return BDT;
-
-        float HH_b3_pt_bdt           =  ei.HH_b3->P4().Pt();
-        float HH_b4_pt_bdt           =  ei.HH_b4->P4().Pt();
-        float abs_HH_b3_eta_bdt      =  abs(ei.HH_b3->P4().Eta());
-        float abs_HH_b4_eta_bdt      =  abs(ei.HH_b4->P4().Eta());
-        float H1_m_bdt               =  ei.H1->P4().M();
-        float H2_m_bdt               =  ei.H2->P4().M();
-        float H1_bb_deltaR_bdt       =  ei.H1_bb_deltaR.get();
-        float H2_bb_deltaR_bdt       =  ei.H2_bb_deltaR.get();
-        float H1_bb_deltaPhi_bdt     =  ei.H1_bb_deltaPhi.get();
-        float H2_bb_deltaPhi_bdt     =  ei.H2_bb_deltaPhi.get();
-        float abs_costh_HH_b1_cm_bdt =  abs(ei.costh_HH_b1_cm.get());
-        float abs_costh_HH_b2_cm_bdt =  abs(ei.costh_HH_b2_cm.get());
-
-        eval_BDT3_ -> floatVarsMap["HH_b3_pt"]                                 = HH_b3_pt_bdt;
-        eval_BDT3_ -> floatVarsMap["HH_b4_pt"]                                 = HH_b4_pt_bdt;
-        eval_BDT3_ -> floatVarsMap["abs_HH_b3_eta:=abs(HH_b3_eta)"]            = abs_HH_b3_eta_bdt;
-        eval_BDT3_ -> floatVarsMap["abs_HH_b4_eta:=abs(HH_b4_eta)"]            = abs_HH_b4_eta_bdt;
-        eval_BDT3_ -> floatVarsMap["H1_m"]                                     = H1_m_bdt;
-        eval_BDT3_ -> floatVarsMap["H2_m"]                                     = H2_m_bdt;
-        eval_BDT3_ -> floatVarsMap["H1_bb_deltaR"]                             = H1_bb_deltaR_bdt;
-        eval_BDT3_ -> floatVarsMap["H2_bb_deltaR"]                             = H2_bb_deltaR_bdt;
-        eval_BDT3_ -> floatVarsMap["H1_bb_deltaPhi"]                           = H1_bb_deltaPhi_bdt;
-        eval_BDT3_ -> floatVarsMap["H2_bb_deltaPhi"]                           = H2_bb_deltaPhi_bdt;
-        eval_BDT3_ -> floatVarsMap["abs_costh_HH_b1_cm:=abs(costh_HH_b1_cm)"]  = abs_costh_HH_b1_cm_bdt;
-        eval_BDT3_ -> floatVarsMap["abs_costh_HH_b2_cm:=abs(costh_HH_b2_cm)"]  = abs_costh_HH_b2_cm_bdt;
-
-        return eval_BDT3_ -> eval();
-}
-
-std::vector<Jet> OfflineProducerHelper::bjJets_PreselectionCut(NanoAODTree& nat, EventInfo& ei,OutputTree &ot,std::vector<Jet> jets)
-
-{
-    float bminimumDeepCSVAccepted           = any_cast<float>(parameterList_->at("bMinDeepCSV"          ));
-    float bminimumPtAccepted                = any_cast<float>(parameterList_->at("bMinPt"               ));
-    float bmaximumAbsEtaAccepted            = any_cast<float>(parameterList_->at("bMaxAbsEta"           ));
-    float jminimumPtAccepted                = any_cast<float>(parameterList_->at("jMinPt"               ));
-    float jmaximumAbsEtaAccepted            = any_cast<float>(parameterList_->at("jMaxAbsEta"           ));
-    std::vector<Jet> nobjets,outputJets,btaggedjets;
-
-    /////////////--------Select four b-jet candidates
-    ///////////// Apply PT and ETA requirements
-    auto it = jets.begin();
-    while (it != jets.end()){
-        if(bminimumPtAccepted>0.){
-            if(get_property( (*it),Jet_pt)<bminimumPtAccepted){
-                nobjets.emplace_back(*it);
-                it=jets.erase(it);
-                continue;
-            }
-        }
-        if(bmaximumAbsEtaAccepted>0.){
-            if(abs(get_property( (*it),Jet_eta))>bmaximumAbsEtaAccepted){
-                nobjets.emplace_back(*it);
-                it=jets.erase(it);
-                continue;
-            }
-        }
-        ++it;
-    }
-    if(jets.size() < 4) return outputJets;
-    ///////////// Apply BTAGGING requirements
-    //Do we want antibtag information or not?
-    int MinimumNumberOfBTags=0;
-    if(any_cast<bool>(parameterList_->at("FourthAntiBTagInformation"))){MinimumNumberOfBTags= 3;}
-    else{MinimumNumberOfBTags= 4;}
-    //Count number of b-tagged jets. If btags < 3, then reject event (not important for us)
-    int btags=0; for (uint i=0;i<jets.size();i++ ){ if( get_property( jets.at(i) ,Jet_btagDeepB) > bminimumDeepCSVAccepted) btags++;}
-    if(btags<MinimumNumberOfBTags) return outputJets;
-    //Select the four most b-tagged
-    stable_sort(jets.begin(), jets.end(), [](const Jet & a, const Jet & b) -> bool
-    { return ( get_property(a, Jet_btagDeepB) > get_property(b, Jet_btagDeepB) );});
-    outputJets = {{*(jets.begin()+0),*(jets.begin()+1),*(jets.begin()+2),*(jets.begin()+3)}};
-    int c=0; while (c<4){jets.erase(jets.begin());c++;}
-    //Calculate the associated b-tagging scale factor depending on b-tag or anti-btag selection
-    if(btags==3){btaggedjets={{*(outputJets.begin()+0),*(outputJets.begin()+1),*(outputJets.begin()+2)}};CalculateBtagScaleFactor(btaggedjets,nat,ot);}
-    else{btaggedjets={{*(outputJets.begin()+0),*(outputJets.begin()+1),*(outputJets.begin()+2),*(outputJets.begin()+3)}};CalculateBtagScaleFactor(btaggedjets,nat,ot);}
-
-    /////////////--------Select two VBF-jet candidates based on PT and ETA1*ETA2<0
-    ///////////// Apply PT and ETA requirements
-    jets.insert(jets.end(), nobjets.begin(), nobjets.end());
-    auto jt = jets.begin();
-    while (jt != jets.end()){
-        if(jminimumPtAccepted>0.){
-            if(get_property( (*jt),Jet_pt)<jminimumPtAccepted){
-                jt=jets.erase(jt);
-                continue;
-            }
-        }
-        if(jmaximumAbsEtaAccepted>0.){
-            if(abs(get_property( (*jt),Jet_eta))>jmaximumAbsEtaAccepted){
-                jt=jets.erase(jt);
-                continue;
-            }
-        }
-        ++jt;
-    }
-    if(jets.size() < 2) return outputJets;
-    //Check if event has at least two VBF-jet candidates (OppositeEtaJetPair), otherwise returns only b-jets candidates
-    std::vector<Jet> VBFjets = OppositeEtaJetPair(jets);
-    if(VBFjets.size() < 2)return outputJets;
-    /////////////--------Fill information of preselected jets: outputJets = (4 b-jets, 2 VBF jets) and return it
-    outputJets.insert(outputJets.end(),VBFjets.begin(),VBFjets.end());
-    return outputJets;
-}
-
-std::vector<Jet> OfflineProducerHelper::bjJets_2016_PreselectionCut(NanoAODTree& nat, EventInfo& ei,OutputTree &ot,std::vector<Jet> jets)
-
-{
-    float bminimumDeepCSVAccepted           = any_cast<float>(parameterList_->at("bMinDeepCSV"          ));
-    float bminimumPtAccepted                = any_cast<float>(parameterList_->at("bMinPt"               ));
-    float bmaximumAbsEtaAccepted            = any_cast<float>(parameterList_->at("bMaxAbsEta"           ));
-    float jminimumPtAccepted                = any_cast<float>(parameterList_->at("jMinPt"               ));
-    float jmaximumAbsEtaAccepted            = any_cast<float>(parameterList_->at("jMaxAbsEta"           ));
-    std::vector<Jet> nobjets,outputJets,btaggedjets;
-
-    /////////////--------Select four b-jet candidates
-    ///////////// Apply PT and ETA requirements
-    auto it = jets.begin();
-    while (it != jets.end()){
-        if(bminimumPtAccepted>0.){
-            if(get_property( (*it),Jet_pt)<bminimumPtAccepted){
-                nobjets.emplace_back(*it);
-                it=jets.erase(it);
-                continue;
-            }
-        }
-        if(bmaximumAbsEtaAccepted>0.){
-            if(abs(get_property( (*it),Jet_eta))>bmaximumAbsEtaAccepted){
-                nobjets.emplace_back(*it);
-                it=jets.erase(it);
-                continue;
-            }
-        }
-        ++it;
-    }
-    if(jets.size() < 4) return outputJets;
-    ///////////// Apply BTAGGING requirements
-    //Do we want antibtag information or not?
-    int MinimumNumberOfBTags=0;
-    if(any_cast<bool>(parameterList_->at("FourthAntiBTagInformation"))){MinimumNumberOfBTags= 3;}
-    else{MinimumNumberOfBTags= 4;}
-    //Count number of b-tagged jets. If btags < 3, then reject event (not important for us)
-    int btags=0; for (uint i=0;i<jets.size();i++ ){ if( get_property( jets.at(i) ,Jet_btagCMVA) > bminimumDeepCSVAccepted) btags++;}
-    if(btags<MinimumNumberOfBTags) return outputJets;
-    //Select the four most b-tagged
-    stable_sort(jets.begin(), jets.end(), [](const Jet & a, const Jet & b) -> bool
-    { return ( get_property(a, Jet_btagCMVA) > get_property(b, Jet_btagCMVA) );});
-    outputJets = {{*(jets.begin()+0),*(jets.begin()+1),*(jets.begin()+2),*(jets.begin()+3)}};
-    int c=0; while (c<4){jets.erase(jets.begin());c++;}
-    //Calculate the associated b-tagging scale factor depending on b-tag or anti-btag selection
-    if(btags==3){btaggedjets={{*(outputJets.begin()+0),*(outputJets.begin()+1),*(outputJets.begin()+2)}};CalculateBtagScaleFactor(btaggedjets,nat,ot);}
-    else{btaggedjets={{*(outputJets.begin()+0),*(outputJets.begin()+1),*(outputJets.begin()+2),*(outputJets.begin()+3)}};CalculateBtagScaleFactor(btaggedjets,nat,ot);}
-
-    /////////////--------Select two VBF-jet candidates based on PT and ETA1*ETA2<0
-    ///////////// Apply PT and ETA requirements
-    jets.insert(jets.end(), nobjets.begin(), nobjets.end());
-    auto jt = jets.begin();
-    while (jt != jets.end()){
-        if(jminimumPtAccepted>0.){
-            if(get_property( (*jt),Jet_pt)<jminimumPtAccepted){
-                jt=jets.erase(jt);
-                continue;
-            }
-        }
-        if(jmaximumAbsEtaAccepted>0.){
-            if(abs(get_property( (*jt),Jet_eta))>jmaximumAbsEtaAccepted){
-                jt=jets.erase(jt);
-                continue;
-            }
-        }
-        ++jt;
-    }
-    if(jets.size() < 2) return outputJets;
-    //Check if event has at least two VBF-jet candidates (OppositeEtaJetPair), otherwise returns only b-jets candidates
-    std::vector<Jet> VBFjets = OppositeEtaJetPair(jets);
-    if(VBFjets.size() < 2)return outputJets;
-    /////////////--------Fill information of preselected jets: outputJets = (4 b-jets, 2 VBF jets) and return it
-    outputJets.insert(outputJets.end(),VBFjets.begin(),VBFjets.end());
-    return outputJets;
-}
-
-std::vector<Jet> OfflineProducerHelper::ExternalEtaJetPair(std::vector<Jet> jets, std::vector<Jet> bjets){
-//Check Max abs(Eta) among the b-jets
-std::vector<Jet> outputJets;
-float maxbEta=-1;
-for (uint i=0;i<bjets.size();i++ )
-{
-        float Eta = abs(bjets.at(i).P4().Eta());
-        if(Eta>maxbEta){maxbEta=Eta;}
-}
-//Remove VBF-jet candidates with abs(eta) lower than the bjets abs(eta)
-auto jt = jets.begin();
-while (jt != jets.end()){
-        if(abs(get_property( (*jt),Jet_eta))<maxbEta){
-            jt=jets.erase(jt);
-            continue;
-        }
-        ++jt;
-}
-//Ordered the VBF candidates by pt. Ff there are not two VBF-candidates, then return empty
-if(jets.size()<2) return outputJets;
-stable_sort(jets.begin(), jets.end(), [](const Jet & a, const Jet & b) -> bool
-{ return ( get_property(a, Jet_pt ) >  get_property(b, Jet_pt)  );});
-outputJets = {{*(jets.begin()+0),*(jets.begin()+1)}}; return outputJets;
-}
-
-std::vector<int> OfflineProducerHelper::AddGenMatchingInfo(NanoAODTree& nat, EventInfo& ei, std::vector<Jet> jets)
-{
-    //OUTPUT: Vector of quarkIDs for the jets
-    //QuarkId: (0) Others, (1) gen_H1_b1, (2) gen_H1_b2, (3) gen_H2_b1, (4) gen_H2_b2, (5) gen_j1_out, (6) gen_j2_outs
-    //Order the generator level information by specific PT
-    order_by_pT(ei.gen_H1_b1.get(), ei.gen_H1_b2.get());
-    order_by_pT(ei.gen_H2_b1.get(), ei.gen_H2_b2.get());
-    order_by_pT(ei.gen_q1_out.get(), ei.gen_q2_out.get());
-    std::vector<GenPart> bs = {{*(ei.gen_H1_b1),*(ei.gen_H1_b2),*(ei.gen_H2_b1),*(ei.gen_H2_b2)}};
-    bool swapped = order_by_pT(ei.gen_H1.get(), ei.gen_H2.get());
-    if (!swapped)
-    {
-        ei.gen_H1_b1 = bs.at(0);
-        ei.gen_H1_b2 = bs.at(1);
-        ei.gen_H2_b1 = bs.at(2);
-        ei.gen_H2_b2 = bs.at(3);
-    }
-    else
-    {
-        ei.gen_H1_b1 = bs.at(2);
-        ei.gen_H1_b2 = bs.at(3);
-        ei.gen_H2_b1 = bs.at(0);
-        ei.gen_H2_b2 = bs.at(1);
-    }
-    //Define a vector with the six ordered quarks
-    std::vector<GenPart> quarks = {{
-        *(ei.gen_H1_b1),*(ei.gen_H1_b2),
-        *(ei.gen_H2_b1),*(ei.gen_H2_b2), *(ei.gen_q1_out),*(ei.gen_q2_out)}};
-    std::vector<int> output = QuarkToJetMatcher(quarks,jets);
-    return output;
- }
-
-std::vector<int> OfflineProducerHelper::QuarkToJetMatcher(const std::vector<GenPart> quarks,const std::vector<Jet> jets){
-// OUTPUT is a vector with nJet entries filled the QuarkId, ordered by jets index
-//----QuarkId: (1) gen_H1_b1, (2) gen_H1_b2, (3) gen_H2_b1, (4) gen_H2_b2, (5) gen_j1_out, (6) gen_j2_out, (0) Others
-//----JetId: Index of the jets in the input vector 'jets'
-//Define and initialize variables
-std::vector<std::tuple<TLorentzVector,int>> jetsinfo,quarksinfo;
-std::vector<std::tuple<int,int>> quark_jet_link; uint id;
-std::vector<int> output;
-float dR=0.4, maxDeltaR, DeltaR; bool matched = false;
-uint m=0; while(m<quarks.size()){quarksinfo.emplace_back( make_tuple(quarks.at(m).P4(), m)); m++;}
-uint n=0; while(n<jets.size()  ){jetsinfo.emplace_back( make_tuple(jets.at(n).P4(), n)    ); n++;}
-//Create all possible combinations and find the jet set that minimize the deltaR
-for (uint x=0;x < quarksinfo.size();x++ )
-{
- maxDeltaR = dR;
- for (uint y=0;y < jetsinfo.size(); y++ ){
-      DeltaR = get<0>(quarksinfo[x]).DeltaR( get<0>(jetsinfo[y]) );
-      if(DeltaR < maxDeltaR){maxDeltaR=DeltaR; matched=true; id = y ;}
- }
- if(matched) {quark_jet_link.emplace_back( make_tuple(x,get<1>(jetsinfo[id]))); jetsinfo.erase(jetsinfo.begin()+id);}
- else {quark_jet_link.emplace_back( make_tuple(x,-1) );}
- matched = false;
-}
-//Create output with QuarkID
-bool found; int foundy;
-for (uint x=0; x < jets.size(); x++ ){
-      uint jetid=x;
-      found = false;
-      //Check if there is a quark that is linked to this jet
-      for (uint y=0; y < quark_jet_link.size(); y++ ){
-      uint m = get<1>(quark_jet_link[y]);
-      if(jetid == m ){found = true; foundy=y;}
-      }
-      //Load jet information to the output: QuarkID
-      if(found){output.emplace_back(get<0>(quark_jet_link[foundy])+1);}
-      else{output.emplace_back(0);}
-}
-return output;
-}
-
-std::vector<Jet> OfflineProducerHelper::OppositeEtaJetPair(std::vector<Jet> jets){
-//Initialize DEta
-int id;
-float Eta1Eta2= 0; bool foundpair=false;
-std::vector<Jet> outputJets;
-//Order the jets py pt
-stable_sort(jets.begin(), jets.end(), [](const Jet & a, const Jet & b) -> bool
-{ return ( get_property(a, Jet_pt ) >  get_property(b, Jet_pt)  );});
-//Find the j1 (highest pt jet) and j2 (the jet with highest pt and opposite eta sign)
-for (uint y=1;y<jets.size();y++ )
-{
-        Eta1Eta2 = jets.at(0).P4().Eta()*jets.at(y).P4().Eta();
-        if (Eta1Eta2<0)
-        {
-            id = y; foundpair=true;
-        }
-        if(foundpair) break;
-}
-if(!foundpair) return outputJets;
-outputJets = {{*(jets.begin()+0),*(jets.begin()+id)}}; return outputJets;
-}
-
-std::vector<Jet> OfflineProducerHelper::HighestPtJetPair(std::vector<Jet> jets){
-std::vector<Jet> outputJets;
-//Order the jets py pt
-stable_sort(jets.begin(), jets.end(), [](const Jet & a, const Jet & b) -> bool
-{ return ( get_property(a, Jet_pt ) >  get_property(b, Jet_pt)  );});
-//Find the j1 (highest pt jet) and j2 (the jet with highest pt and opposite eta sign)
-outputJets = {{*(jets.begin()+0),*(jets.begin()+1)}}; return outputJets;
 }
 
 ////////////-----FUNCTIONS FOR PRESELECTION OF EVENTS FOR NON-RESONANT ANALYSIS - END

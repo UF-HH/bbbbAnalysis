@@ -28,7 +28,7 @@ Sample::Sample (string name, string filelistname, string treename, string histon
     nentries_    = 0.;
     treename_    = treename;
     histoname_   = histoname;
-    hCutInSkim_ = new TH1F();
+    hCutInSkim_  = unique_ptr<TH1F>(new TH1F());
     hCutInSkim_->SetNameTitle(name_.data(), name_.data());
 }
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -86,7 +86,7 @@ bool Sample::openFileAndTree(const std::vector<Selection> &selections)
     string line;
     int counter = 0;
     bool cutHistogramSet=false;
-    int skimNBins=0;
+    // int skimNBins=0;
     while (std::getline(fList, line))
     {
         line = line.substr(0, line.find("#", 0)); // remove comments introduced by #
@@ -115,16 +115,7 @@ bool Sample::openFileAndTree(const std::vector<Selection> &selections)
             }
             if (!cutHistogramSet){
                 cutHistogramSet=true;
-                skimNBins = 3;
-                int selNBins = selections.size();
-                int nBins = skimNBins + selNBins;
-                hCutInSkim_->SetBins(nBins, 0, nBins);
-                hCutInSkim_->GetXaxis()->SetBinLabel(1, "Ntot_w" );
-                hCutInSkim_->GetXaxis()->SetBinLabel(2, "Ntrg_w" );
-                hCutInSkim_->GetXaxis()->SetBinLabel(3, "Nsel_w" );
-                for(int xBin=1; xBin<=selNBins; ++ xBin){
-                    hCutInSkim_->GetXaxis()->SetBinLabel(xBin+skimNBins, selections.at(xBin-1).getName().data() );
-                }
+                initCutHisto(selections);
             }
 
             hCutInSkim_->Fill(hCutInSkim_->GetBinCenter(hCutInSkim_->GetXaxis()->FindBin("Ntot_w")), hCutTmp->GetBinContent(hCutTmp->GetXaxis()->FindBin("Ntot_w")) );
@@ -213,6 +204,22 @@ void Sample::scaleAll(double luminosity)
             }
         }
     }
+}
+
+void Sample::initCutHisto(const std::vector<Selection> &selections)
+{
+    int skimNBins = 3;
+    int selNBins = selections.size();
+    int nBins    = skimNBins + selNBins;
+    hCutInSkim_->SetBins(nBins, 0, nBins);
+    hCutInSkim_->GetXaxis()->SetBinLabel(1, "Ntot_w" );
+    hCutInSkim_->GetXaxis()->SetBinLabel(2, "Ntrg_w" );
+    hCutInSkim_->GetXaxis()->SetBinLabel(3, "Nsel_w" );
+    for(int xBin=1; xBin<=selNBins; ++ xBin)
+    {
+        hCutInSkim_->GetXaxis()->SetBinLabel(xBin+skimNBins, selections.at(xBin-1).getName().data() );
+    }
+    return;
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

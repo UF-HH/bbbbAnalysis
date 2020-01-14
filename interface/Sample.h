@@ -79,11 +79,14 @@ class Sample
         void clearWeights() {weights_.clear();}
 
         TChain* getTree() {return tree_.get();}
-        TH1F* getCutHistogram() {return hCutInSkim_;}
+        TH1F* getCutHistogram() {return hCutInSkim_.get();}
 
         const std::vector<Weight>& getWeights() const {return weights_;}
         std::vector<Weight>& getWeights() {return weights_;}
         // void addWeight  (std::string wstring); // if no syst, just weight name
+
+        // initialises the structure of the cut flow histo (nbins, labels, etc..)
+        void initCutHisto(const std::vector<Selection> &selections);
 
     private:
         // TFile* fIn_;
@@ -104,7 +107,7 @@ class Sample
         selColl2D plots2D_;
 
         std::vector<Weight> weights_;
-        TH1F *hCutInSkim_;
+        std::unique_ptr<TH1F> hCutInSkim_;
 };
 
 #endif

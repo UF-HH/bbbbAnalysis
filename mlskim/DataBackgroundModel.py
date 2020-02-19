@@ -32,67 +32,86 @@ def BuildReweightingModel(data_3b, data_4b,category,tag,bkgparams,bkgclassifierp
 	if category =='GGF':
 		 variablescr = ['nJet_ec','H1_m','H2_m','H1_pt','H2_pt','h1h2_deltaEta','H1_bb_deltaR','H2_bb_deltaR','HH_m','costh_HH_b1_ggfcm','HH_btag_b3_bscore','HH_btag_b3_bres']
 	elif category == 'VBF':
-		 variablescr = ['HH_m','H1_m','H2_m','H1_pt','H2_pt','h1h2_deltaEta','h1h2_deltaPhi','nJet_ec','JJ_m','j1j2_deltaEta']
+		 variablescr = ['nJet_ec','HH_m','H1_pt','H2_pt','h1h2_deltaEta','JJ_m','j1j2_deltaEta']
 	else:
 		 variablescr = ['H1_pt', 'H2_pt','H1_eta', 'H2_eta']  	
 	#######################################
-	##Gradient Boosted Reweighter
+	##Prepare data to create the model
 	#######################################
 	originalcr,targetcr,originalcr_weights,targetcr_weights,transferfactor = data.preparedataformodel(data_3b,data_4b,variablescr)
-	ksresult_original = plotter.Draw1DHistosComparison(originalcr, targetcr, variablescr, originalcr_weights,True,"%s_original"%tag)
+	plotter.Draw1DHistosComparison(originalcr, targetcr, variablescr, originalcr_weights,True,"%s_original"%tag)
+	
 	#######################################
-	##Folding Gradient Boosted Reweighter
+	##Folding Gradient Boosted Reweighter (2-fold BDT reweighter)
 	#######################################
-	foldingcr_weights,reweightermodel,renormtransferfactor = data.fitreweightermodel(originalcr,targetcr,originalcr_weights,targetcr_weights,transferfactor,modelargs)  
-	ksresult_model   = plotter.Draw1DHistosComparison(originalcr, targetcr, variablescr, foldingcr_weights,True,"%s_model"%tag)
+	foldingcr_weights,reweightermodel = data.fitreweightermodel(originalcr,targetcr,originalcr_weights,targetcr_weights,transferfactor,modelargs)  
+	plotter.Draw1DHistosComparison(originalcr, targetcr, variablescr, foldingcr_weights,True,"%s_model"%tag)
+	
 	########################################
-	## KS Test (as the developers do) / GB ROC AUC Test Study (Very slow, needs to train a classifier in cross-validation)
+	## KS Test (as the developers of the method do), currently used for optimization/check of the parameters
 	########################################
-	bdtreweighter.ks_measurement(variablescr,ksresult_original,ksresult_model)
-	##Not currently used for optimization###bdtreweighter.discrimination_measurement(originalcr,targetcr,originalcr_weights,bkgclassifierparams,"%s"%tag,"original")
-	##Not currently used for optimization###bdtreweighter.discrimination_measurement(originalcr,targetcr,foldingcr_weights,bkgclassifierparams,"%s"%tag,"model")
+	ksresult_original = bdtreweighter.ks_test(originalcr, targetcr, variablescr, originalcr_weights)
+	ksresult_model    = bdtreweighter.ks_test(originalcr, targetcr, variablescr, foldingcr_weights)	
+	bdtreweighter.ks_comparison(variablescr,ksresult_original,ksresult_model)
+	
 	########################################
-	##Update 3b dataframe for modeling
+	## GB ROC AUC Test Study (Very slow test, needs to train a classifier in cross-validation)
 	########################################
-	return foldingcr_weights,reweightermodel,transferfactor,renormtransferfactor
+	bdtreweighter.discrimination_test(originalcr,targetcr,originalcr_weights,bkgclassifierparams,"%s"%tag,"original")
+	bdtreweighter.discrimination_test(originalcr,targetcr,foldingcr_weights,bkgclassifierparams,"%s"%tag,"model")
+	return foldingcr_weights,reweightermodel,transferfactor
 
-def CreatePredictionModel(reweightermodel,transferfactor,renormtransferfactor,data_3b,category):
+def CreatePredictionModel(reweightermodel,transferfactor,data_3b,data_4b,category,valflag,srflag):
 	############################################################################
 	##Let's slice data one more time to have the inputs for the bdt reweighting#
 	############################################################################
 	if category =='GGF':
 		 variables = ['nJet_ec','H1_m','H2_m','H1_pt','H2_pt','h1h2_deltaEta','H1_bb_deltaR','H2_bb_deltaR','HH_m','costh_HH_b1_ggfcm','HH_btag_b3_bscore','HH_btag_b3_bres']
 	elif category == 'VBF':
-		 variables = ['HH_m','H1_m','H2_m','H1_pt','H2_pt','h1h2_deltaEta','h1h2_deltaPhi','nJet_ec','JJ_m','j1j2_deltaEta']
+		 variables = ['nJet_ec','HH_m','H1_pt','H2_pt','h1h2_deltaEta','JJ_m','j1j2_deltaEta']
 	else:
 		 variables = ['H1_pt','H2_pt','H1_eta','H2_eta']          
 	original,original_weights = data.preparedataforprediction(data_3b,transferfactor,variables)
+	target,target_weights     = data.preparedataforprediction(data_4b,1,variables)
 	########################################3############
 	##Folding Gradient Boosted Reweighter (and DQM plots)
 	#####################################################
-	folding_weights= data.getmodelweights(original,original_weights,reweightermodel,transferfactor,renormtransferfactor)
+	folding_weights= data.getmodelweights(original,original_weights,target,target_weights,reweightermodel,transferfactor,valflag,srflag)
+	########################################
+	## KS Test (as the developers of the method do), done just for the validation signal region as we are currently blinded
+	########################################
+	#if valflag==True and srflag==True:
+	#	ksresult_original = bdtreweighter.ks_test(original, target, variables, original_weights)
+	#	ksresult_model    = bdtreweighter.ks_test(original, target, variables, folding_weights)	
+	#	bdtreweighter.ks_comparison(variables,ksresult_original,ksresult_model)
 	return folding_weights
 
 
-def AddModelWeight(dataset,bkgparams,bkgclassifierparams,weightname,categ,valflag,tag):
+def AddModelWeights(dataset,bkgparams,bkgclassifierparams,weightname,categ,valflag,tag):
 	#Slice the data sample to take only events with three/four b-tags among the two categories
+	print "\n"*5
+	print "[INFO] Preparing data and building BDT-reweighting model for %s using the 3b/4b CR data"%weightname
 	data_cr_3b_categ,data_sr_3b_categ,data_rest_3b_categ = SelectRegions(dataset,'3b',categ,valflag)
 	del dataset
 	data_cr_4b_categ,data_sr_4b_categ,data_rest_4b_categ = SelectRegions(data_rest_3b_categ,'4b',categ,valflag)
 	#Get weights ,model, transferfactor for CR data
-	print "[INFO] Building BDT-reweighting model for %s using the 3b/4b CR data"%weightname
-	weights_cr_categ,reweightermodel_categ,transferfactor_categ,renormtransferfactor_categ=BuildReweightingModel(data_cr_3b_categ,data_cr_4b_categ,categ,'%s_%s_%sCR'%(tag,weightname,categ),bkgparams,bkgclassifierparams)
-	del data_cr_4b_categ,data_sr_4b_categ,data_rest_4b_categ
+	weights_cr_categ,reweightermodel_categ,transferfactor_categ=BuildReweightingModel(data_cr_3b_categ,data_cr_4b_categ,categ,'%s_%s_%sCR'%(tag,weightname,categ),bkgparams,bkgclassifierparams)
+	del data_cr_4b_categ 
 	#Get weights for the dataset
 	print "[INFO] Calculating BDT-reweighting model prediction %s in the 3b SR data"%weightname
-	weights_sr_categ=CreatePredictionModel(reweightermodel_categ,transferfactor_categ,renormtransferfactor_categ,data_sr_3b_categ,categ)		
+	weights_sr_categ=CreatePredictionModel(reweightermodel_categ,transferfactor_categ,data_sr_3b_categ,data_sr_4b_categ,categ,valflag,True)		
 	print "[INFO] Calculating BDT-reweighting model prediction %s in the rest of the data"%weightname
-	weights_rest_categ=CreatePredictionModel(reweightermodel_categ,transferfactor_categ,renormtransferfactor_categ,data_rest_3b_categ,categ)
+	weights_rest_categ=CreatePredictionModel(reweightermodel_categ,transferfactor_categ,data_rest_3b_categ,data_rest_4b_categ,categ,valflag,False)
+	del data_sr_4b_categ,data_rest_4b_categ
 	#Add the weights to the CR & the rest
-	print "[INFO] Adding weight %s to the dataframes"%weightname
+	print "[INFO] Adding weight %s"%weightname
 	data_cr_3b_categ[weightname]      = weights_cr_categ 
 	data_sr_3b_categ[weightname]      = weights_sr_categ
 	data_rest_3b_categ[weightname]    = weights_rest_categ
+	print "[INFO] Creating a region id flag (3b-SR:1, 3-CR:0,Rest:-1)"
+	data_sr_3b_categ["SelectedRegion_%s"%weightname]      =  1.0
+	data_cr_3b_categ["SelectedRegion_%s"%weightname]      =  0 
+	data_rest_3b_categ["SelectedRegion_%s"%weightname]    = -1.0
 	print "[INFO] Adding training weight for MVA training"
 	if weightname=='Weight_AnaGGF':
 		l = int(len(data_sr_3b_categ.index) / 2)
@@ -100,37 +119,26 @@ def AddModelWeight(dataset,bkgparams,bkgclassifierparams,weightname,categ,valfla
 		data_sr_3b_categ.loc[:l,"Weight_MVA"] = 0.
 		data_sr_3b_categ.loc[l:,"Weight_MVA"] = 2.0  
 	#Merge (concatenate) them
-	print "[INFO] Returning dataframe"
+	print "[INFO] Concatenating all events in the dataframe"
 	datasetwithweight = pandas.concat( (data_cr_3b_categ,data_sr_3b_categ,data_rest_3b_categ), ignore_index=True   )
 	del data_cr_3b_categ,data_sr_3b_categ,data_rest_3b_categ
 	value = numpy.ones(dtype='float64',shape=len(datasetwithweight))
 	valuef = numpy.multiply(value,transferfactor_categ)
 	datasetwithweight[weightname+"_tfactor"] = valuef
+	datasetwithweight=datasetwithweight.reset_index(drop=True)
 	return datasetwithweight
 
-def RunReweightingModel(dataset,ggfbkgparams,vbfbkgparams,ggfanaclassifierparams,vbfanaclassifierparams,ggfvalclassifierparams,vbfvalclassifierparams,case,directory,tag):
-	datasetwithweights1=AddModelWeight(dataset,ggfbkgparams,ggfvalclassifierparams,'Weight_ValGGF','GGF',True,'%s%s'%(tag,case))
-	del dataset
-	datasetwithweights2=AddModelWeight(datasetwithweights1,vbfbkgparams,vbfvalclassifierparams,'Weight_ValVBF','VBF',True,'%s%s'%(tag,case))
-	del datasetwithweights1
-	datasetwithweights3=AddModelWeight(datasetwithweights2,ggfbkgparams,ggfanaclassifierparams,'Weight_AnaGGF','GGF',False,'%s%s'%(tag,case))
-	del datasetwithweights2
-	datasetwithweights =AddModelWeight(datasetwithweights3,vbfbkgparams,vbfanaclassifierparams,'Weight_AnaVBF','VBF',False,'%s%s'%(tag,case))
-	del datasetwithweights3
-	print 'Here comes the dataset with reweighting-model weights . . .'
-	print datasetwithweights.head()
-	#Save modeling dataframe tree to a root file
-	seed = ggfbkgparams[5]
-	if seed!=2019:
-	   data.pandas2root(datasetwithweights,'bbbbTree',   'outputskims/%s/%s/SKIM_BKG_MODEL_tree_%s.root'%(case,directory,seed)  )
-	   data.roothist2root('outputskims/%s/%s/SKIM_Data.root'%(case,directory),'eff_histo','outputskims/%s/%s/SKIM_BKG_MODEL_hist_%s.root'%(case,directory,seed)  )
-	   os.system("hadd -f outputskims/%s/%s/SKIM_BKG_MODEL_%s.root outputskims/%s/%s/SKIM_BKG_MODEL_tree_%s.root outputskims/%s/%s/SKIM_BKG_MODEL_hist_%s.root"%(case,directory,seed,case,directory,seed,case,directory,seed))
-	   os.system("rm outputskims/%s/%s/SKIM_BKG_MODEL_tree_%s.root outputskims/%s/%s/SKIM_BKG_MODEL_hist_%s.root"%(case,directory,seed,case,directory,seed) )
+def RunReweightingModel(dataset,bkgparams,classifierparams,case,directory,tag,valflag,catflag):
+	#Add weights for analysis
+	if valflag==True and catflag==True:
+		dataset=AddModelWeights(dataset,bkgparams,classifierparams,'Weight_ValGGF','GGF',valflag,'%s%s'%(tag,case))
+	elif valflag==True and catflag==False:
+		dataset=AddModelWeights(dataset,bkgparams,classifierparams,'Weight_ValVBF','VBF',valflag,'%s%s'%(tag,case))
+	elif valflag==False and catflag==True:
+		dataset=AddModelWeights(dataset,bkgparams,classifierparams,'Weight_AnaGGF','GGF',valflag,'%s%s'%(tag,case))
 	else:
-	   data.pandas2root(datasetwithweights,'bbbbTree',   'outputskims/%s/%s/SKIM_BKG_MODEL_tree.root'%(case,directory)  )
-	   data.roothist2root('outputskims/%s/%s/SKIM_Data.root'%(case,directory),'eff_histo','outputskims/%s/%s/SKIM_BKG_MODEL_hist.root'%(case,directory)  )
-	   os.system("hadd -f outputskims/%s/%s/SKIM_BKG_MODEL.root outputskims/%s/%s/SKIM_BKG_MODEL_tree.root outputskims/%s/%s/SKIM_BKG_MODEL_hist.root"%(case,directory,case,directory,case,directory))
-	   os.system("rm outputskims/%s/%s/SKIM_BKG_MODEL_tree.root outputskims/%s/%s/SKIM_BKG_MODEL_hist.root"%(case,directory,case,directory) )			
+		dataset=AddModelWeights(dataset,bkgparams,classifierparams,'Weight_AnaVBF','VBF',valflag,'%s%s'%(tag,case))    	
+	return dataset
 
 #############COMMAND CODE IS BELOW ######################
 
@@ -150,31 +158,49 @@ print "[INFO] Getting configuration parameters . . ."
 directory   = ast.literal_eval(cfgparser.get("configuration","directory"))
 print "    -The directory:"
 print "      *",directory
-ggfbkgparams = ast.literal_eval(cfgparser.get("configuration","ggfbkgparams"))
-print "    -The ggf-hh background parameters (trees, learning rate, max depth, min sample leaf, subsample, randomseed):"
-print "      *",ggfbkgparams
-vbfbkgparams = ast.literal_eval(cfgparser.get("configuration","vbfbkgparams"))
-print "    -The vbf-hh background parameters (trees, learning rate, max depth, min sample leaf, subsample, randomseed):"
-print "      *",vbfbkgparams
+ggfanabkgparams = ast.literal_eval(cfgparser.get("configuration","ggfanabkgparams"))
+print "    -The ggf-hh ana background parameters (trees, learning rate, max depth, min sample leaf, subsample, randomseed):"
+print "      *",ggfanabkgparams
+vbfanabkgparams = ast.literal_eval(cfgparser.get("configuration","vbfanabkgparams"))
+print "    -The vbf-hh ana background parameters (trees, learning rate, max depth, min sample leaf, subsample, randomseed):"
+print "      *",vbfanabkgparams
+ggfvalbkgparams = ast.literal_eval(cfgparser.get("configuration","ggfvalbkgparams"))
+print "    -The ggf-hh val background parameters (trees, learning rate, max depth, min sample leaf, subsample, randomseed):"
+print "      *",ggfvalbkgparams
+vbfvalbkgparams = ast.literal_eval(cfgparser.get("configuration","vbfvalbkgparams"))
+print "    -The vbf-hh val background parameters (trees, learning rate, max depth, min sample leaf, subsample, randomseed):"
+print "      *",vbfvalbkgparams
 ggfanaclassifierparams = ast.literal_eval(cfgparser.get("configuration","ggfanaclassifierparams"))
-print "    -The ggf-hh ana classifier parameters (trees, learning rate, max depth, min sample leaf, subsample, randomseed):"
+print "    -The ggf-hh ana classifier parameters (trees, subsample, randomseed):"
 print "      *",ggfanaclassifierparams
 vbfanaclassifierparams = ast.literal_eval(cfgparser.get("configuration","vbfanaclassifierparams"))
-print "    -The vbf-hh ana classifier parameters (trees, learning rate, max depth, min sample leaf, subsample, randomseed):"
+print "    -The vbf-hh ana classifier parameters (trees, subsample, randomseed):"
 print "      *",vbfanaclassifierparams
 ggfvalclassifierparams  = ast.literal_eval(cfgparser.get("configuration","ggfvalclassifierparams"))
-print "    -The ggf-hh val classifier parameters (trees, learning rate, max depth, min sample leaf, subsample, randomseed):"
+print "    -The ggf-hh val classifier parameters (trees, subsample, randomseed):"
 print "      *",ggfvalclassifierparams
 vbfvalclassifierparams = ast.literal_eval(cfgparser.get("configuration","vbfvalclassifierparams"))
-print "    -The vbf-hh val classifier parameters (trees, learning rate, max depth, min sample leaf, subsample, randomseed):"
+print "    -The vbf-hh val classifier parameters (trees, subsample, randomseed):"
 print "      *",vbfvalclassifierparams
 tag         = ast.literal_eval(cfgparser.get("configuration","tag"))
 print "    -The tag name:"
 print "      *",tag 
 print "    -The case of event selection a.k.a. foldername:"
 print "      *",case 
-##########Make microskims
+
+##########Make background miodel
 print "[INFO] Making background model . . . "
 #Get data and create panda dataframes with specific variables, a.k.a. slicing the data. Then, create background model based on control region data
-dataset      = data.root2pandas('outputskims/%s/%s/SKIM_Data.root'%(case,directory),'bbbbTree')
-RunReweightingModel(dataset,ggfbkgparams,vbfbkgparams,ggfanaclassifierparams,vbfanaclassifierparams,ggfvalclassifierparams,vbfvalclassifierparams,case,directory,tag)
+dataset = data.root2pandas('outputskims/%s/%s/SKIM_Data.root'%(case,directory),'bbbbTree')
+#Add VBF weights for analysis/validation region
+dataset = RunReweightingModel(dataset,vbfanabkgparams,vbfanaclassifierparams,case,directory,tag,False,False)
+dataset = RunReweightingModel(dataset,vbfvalbkgparams,vbfvalclassifierparams,case,directory,tag,True,False)
+#Add GGF weights for analysis/validation region
+dataset = RunReweightingModel(dataset,ggfanabkgparams,ggfanaclassifierparams,case,directory,tag,False,True)
+dataset = RunReweightingModel(dataset,ggfvalbkgparams,ggfvalclassifierparams,case,directory,tag,True,True)
+#Save everything in a root file
+print "[INFO] Saving background model . . . "
+data.pandas2root(dataset,'bbbbTree',   'outputskims/%s/%s/SKIM_BKG_MODEL_tree.root'%(case,directory)  )
+data.roothist2root('outputskims/%s/%s/SKIM_Data.root'%(case,directory),'eff_histo','outputskims/%s/%s/SKIM_BKG_MODEL_hist.root'%(case,directory)  )
+os.system("hadd -f outputskims/%s/%s/SKIM_BKG_MODEL.root outputskims/%s/%s/SKIM_BKG_MODEL_tree.root outputskims/%s/%s/SKIM_BKG_MODEL_hist.root"%(case,directory,case,directory,case,directory))
+os.system("rm outputskims/%s/%s/SKIM_BKG_MODEL_tree.root outputskims/%s/%s/SKIM_BKG_MODEL_hist.root"%(case,directory,case,directory) )			

@@ -14,33 +14,29 @@ def  RunTraining(dataset,optimization):
 			 '!V:!Silent:Color:DrawProgressBar:Transformations=I:AnalysisType=Classification')
 	 #Load Data
 	 #Load 2016 SIMULATION
-	 file_GGF_HH_2016        = "../TrainingSamples/New2016/SKIM_GluGluToHHTo4B_node_SM_13TeV-madgraph_BR.root"
-	 file_QCD_MODEL_2016     = "../TrainingSamples/New2016/SKIM_BKG_MODEL_BR.root"
+	 file_GGF_HH_2016        = "../FullNtuples/New2016/SKIM_GluGluToHHTo4B_node_SM_13TeV-madgraph_BR.root"
+	 file_QCD_MODEL_2016     = "../FullNtuples/New2016/SKIM_BKG_MODEL_BR.root"
 	 #Load 2017 SIMULATION
-	 file_GGF_HH_2017        = "../TrainingSamples/New2017/SKIM_GluGluToHHTo4B_node_SM_13TeV-madgraph_correctedcfg_BR.root"
-	 file_QCD_MODEL_2017     = "../TrainingSamples/New2017/SKIM_BKG_MODEL_BR.root"
+	 file_GGF_HH_2017        = "../FullNtuples/New2017/SKIM_GluGluToHHTo4B_node_SM_13TeV-madgraph_correctedcfg_BR.root"
+	 file_QCD_MODEL_2017     = "../FullNtuples/New2017/SKIM_BKG_MODEL_BR.root"
 	 #Load 2018 SIMULATION
-	 file_GGF_HH_2018        = "../TrainingSamples/New2018/SKIM_GluGluToHHTo4B_node_SM_TuneCP5_PSWeights_13TeV-madgraph-pythia8_BR.root"
-	 file_QCD_MODEL_2018     = "../TrainingSamples/New2018/SKIM_BKG_MODEL_BR.root"
+	 file_GGF_HH_2018        = "../FullNtuples/New2018/SKIM_GluGluToHHTo4B_node_SM_TuneCP5_PSWeights_13TeV-madgraph-pythia8_BR.root"
+	 file_QCD_MODEL_2018     = "../FullNtuples/New2018/SKIM_BKG_MODEL_BR.root"
 
 	 #COMBINE THE INFORMATION
 	 ch_sig = TChain("bbbbTree")
 	 ch_bkg = TChain("bbbbTree") 
 	 #AddfILES       
 	 if dataset=='2016':
-		Lumi=35.9
 		ch_sig.AddFile(file_GGF_HH_2016)
 		ch_bkg.AddFile(file_QCD_MODEL_2016) 
 	 elif dataset=='2017': 
-		Lumi=36.7 
 		ch_sig.AddFile(file_GGF_HH_2017)
 		ch_bkg.AddFile(file_QCD_MODEL_2017)   
-	 elif dataset=='2018':
-		Lumi=59.7 	      
+	 elif dataset=='2018': 	      
 		ch_sig.AddFile(file_GGF_HH_2018)
 		ch_bkg.AddFile(file_QCD_MODEL_2018)  
 	 else:
-		Lumi=1
 		ch_sig.AddFile(file_GGF_HH_2016)
 		ch_bkg.AddFile(file_QCD_MODEL_2016)  
 	 #LOAD VARIABLES	

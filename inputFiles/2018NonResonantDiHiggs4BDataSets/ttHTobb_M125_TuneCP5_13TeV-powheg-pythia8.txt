@@ -1,0 +1,10 @@
+root://cmsxrootd.fnal.gov//store/mc/RunIIAutumn18NanoAODv6/ttHTobb_M125_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/Nano25Oct2019_102X_upgrade2018_realistic_v20-v1/60000/C02CDBE6-B830-9540-B2DA-0CB34BBFF1F3.root
+root://cmsxrootd.fnal.gov//store/mc/RunIIAutumn18NanoAODv6/ttHTobb_M125_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/Nano25Oct2019_102X_upgrade2018_realistic_v20-v1/60000/588B1B06-BDB0-064F-9C47-E55F6979552D.root
+root://cmsxrootd.fnal.gov//store/mc/RunIIAutumn18NanoAODv6/ttHTobb_M125_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/Nano25Oct2019_102X_upgrade2018_realistic_v20-v1/60000/B26DF706-6B03-E74C-8B57-3795652EE24D.root
+root://cmsxrootd.fnal.gov//store/mc/RunIIAutumn18NanoAODv6/ttHTobb_M125_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/Nano25Oct2019_102X_upgrade2018_realistic_v20-v1/60000/E04467B5-8DCE-7445-BCF0-50C7A01496DA.root
+root://cmsxrootd.fnal.gov//store/mc/RunIIAutumn18NanoAODv6/ttHTobb_M125_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/Nano25Oct2019_102X_upgrade2018_realistic_v20-v1/60000/4B108926-3FD6-D449-B312-BF0FEFDEDAF6.root
+root://cmsxrootd.fnal.gov//store/mc/RunIIAutumn18NanoAODv6/ttHTobb_M125_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/Nano25Oct2019_102X_upgrade2018_realistic_v20-v1/60000/96F4859B-20F4-074D-8264-8D363544BBC1.root
+root://cmsxrootd.fnal.gov//store/mc/RunIIAutumn18NanoAODv6/ttHTobb_M125_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/Nano25Oct2019_102X_upgrade2018_realistic_v20-v1/60000/A5A6B45C-72A6-D748-9D93-E9BC91ABFDE5.root
+root://cmsxrootd.fnal.gov//store/mc/RunIIAutumn18NanoAODv6/ttHTobb_M125_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/Nano25Oct2019_102X_upgrade2018_realistic_v20-v1/60000/3CB6282A-C983-0B44-AC96-EC6290CB32BA.root
+root://cmsxrootd.fnal.gov//store/mc/RunIIAutumn18NanoAODv6/ttHTobb_M125_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/Nano25Oct2019_102X_upgrade2018_realistic_v20-v1/60000/5B7D0572-F5CE-8D46-9BE3-E49038940EBA.root
+root://cmsxrootd.fnal.gov//store/mc/RunIIAutumn18NanoAODv6/ttHTobb_M125_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/Nano25Oct2019_102X_upgrade2018_realistic_v20-v1/60000/E4E0D8FD-34DB-BB44-AD93-82F74C1684A9.root

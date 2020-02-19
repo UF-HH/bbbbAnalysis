@@ -1,0 +1,10 @@
+root://cmsxrootd.fnal.gov//store/mc/RunIIAutumn18NanoAODv6/GluGluHToBB_M125_13TeV_powheg_pythia8/NANOAODSIM/Nano25Oct2019_102X_upgrade2018_realistic_v20-v1/60000/A31B8F3C-E369-FA47-990B-96ABF6A01A76.root
+root://cmsxrootd.fnal.gov//store/mc/RunIIAutumn18NanoAODv6/GluGluHToBB_M125_13TeV_powheg_pythia8/NANOAODSIM/Nano25Oct2019_102X_upgrade2018_realistic_v20-v1/60000/5FC193DD-7BAF-964E-B140-9A6B9F2AC416.root
+root://cmsxrootd.fnal.gov//store/mc/RunIIAutumn18NanoAODv6/GluGluHToBB_M125_13TeV_powheg_pythia8/NANOAODSIM/Nano25Oct2019_102X_upgrade2018_realistic_v20-v1/60000/616A9FA8-7448-814C-8F6F-BF6AE857ED2F.root
+root://cmsxrootd.fnal.gov//store/mc/RunIIAutumn18NanoAODv6/GluGluHToBB_M125_13TeV_powheg_pythia8/NANOAODSIM/Nano25Oct2019_102X_upgrade2018_realistic_v20-v1/60000/F6D271B3-FEBA-F74B-9306-B3516BEBE0A9.root
+root://cmsxrootd.fnal.gov//store/mc/RunIIAutumn18NanoAODv6/GluGluHToBB_M125_13TeV_powheg_pythia8/NANOAODSIM/Nano25Oct2019_102X_upgrade2018_realistic_v20-v1/60000/139A38C8-B540-2C4C-AF8E-85CFA3F48DDE.root
+root://cmsxrootd.fnal.gov//store/mc/RunIIAutumn18NanoAODv6/GluGluHToBB_M125_13TeV_powheg_pythia8/NANOAODSIM/Nano25Oct2019_102X_upgrade2018_realistic_v20-v1/60000/46EB3230-9D59-9341-9E82-A90A2CF5637F.root
+root://cmsxrootd.fnal.gov//store/mc/RunIIAutumn18NanoAODv6/GluGluHToBB_M125_13TeV_powheg_pythia8/NANOAODSIM/Nano25Oct2019_102X_upgrade2018_realistic_v20-v1/60000/5C4CD9B5-E842-A841-8FE4-3580D8524672.root
+root://cmsxrootd.fnal.gov//store/mc/RunIIAutumn18NanoAODv6/GluGluHToBB_M125_13TeV_powheg_pythia8/NANOAODSIM/Nano25Oct2019_102X_upgrade2018_realistic_v20-v1/60000/85ECF1C6-C300-CE41-A0E6-084CF66915FB.root
+root://cmsxrootd.fnal.gov//store/mc/RunIIAutumn18NanoAODv6/GluGluHToBB_M125_13TeV_powheg_pythia8/NANOAODSIM/Nano25Oct2019_102X_upgrade2018_realistic_v20-v1/60000/E7D72240-3A0F-DA48-9ECE-7F518BC4D045.root
+root://cmsxrootd.fnal.gov//store/mc/RunIIAutumn18NanoAODv6/GluGluHToBB_M125_13TeV_powheg_pythia8/NANOAODSIM/Nano25Oct2019_102X_upgrade2018_realistic_v20-v1/60000/7873C8BB-B5E4-7E4D-AF8E-32A7637A4EF3.root

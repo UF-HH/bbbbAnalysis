@@ -1,0 +1,2 @@
+root://cmsxrootd.fnal.gov//store/mc/RunIIAutumn18NanoAODv6/ZH_HToBB_ZToQQ_M125_13TeV_powheg_pythia8/NANOAODSIM/Nano25Oct2019_102X_upgrade2018_realistic_v20-v1/260000/F899286A-6FEA-554C-ACD4-36D4C8580525.root
+root://cmsxrootd.fnal.gov//store/mc/RunIIAutumn18NanoAODv6/ZH_HToBB_ZToQQ_M125_13TeV_powheg_pythia8/NANOAODSIM/Nano25Oct2019_102X_upgrade2018_realistic_v20-v1/260000/02C99BC1-E85B-AD4C-9859-8782B6AF80AA.root

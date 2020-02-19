@@ -1,0 +1,10 @@
+root://cmsxrootd.fnal.gov//store/mc/RunIIAutumn18NanoAODv6/ZZTo4bQ01j_5f_TuneCP5_amcatNLO_FXFX_pythia8/NANOAODSIM/Nano25Oct2019_102X_upgrade2018_realistic_v20_ext2-v1/260000/3505D8EC-DF8D-4B4B-BA5D-7CA1CDB98BFE.root
+root://cmsxrootd.fnal.gov//store/mc/RunIIAutumn18NanoAODv6/ZZTo4bQ01j_5f_TuneCP5_amcatNLO_FXFX_pythia8/NANOAODSIM/Nano25Oct2019_102X_upgrade2018_realistic_v20_ext2-v1/260000/14785DD8-A36E-A943-B618-2DF266370122.root
+root://cmsxrootd.fnal.gov//store/mc/RunIIAutumn18NanoAODv6/ZZTo4bQ01j_5f_TuneCP5_amcatNLO_FXFX_pythia8/NANOAODSIM/Nano25Oct2019_102X_upgrade2018_realistic_v20_ext2-v1/260000/3857DA22-1DD5-6742-8C2E-DB19DC03A38F.root
+root://cmsxrootd.fnal.gov//store/mc/RunIIAutumn18NanoAODv6/ZZTo4bQ01j_5f_TuneCP5_amcatNLO_FXFX_pythia8/NANOAODSIM/Nano25Oct2019_102X_upgrade2018_realistic_v20_ext2-v1/260000/31FFFF6D-3C5C-0B48-8397-2B2F7701B93B.root
+root://cmsxrootd.fnal.gov//store/mc/RunIIAutumn18NanoAODv6/ZZTo4bQ01j_5f_TuneCP5_amcatNLO_FXFX_pythia8/NANOAODSIM/Nano25Oct2019_102X_upgrade2018_realistic_v20_ext2-v1/260000/1DAFFB7F-BFE6-9141-9605-418A1AA5DC10.root
+root://cmsxrootd.fnal.gov//store/mc/RunIIAutumn18NanoAODv6/ZZTo4bQ01j_5f_TuneCP5_amcatNLO_FXFX_pythia8/NANOAODSIM/Nano25Oct2019_102X_upgrade2018_realistic_v20_ext1-v1/250000/485FB02D-E17C-3E49-94DE-1D55B130F8BA.root
+root://cmsxrootd.fnal.gov//store/mc/RunIIAutumn18NanoAODv6/ZZTo4bQ01j_5f_TuneCP5_amcatNLO_FXFX_pythia8/NANOAODSIM/Nano25Oct2019_102X_upgrade2018_realistic_v20_ext1-v1/250000/D9ECAB7F-0A66-AB4F-8446-FD2D481B6F45.root
+root://cmsxrootd.fnal.gov//store/mc/RunIIAutumn18NanoAODv6/ZZTo4bQ01j_5f_TuneCP5_amcatNLO_FXFX_pythia8/NANOAODSIM/Nano25Oct2019_102X_upgrade2018_realistic_v20_ext1-v1/250000/047BF217-0180-E24E-A35B-847FF95635FF.root
+root://cmsxrootd.fnal.gov//store/mc/RunIIAutumn18NanoAODv6/ZZTo4bQ01j_5f_TuneCP5_amcatNLO_FXFX_pythia8/NANOAODSIM/Nano25Oct2019_102X_upgrade2018_realistic_v20_ext1-v1/260000/30745272-A8D6-7B43-8FD1-591142B898DA.root
+root://cmsxrootd.fnal.gov//store/mc/RunIIAutumn18NanoAODv6/ZZTo4bQ01j_5f_TuneCP5_amcatNLO_FXFX_pythia8/NANOAODSIM/Nano25Oct2019_102X_upgrade2018_realistic_v20_ext2-v1/260000/38D32CCE-0F72-D24F-BE71-B6845DD7C387.root

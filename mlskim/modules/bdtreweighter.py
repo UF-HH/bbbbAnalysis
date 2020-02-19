@@ -22,7 +22,7 @@ from sklearn.model_selection import StratifiedKFold
 def reweightermodel(ioriginal,itarget,ioriginal_weights,itarget_weights,args): 
 	numpy.random.seed(args[5]) #Fix any random seed using numpy arrays
 	reweighter_base = reweight.GBReweighter(n_estimators=args[0], learning_rate=args[1], max_depth=args[2], min_samples_leaf=args[3],gb_args={'subsample': args[4]})
-	reweighter = reweight.FoldingReweighter(reweighter_base, random_state=args[5], n_folds=2, verbose=True)
+	reweighter = reweight.FoldingReweighter(reweighter_base, random_state=args[5], n_folds=2, verbose=False)
 	reweighter.fit(ioriginal,itarget,ioriginal_weights,itarget_weights)
 	return reweighter
 
@@ -37,7 +37,7 @@ def check_ks_of_expression(expression):
 												 weights1=gb_weights_test, weights2=w_target))
 
 def roc_auc_study(data,labels,weights,args,tag,name):
-		cv = StratifiedKFold(n_splits=2,random_state=2020)
+		cv = StratifiedKFold(n_splits=2,shuffle=True,random_state=args[2])
 		tprs = []
 		aucs = []
 		mean_fpr = numpy.linspace(0, 1, 100)
@@ -48,8 +48,8 @@ def roc_auc_study(data,labels,weights,args,tag,name):
 
 		i = 0
 		for train, test in cv.split(data, labels, weights):
-			classifier = GradientBoostingClassifier(n_estimators=args[0],learning_rate=args[1],max_depth=args[2],min_samples_leaf=args[3],subsample=args[4],random_state=args[5])
-			probas_ = classifier.fit(data[train], labels[train],sample_weight=weights[train]).predict_proba(data[test])
+			classifier = GradientBoostingClassifier(n_estimators=args[0],subsample=args[1],random_state=args[2])
+			probas_    = classifier.fit(data[train], labels[train],sample_weight=weights[train]).predict_proba(data[test])
 			# Compute ROC curve and area the curve
 			fpr, tpr, thresholds = roc_curve(labels[test], probas_[:, 1], sample_weight=weights[test])
 			#Draw Classifier Output
@@ -85,24 +85,35 @@ def roc_auc_study(data,labels,weights,args,tag,name):
 		ax1.set_ylabel('True Positive Rate')
 		ax1.set_title('ROC Curve')
 		ax1.legend(loc="lower right",fontsize="small")
-		ax2.set_xlabel('Classifier score')
+		ax2.set_xlabel('Discriminant score')
 		ax2.set_ylabel('Normalized Units')
 		ax2.set_title('')
 		ax2.legend(loc="lower right",fontsize="small")
 		plt.savefig("myplots/roc_curve_%s_%s.png"%(tag,name))
 
 
-def discrimination_measurement(original,target,weights,args,tag,name):
-	data = numpy.concatenate([original, target])
+def discrimination_test(original,target,weights,args,tag,name):
+	data   = numpy.concatenate([original, target])
 	labels = numpy.array([0] * len(original) + [1] * len(target))
-	w = numpy.concatenate([weights / weights.sum() * len(target), [1] * len(target)])
+	w      = numpy.concatenate([weights / weights.sum() * len(target), [1] * len(target)])
 	roc_auc_study(data,labels,w,args,tag,name)
 
-def ks_measurement(variables,ks_noweight,ks_weight):
-	print "  **Runninng KS-test on each variable to define the bdt-reweighter paramaters:"
+def ks_comparison(variables,ks_noweight,ks_weight):
+	print "[INFO] Runninng KS-test on each variable to define the bdt-reweighter paramaters:"
 	mean=0
 	for i in range(0, len(variables) ):
 		ratio = ks_weight[i] / ks_noweight[i] 
-		print "   **KS distance ratio in %s (after/before) = (%0.3f/%0.3f)  = %0.3f"%(variables[i],ks_weight[i],ks_noweight[i], ratio)
+		print "   -KS distance ratio in %s (after/before) = (%0.3f/%0.3f)  = %0.3f"%(variables[i],ks_weight[i],ks_noweight[i], ratio)
 		mean+=ratio 
-	print "  **The average KS distance ratio = %0.3f"%(mean/len(variables))
+	print "                     **The average KS distance ratio = %0.3f"%(mean/len(variables))
+
+
+def ks_test(original, target, variables, original_weights):
+	ksresults=[] ##original_weights
+	i = 0
+	for id, column in enumerate(variables, 1):
+
+		ks =  ks_2samp_weighted(original[column], target[column], weights1=original_weights, weights2=numpy.ones(len(target), dtype=int))
+		ksresults.append(ks)
+		i+=1
+	return ksresults 

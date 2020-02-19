@@ -45,7 +45,7 @@ def eventmassregion(data,massregion,validation=False):
 	else:
 		center1 = 125
 		center2 = 120    	
-	radius1  = 30
+	radius1  = 25
 	radius2  = 50
 
 	if   massregion == 'CR':
@@ -83,9 +83,9 @@ def eventselection(data,btagregion=None,category=None,massregion=None,validation
 	del databtagregionrejected,datacategoryrejected
 	datarejected    = pandas.concat((datarejected12,datamassregionrejected), ignore_index=True)
 	del datarejected12,datamassregionrejected
-	print "[INFO] DATAFRAME SLICING FOR %s"%selectionname   
-	print "   -Number of events in dataset (before) = ",len(data) 
-	if blindname != '4b/SR/anareg': print "   -Number of selected events            = ",len(dataselected)  
-	if blindname != '4b/SR/anareg': print "   -Number of rejected events            = ",len(datarejected)
-	print "   -Number of events in dataset (after)  = ",int(len(dataselected)+len(datarejected))
+	print "[INFO] DATAFRAME SLICING CHECK FOR %s"%selectionname   
+	print "    -Number of events in dataset (before) = ",len(data) 
+	if blindname != '4b/SR/anareg': print "    -Number of selected events            = ",len(dataselected)  
+	if blindname != '4b/SR/anareg': print "    -Number of rejected events            = ",len(datarejected)
+	print "    -Number of events in dataset (after)  = ",int(len(dataselected)+len(datarejected))
 	return dataselected,datarejected

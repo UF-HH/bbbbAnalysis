@@ -21,7 +21,6 @@ def Draw1DHistosComparison(original, target, variables, original_weights, norm, 
 	#Create figure on matplotlib
 	matplotlib.rcParams.update({'font.size': 35})
 	plt.figure(figsize=[80, 60], dpi=50)
-	ksresults=[]
 	i = 0
 	for id, column in enumerate(variables, 1):
 		xlim = numpy.percentile(numpy.hstack([target[column]]), [0.01, 99.99])
@@ -30,11 +29,9 @@ def Draw1DHistosComparison(original, target, variables, original_weights, norm, 
 		plt.hist(target[column],  label='4 btag (Target)', range=xlim, **hist_settings)
 		plt.legend(loc='best')
 		plt.title(column,fontsize=40)
-		ks =  ks_2samp_weighted(original[column], target[column], weights1=original_weights, weights2=numpy.ones(len(target), dtype=float))
-		ksresults.append(ks)
 		i+=1
 	plt.savefig("myplots/distibutions_%s.png"%tag)
-	return ksresults 
+	plt.close('all')
 
 def DrawDNNScoreComparison(yhat,y, norm, tag):
 	#Normalize or not?
@@ -83,6 +80,7 @@ def DrawDNNScore(yhat,y, norm, tag):
 	plt.legend(loc='best')
 	plt.title('DNN output (%s)'%tag,fontsize=20) 
 	plt.savefig("myplots/nndistibution_%s.png"%tag) 
+
 
 
 def CreateDataFrameForPlot(scores,labels):

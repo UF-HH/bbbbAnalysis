@@ -1,4 +1,3 @@
-import numpy 
 import os
 import root_numpy
 import pandas
@@ -7,6 +6,7 @@ import ast
 import argparse
 import sys
 import copy
+import numpy
 from  ConfigParser import *
 from root_numpy import root2array
 from numpy.lib.recfunctions import stack_arrays
@@ -17,7 +17,7 @@ import modules.plotter as plotter
 import modules.bdtreweighter as bdtreweighter
 import modules.selections as selector
 
-def TreeDevelopment(sample,columns_input,case,directory,lepveto):
+def TreeDevelopment(sample,filelist,columns_input,case,directory,lepveto):
 	#Correct acccording to the type of data
 	columns = copy.copy(columns_input)
 	if "GGHH4B" not in sample: columns.remove('HH_reweight')
@@ -26,7 +26,7 @@ def TreeDevelopment(sample,columns_input,case,directory,lepveto):
 		 columns.remove('genWeight')
 		 columns.remove('PUWeight') 
 	#Common branches
-	skim  = data.root2pandas('/eos/uscms/store/user/guerrero/bbbb_ntuples/%s/%s/SKIM_%s/output/*.root'%(case,directory,sample),'bbbbTree', branches=columns)
+	skim   = data.root2pandas(filelist,'bbbbTree', branches=columns)
 	value  = numpy.ones(dtype='float64',shape=len(skim))
 	skim['Weight_ValGGF'] = value
 	skim['Weight_AnaGGF'] = value
@@ -56,12 +56,13 @@ def MakeOutputSkims(samples,columns,case,directory,lepveto):
 	os.system('mkdir outputskims/%s/'%case)
 	os.system('mkdir outputskims/%s/%s'%(case,directory))
 	for sample in samples:
-		#Create eventweight = Lumi*XS*bTagSF/TotalMCEvents
-		skim = TreeDevelopment(sample,columns,case,directory,lepveto) 
+		#Create a list of files and dataframe (but edit eos address accordingly)
+		filelist = data.GetFileList('/eos/uscms/store/user/guerrero/bbbb_ntuples/%s/%s/SKIM_%s/output/*.root'%(case,directory,sample),'bbbbTree')
+		skim     = TreeDevelopment(sample,filelist,columns,case,directory,lepveto) 
 		#Save it in a root file (bbbbtree)
 		data.pandas2root(skim,'bbbbTree','outputskims/%s/%s/SKIM_%s_tree.root'%(case,directory,sample)  )
 		#Save it in a root file (eff_histo) 
-		data.roothist2root('/eos/uscms/store/user/guerrero/bbbb_ntuples/%s/%s/SKIM_%s/output/*.root'%(case,directory,sample),'eff_histo','outputskims/%s/%s/SKIM_%s_hist.root'%(case,directory,sample))
+		data.roothist2root(filelist,'eff_histo','outputskims/%s/%s/SKIM_%s_hist.root'%(case,directory,sample))
 		#Merge tree and efficiency histos in root file
 		data.mergedata2root('outputskims/%s/%s/SKIM_%s_tree.root'%(case,directory,sample), 'outputskims/%s/%s/SKIM_%s_hist.root'%(case,directory,sample), 'outputskims/%s/%s/SKIM_%s.root'%(case,directory,sample))
 		print '[INFO] Saving output skim for',sample,' in ',case

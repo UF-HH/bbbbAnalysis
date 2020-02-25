@@ -37,13 +37,25 @@ def PrepareModel(tag):
 	print("Loaded model and weights from mymodels")	
 	return model
 
-def root2pandas(files_path, tree_name, **kwargs):
+def GetFileList(files_path,tree_name):
 	# -- create list of .root files to process
-	files = glob.glob(files_path)
-	
+	filelist = glob.glob(files_path)
+	files    = []
+	# -- check that the file has the bbbbTree, otherwise don't add it
+	for file in filelist:
+		ftmp       = ROOT.TFile.Open(file)
+		tree       = ftmp.Get(tree_name)
+		events     = tree.GetEntries()
+		if events!=0: 
+			files.append(file)
+		else:
+			print "This file doesn't have a tree, have a look at it: ",file		
+		ftmp.Close()
+	return files	
+
+def root2pandas(files, tree_name, **kwargs):
 	# -- process ntuples into rec arrays
 	ss = stack_arrays([root2array(fpath, tree_name, **kwargs).view(numpy.recarray) for fpath in files])
-
 	try:
 		return pandas.DataFrame(ss)
 	except Exception:
@@ -108,7 +120,7 @@ def pandas2root(tree_dataframe, tree_name, rootfile_name):
 
 def roothist2root(inputrootfile_name, hist_name, outputrootfile_name):
 	# -- create list of .root files to process
-	files = glob.glob(inputrootfile_name)
+	files = inputrootfile_name
 	# ---read the list of files and get the histogram
 	if len(files)==0: print "No files are found in the input directory!,expect this to crash..."
 	file0 = ROOT.TFile.Open(files[0])
@@ -120,7 +132,7 @@ def roothist2root(inputrootfile_name, hist_name, outputrootfile_name):
 			h = ftmp.Get(hist_name)		
 			histo.Add(h)
 			ftmp.Close()
-    #save histograms in a root file
+	#save histograms in a root file
 	hfile = ROOT.TFile('%s'%outputrootfile_name, 'RECREATE')
 	histo.Write()
 	hfile.Write()

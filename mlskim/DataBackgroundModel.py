@@ -108,7 +108,7 @@ def AddModelWeights(dataset,bkgparams,bkgclassifierparams,weightname,categ,valfl
 	data_cr_3b_categ[weightname]      = weights_cr_categ 
 	data_sr_3b_categ[weightname]      = weights_sr_categ
 	data_rest_3b_categ[weightname]    = weights_rest_categ
-	print "[INFO] Creating a region id flag (3b-SR:1, 3-CR:0,Rest:-1)"
+	print "[INFO] Creating a region id flag used for debugging (-1=Rest,0=3-CR,1=3b-SR)"
 	data_sr_3b_categ["SelectedRegion_%s"%weightname]      =  1.0
 	data_cr_3b_categ["SelectedRegion_%s"%weightname]      =  0 
 	data_rest_3b_categ["SelectedRegion_%s"%weightname]    = -1.0
@@ -191,7 +191,9 @@ print "      *",case
 ##########Make background miodel
 print "[INFO] Making background model . . . "
 #Get data and create panda dataframes with specific variables, a.k.a. slicing the data. Then, create background model based on control region data
-dataset = data.root2pandas('outputskims/%s/%s/SKIM_Data.root'%(case,directory),'bbbbTree')
+datalist =[]
+datalist.append('outputskims/%s/%s/SKIM_Data.root'%(case,directory))
+dataset = data.root2pandas(datalist,'bbbbTree')
 #Add VBF weights for analysis/validation region
 dataset = RunReweightingModel(dataset,vbfanabkgparams,vbfanaclassifierparams,case,directory,tag,False,False)
 dataset = RunReweightingModel(dataset,vbfvalbkgparams,vbfvalclassifierparams,case,directory,tag,True,False)
@@ -201,6 +203,6 @@ dataset = RunReweightingModel(dataset,ggfvalbkgparams,ggfvalclassifierparams,cas
 #Save everything in a root file
 print "[INFO] Saving background model . . . "
 data.pandas2root(dataset,'bbbbTree',   'outputskims/%s/%s/SKIM_BKG_MODEL_tree.root'%(case,directory)  )
-data.roothist2root('outputskims/%s/%s/SKIM_Data.root'%(case,directory),'eff_histo','outputskims/%s/%s/SKIM_BKG_MODEL_hist.root'%(case,directory)  )
+data.roothist2root(datalist,'eff_histo','outputskims/%s/%s/SKIM_BKG_MODEL_hist.root'%(case,directory)  )
 os.system("hadd -f outputskims/%s/%s/SKIM_BKG_MODEL.root outputskims/%s/%s/SKIM_BKG_MODEL_tree.root outputskims/%s/%s/SKIM_BKG_MODEL_hist.root"%(case,directory,case,directory,case,directory))
 os.system("rm outputskims/%s/%s/SKIM_BKG_MODEL_tree.root outputskims/%s/%s/SKIM_BKG_MODEL_hist.root"%(case,directory,case,directory) )			

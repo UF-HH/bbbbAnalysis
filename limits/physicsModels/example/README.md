@@ -1,4 +1,4 @@
-### About the physics model
+# About the physics model
 The physics model ``limits/physicsModels/VBFHHModel.py`` implements the scaling of the 6 VBF components.
 When using it the important things to check are:
 
@@ -16,11 +16,11 @@ By default ``r`` is floating in -10, 10, while ``CV``, ``C2V``, ``kl`` are all f
 
 **IMPORTANT NOTE** : the model assumes that the six input samples are originally normalised to the theoretical cross section that is indicated in the ``sample_list``.
 
-### Examples
+# Examples
 
 An example datacard is in ``limits/physicsModels/example``, commands to be launched in that subfolder.
 
-#### Making the datacard
+## Making the datacard
 
 ```
 cmsenv
@@ -30,7 +30,7 @@ text2workspace.py test_card_vbfHH_comp.txt -D DATA -P VBFHHModel:VBFHHdefault
 
 Setting ``PYTHONPATH`` (just once) before calling ``text2workspace.py`` is needed to link properly the model repo.
 
-#### Running the upper limits
+## Running the upper limits
 
 ```
 combine -M AsymptoticLimits --run blind test_card_vbfHH_comp.root -D DATA --redefineSignalPOIs r --setParameters kl=1,CV=1,C2V=3
@@ -38,7 +38,7 @@ combine -M AsymptoticLimits --run blind test_card_vbfHH_comp.root -D DATA --rede
 Add `` --freezeParameters allConstrainedNuisances`` to make stat only limits
 
 
-#### Make likelihood scans
+## Make likelihood scans
 
 **1D scan**
 ```
@@ -54,7 +54,7 @@ combine -M MultiDimFit -t -1  test_card_vbfHH_comp.root -D DATA --redefineSignal
 To make stat-only limits add `` --freezeParameters rgx{.*},r,kl`` (i.e. use a regexp to get the result)
 
 
-#### Quickly checking the output of the likelihood fits
+## Quickly checking the output of the likelihood fits
 From the combine output file
 
 **1D scan**

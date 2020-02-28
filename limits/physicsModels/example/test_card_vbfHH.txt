@@ -1,0 +1,27 @@
+imax *  number of channels
+jmax *  number of backgrounds
+kmax *  number of nuisance parameters (sources of systematical uncertainties)
+----------------------------------------------------------------------------------------------------------------------------------
+shapes DATA               bin1 outPlotter_VBF_withsum.root     DATA
+shapes MODEL              bin1 outPlotter_VBF_withsum.root     MODEL
+shapes VBH_HH_sum_C2V_3   bin1 outPlotter_VBF_withsum.root     VBH_HH_sum_C2V_3
+----------------------------------------------------------------------------------------------------------------------------------
+bin          bin1  
+observation  2013 
+----------------------------------------------------------------------------------------------------------------------------------
+# list the expected events for signal and all backgrounds in that bin
+# the second process line must have a positive number for backgrounds, and 0 or neg for signal
+bin                         bin1         bin1
+process             VBH_HH_sum_C2V_3        MODEL
+process                        0            1
+rate                   11.071277              1936.685643
+----------------------------------------------------------------------------------------------------------------------------------
+lumi         lnN           1.025            -
+bTag         lnN           1.086            -
+JER          lnN           1.021            -
+JEC          lnN           1.029            -
+trigger      lnN           1.090            -
+PDF          lnN           1.035            -
+xS           lnN           1.050            -
+xB           lnN               -        1.050
+#* autoMCStats 10

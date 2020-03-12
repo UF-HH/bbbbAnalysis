@@ -16,6 +16,7 @@ and the model is built as:
 
 ```
 r * { r_gghh * sum [f_ggf^i (kl, kt) s_ggf^i ] + r_qqhh * sum [f_vbf^i (CV, C2V, kl) s_vbf^i ] }
+```
 
 Default setup:
 * all paramters in default range [-10, 10] with the exception of ``kl`` in [-30, 30]

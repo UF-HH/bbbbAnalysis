@@ -1,4 +1,7 @@
 # About the physics model
+
+**_WARNING_ : as of 12/03/2020, only the VBF modelling is validated against a "simple" datacard where the scaling is done by hand. GGF validation still pending.**
+
 The physics model ``limits/physicsModels/HHModel.py`` implements the scaling of the 6 VBF components and of the 3 GGF components.
 When using it the important things to check are:
 

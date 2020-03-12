@@ -1,0 +1,35 @@
+imax *  number of channels
+jmax *  number of backgrounds
+kmax *  number of nuisance parameters (sources of systematical uncertainties)
+----------------------------------------------------------------------------------------------------------------------------------
+
+shapes DATA                      bin1 outPlotter_VBF_withsum.root     DATA
+shapes MODEL                     bin1 outPlotter_VBF_withsum.root     MODEL
+shapes qqHH_CV_1_C2V_1_kl_1      bin1 outPlotter_VBF_withsum.root     qqHH_CV_1_C2V_1_C3_1
+shapes qqHH_CV_1_C2V_2_kl_1      bin1 outPlotter_VBF_withsum.root     qqHH_CV_1_C2V_2_C3_1
+shapes qqHH_CV_1_C2V_1_kl_2      bin1 outPlotter_VBF_withsum.root     qqHH_CV_1_C2V_1_C3_2
+shapes qqHH_CV_1_C2V_1_kl_0      bin1 outPlotter_VBF_withsum.root     qqHH_CV_1_C2V_1_C3_0
+shapes qqHH_CV_0p5_C2V_1_kl_1    bin1 outPlotter_VBF_withsum.root     qqHH_CV_0p5_C2V_1_C3_1
+shapes qqHH_CV_1p5_C2V_1_kl_1    bin1 outPlotter_VBF_withsum.root     qqHH_CV_1p5_C2V_1_C3_1
+
+----------------------------------------------------------------------------------------------------------------------------------
+bin          bin1  
+observation  2013 
+----------------------------------------------------------------------------------------------------------------------------------
+# list the expected events for signal and all backgrounds in that bin
+# the second process line must have a positive number for backgrounds, and 0 or neg for signal
+bin                         bin1                   bin1                   bin1                   bin1                     bin1                     bin1     bin1
+process     qqHH_CV_1_C2V_1_kl_1   qqHH_CV_1_C2V_2_kl_1   qqHH_CV_1_C2V_1_kl_2   qqHH_CV_1_C2V_1_kl_0   qqHH_CV_0p5_C2V_1_kl_1   qqHH_CV_1p5_C2V_1_kl_1     MODEL
+process                       -5                     -4                     -3                     -2                       -1                         0      1
+rate                          -1                     -1                     -1                     -1                       -1                        -1     -1
+
+----------------------------------------------------------------------------------------------------------------------------------
+lumi         lnN           1.025                    1.025               1.025                  1.025                     1.025                       1.025       -
+bTag         lnN           1.086                    1.086               1.086                  1.086                     1.086                       1.086       -
+JER          lnN           1.021                    1.021               1.021                  1.021                     1.021                       1.021       -
+JEC          lnN           1.029                    1.029               1.029                  1.029                     1.029                       1.029       -
+trigger      lnN           1.090                    1.090               1.090                  1.090                     1.090                       1.090       -
+PDF          lnN           1.035                    1.035               1.035                  1.035                     1.035                       1.035       -
+xS           lnN           1.050                    1.050               1.050                  1.050                     1.050                       1.050       -
+xB           lnN               -                        -                   -                      -                         -                           -   1.050
+#* autoMCStats 10

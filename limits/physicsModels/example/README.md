@@ -32,7 +32,7 @@ By default ``r`` is floating in -10, 10, while ``r_gghh``, ``r_qqhh``, ``CV``, `
 
 **IMPORTANT NOTE** : the model assumes that the input samples are originally normalised to the theoretical cross section that is indicated in the ``sample_list``
 (apart from from overall scalings, i.e. the relative normalisations of the chosen samples must match the relative cross sections).
-In short : just normalise your samples to their generator xs times the final state BR and all will be fine.
+In short : just normalise your samples to their generator xs times the final state BR, possibly scaled up by a k-factor, and all will be fine.
 
 
 # Examples

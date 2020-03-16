@@ -108,7 +108,6 @@ int main(int argc, char** argv)
     ////////////////////////////////////////////////////////////////////////
 
     std::map<std::string,std::any> parameterList;
-
     const string bbbbChoice  = config.readStringOpt("parameters::bbbbChoice");
     const string datasetname = config.readStringOpt("parameters::datasetname");
     parameterList.emplace("is_VBF_sig",is_VBF_sig);
@@ -240,6 +239,19 @@ int main(int argc, char** argv)
         // }  
         else throw std::runtime_error("cannot recognize event choice bTagScaleFactorMethod " + bTagscaleFactorMethod);
 
+        //L1prefiring scale factor
+        const string L1PrefiringSFMethod = config.readStringOpt("parameters::L1PrefiringSFMethod");
+        parameterList.emplace("L1PrefiringSFMethod",L1PrefiringSFMethod);
+        if(L1PrefiringSFMethod == "Standard"){
+        cout << "[INFO] ... Standard L1Prefiring weights are added in the MC sample" << endl;  
+        }
+        else if(config.readStringOpt("parameters::L1PrefiringSFMethod") == "None"){
+        cout << "[INFO] ... No L1Prefiring weights are added in the MC sample" << endl;      
+        }  
+        // else if(other selection type){
+        //     parameters fo be retreived;
+        // }  
+        else throw std::runtime_error("cannot recognize event choice L1PrefiringScaleFactorMethod " + config.readStringOpt("parameters::L1PrefiringSFMethod"));
 
         //Generator weights
         const string weightMethod = config.readStringOpt("parameters::WeightMethod");
@@ -268,9 +280,7 @@ int main(int argc, char** argv)
             else
                 parameterList.emplace("RandomGeneratorSeed"  ,config.readIntOpt   ("parameters::RandomGeneratorSeed"  ));                
             parameterList.emplace("JERResolutionFile"        ,config.readStringOpt("parameters::JERResolutionFile"    ));
-            parameterList.emplace("JERScaleFactorFile"       ,config.readStringOpt("parameters::JERScaleFactorFile"   ));
-            //parameterList.emplace("BregJERResolution"        ,config.readStringOpt("parameters::BregJERResolution"    ));
-            //parameterList.emplace("BregJERScaleFactor"       ,config.readStringOpt("parameters::BregJERScaleFactor"   ));            
+            parameterList.emplace("JERScaleFactorFile"       ,config.readStringOpt("parameters::JERScaleFactorFile"   ));          
         }
         else if(JERstrategy == "None"){
             cout << "[INFO] ... No JER correction is applied to the jets" << endl;
@@ -352,7 +362,8 @@ int main(int argc, char** argv)
         oph.initializeJECVariations(ot);
         oph.initializeObjectsForEventWeight(ot,ec,opts["puWeight"].as<string>(),xs);
         oph.initializeObjectsBJetForScaleFactors(ot);
-
+        oph.initializeObjectsL1PrefiringForScaleFactors(ot);
+  
         // MC reweight initialization
         if (opts.find("kl-rew") != opts.end()) // a kl value was passed
         {
@@ -423,6 +434,7 @@ int main(int argc, char** argv)
         
         if (!oph.select_bbbbjj_jets(nat, ei, ot)) continue; 
         if(!is_data){ot.userFloat("XS")=xs;}
+
         oph.save_objects_for_cut(nat, ot,ei);
 
         ec.updateSelected(weight);

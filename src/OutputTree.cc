@@ -283,6 +283,8 @@ void OutputTree::init_branches()
     tree_->Branch("BDT1", &BDT1);
     tree_->Branch("BDT2", &BDT2);
     tree_->Branch("BDT3", &BDT3);
+    tree_->Branch("BDT3cat1", &BDT3cat1);
+    tree_->Branch("BDT3cat2", &BDT3cat2);
     tree_->Branch("NPartonsMatchedToJets", &NPartonsMatchedToJets); 
     tree_->Branch("NVBFCandidateswithVBFMatch", &NVBFCandidateswithVBFMatch); 
     tree_->Branch("VBFMatchedCandidatesEtaSign", &VBFMatchedCandidatesEtaSign); 
@@ -548,6 +550,8 @@ void OutputTree::clear()
     BDT1 =-1.2;
     BDT2 =-1.2;
     BDT3 =-1.2;
+    BDT3cat1 =-1.2;
+    BDT3cat2 =-1.2;
     NPartonsMatchedToJets=-1.;
     NVBFCandidateswithVBFMatch=-1;
     VBFMatchedCandidatesEtaSign=0;

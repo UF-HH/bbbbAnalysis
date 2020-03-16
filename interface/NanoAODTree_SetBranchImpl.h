@@ -203,6 +203,10 @@ class NanoAODTree_SetBranchImpl {
         ReaderValuePatch<UChar_t>     LHE_Nglu                            {chain_, "LHE_Nglu"};
         ReaderValuePatch<UChar_t>     LHE_NpNLO                           {chain_, "LHE_NpNLO"};
         ReaderValuePatch<UChar_t>     LHE_NpLO                            {chain_, "LHE_NpLO"};
+        ReaderValuePatch<Float_t>     L1PreFiringWeight_Nom               {chain_, "L1PreFiringWeight_Nom"};
+        ReaderValuePatch<Float_t>     L1PreFiringWeight_Up                {chain_, "L1PreFiringWeight_Up"};
+        ReaderValuePatch<Float_t>     L1PreFiringWeight_Dn                {chain_, "L1PreFiringWeight_Dn"};
+        
         ReaderValuePatch<Float_t>     GenMET_phi                          {chain_, "GenMET_phi"};
         ReaderValuePatch<Float_t>     GenMET_pt                           {chain_, "GenMET_pt"};
         ReaderValuePatch<Float_t>     MET_MetUnclustEnUpDeltaX            {chain_, "MET_MetUnclustEnUpDeltaX"};

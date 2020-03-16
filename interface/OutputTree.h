@@ -320,6 +320,8 @@ class OutputTree {
         float BDT1; 
         float BDT2;
         float BDT3;
+        float BDT3cat1;
+        float BDT3cat2;
         int ExtraVBFJetDecision;
         float ExtraVBFJetPt;
         float ExtraVBFJetEta;  

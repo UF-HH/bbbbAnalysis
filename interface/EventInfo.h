@@ -316,6 +316,8 @@ struct EventInfo{
     boost::optional<float> BDT1;
     boost::optional<float> BDT2;
     boost::optional<float> BDT3;
+    boost::optional<float> BDT3cat1;
+    boost::optional<float> BDT3cat2;
     boost::optional<int> nPVgood;   
     //TTEMU Events
     boost::optional<Jet> TT_b1;

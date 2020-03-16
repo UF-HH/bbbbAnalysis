@@ -12,6 +12,7 @@
 **/
 
 #include <TH1F.h>
+#include <TLorentzVector.h>
 #include "CfgParser.h"
 #include "NanoAODTree.h"
 #include "EventInfo.h"
@@ -45,7 +46,8 @@ class OfflineProducerHelper{
             eval_BDT1_ = std::unique_ptr<BDTEval> (new BDTEval (float_varlist_BDT1, std::vector<std::string>(0)) );
             eval_BDT2_ = std::unique_ptr<BDTEval> (new BDTEval (float_varlist_BDT2, std::vector<std::string>(0)) );
             eval_BDT3_ = std::unique_ptr<BDTEval> (new BDTEval (float_varlist_BDT3, std::vector<std::string>(0)) );
-
+            eval_BDT3cat1_ = std::unique_ptr<BDTEval> (new BDTEval (float_varlist_BDT3cat1, std::vector<std::string>(0)) );
+            eval_BDT3cat2_ = std::unique_ptr<BDTEval> (new BDTEval (float_varlist_BDT3cat2, std::vector<std::string>(0)) );
             // HH reweighters
             hhreweighter_    = std::unique_ptr<HHReweight5D>(nullptr);
             hhreweighter_kl_ = 1.0;
@@ -56,7 +58,8 @@ class OfflineProducerHelper{
         std::unique_ptr<BDTEval> eval_BDT1_;
         std::unique_ptr<BDTEval> eval_BDT2_;
         std::unique_ptr<BDTEval> eval_BDT3_;
-
+        std::unique_ptr<BDTEval> eval_BDT3cat1_;
+        std::unique_ptr<BDTEval> eval_BDT3cat2_;
         std::unique_ptr<HHReweight5D> hhreweighter_;
         float hhreweighter_kl_;
 
@@ -128,7 +131,32 @@ class OfflineProducerHelper{
             "HH_btag_b3_bscore", 
             "HH_btag_b3_bres",           
         };            
- 
+
+        std::vector<std::string> float_varlist_BDT3cat1= {
+            "H1_pt",
+            "H2_pt",
+            "H1_m",
+            "H2_m",
+            "h1h2_deltaEta",
+            "H1_bb_deltaR",
+            "H2_bb_deltaR",
+            "abs_costh_HH_b1_cm:=abs(costh_HH_b1_ggfcm)",
+            "HH_btag_b3_bscore", 
+            "HH_btag_b3_bres",           
+        };  
+
+        std::vector<std::string> float_varlist_BDT3cat2= {
+            "H1_pt",
+            "H2_pt",
+            "H1_m",
+            "H2_m",
+            "h1h2_deltaEta",
+            "H1_bb_deltaR",
+            "H2_bb_deltaR",
+            "abs_costh_HH_b1_cm:=abs(costh_HH_b1_ggfcm)",
+            "HH_btag_b3_bscore", 
+            "HH_btag_b3_bres",           
+        }; 
 
         void init_BDT_evals();
         void init_HH_reweighter(OutputTree& ot, std::string coeffFile, std::string hhreweighterInputMap, std::string histoName);
@@ -215,8 +243,12 @@ class OfflineProducerHelper{
         
 
         void initializeObjectsBJetForScaleFactors(OutputTree &ot);
+        void initializeObjectsL1PrefiringForScaleFactors(OutputTree &ot);
+        std::function<void (NanoAODTree&, OutputTree&, EventInfo& ei)>  save_objects_for_l1prefiring;
         // compute events weight for four b
         void compute_scaleFactors_fourBtag_eventScaleFactor (const std::vector<Jet> &jets, NanoAODTree& nat, OutputTree &ot);
+        void CalculateBtagScaleFactor(const std::vector<Jet> presel_bjets,NanoAODTree& nat,OutputTree &ot);
+        void CalculateL1prefiringScaleFactor(NanoAODTree& nat,OutputTree &ot, EventInfo& ei);
 
 
         JME::JetResolutionScaleFactor *jetResolutionScaleFactor_;
@@ -234,7 +266,7 @@ class OfflineProducerHelper{
         void standardJERVariations(NanoAODTree& nat, std::vector<Jet> &jets, std::vector< std::pair<std::string, std::vector<Jet> > > &jetEnergyVariationsMap);
         //function to apply JER
         std::vector<Jet> applyJERsmearing(NanoAODTree& nat, std::vector<Jet> jets, Variation variation = Variation::NOMINAL);
-
+        TLorentzVector AddNeutrinosToGenJet(NanoAODTree& nat, TLorentzVector genjetP4);
 
         void initializeJECVariations(OutputTree &ot);
         // function pointer for JEC variations
@@ -256,7 +288,8 @@ class OfflineProducerHelper{
         BTagCalibrationReader *btagCalibrationReader_cJets_;
         BTagCalibrationReader *btagCalibrationReader_bJets_;
         //Functions to be applied in the bjetregression scores
-        float Get_bRegRes(NanoAODTree& nat, EventInfo& ei, Jet jet);
+        float Get_bRegRes(Jet jet);
+        float Get_bRegCorr(Jet jet);
         //functions fo apply preselection cuts:
         void bJets_PreselectionCut(std::vector<Jet> &jets);
         std::vector<Jet> bjJets_PreselectionCut(NanoAODTree& nat, EventInfo& ei, OutputTree &ot, std::vector<Jet> jets);
@@ -294,7 +327,7 @@ class OfflineProducerHelper{
 
         //Additional kinematic variables
         void ApplyBjetRegression(std::vector<Jet> bjets);
-        void CalculateBtagScaleFactor(const std::vector<Jet> presel_bjets,NanoAODTree& nat,OutputTree &ot);
+
         void AddVBFCategoryVariables(NanoAODTree& nat, EventInfo& ei,std::vector<Jet> ordered_jets);
         void AddInclusiveCategoryVariables(NanoAODTree& nat, EventInfo& ei,std::vector<Jet> ordered_jets);    
         float MindRToAJet(const GenPart quark,const std::vector<Jet> jets);
@@ -305,6 +338,8 @@ class OfflineProducerHelper{
         float GetBDT1Score(EventInfo& ei);//GGFHHKiller
         float GetBDT2Score(EventInfo& ei);//VBFQCDKiller
         float GetBDT3Score(EventInfo& ei);//GGFQCDHHKiller
+        float GetBDT3cat1Score(EventInfo& ei);//GGFQCDHHKillercat1
+        float GetBDT3cat2Score(EventInfo& ei);//GGFQCDHHKillercat2
         float GetDNNScore(EventInfo& ei);
         float GenJetToPartonPt(const GenPart quark,const std::vector<GenJet> jets);
 

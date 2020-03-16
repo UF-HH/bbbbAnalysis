@@ -233,9 +233,13 @@ class NanoAODTree_ReaderImpl {
         NanoReaderValue<UChar_t>   LHE_Nglu                              {fReader, "LHE_Nglu"};
         NanoReaderValue<UChar_t>   LHE_NpNLO                             {fReader, "LHE_NpNLO"};
         NanoReaderValue<UChar_t>   LHE_NpLO                              {fReader, "LHE_NpLO"};
+
+        NanoReaderValue<Float_t>   L1PreFiringWeight_Nom                 {fReader, "L1PreFiringWeight_Nom"};
+        NanoReaderValue<Float_t>   L1PreFiringWeight_Up                  {fReader, "L1PreFiringWeight_Up"};
+        NanoReaderValue<Float_t>   L1PreFiringWeight_Dn                  {fReader, "L1PreFiringWeight_Dn"};
         
-        NanoReaderValue<Float_t>    GenMET_phi                           {fReader, "GenMET_phi"};
-        NanoReaderValue<Float_t>    GenMET_pt                            {fReader, "GenMET_pt"};
+        NanoReaderValue<Float_t>   GenMET_phi                           {fReader, "GenMET_phi"};
+        NanoReaderValue<Float_t>   GenMET_pt                            {fReader, "GenMET_pt"};
         NanoReaderValue<Float_t>   MET_MetUnclustEnUpDeltaX             {fReader, "MET_MetUnclustEnUpDeltaX"};
         NanoReaderValue<Float_t>   MET_MetUnclustEnUpDeltaY             {fReader, "MET_MetUnclustEnUpDeltaY"};
         NanoReaderValue<Float_t>   MET_covXX                            {fReader, "MET_covXX"};

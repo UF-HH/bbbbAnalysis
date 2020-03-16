@@ -94,7 +94,7 @@ void OfflineProducerHelper::initializeObjectsForCuts(OutputTree &ot){
 
 }
 
-// reject events with leptons that may come from W and Z decays
+// objects to reject events with leptons 
 void OfflineProducerHelper::save_IsolatedLeptons (NanoAODTree& nat, OutputTree &ot, EventInfo& ei){
 
     std::vector<Electron> IsolatedElectrons;
@@ -315,6 +315,15 @@ void OfflineProducerHelper::save_TriggerObjects (NanoAODTree& nat, OutputTree &o
 
 // ----------------- Compute scaleFactors - BEGIN ----------------- //
 
+void OfflineProducerHelper::initializeObjectsL1PrefiringForScaleFactors(OutputTree &ot)
+{
+    //save_objects_for_l1prefiring = [=](NanoAODTree& nat, OutputTree &ot, EventInfo& ei) -> void {this -> compute_scaleFactors_l1prefiring(nat, ot, ei);};
+    ot.declareUserFloatBranch("L1PreFiringWeight_Nom", 1.);
+    ot.declareUserFloatBranch("L1PreFiringWeight_Up",  1.);
+    ot.declareUserFloatBranch("L1PreFiringWeight_Dn",  1.);
+    return;
+}
+
 void OfflineProducerHelper::initializeObjectsBJetForScaleFactors(OutputTree &ot){
 
     string scaleFactorsMethod = any_cast<string>(parameterList_->at("BTagScaleFactorMethod"));
@@ -408,16 +417,62 @@ void OfflineProducerHelper::compute_scaleFactors_fourBtag_eventScaleFactor (cons
     return;
 }
 
+void OfflineProducerHelper::CalculateL1prefiringScaleFactor(NanoAODTree& nat,OutputTree &ot, EventInfo& ei)
+{
+
+   if( parameterList_->find("L1PrefiringSFMethod") != parameterList_->end()) //only defined when it is MC
+   {
+       if(any_cast<string>(parameterList_->at("L1PrefiringSFMethod")) == "Standard" && any_cast<string>(parameterList_->at("datasetname")) != "2018")
+       {
+       ot.userFloat("L1PreFiringWeight_Nom") = *(nat.L1PreFiringWeight_Nom);
+       ot.userFloat("L1PreFiringWeight_Up")  = *(nat.L1PreFiringWeight_Up);
+       ot.userFloat("L1PreFiringWeight_Dn")  = *(nat.L1PreFiringWeight_Dn);
+       }
+       else{
+        //do nothing
+       }
+   }
+   else{
+        //do nothing
+   }
+
+   return;
+}
+
+void OfflineProducerHelper::CalculateBtagScaleFactor(const std::vector<Jet> presel_bjets,NanoAODTree& nat,OutputTree &ot){
+    if(parameterList_->find("BTagScaleFactorMethod") != parameterList_->end()){ //is it a MC event
+        const string BJetcaleFactorsMethod = any_cast<string>(parameterList_->at("BTagScaleFactorMethod"));
+        if(BJetcaleFactorsMethod == "FourBtag_ScaleFactor")
+        {
+            float bminimumDeepCSVAccepted           = any_cast<float>(parameterList_->at("bMinDeepCSV"  ));
+            float bminimumDeepJetAccepted           = any_cast<float>(parameterList_->at("bMinDeepJet"  ));
+            std::vector<Jet> jetsforbSF;
+            if(any_cast<bool>(parameterList_->at("NewestBtaggingAlgorithm")))
+            {
+                  for (uint i=0;i<presel_bjets.size();i++ ){ if( get_property( presel_bjets.at(i) ,Jet_btagDeepFlavB) >= bminimumDeepJetAccepted) jetsforbSF.push_back(presel_bjets.at(i));}
+            }
+            else
+            {
+                  for (uint i=0;i<presel_bjets.size();i++ ){ if( get_property( presel_bjets.at(i) ,Jet_btagDeepB) >= bminimumDeepCSVAccepted) jetsforbSF.push_back(presel_bjets.at(i));}
+            }
+
+            compute_scaleFactors_fourBtag_eventScaleFactor(jetsforbSF,nat,ot);
+        }
+    }
+    return;
+}
 // ----------------- Compute scaleFactors - END ----------------- //
 
 
-// ----------------- Compute weights - BEGIN ----------------- //
+// ----------------- Compute shape weights - BEGIN ----------------- //
 
 void OfflineProducerHelper::initializeObjectsForEventWeight(OutputTree &ot, SkimEffCounter &ec, std::string PUWeightFileName, float crossSection)
 {
-    sampleCrossSection_ = 1;//crossSection;
+    sampleCrossSection_ = 1;
 
     string weightsMethod = any_cast<string>(parameterList_->at("WeightMethod"));
+
+    string dataset  = any_cast<string>(parameterList_->at("datasetname"));
 
     if(weightsMethod == "None")
     {
@@ -453,7 +508,6 @@ void OfflineProducerHelper::initializeObjectsForEventWeight(OutputTree &ot, Skim
             ec.binMap_[variationBranch] = ++weightBin;
             ec.binEntries_[variationBranch] = 0.;
             PUWeightHistogramMap[variationBranch] = (TH1D*) PUWeightFile->Get(("PUweights"+puWeightVariation[var]).data());
-            // PUWeightHistogramMap[variationBranch]->SetDirectory(0);
         }
 
         for(const auto & histogram : PUWeightHistogramMap)
@@ -492,6 +546,7 @@ void OfflineProducerHelper::initializeObjectsForEventWeight(OutputTree &ot, Skim
         weightMap_[branchName] = std::pair< float, std::map<std::string, float> >();
         weightMap_[branchName].first = 1.;
         // PSWeight weight variations branches are created during the event loop (number of variation varies between samples)
+
     }
 
     return;
@@ -512,7 +567,7 @@ float OfflineProducerHelper::calculateEventWeight_AllWeights(NanoAODTree& nat, E
 
     int weightBin = ec.binMap_.size();
 
-    float eventWeight = 1.; //sampleCrossSection_;
+    float eventWeight = 1.; 
     float tmpWeight = 1.;
     std::string branchName;
 
@@ -558,8 +613,7 @@ float OfflineProducerHelper::calculateEventWeight_AllWeights(NanoAODTree& nat, E
     ot.userFloat(branchName) = tmpWeight;
     weightMap_[branchName].first = tmpWeight;
     eventWeight *= tmpWeight;
-
-
+ 
     // LHEPdfWeight
     branchName = "LHEPdfWeight";
     tmpWeight = 1.;
@@ -662,7 +716,7 @@ float OfflineProducerHelper::calculateEventWeight_AllWeights(NanoAODTree& nat, E
 
 }
 
-// ----------------- Compute weights - END ----------------- //
+// ----------------- Compute shape weights - END ----------------- //
 
 
 // ----------------- Compute JER - BEGIN ------------------- //
@@ -727,7 +781,6 @@ void OfflineProducerHelper::standardJERVariations(NanoAODTree& nat, std::vector<
     return;
 }
 
-
 std::vector<Jet> OfflineProducerHelper::applyJERsmearing(NanoAODTree& nat, std::vector<Jet> jets, Variation variation)
 {
 
@@ -743,17 +796,22 @@ std::vector<Jet> OfflineProducerHelper::applyJERsmearing(NanoAODTree& nat, std::
         float tmpJER_ScaleFactor = jetResolutionScaleFactor_->getScaleFactor(jetParameters, variation  );
         float tmpJER_Resolution  = jetResolution_->getResolution(jetParameters);
 
-        int genJetId = abs(get_property(iJet,Jet_genJetIdx));
+        int genJetId = get_property(iJet,Jet_genJetIdx); //Before was bugged, int genJetId = abs(get_property(iJet,Jet_genJetIdx));
 
+        //Get the unsmeared jetP4 (before any procedure)
+        TLorentzVector unsmeared_jetP4 = iJet.P4();
+
+        //JER smearfactor for normal jets
         float smearFactor;
-        if(genJetId>=0 && genJetId < numberOfGenJets) //generated jet was found
+        if(genJetId>=0 && genJetId < numberOfGenJets) //generated jet was found and saved
         {
-            smearFactor = 1. + (tmpJER_ScaleFactor - 1.) * (iJet.P4().Pt() - nat.GenJet_pt.At(genJetId))/iJet.P4().Pt();
+            //JER smearfactor for normal jets
+            smearFactor     = 1. + (tmpJER_ScaleFactor - 1.) * (iJet.P4().Pt() - nat.GenJet_pt.At(genJetId))   /iJet.P4().Pt();
         }
         else if(tmpJER_ScaleFactor>1.)
         {
-            float sigma = tmpJER_Resolution * std::sqrt(tmpJER_ScaleFactor * tmpJER_ScaleFactor - 1);
-            smearFactor = 1. + gRandom->Gaus(0., sigma);
+            float sigma     = tmpJER_Resolution * std::sqrt(tmpJER_ScaleFactor * tmpJER_ScaleFactor - 1);
+            smearFactor     = 1. + gRandom->Gaus(0., sigma);
         }
         else
         {
@@ -766,22 +824,59 @@ std::vector<Jet> OfflineProducerHelper::applyJERsmearing(NanoAODTree& nat, std::
         {
             smearFactor = MIN_JET_ENERGY / iJet.P4().Energy();
         }
+        
+        //Make standard smearing to the jet
+        iJet.setP4(unsmeared_jetP4*smearFactor);
 
-        //Let's smear the "standard" jets as needs to be done w.r.t. "NANOAOD" jet pt
-        iJet.setP4(iJet.P4()*smearFactor);
-        //Build pT regressed on top of the smeared jets (not optimal but just for now)
-        iJet.buildP4Regressed();
-        //FIXME: Make appropiate smearing for bregressed jets for final result
+        //Procedure for b-regressed jets 
+        //Step1: Check if genjet is found, then use the dedicated smearing and regression
+        float bregcorr          = Get_bRegCorr(iJet);
+        float smearedbreg_jetpt = unsmeared_jetP4.Pt()*bregcorr;
+        float smearedbreg_jeten = unsmeared_jetP4.E()*bregcorr; 
+        if(genJetId>=0 && genJetId < numberOfGenJets) //generated jet was found and saved
+        {
+            //Get the genjet P4
+            GenJet genjet           = GenJet(genJetId, &nat);
+            TLorentzVector genjetP4 = genjet.P4();
+            TLorentzVector gennuP4, genjetwithnuP4;
+            //Compute the nearby neutrinos p4
+            for (uint igp = 0; igp < *(nat.nGenPart); ++igp)
+            {
+                GenPart nu (igp, &nat);
+                if (     get_property(nu, GenPart_status) == 1  && 
+                    (abs(get_property(nu, GenPart_pdgId)) == 12 || 
+                     abs(get_property(nu, GenPart_pdgId)) == 14 ||
+                     abs(get_property(nu, GenPart_pdgId)) == 16) )
+                {
+                    if( genjetP4.DeltaR( nu.P4() ) < 0.4) gennuP4 = gennuP4 + nu.P4();
+                }
+            }
+            //Add the neutrinos to the genjet
+            genjetwithnuP4 = genjetP4 + gennuP4;
+            //Derive the new values of regressed/smeared pt and energy to build the dedicated regressed p4
+            float resSmear = 1.1; //recommended nominal scale factor //TODO:Add the variations of this scale factor
+            float dpt          = smearedbreg_jetpt - genjetwithnuP4.Pt();
+            smearedbreg_jetpt  = genjetwithnuP4.Pt() + resSmear*dpt;
+            float den          = smearedbreg_jeten - genjetwithnuP4.E();
+            smearedbreg_jeten  = genjetwithnuP4.E()  + resSmear*den;
+            //Save the correct p4 for b-regressed jets
+            TLorentzVector smearedbreg_jetP4;
+            smearedbreg_jetP4.SetPtEtaPhiE(smearedbreg_jetpt,unsmeared_jetP4.Eta(),unsmeared_jetP4.Phi(),smearedbreg_jeten);
+            iJet.setP4Regressed(smearedbreg_jetP4);    
+        }
+        else // Step2: Keep standard smearing and build standard P4Regressed with it
+        {
+           iJet.buildP4Regressed();
+        } 
+  
     }
-
 
     return jets;
 }
-
 // ----------------- Compute JER - END --------------------- //
 
 
-// ----------------- Compute JER - BEGIN ------------------- //
+// ----------------- Compute JEC - BEGIN ------------------- //
 
 void OfflineProducerHelper::initializeJECVariations(OutputTree &ot)
 {
@@ -1709,17 +1804,6 @@ std::vector<std::tuple <Electron,Muon>> OfflineProducerHelper::OppositeChargeEMU
 ////----------------------------------------TTEMU SELECTION ENDS-------------------------------------------------////
 
 ////////////-----FUNCTIONS FOR NON-RESONANT ANALYSIS - START
-void OfflineProducerHelper::CalculateBtagScaleFactor(const std::vector<Jet> presel_bjets,NanoAODTree& nat,OutputTree &ot){
-    if(parameterList_->find("BTagScaleFactorMethod") != parameterList_->end()){ //is it a MC event
-        const string BJetcaleFactorsMethod = any_cast<string>(parameterList_->at("BTagScaleFactorMethod"));
-        if(BJetcaleFactorsMethod == "FourBtag_ScaleFactor"){
-            compute_scaleFactors_fourBtag_eventScaleFactor(presel_bjets,nat,ot);
-        }
-    }
-    return;
-}
-
-
 bool OfflineProducerHelper::select_bbbbjj_jets(NanoAODTree& nat, EventInfo& ei, OutputTree &ot)
 {
     //Get the jet collection
@@ -1751,6 +1835,7 @@ bool OfflineProducerHelper::select_bbbbjj_jets(NanoAODTree& nat, EventInfo& ei, 
     else{
         ordered_jets = bbbb_jets_idxs_MinMassDifference(&presel_bjets);
     }
+    
     //Add objects (H1,H2,HH) and angular variables (dEta,dPhi,etc) 
     if(presel_jets.size()==6){
         ordered_jets.push_back(presel_jets.at(4)); ordered_jets.push_back(presel_jets.at(5));
@@ -1762,6 +1847,12 @@ bool OfflineProducerHelper::select_bbbbjj_jets(NanoAODTree& nat, EventInfo& ei, 
     {
         AddInclusiveCategoryVariables(nat,ei,ordered_jets);
     }
+
+    //Here calculate btag scale factors for MC
+    //--Calculate the associated b-tagging scale factor
+    CalculateBtagScaleFactor(presel_bjets,nat,ot);
+    //--L1Prefiring weights
+    CalculateL1prefiringScaleFactor(nat,ot,ei);
 
     return true; 
 }
@@ -1836,11 +1927,11 @@ void OfflineProducerHelper::AddInclusiveCategoryVariables(NanoAODTree& nat, Even
            ei.HH_btag_b2_bscore = get_property( presel_bjets_btags.at(1) , Jet_btagDeepFlavB );
            ei.HH_btag_b3_bscore = get_property( presel_bjets_btags.at(2) , Jet_btagDeepFlavB );
            ei.HH_btag_b4_bscore = get_property( presel_bjets_btags.at(3) , Jet_btagDeepFlavB );           
-           ei.HH_btag_b1_bres = Get_bRegRes(nat, ei, presel_bjets_btags.at(0) ); 
-           ei.HH_btag_b2_bres = Get_bRegRes(nat, ei, presel_bjets_btags.at(1) );
-           ei.HH_btag_b3_bres = Get_bRegRes(nat, ei, presel_bjets_btags.at(2) );
-           ei.HH_btag_b4_bres = Get_bRegRes(nat, ei, presel_bjets_btags.at(3) );
-           if( get_property( ei.HH_btag_b4.get() , Jet_btagDeepFlavB ) > any_cast<float>(parameterList_->at("bMinDeepJet") ) ){ei.nBtag=4;}
+           ei.HH_btag_b1_bres = Get_bRegRes( presel_bjets_btags.at(0) ); 
+           ei.HH_btag_b2_bres = Get_bRegRes( presel_bjets_btags.at(1) );
+           ei.HH_btag_b3_bres = Get_bRegRes( presel_bjets_btags.at(2) );
+           ei.HH_btag_b4_bres = Get_bRegRes( presel_bjets_btags.at(3) );
+           if( get_property( ei.HH_btag_b4.get() , Jet_btagDeepFlavB ) >= any_cast<float>(parameterList_->at("bMinDeepJet") ) ){ei.nBtag=4;}
            else{ei.nBtag=3;}
        }
        else
@@ -1856,11 +1947,11 @@ void OfflineProducerHelper::AddInclusiveCategoryVariables(NanoAODTree& nat, Even
            ei.HH_btag_b2_bscore = get_property( presel_bjets_btags.at(1) , Jet_btagDeepB );
            ei.HH_btag_b3_bscore = get_property( presel_bjets_btags.at(2) , Jet_btagDeepB );
            ei.HH_btag_b4_bscore = get_property( presel_bjets_btags.at(3) , Jet_btagDeepB );           
-           ei.HH_btag_b1_bres = Get_bRegRes(nat, ei, presel_bjets_btags.at(0) );
-           ei.HH_btag_b2_bres = Get_bRegRes(nat, ei, presel_bjets_btags.at(1) );
-           ei.HH_btag_b3_bres = Get_bRegRes(nat, ei, presel_bjets_btags.at(2) );
-           ei.HH_btag_b4_bres = Get_bRegRes(nat, ei, presel_bjets_btags.at(3) );
-           if( get_property( ei.HH_btag_b4.get() , Jet_btagDeepB ) > any_cast<float>(parameterList_->at("bMinDeepCSV") ) ){ei.nBtag=4;}
+           ei.HH_btag_b1_bres = Get_bRegRes( presel_bjets_btags.at(0) );
+           ei.HH_btag_b2_bres = Get_bRegRes( presel_bjets_btags.at(1) );
+           ei.HH_btag_b3_bres = Get_bRegRes( presel_bjets_btags.at(2) );
+           ei.HH_btag_b4_bres = Get_bRegRes( presel_bjets_btags.at(3) );
+           if( get_property( ei.HH_btag_b4.get() , Jet_btagDeepB ) >= any_cast<float>(parameterList_->at("bMinDeepCSV") ) ){ei.nBtag=4;}
            else{ei.nBtag=3;}
        }
        //Mass cut variables with a random swap to be sure that the m1 and m2 are simmetric when selecting the signal region
@@ -1949,6 +2040,8 @@ void OfflineProducerHelper::AddInclusiveCategoryVariables(NanoAODTree& nat, Even
        ei.costh_HH_b4_ggfcm = HH_b4_cm.CosTheta();
        //GGF-QCDKiller
        ei.BDT3 = GetBDT3Score(ei);
+       ei.BDT3cat1 = GetBDT3cat1Score(ei);
+       ei.BDT3cat2 = GetBDT3cat2Score(ei);
        return;
 }
 
@@ -2079,7 +2172,7 @@ void OfflineProducerHelper::AddVBFCategoryVariables(NanoAODTree& nat, EventInfo&
        return;
 }
 
-float OfflineProducerHelper::Get_bRegRes(NanoAODTree& nat, EventInfo& ei, Jet jet){
+float OfflineProducerHelper::Get_bRegRes(Jet jet){
     float corr = get_property(jet,Jet_bRegCorr);
     float res  = get_property(jet,Jet_bRegRes);
     float pt   = get_property(jet,Jet_pt);
@@ -2094,8 +2187,25 @@ float OfflineProducerHelper::Get_bRegRes(NanoAODTree& nat, EventInfo& ei, Jet je
     {
         //do nothing
     }    
-    
     return res;
+}
+
+float OfflineProducerHelper::Get_bRegCorr(Jet jet){
+    float corr = get_property(jet,Jet_bRegCorr);
+    float res  = get_property(jet,Jet_bRegRes);
+    float pt   = get_property(jet,Jet_pt);
+    //The condition below needs to be checked in every NANOAOD release. It is not implemmented in NANOAODv5.
+    if (  !( (corr>0.1) && (corr<2) && (res>0.005) && (res<0.9) ) ) {
+        corr = 1.0;
+    }
+    else if( pt < 20 ){
+        corr = 1.0;
+    }
+    else
+    {
+        //do nothing
+    }    
+    return corr;
 }
 
 void OfflineProducerHelper::init_BDT_evals()
@@ -2143,7 +2253,8 @@ void OfflineProducerHelper::init_BDT_evals()
    string weights_BDT1 = "weights/TMVAClassification2016BSM_BDT1_breg.weights.xml"; // FIXME: OK as default?
    string weights_BDT2 = "weights/TMVAClassification_BDT2_placeholder.weights.xml"; // FIXME: OK as default?
    string weights_BDT3 = "weights/TMVAClassification2016BSM_BDT3_breg.weights.xml"; // FIXME: OK as default?
-   
+   string weights_BDT3cat1 = "weights/TMVAClassification2016BSMcat1_BDT3_breg.weights.xml"; // FIXME: OK as default?
+   string weights_BDT3cat2 = "weights/TMVAClassification2016BSMcat2_BDT3_breg.weights.xml"; // FIXME: OK as default?   
     // GGF-HHKiller weights
     if(strategy=="BothClosestToMh"){
         //Define weights here if needed
@@ -2153,15 +2264,21 @@ void OfflineProducerHelper::init_BDT_evals()
         {
            weights_BDT1 = "weights/TMVAClassification2016BSM_BDT1_breg.weights.xml"; 
            weights_BDT3 = "weights/TMVAClassification2016BSM_BDT3_breg.weights.xml";
+           weights_BDT3cat1 = "weights/TMVAClassification2016BSMcat1_BDT3_breg.weights.xml";
+           weights_BDT3cat2 = "weights/TMVAClassification2016BSMcat2_BDT3_breg.weights.xml";
         }
         else if (dataset=="2017")
         {
            weights_BDT1 = "weights/TMVAClassification2017BSM_BDT1_breg.weights.xml";
            weights_BDT3 = "weights/TMVAClassification2017BSM_BDT3_breg.weights.xml";
+           weights_BDT3cat1 = "weights/TMVAClassification2017BSMcat1_BDT3_breg.weights.xml";
+           weights_BDT3cat2 = "weights/TMVAClassification2017BSMcat2_BDT3_breg.weights.xml";
         }
         else{
            weights_BDT1 = "weights/TMVAClassification2018BSM_BDT1_breg.weights.xml";
            weights_BDT3 = "weights/TMVAClassification2018BSM_BDT3_breg.weights.xml";
+           weights_BDT3cat1 = "weights/TMVAClassification2018BSMcat1_BDT3_breg.weights.xml";
+           weights_BDT3cat2 = "weights/TMVAClassification2018BSMcat2_BDT3_breg.weights.xml";
         }
     }
     else if(strategy=="MinMassDifference"){
@@ -2178,6 +2295,8 @@ void OfflineProducerHelper::init_BDT_evals()
     eval_BDT1_->init(method, weights_BDT1);
     eval_BDT2_->init(method, weights_BDT2);
     eval_BDT3_->init(method, weights_BDT3);
+    eval_BDT3cat1_->init(method, weights_BDT3cat1);
+    eval_BDT3cat2_->init(method, weights_BDT3cat2);
 }
 
 
@@ -2387,6 +2506,58 @@ float OfflineProducerHelper::GetBDT3Score(EventInfo& ei){
         return eval_BDT3_ -> eval();
 }
 
+
+float OfflineProducerHelper::GetBDT3cat1Score(EventInfo& ei){
+        string dataset  = any_cast<string>(parameterList_->at("datasetname"));
+        float H1_pt_bdt              =  ei.H1->P4().Pt();
+        float H2_pt_bdt              =  ei.H2->P4().Pt();
+        float H1_m_bdt               =  ei.H1->P4().M();
+        float H2_m_bdt               =  ei.H2->P4().M();      
+        float h1h2_deltaEta_bdt      =  ei.h1h2_deltaEta.get();
+        float H1_bb_deltaR_bdt       =  ei.H1_bb_deltaR.get();
+        float H2_bb_deltaR_bdt       =  ei.H2_bb_deltaR.get();        
+        float abs_costh_HH_b1_cm_bdt =  abs(ei.costh_HH_b1_ggfcm.get());
+        float HH_btag_b3_bscore_bdt  =  ei.HH_btag_b3_bscore.get();
+        float HH_btag_b3_bres_bdt    =  ei.HH_btag_b3_bres.get();
+        eval_BDT3cat1_ -> floatVarsMap["H1_pt"]                                       = H1_pt_bdt;
+        eval_BDT3cat1_ -> floatVarsMap["H2_pt"]                                       = H2_pt_bdt;
+        eval_BDT3cat1_ -> floatVarsMap["H1_m"]                                        = H1_m_bdt;
+        eval_BDT3cat1_ -> floatVarsMap["H2_m"]                                        = H2_m_bdt;
+        eval_BDT3cat1_ -> floatVarsMap["h1h2_deltaEta"]                               = h1h2_deltaEta_bdt;
+        eval_BDT3cat1_ -> floatVarsMap["H1_bb_deltaR"]                                = H1_bb_deltaR_bdt;
+        eval_BDT3cat1_ -> floatVarsMap["H2_bb_deltaR"]                                = H2_bb_deltaR_bdt;
+        eval_BDT3cat1_ -> floatVarsMap["abs_costh_HH_b1_cm:=abs(costh_HH_b1_ggfcm)"]  = abs_costh_HH_b1_cm_bdt; 
+        eval_BDT3cat1_ -> floatVarsMap["HH_btag_b3_bscore"]                           = HH_btag_b3_bscore_bdt;
+        eval_BDT3cat1_ -> floatVarsMap["HH_btag_b3_bres"]                             = HH_btag_b3_bres_bdt;
+        return eval_BDT3cat1_ -> eval();
+}
+
+float OfflineProducerHelper::GetBDT3cat2Score(EventInfo& ei){
+        string dataset  = any_cast<string>(parameterList_->at("datasetname"));
+        float H1_pt_bdt              =  ei.H1->P4().Pt();
+        float H2_pt_bdt              =  ei.H2->P4().Pt();
+        float H1_m_bdt               =  ei.H1->P4().M();
+        float H2_m_bdt               =  ei.H2->P4().M();      
+        float h1h2_deltaEta_bdt      =  ei.h1h2_deltaEta.get();
+        float H1_bb_deltaR_bdt       =  ei.H1_bb_deltaR.get();
+        float H2_bb_deltaR_bdt       =  ei.H2_bb_deltaR.get();        
+        float abs_costh_HH_b1_cm_bdt =  abs(ei.costh_HH_b1_ggfcm.get());
+        float HH_btag_b3_bscore_bdt  =  ei.HH_btag_b3_bscore.get();
+        float HH_btag_b3_bres_bdt    =  ei.HH_btag_b3_bres.get();
+        eval_BDT3cat2_ -> floatVarsMap["H1_pt"]                                       = H1_pt_bdt;
+        eval_BDT3cat2_ -> floatVarsMap["H2_pt"]                                       = H2_pt_bdt;
+        eval_BDT3cat2_ -> floatVarsMap["H1_m"]                                        = H1_m_bdt;
+        eval_BDT3cat2_ -> floatVarsMap["H2_m"]                                        = H2_m_bdt;
+        eval_BDT3cat2_ -> floatVarsMap["h1h2_deltaEta"]                               = h1h2_deltaEta_bdt;
+        eval_BDT3cat2_ -> floatVarsMap["H1_bb_deltaR"]                                = H1_bb_deltaR_bdt;
+        eval_BDT3cat2_ -> floatVarsMap["H2_bb_deltaR"]                                = H2_bb_deltaR_bdt;
+        eval_BDT3cat2_ -> floatVarsMap["abs_costh_HH_b1_cm:=abs(costh_HH_b1_ggfcm)"]  = abs_costh_HH_b1_cm_bdt; 
+        eval_BDT3cat2_ -> floatVarsMap["HH_btag_b3_bscore"]                           = HH_btag_b3_bscore_bdt;
+        eval_BDT3cat2_ -> floatVarsMap["HH_btag_b3_bres"]                             = HH_btag_b3_bres_bdt;
+        return eval_BDT3cat2_ -> eval();
+}
+
+
 bool checkBit(int number, int bitpos)
 {
     return (number & (1 << bitpos));
@@ -2452,22 +2623,19 @@ std::vector<Jet> OfflineProducerHelper::bjJets_PreselectionCut(NanoAODTree& nat,
     int btags=0;
     if(any_cast<bool>(parameterList_->at("NewestBtaggingAlgorithm")))
     {
-          for (uint i=0;i<jets.size();i++ ){ if( get_property( jets.at(i) ,Jet_btagDeepFlavB) > bminimumDeepJetAccepted) btags++;}
+          for (uint i=0;i<jets.size();i++ ){ if( get_property( jets.at(i) ,Jet_btagDeepFlavB) >= bminimumDeepJetAccepted) btags++;}
           stable_sort(jets.begin(), jets.end(), [](const Jet & a, const Jet & b) -> bool
           { return ( get_property(a, Jet_btagDeepFlavB) > get_property(b, Jet_btagDeepFlavB) );}); 
     }
     else
     {
-          for (uint i=0;i<jets.size();i++ ){ if( get_property( jets.at(i) ,Jet_btagDeepB) > bminimumDeepCSVAccepted) btags++;}
+          for (uint i=0;i<jets.size();i++ ){ if( get_property( jets.at(i) ,Jet_btagDeepB) >= bminimumDeepCSVAccepted) btags++;}
           stable_sort(jets.begin(), jets.end(), [](const Jet & a, const Jet & b) -> bool
           { return ( get_property(a, Jet_btagDeepB) > get_property(b, Jet_btagDeepB) );}); 
     }
     if(btags<MinimumNumberOfBTags) return outputJets;
     outputJets = {{*(jets.begin()+0),*(jets.begin()+1),*(jets.begin()+2),*(jets.begin()+3)}};
     int c=0; while (c<4){jets.erase(jets.begin());c++;}
-    //Calculate the associated b-tagging scale factor depending on b-tag or anti-btag selection
-    if(btags==3){btaggedjets={{*(outputJets.begin()+0),*(outputJets.begin()+1),*(outputJets.begin()+2)}};CalculateBtagScaleFactor(btaggedjets,nat,ot);}
-    else{btaggedjets={{*(outputJets.begin()+0),*(outputJets.begin()+1),*(outputJets.begin()+2),*(outputJets.begin()+3)}};CalculateBtagScaleFactor(btaggedjets,nat,ot);}
     /////////////--------Done selecting b-jets------------------------------------
 
     /////////////--------Select two VBF-jet candidates based on PT and ETA1*ETA2<0

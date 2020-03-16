@@ -344,6 +344,8 @@ void SkimUtils::fill_output_tree(OutputTree& ot, NanoAODTree& nat, EventInfo& ei
     if(ei.BDT1) ot.BDT1 = *ei.BDT1;
     if(ei.BDT2) ot.BDT2 = *ei.BDT2;
     if(ei.BDT3) ot.BDT3 = *ei.BDT3;
+    if(ei.BDT3cat1) ot.BDT3cat1 = *ei.BDT3cat1;
+    if(ei.BDT3cat2) ot.BDT3cat2 = *ei.BDT3cat2;
     if(ei.ExtraVBFJetDecision) ot.ExtraVBFJetDecision = *ei.ExtraVBFJetDecision;
     if(ei.ExtraVBFJetPt) ot.ExtraVBFJetPt = *ei.ExtraVBFJetPt;
     if(ei.ExtraVBFJetEta) ot.ExtraVBFJetEta = *ei.ExtraVBFJetEta;

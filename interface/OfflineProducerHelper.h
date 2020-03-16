@@ -266,7 +266,6 @@ class OfflineProducerHelper{
         void standardJERVariations(NanoAODTree& nat, std::vector<Jet> &jets, std::vector< std::pair<std::string, std::vector<Jet> > > &jetEnergyVariationsMap);
         //function to apply JER
         std::vector<Jet> applyJERsmearing(NanoAODTree& nat, std::vector<Jet> jets, Variation variation = Variation::NOMINAL);
-        TLorentzVector AddNeutrinosToGenJet(NanoAODTree& nat, TLorentzVector genjetP4);
 
         void initializeJECVariations(OutputTree &ot);
         // function pointer for JEC variations

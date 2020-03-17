@@ -5,7 +5,6 @@
 #include <stdlib.h>
 #include <any>
 
-#include "CondFormats/JetMETObjects/interface/JetCorrectorParameters.h"
 #include "CompositeCandidate.h"
 #include "Jet.h"
 #include "Electron.h"
@@ -23,6 +22,8 @@
 #include "TMVA/Reader.h"
 
 using namespace std;
+
+const std::string OfflineProducerHelper::nominal_jes_syst_shift_name = "nominal";
 
 // ----------------- Objects for cut - BEGIN ----------------- //
 
@@ -958,6 +959,76 @@ std::vector<Jet> OfflineProducerHelper::applyJECVariation(NanoAODTree& nat, std:
 
 // ----------------- Compute JEC - END --------------------- //
 
+void OfflineProducerHelper::initializeApplyJESshift(std::string syst_and_direction)
+{
+    // parse the string to get the systematic name and the direction.
+    // the string is expected to be formatted as systematicName:direction
+    // if the name -nominal- is passed, no shift is applied
+
+    if (syst_and_direction == nominal_jes_syst_shift_name)
+    {
+        jes_syst_shift_name_ = nominal_jes_syst_shift_name;
+        cout << "[INFO] ... jets will not be shifted because shift is set to : " << syst_and_direction << endl;
+        return;
+    }
+
+    // check that the input string is well formatted
+    auto idelimiter = syst_and_direction.find(":");
+    if (idelimiter == std::string::npos)
+    {
+        string msg = "OfflineProducerHelper::initializeApplyJESshift : input string [" + syst_and_direction + string("] is malformed : cannot find delimited (:) : aborting");
+        throw std::runtime_error(msg);
+    }
+
+    string sname = syst_and_direction.substr(0, idelimiter);
+    string sdir  = syst_and_direction.substr(idelimiter+1);
+
+    string JECFileName = any_cast<string>(parameterList_->at("JECFileName"));
+
+    jcp_ = std::unique_ptr<JetCorrectorParameters> (new JetCorrectorParameters(JECFileName, sname));
+    jcu_ = std::unique_ptr<JetCorrectionUncertainty> (new JetCorrectionUncertainty(*jcp_));
+
+    jes_syst_shift_name_ = sname;
+    if (sdir == "up")
+        jes_syst_shift_dir_is_up_ = true;
+    else if (sdir == "down")
+        jes_syst_shift_dir_is_up_ = false;
+    else
+    {
+        string msg = "OfflineProducerHelper::initializeApplyJESshift : input string [" + syst_and_direction + string("] is malformed : cannot understand direction (up/down) : aborting");
+        throw std::runtime_error(msg);
+    }
+
+    cout << "[INFO] ... jets will be shifted according to systematic : " << jes_syst_shift_name_ << " : " << (jes_syst_shift_dir_is_up_ ? "up" : "down") << endl;
+
+    return;
+}
+
+std::vector<Jet> OfflineProducerHelper::applyJESshift(NanoAODTree &nat, const std::vector<Jet> &jets, bool direction_is_up)
+{
+    // calculation derived from the following twikis:
+    // https://twiki.cern.ch/twiki/bin/view/CMS/JECUncertaintySources#Example_implementation
+    // https://twiki.cern.ch/twiki/bin/view/CMSPublic/WorkBookJetEnergyCorrections#JetCorUncertainties
+
+    // NOTE : the input jets must be unsmeared
+
+    std::vector<Jet> result;
+    double shift = direction_is_up ? 1. : -1.;
+
+    for(size_t ijet = 0; ijet < jets.size(); ++ijet)
+    {
+        jcu_->setJetPt  (jets.at(ijet).P4().Pt());
+        jcu_->setJetEta (jets.at(ijet).P4().Eta());
+        double corr_factor = jcu_->getUncertainty(direction_is_up);
+
+        Jet jet = jets.at(ijet);
+        jet.setP4(jet.P4() * (1 + shift * corr_factor) ); // set the shifted p4 ...
+        jet.buildP4Regressed(); // ... and reset the regressed p4 to be recomputed
+        result.emplace_back(jet);
+    }
+
+    return result;
+}
 
 void OfflineProducerHelper::fillJetEnergyVariationBranch(OutputTree &ot, std::string branchName, std::string variation, float value)
 {
@@ -1818,9 +1889,16 @@ bool OfflineProducerHelper::select_bbbbjj_jets(NanoAODTree& nat, EventInfo& ei, 
     else
     {   //It is data
         jets = unsmearedjets;
-    }    
+    }
+
+    // if a shift was asked (shift name != "nominal"), run the systematics shift
+    if (jes_syst_shift_name_ != nominal_jes_syst_shift_name){
+        auto jets_tmp = applyJESshift(nat, jets, jes_syst_shift_dir_is_up_);
+        jets = jets_tmp;
+    }
+
     //Preselect four most b-tagged jets (pt, eta, btagging) & 'VBF-jet pair'(pt,eta,deltaEta). Note: BTagSF is calculated for events with 3 & 4 b-tags
-    std::vector<Jet> presel_jets = bjJets_PreselectionCut(nat,ei,ot,jets);
+    std::vector<Jet> presel_jets = bjJets_PreselectionCut(nat, ei, ot, jets);
     if(presel_jets.size()<4) return false;
     //Pick up the four preselected b-jets
     std::vector<Jet> presel_bjets={{*(presel_jets.begin()+0),*(presel_jets.begin()+1),*(presel_jets.begin()+2),*(presel_jets.begin()+3)}};

@@ -22,6 +22,7 @@
 #include "BTagCalibrationStandalone.h"
 #include "JetMETCorrections/Modules/interface/JetResolution.h"
 #include "CondFormats/JetMETObjects/interface/JetCorrectionUncertainty.h"
+#include "CondFormats/JetMETObjects/interface/JetCorrectorParameters.h"
 #include "Jet.h"
 #include "GenJet.h"
 #include "SkimEffCounter.h"
@@ -85,6 +86,13 @@ class OfflineProducerHelper{
         // branch Name, default value
         std::map<std::string, float> branchesAffectedByJetEnergyVariations_;
         float sampleCrossSection_;
+
+        // to apply a single jet energy correction to all the incoming jets
+        const static std::string nominal_jes_syst_shift_name;
+        std::string jes_syst_shift_name_;
+        bool        jes_syst_shift_dir_is_up_;
+        std::unique_ptr<JetCorrectorParameters>   jcp_;
+        std::unique_ptr<JetCorrectionUncertainty> jcu_;
 
         // -------------------------------------------------------------------------------
         // helpers for the BDT evaluation
@@ -266,6 +274,10 @@ class OfflineProducerHelper{
         void standardJERVariations(NanoAODTree& nat, std::vector<Jet> &jets, std::vector< std::pair<std::string, std::vector<Jet> > > &jetEnergyVariationsMap);
         //function to apply JER
         std::vector<Jet> applyJERsmearing(NanoAODTree& nat, std::vector<Jet> jets, Variation variation = Variation::NOMINAL);
+
+        // function that applies whatever smearing strategy is defined in the parameters, and returns the jet
+        void initializeApplyJESshift(std::string syst_and_direction);
+        std::vector<Jet> applyJESshift(NanoAODTree &nat, const std::vector<Jet> &jets, bool direction_is_up);
 
         void initializeJECVariations(OutputTree &ot);
         // function pointer for JEC variations

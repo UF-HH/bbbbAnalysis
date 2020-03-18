@@ -48,7 +48,7 @@ def writeln(f, line):
 ###########
 
 parser = argparse.ArgumentParser(description='Command line parser of skim options')
-parser.add_argument('--input'     ,  dest = 'input'     ,  help = 'input filelist'           ,  required = True        )
+parser.add_argument('--input'     ,  dest = 'input'     ,  help = 'input filelist'           ,  default  = None        )
 parser.add_argument('--tag'       ,  dest = 'tag'       ,  help = 'production tag'           ,  required = True        )
 parser.add_argument('--njobs'     ,  dest = 'njobs'     ,  help = 'njobs'                    ,  type     = int         ,   default = 500    )
 ##
@@ -60,6 +60,7 @@ parser.add_argument('--outputDir',  dest='odir',   help='the base EOS output dir
 ## if leaving a {0} argument, odir will be formatted with the current username
 ## otherwise a manual fixed path can also be given
 ##
+parser.add_argument('--xrdcp-tar-only', dest='xrdcptaronly', help='just tar the executable folder and send it, do not submit jobs',  action='store_true', default=False)
 parser.add_argument('--no-tar',         dest='tar',        help='do not tar the executable folder',  action='store_false', default=True)
 parser.add_argument('--no-xrdcp-tar',   dest='xrdcptar',   help='do not xrdcp the tar to EOS',       action='store_false', default=True)
 parser.add_argument('--no-xrdcp-flist', dest='xrdcpflist', help='do not xrdcp the filelist to EOS',  action='store_false', default=True)
@@ -83,40 +84,43 @@ executable = 'bin/skim_ntuple_nonresonant.exe' ##if non resonant 'bin/skim_ntupl
 
 username = getpass.getuser()
 print "... Welcome", username
+odir = args.odir.format(username)
 
-
-oname = args.oname
-if not oname:
-    # print "A:" , args.input
-    # print "B:" , args.input.rsplit(r'/', 1)[-1]
-    # print "C:" , args.input.rsplit(r'/', 1)[0].rsplit('.', 1)
-    oname = args.input.rsplit(r'/', 1)[-1].rsplit('.', 1)[0]
-oname = 'SKIM_' + oname
+if args.input is None and not args.xrdcptaronly:
+    print "... please provide a input file list with --input <filelist>"
+    print "... if you just want to create and ship the tar file use --xrdcp-tar-only instead"
+    sys.exit()
 
 if not args.tag:
     print "... please provide a non-empty tag name (are you using --tag=$1 without cmd line argument?)"
     sys.exit()
 
-odir = args.odir.format(username)
-oLFN_base = formOutName(odir, args.tag, oname)
-if oLFN_base[-1] == '/':
-    oLFN_base = oLFN_base[:-1]
+if not args.xrdcptaronly:
+    oname = args.oname
+    if not oname:
+        # print "A:" , args.input
+        # print "B:" , args.input.rsplit(r'/', 1)[-1]
+        # print "C:" , args.input.rsplit(r'/', 1)[0].rsplit('.', 1)
+        oname = args.input.rsplit(r'/', 1)[-1].rsplit('.', 1)[0]
+    oname = 'SKIM_' + oname
 
-jobsDir                = 'jobs_' + args.tag + '/' + oname
-outListNameBareProto   = 'filelist_{0}.txt'
-outScriptNameBareProto = 'job_{0}.sh'
-outListNameProto       = (jobsDir + '/' + outListNameBareProto)
-outScriptNameProto     = (jobsDir + '/' + outScriptNameBareProto)
-EOSfilelistBase        = oLFN_base + '/filelist'
-EOSfilelistProto       = EOSfilelistBase + '/' + outListNameBareProto
-outFileNameProto       = 'bbbbNtuple_{0}.root'
-randomSeedProto        = '1{0}'
+    oLFN_base = formOutName(odir, args.tag, oname)
+    if oLFN_base[-1] == '/':
+        oLFN_base = oLFN_base[:-1]
+
+    jobsDir                = 'jobs_' + args.tag + '/' + oname
+    outListNameBareProto   = 'filelist_{0}.txt'
+    outScriptNameBareProto = 'job_{0}.sh'
+    outListNameProto       = (jobsDir + '/' + outListNameBareProto)
+    outScriptNameProto     = (jobsDir + '/' + outScriptNameBareProto)
+    EOSfilelistBase        = oLFN_base + '/filelist'
+    EOSfilelistProto       = EOSfilelistBase + '/' + outListNameBareProto
+    outFileNameProto       = 'bbbbNtuple_{0}.root'
+    randomSeedProto        = '1{0}'
 
 cmssw_base    = os.environ['CMSSW_BASE']
 cmssw_version = os.environ['CMSSW_VERSION']
 scram_arch    = os.environ['SCRAM_ARCH']
-
-
 
 tarName      = 'bbbbAnalysis.tar.gz' #%s_tar.tgz' % cmssw_version
 bbbbWorkDir  = os.getcwd()
@@ -126,69 +130,6 @@ tarLFN       = bbbbWorkDir + '/tars/' + tarName
 tarEOSdestLFN         = odir + '/' + args.tag + '/analysis_tar/' + tarName
 tarEOSdestLFN.replace('root://cmseos.fnal.gov/', '/eos/uscms')
 # filelistEOSdestLFNdir = ('root://cmseos.fnal.gov//store/user/{0}/bbbb_analysis_tar/' + tarName).format(username)
-
-inputfiles = parseInputFileList (args.input)    ## parse input list
-njobs      = args.njobs if args.njobs <= len (inputfiles) else len (inputfiles)
-fileblocks = splitInBlocks (inputfiles, njobs)
-if njobs != len(fileblocks):
-    print "** ERROR: length of file lists and njobs do not match, something went wrong"
-    sys.exit()
-
-## build the full command to launch
-## all to format on the job number
-
-## come commands MUST NOT be forwarded - so check and throw in case
-if '--input'  in unknown:
-    print "** you MUST pass a --input as it is generated by the script, exiting..."
-    sys.exit()
-if '--output' in unknown:
-    print "** you MUST pass a --output as it is generated by the script, exiting..."
-    sys.exit()
-
-commands = [
-    executable,
-    '--input %s'  % outListNameBareProto,
-    '--output %s' % outFileNameProto,
-    '--seed %s' % randomSeedProto,   
-    ]
-
-full_command = ' '.join(commands)
-## now forward all the other commands to full_command
-full_command += ' ' + ' '.join(unknown)
-
-#######
-
-print "** Skim of filelist      :", args.input
-print "** Production tag        :", args.tag
-print "** Njobs                 :", njobs
-print "** Working in            :", jobsDir
-print "** Saving output to      :", oLFN_base
-print "** Saving executables in :", tarEOSdestLFN
-print "** The script will execute :", full_command
-
-if os.path.isdir(jobsDir):
-    if not args.force:
-        print "... working folder", jobsDir, " already exists, exit"
-        sys.exit()
-    else:
-        print "... working folder", jobsDir, " already exists, FORCING ITS DELETION "
-        cmd = 'rm -r ' + jobsDir
-        print ">>> ", cmd
-        if os.system(cmd) != 0:
-            print "... Not able to execute command \"", cmd, "\", exit"
-            sys.exit()
-
-cmd='mkdir -p ' + jobsDir
-if os.system(cmd) != 0:
-    print "... Not able to execute command \"", cmd, "\", exit"
-    sys.exit()
-
-## filelist
-for n in range(0, njobs):
-    outListName = outListNameProto.format(n)
-    jobfilelist = open(outListName, 'w')
-    for f in fileblocks[n]: jobfilelist.write(f+"\n")
-    jobfilelist.close()
 
 ################################################################
 ## prepare the tarball of the executables
@@ -223,61 +164,128 @@ if args.tar:
 else:
     print '** INFO: Not going to tar executable folder, using', tarLFN
 
-# script
-for n in range(0, njobs):
-    this_full_command = full_command.format(n)
-    outListName     = outListNameProto.format(n)
-    outListNameBare = outListNameBareProto.format(n)
-    # outputFileName = 'ntuple_%i.root' % n
-    outputFileName = outFileNameProto.format(str(n))
-    outputEOSName  = '%s/output/%s' % (oLFN_base, outputFileName)
-    outScriptName  = outScriptNameProto.format(n)
-    outScript      = open(outScriptName, 'w')
-    writeln(outScript, '#!/bin/bash')
-    writeln(outScript, '{') ## start of redirection..., keep stderr and stdout in a single file, it's easier
-    writeln(outScript, 'echo "... starting job on " `date` #Date/time of start of job')
-    writeln(outScript, 'echo "... running on: `uname -a`" #Condor job is running on this node')
-    writeln(outScript, 'echo "... system software: `cat /etc/redhat-release`" #Operating System on that node')
-    writeln(outScript, 'source /cvmfs/cms.cern.ch/cmsset_default.sh')
-    writeln(outScript, 'export SCRAM_ARCH=%s' % scram_arch)
-    # writeln(outScript, 'cd %s/src/' % cmssw_version)
-    writeln(outScript, 'eval `scramv1 project CMSSW %s`' % cmssw_version)
-    writeln(outScript, 'cd %s/src' % cmssw_version)
-    writeln(outScript, 'eval `scramv1 runtime -sh`')
-    writeln(outScript, 'echo "... retrieving bbbb executables tarball"')
-    writeln(outScript, 'xrdcp -f -s %s .' % tarEOSdestLFN) ## force overwrite CMSSW tar
-    writeln(outScript, 'echo "... uncompressing bbbb executables tarball"')
-    writeln(outScript, 'tar -xzf %s' % tarName)
-    writeln(outScript, 'rm %s' % tarName)
-    writeln(outScript, 'echo "... retrieving filelist"')
-    writeln(outScript, 'xrdcp -f -s %s .' % EOSfilelistProto.format(n)) ## force overwrite file list
-    # writeln(outScript, 'echo "... listing files"')
-    # writeln(outScript, 'ls -altrh')
-    writeln(outScript, 'export CPP_BOOST_PATH=/cvmfs/sft.cern.ch/lcg/views/LCG_89/x86_64-slc6-gcc62-opt')
-    writeln(outScript, 'export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:./lib:${CPP_BOOST_PATH}/lib')
-    # writeln(outScript, 'echo "Arguments passed to this script are: for 1: $1, and for 2: $2"')
-    # writeln(outScript, 'echo $LD_LIBRARY_PATH')
-    # writeln(outScript, 'ls /cvmfs/sft.cern.ch/lcg/views/LCG_89/x86_64-slc6-gcc62-opt/lib')
-    writeln(outScript, 'echo "... executing the command:"')
-    writeln(outScript, 'echo "%s"' % this_full_command)
-    writeln(outScript, 'echo "... starting execution"')
-    # writeln(outScript, 'cmsRun %s inputFiles_load=%s outputFile=%s' % (executable, outListNameBare, outputFileName))
-    writeln(outScript, '%s' % this_full_command)
-    writeln(outScript, 'echo "... execution finished with status $?"')
-    writeln(outScript, 'echo "... copying output file %s to EOS in %s"' % (outputFileName, outputEOSName))
-    writeln(outScript, 'xrdcp -s %s %s' % (outputFileName, outputEOSName)) ## no not force overwrite output in destination
-    writeln(outScript, 'echo "... copy done with status $?"')
-    # writeln(outScript, 'remove the input and output files if you dont want it automatically transferred when the job ends')
-    # writeln(outScript, 'rm nameOfOutputFile.root')
-    # writeln(outScript, 'rm Filename1.root')
-    # writeln(outScript, 'rm Filename2.root')
-    writeln(outScript, 'cd ${_CONDOR_SCRATCH_DIR}')
-    writeln(outScript, 'rm -rf %s' % cmssw_version)
-    writeln(outScript, 'echo "... job finished with status $?"')
-    writeln(outScript, 'echo "... finished job on " `date`')
-    writeln(outScript, 'echo "... exiting script"')
-    writeln(outScript, '} 2>&1') ## end of redirection
-    outScript.close()
+
+if not args.xrdcptaronly:
+
+    inputfiles = parseInputFileList (args.input)    ## parse input list
+    njobs      = args.njobs if args.njobs <= len (inputfiles) else len (inputfiles)
+    fileblocks = splitInBlocks (inputfiles, njobs)
+    if njobs != len(fileblocks):
+        print "** ERROR: length of file lists and njobs do not match, something went wrong"
+        sys.exit()
+
+    ## build the full command to launch
+    ## all to format on the job number
+
+    ## some commands MUST NOT be forwarded - so check and throw in case
+    if '--input'  in unknown:
+        print "** you MUST pass a --input as it is generated by the script, exiting..."
+        sys.exit()
+    if '--output' in unknown:
+        print "** you MUST pass a --output as it is generated by the script, exiting..."
+        sys.exit()
+
+    commands = [
+        executable,
+        '--input %s'  % outListNameBareProto,
+        '--output %s' % outFileNameProto,
+        '--seed %s' % randomSeedProto,   
+        ]
+
+    full_command = ' '.join(commands)
+    ## now forward all the other commands to full_command
+    full_command += ' ' + ' '.join(unknown)
+
+    #######
+
+    print "** Skim of filelist      :", args.input
+    print "** Production tag        :", args.tag
+    print "** Njobs                 :", njobs
+    print "** Working in            :", jobsDir
+    print "** Saving output to      :", oLFN_base
+    print "** Saving executables in :", tarEOSdestLFN
+    print "** The script will execute :", full_command
+
+    if os.path.isdir(jobsDir):
+        if not args.force:
+            print "... working folder", jobsDir, " already exists, exit"
+            sys.exit()
+        else:
+            print "... working folder", jobsDir, " already exists, FORCING ITS DELETION "
+            cmd = 'rm -r ' + jobsDir
+            print ">>> ", cmd
+            if os.system(cmd) != 0:
+                print "... Not able to execute command \"", cmd, "\", exit"
+                sys.exit()
+
+    cmd='mkdir -p ' + jobsDir
+    if os.system(cmd) != 0:
+        print "... Not able to execute command \"", cmd, "\", exit"
+        sys.exit()
+
+    ## filelist
+    for n in range(0, njobs):
+        outListName = outListNameProto.format(n)
+        jobfilelist = open(outListName, 'w')
+        for f in fileblocks[n]: jobfilelist.write(f+"\n")
+        jobfilelist.close()
+
+
+    # script
+    for n in range(0, njobs):
+        this_full_command = full_command.format(n)
+        outListName     = outListNameProto.format(n)
+        outListNameBare = outListNameBareProto.format(n)
+        # outputFileName = 'ntuple_%i.root' % n
+        outputFileName = outFileNameProto.format(str(n))
+        outputEOSName  = '%s/output/%s' % (oLFN_base, outputFileName)
+        outScriptName  = outScriptNameProto.format(n)
+        outScript      = open(outScriptName, 'w')
+        writeln(outScript, '#!/bin/bash')
+        writeln(outScript, '{') ## start of redirection..., keep stderr and stdout in a single file, it's easier
+        writeln(outScript, 'echo "... starting job on " `date` #Date/time of start of job')
+        writeln(outScript, 'echo "... running on: `uname -a`" #Condor job is running on this node')
+        writeln(outScript, 'echo "... system software: `cat /etc/redhat-release`" #Operating System on that node')
+        writeln(outScript, 'source /cvmfs/cms.cern.ch/cmsset_default.sh')
+        writeln(outScript, 'export SCRAM_ARCH=%s' % scram_arch)
+        # writeln(outScript, 'cd %s/src/' % cmssw_version)
+        writeln(outScript, 'eval `scramv1 project CMSSW %s`' % cmssw_version)
+        writeln(outScript, 'cd %s/src' % cmssw_version)
+        writeln(outScript, 'eval `scramv1 runtime -sh`')
+        writeln(outScript, 'echo "... retrieving bbbb executables tarball"')
+        writeln(outScript, 'xrdcp -f -s %s .' % tarEOSdestLFN) ## force overwrite CMSSW tar
+        writeln(outScript, 'echo "... uncompressing bbbb executables tarball"')
+        writeln(outScript, 'tar -xzf %s' % tarName)
+        writeln(outScript, 'rm %s' % tarName)
+        writeln(outScript, 'echo "... retrieving filelist"')
+        writeln(outScript, 'xrdcp -f -s %s .' % EOSfilelistProto.format(n)) ## force overwrite file list
+        # writeln(outScript, 'echo "... listing files"')
+        # writeln(outScript, 'ls -altrh')
+        writeln(outScript, 'export CPP_BOOST_PATH=/cvmfs/sft.cern.ch/lcg/views/LCG_89/x86_64-slc6-gcc62-opt')
+        writeln(outScript, 'export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:./lib:${CPP_BOOST_PATH}/lib')
+        # writeln(outScript, 'echo "Arguments passed to this script are: for 1: $1, and for 2: $2"')
+        # writeln(outScript, 'echo $LD_LIBRARY_PATH')
+        # writeln(outScript, 'ls /cvmfs/sft.cern.ch/lcg/views/LCG_89/x86_64-slc6-gcc62-opt/lib')
+        writeln(outScript, 'echo "... executing the command:"')
+        writeln(outScript, 'echo "%s"' % this_full_command)
+        writeln(outScript, 'echo "... starting execution"')
+        # writeln(outScript, 'cmsRun %s inputFiles_load=%s outputFile=%s' % (executable, outListNameBare, outputFileName))
+        writeln(outScript, '%s' % this_full_command)
+        writeln(outScript, 'echo "... execution finished with status $?"')
+        writeln(outScript, 'echo "... copying output file %s to EOS in %s"' % (outputFileName, outputEOSName))
+        writeln(outScript, 'xrdcp -s %s %s' % (outputFileName, outputEOSName)) ## no not force overwrite output in destination
+        writeln(outScript, 'echo "... copy done with status $?"')
+        # writeln(outScript, 'remove the input and output files if you dont want it automatically transferred when the job ends')
+        # writeln(outScript, 'rm nameOfOutputFile.root')
+        # writeln(outScript, 'rm Filename1.root')
+        # writeln(outScript, 'rm Filename2.root')
+        writeln(outScript, 'cd ${_CONDOR_SCRATCH_DIR}')
+        writeln(outScript, 'rm -rf %s' % cmssw_version)
+        writeln(outScript, 'echo "... job finished with status $?"')
+        writeln(outScript, 'echo "... finished job on " `date`')
+        writeln(outScript, 'echo "... exiting script"')
+        writeln(outScript, '} 2>&1') ## end of redirection
+        outScript.close()
 
 
 ##############################
@@ -293,41 +301,41 @@ if args.xrdcptar:
 else:
     print "** INFO: not going to xrdcp the CMSSW tarball to EOS, assuming it exists at", tarEOSdestLFN
 
-if args.xrdcpflist:    
-    
-    print "** INFO: copying input filelists to:", EOSfilelistProto.format('*')
-    command = 'eos root://cmseos.fnal.gov mkdir -p %s' % EOSfilelistBase.replace('root://cmseos.fnal.gov/', '/eos/uscms')
-     # there is an incompatibility of EOS commands with cmsenv, so this below encapsulated the call of the command in a new shell
-    command = 'env -i PATH="$(getconf PATH)" HOME="$HOME" USER="$USER" SHELL="$SHELL" "$SHELL" -lc "%s"' % command
-    if args.verbose: print "** INFO: executing:", command
-    if os.system(command) != 0:
-        print "... Not able to execute command \"", command, "\", exit"
-        sys.exit()
-
-    
-    command = 'xrdcp -f -s %s %s' % (outListNameProto.format('*'), EOSfilelistBase)
-    if args.verbose: print "** INFO: executing:", command
-    if os.system(command) != 0:
-        print "... Not able to execute command \"", command, "\", exit"
-        sys.exit()
-
-    # for n in range(0, njobs):
-    #     command = 'xrdcp -f -s %s %s' % (outListNameProto.format(n), EOSfilelistProto.format(n))
-    #     if args.verbose: print "** INFO: executing:", command
-    #     os.system(command)
-else:
-    print "** INFO: not going to xrdcp the filelistsi to EOS, they exists at", EOSfilelistProto.format('*')
-
-
-## set directory to job directory, so that logs will be saved there
-os.chdir(jobsDir)
-for n in range(0, njobs):
-    command = "%s/scripts/t3submit %s" % (bbbbWorkDir, outScriptNameBareProto.format(n))
-    if not args.dryrun:
-        if args.verbose: print "** INFO: submit job with command", command
+if not args.xrdcptaronly:
+    if args.xrdcpflist:    
+        
+        print "** INFO: copying input filelists to:", EOSfilelistProto.format('*')
+        command = 'eos root://cmseos.fnal.gov mkdir -p %s' % EOSfilelistBase.replace('root://cmseos.fnal.gov/', '/eos/uscms')
+         # there is an incompatibility of EOS commands with cmsenv, so this below encapsulated the call of the command in a new shell
+        command = 'env -i PATH="$(getconf PATH)" HOME="$HOME" USER="$USER" SHELL="$SHELL" "$SHELL" -lc "%s"' % command
+        if args.verbose: print "** INFO: executing:", command
         if os.system(command) != 0:
             print "... Not able to execute command \"", command, "\", exit"
             sys.exit()
 
+        
+        command = 'xrdcp -f -s %s %s' % (outListNameProto.format('*'), EOSfilelistBase)
+        if args.verbose: print "** INFO: executing:", command
+        if os.system(command) != 0:
+            print "... Not able to execute command \"", command, "\", exit"
+            sys.exit()
+
+        # for n in range(0, njobs):
+        #     command = 'xrdcp -f -s %s %s' % (outListNameProto.format(n), EOSfilelistProto.format(n))
+        #     if args.verbose: print "** INFO: executing:", command
+        #     os.system(command)
+    else:
+        print "** INFO: not going to xrdcp the filelistsi to EOS, they exists at", EOSfilelistProto.format('*')
 
 
+    ## set directory to job directory, so that logs will be saved there
+    os.chdir(jobsDir)
+    for n in range(0, njobs):
+        command = "%s/scripts/t3submit %s" % (bbbbWorkDir, outScriptNameBareProto.format(n))
+        if not args.dryrun:
+            if args.verbose: print "** INFO: submit job with command", command
+            if os.system(command) != 0:
+                print "... Not able to execute command \"", command, "\", exit"
+                sys.exit()
+
+print "\n"

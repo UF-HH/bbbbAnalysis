@@ -27,8 +27,9 @@ void Jet::buildP4Regressed()
     //Do nothing, use the NANOAOD correction value
     }
     if(p4_.Pt()==0.) this->buildP4();
-    float breg_jetpt = p4_.Pt()*corr;
-    float breg_jeten = p4_.E()*corr; 
-    //Apply regression
-    p4Regressed_.SetPtEtaPhiE(breg_jetpt,p4_.Eta(),p4_.Phi(),breg_jeten);
+    // float breg_jetpt = p4_.Pt()*corr;
+    // float breg_jeten = p4_.E()*corr; 
+    // //Apply regression
+    // p4Regressed_.SetPtEtaPhiE(breg_jetpt,p4_.Eta(),p4_.Phi(),breg_jeten);
+    p4Regressed_ = corr * p4_;
 }

@@ -1025,6 +1025,7 @@ std::vector<Jet> OfflineProducerHelper::applyJESshift(NanoAODTree &nat, const st
         jet.setP4(jet.P4() * (1 + shift * corr_factor) ); // set the shifted p4 ...
         jet.buildP4Regressed(); // ... and reset the regressed p4 to be recomputed
         result.emplace_back(jet);
+
     }
 
     return result;
@@ -1587,7 +1588,6 @@ std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_HighestCSVandClosestToMh(
 // Minimizes distance to the diagonal (alla ATLAS)
 std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_BothClosestToDiagonal(const std::vector<Jet> *presel_jets)
 {
-
     //Do you add b-jet regression into the pairing?
     bool breg = any_cast<bool>(parameterList_->at("BjetRegression"));
 
@@ -1649,7 +1649,7 @@ std::vector<Jet> OfflineProducerHelper::bbbb_jets_idxs_BothClosestToDiagonal(con
     //float d14_23_b = fabs( m_14_23.first - ((targetHiggsMass1/targetHiggsMass2)*m_14_23.second) );
  
     float the_min = std::min({d12_34, d13_24, d14_23});
-        
+
     std::vector<Jet> outputJets = *presel_jets;
 
     if (the_min == d12_34){
@@ -1880,7 +1880,15 @@ bool OfflineProducerHelper::select_bbbbjj_jets(NanoAODTree& nat, EventInfo& ei, 
     //Get the jet collection
     std::vector<Jet> unsmearedjets,jets;
     unsmearedjets.reserve(*(nat.nJet));jets.reserve(*(nat.nJet));
+
     for (uint ij = 0; ij < *(nat.nJet); ++ij){unsmearedjets.emplace_back(Jet(ij, &nat));}
+
+    // if a shift was asked (shift name != "nominal"), run the systematics shift
+    if (jes_syst_shift_name_ != nominal_jes_syst_shift_name){
+        auto jets_tmp = applyJESshift(nat, unsmearedjets, jes_syst_shift_dir_is_up_);
+        unsmearedjets = jets_tmp;
+    }
+
     //If MC sample, then obtain the jet energy resolution correction strategy and apply it before any selection.
     if(parameterList_->find("JetEnergyResolution") != parameterList_->end())
     {   //It is MC
@@ -1891,17 +1899,12 @@ bool OfflineProducerHelper::select_bbbbjj_jets(NanoAODTree& nat, EventInfo& ei, 
         jets = unsmearedjets;
     }
 
-    // if a shift was asked (shift name != "nominal"), run the systematics shift
-    if (jes_syst_shift_name_ != nominal_jes_syst_shift_name){
-        auto jets_tmp = applyJESshift(nat, jets, jes_syst_shift_dir_is_up_);
-        jets = jets_tmp;
-    }
-
     //Preselect four most b-tagged jets (pt, eta, btagging) & 'VBF-jet pair'(pt,eta,deltaEta). Note: BTagSF is calculated for events with 3 & 4 b-tags
     std::vector<Jet> presel_jets = bjJets_PreselectionCut(nat, ei, ot, jets);
     if(presel_jets.size()<4) return false;
     //Pick up the four preselected b-jets
     std::vector<Jet> presel_bjets={{*(presel_jets.begin()+0),*(presel_jets.begin()+1),*(presel_jets.begin()+2),*(presel_jets.begin()+3)}};
+
     //Do the Higgs pairing based on bbbbChoice
     std::vector<Jet> ordered_jets;
     if(any_cast<string>(parameterList_->at("bbbbChoice"))=="BothClosestToMh"){

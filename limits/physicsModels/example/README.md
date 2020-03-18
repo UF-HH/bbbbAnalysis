@@ -47,7 +47,7 @@ An example datacard is in ``limits/physicsModels/example``, commands to be launc
 
 ```
 cmsenv
-PYTHONPATH=$PYTHONPATH:${CMSSW_BASE}/src/bbbbAnalysis/limits/physicsModels
+PYTHONPATH=${CMSSW_BASE}/src/bbbbAnalysis/limits/physicsModels:$PYTHONPATH
 text2workspace.py test_card_vbfHH_comp_4HHModel.txt -D DATA -P HHModel:HHdefault
 ```
 

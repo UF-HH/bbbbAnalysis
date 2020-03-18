@@ -61,8 +61,8 @@ parser.add_argument('--outputDir',  dest='odir',   help='the base EOS output dir
 ## otherwise a manual fixed path can also be given
 ##
 parser.add_argument('--xrdcp-tar-only', dest='xrdcptaronly', help='just tar the executable folder and send it, do not submit jobs',  action='store_true', default=False)
-parser.add_argument('--no-tar',         dest='tar',        help='do not tar the executable folder',  action='store_false', default=True)
-parser.add_argument('--no-xrdcp-tar',   dest='xrdcptar',   help='do not xrdcp the tar to EOS',       action='store_false', default=True)
+parser.add_argument('--do-tar',         dest='tar',        help='do not tar the executable folder',  action='store_true', default=False)
+parser.add_argument('--do-xrdcp-tar',   dest='xrdcptar',   help='do not xrdcp the tar to EOS',       action='store_true', default=False)
 parser.add_argument('--no-xrdcp-flist', dest='xrdcpflist', help='do not xrdcp the filelist to EOS',  action='store_false', default=True)
 parser.add_argument('--dry-run',        dest='dryrun',     help='dry run without launching',         action='store_true',  default=False)
 parser.add_argument('--verbose',        dest='verbose',    help='set verbose mode',                  action='store_true',  default=False)

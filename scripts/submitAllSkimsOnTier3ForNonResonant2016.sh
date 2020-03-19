@@ -108,3 +108,12 @@ for jecsyst in "${jecSystList[@]}"; do
         python scripts/submitSkimOnTier3.py --jes-shift-syst ${jecsyst}:${systdir} --outputName GluGluToHHTo4B_node_SM_13TeV-madgraph_${jecsyst}_${systdir} --input=inputFiles/2016NonResonantDiHiggs4BDataSets/GluGluToHHTo4B_node_SM_13TeV-madgraph.txt      --puWeight=weights/2016/GluGluToHHTo4B_node_SM_13TeV-madgraph_PUweights.root       --tag=$1 --cfg=config/skim_2016NonResonantDiHiggs4B.cfg --is-signal --xs=0.01043  --njobs=200  
     done
 done
+
+#######################################################################################################################
+
+##### systematic variations of JER
+for jersyst in jer bjer ; do
+    for systdir in up down ; do
+        python scripts/submitSkimOnTier3.py --jer-shift-syst ${jersyst}:${systdir} --outputName GluGluToHHTo4B_node_SM_13TeV-madgraph_${jersyst}_${systdir} --input=inputFiles/2016NonResonantDiHiggs4BDataSets/GluGluToHHTo4B_node_SM_13TeV-madgraph.txt      --puWeight=weights/2016/GluGluToHHTo4B_node_SM_13TeV-madgraph_PUweights.root       --tag=$1 --cfg=config/skim_2016NonResonantDiHiggs4B.cfg --is-signal --xs=0.01043  --njobs=200  
+    done
+done

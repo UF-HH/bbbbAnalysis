@@ -736,8 +736,8 @@ void OfflineProducerHelper::initializeJERsmearingAndVariations(OutputTree &ot)
     {
         // JERsmearing = &OfflineProducerHelper::standardJERsmearing;
         JERsmearing = [=] (NanoAODTree& nat, std::vector<Jet> &jets) -> std::vector<Jet> {return this -> standardJERsmearing(nat, jets);};
-        jetResolutionScaleFactor_ = new JME::JetResolutionScaleFactor(any_cast<string>(parameterList_->at("JERScaleFactorFile")));
-        jetResolution_            = new JME::JetResolution           (any_cast<string>(parameterList_->at("JERResolutionFile" )));
+        jetResolutionScaleFactor_ = std::unique_ptr<JME::JetResolutionScaleFactor>(new JME::JetResolutionScaleFactor(any_cast<string>(parameterList_->at("JERScaleFactorFile"))));
+        jetResolution_            = std::unique_ptr<JME::JetResolution>           (new JME::JetResolution           (any_cast<string>(parameterList_->at("JERResolutionFile" ))));
         gRandom->SetSeed(any_cast<int>(parameterList_->at("RandomGeneratorSeed")));
 
         //set up variations-> TODO: Consider the BregJERsmearing in the variations
@@ -874,6 +874,209 @@ std::vector<Jet> OfflineProducerHelper::applyJERsmearing(NanoAODTree& nat, std::
 
     return jets;
 }
+
+
+void OfflineProducerHelper::initializeApplyJERAndBregSmearing(std::string syst_and_direction)
+{
+
+    string JERmethod = any_cast<string>(parameterList_->at("JetEnergyResolution"));
+
+    if (JERmethod == "None")
+    {
+        JERsmearing   = [](NanoAODTree& nat, std::vector<Jet> &jets) -> std::vector<Jet>  {return jets;};
+        JERvariations = [](NanoAODTree& nat, std::vector<Jet> &jets, std::vector< std::pair<std::string, std::vector<Jet> > > &jetEnergyVariationsMap) -> void {return;};
+    }
+    else if (JERmethod == "StandardJER")
+    {
+        // JERsmearing = &OfflineProducerHelper::standardJERsmearing;
+        JERsmearing = [=] (NanoAODTree& nat, std::vector<Jet> &jets) -> std::vector<Jet> {return this -> applyJERAndBregSmearing(nat, jets);};
+        jetResolutionScaleFactor_ = std::unique_ptr<JME::JetResolutionScaleFactor>(new JME::JetResolutionScaleFactor(any_cast<string>(parameterList_->at("JERScaleFactorFile"))));
+        jetResolution_            = std::unique_ptr<JME::JetResolution>           (new JME::JetResolution           (any_cast<string>(parameterList_->at("JERResolutionFile" ))));
+        gRandom->SetSeed(any_cast<int>(parameterList_->at("RandomGeneratorSeed")));
+
+        if (syst_and_direction == "nominal")
+        {
+            jer_dir_      = Variation::NOMINAL;
+            breg_jer_dir_ = Variation::NOMINAL;
+        }
+        
+        else
+        {
+            // check that the input string is well formatted
+            auto idelimiter = syst_and_direction.find(":");
+            if (idelimiter == std::string::npos)
+            {
+                string msg = "OfflineProducerHelper::initializeApplyJERAndBregSmearing : input string [" + syst_and_direction + string("] is malformed : cannot find delimited (:) : aborting");
+                throw std::runtime_error(msg);
+            }
+
+            string sname = syst_and_direction.substr(0, idelimiter);
+            string sdir  = syst_and_direction.substr(idelimiter+1);
+
+            // if one syst is not quoted, its default is nominal
+            jer_dir_      = Variation::NOMINAL;
+            breg_jer_dir_ = Variation::NOMINAL;
+
+            // setting standard jer uncertainty
+            if (sname == "jer")
+            {
+                if (sdir == "up")
+                    jer_dir_ = Variation::UP;
+                else if (sdir == "down")
+                    jer_dir_ = Variation::DOWN;
+                else{
+                    string msg = "OfflineProducerHelper::initializeApplyJERAndBregSmearing : input string [" + syst_and_direction + string("] is malformed : cannot understand direction (up/down) : aborting");
+                    throw std::runtime_error(msg);
+                }
+            }
+
+            // setting b jet regression jer uncertainty
+            else if (sname == "bjer")
+            {
+                if (sdir == "up")
+                    breg_jer_dir_ = Variation::UP;
+                else if (sdir == "down")
+                    breg_jer_dir_ = Variation::DOWN;
+                else{
+                    string msg = "OfflineProducerHelper::initializeApplyJERAndBregSmearing : input string [" + syst_and_direction + string("] is malformed : cannot understand direction (up/down) : aborting");
+                    throw std::runtime_error(msg);
+                }
+            }
+
+            // error handling`
+            else
+            {
+                std::string msg = "OfflineProducerHelper::initializeApplyJERAndBregSmearing : malformed input for JER syst variation name : " + sname;
+                throw std::runtime_error(msg);
+            }
+
+        } // variations
+
+        // make a summary
+        std::string s_jer_var = (
+            jer_dir_ == Variation::NOMINAL ? "nominal" : 
+            jer_dir_ == Variation::UP      ? "up"      : 
+            jer_dir_ == Variation::DOWN    ? "down"    : 
+            "!! ERROR !!"
+        );
+        std::string s_breg_jer_var = (
+            breg_jer_dir_ == Variation::NOMINAL ? "nominal" : 
+            breg_jer_dir_ == Variation::UP      ? "up"      : 
+            breg_jer_dir_ == Variation::DOWN    ? "down"    : 
+            "!! ERROR !!"
+        );
+
+        cout << "[INFO] ... for the standard JER smearing the resolution systematics used is : " << s_jer_var << endl;
+        cout << "[INFO] ... for the standard b jet regression JER smearing the resolution systematics used is : " << s_breg_jer_var << endl;
+    } // handling StandardJER
+
+    return;
+}
+
+
+std::vector<Jet> OfflineProducerHelper::applyJERAndBregSmearing(NanoAODTree& nat, std::vector<Jet> jets)
+{
+
+    JME::JetParameters jetParameters;
+    jetParameters.setRho(*(nat.fixedGridRhoFastjetAll));
+    int numberOfGenJets = *(nat.nGenJet);
+
+    for(auto &iJet : jets){
+        //same method of https://github.com/cms-sw/cmssw/blob/CMSSW_8_0_25/PhysicsTools/PatUtils/interface/SmearedJetProducerT.h
+        jetParameters.setJetEta(iJet.P4().Eta());
+        jetParameters.setJetPt(iJet.P4().Pt());
+
+        float tmpJER_ScaleFactor = jetResolutionScaleFactor_->getScaleFactor(jetParameters, jer_dir_);
+        float tmpJER_Resolution  = jetResolution_->getResolution(jetParameters);
+
+        int genJetId = get_property(iJet,Jet_genJetIdx); //Before was bugged, int genJetId = abs(get_property(iJet,Jet_genJetIdx));
+
+        //Get the unsmeared jetP4 (before any procedure)
+        TLorentzVector unsmeared_jetP4 = iJet.P4();
+
+        //JER smearfactor for normal jets
+        float smearFactor;
+        if(genJetId>=0 && genJetId < numberOfGenJets) //generated jet was found and saved
+        {
+            //JER smearfactor for normal jets
+            smearFactor     = 1. + (tmpJER_ScaleFactor - 1.) * (iJet.P4().Pt() - nat.GenJet_pt.At(genJetId))   /iJet.P4().Pt();
+        }
+        else if(tmpJER_ScaleFactor>1.)
+        {
+            float sigma     = tmpJER_Resolution * std::sqrt(tmpJER_ScaleFactor * tmpJER_ScaleFactor - 1);
+            smearFactor     = 1. + gRandom->Gaus(0., sigma);
+        }
+        else
+        {
+            smearFactor = 1.;
+        }
+
+        float MIN_JET_ENERGY = 1e-2;
+
+        if (iJet.P4().Energy() * smearFactor < MIN_JET_ENERGY)
+        {
+            smearFactor = MIN_JET_ENERGY / iJet.P4().Energy();
+        }
+        
+        //Make standard smearing to the jet
+        iJet.setP4(unsmeared_jetP4*smearFactor);
+
+        //Procedure for b-regressed jets 
+        //Step1: Check if genjet is found, then use the dedicated smearing and regression
+        float bregcorr          = Get_bRegCorr(iJet);
+        float smearedbreg_jetpt = unsmeared_jetP4.Pt()*bregcorr;
+        float smearedbreg_jeten = unsmeared_jetP4.E()*bregcorr; 
+        if(genJetId>=0 && genJetId < numberOfGenJets) //generated jet was found and saved
+        {
+            //Get the genjet P4
+            GenJet genjet           = GenJet(genJetId, &nat);
+            TLorentzVector genjetP4 = genjet.P4();
+            TLorentzVector gennuP4, genjetwithnuP4;
+            //Compute the nearby neutrinos p4
+            for (uint igp = 0; igp < *(nat.nGenPart); ++igp)
+            {
+                GenPart nu (igp, &nat);
+                if (     get_property(nu, GenPart_status) == 1  && 
+                    (abs(get_property(nu, GenPart_pdgId)) == 12 || 
+                     abs(get_property(nu, GenPart_pdgId)) == 14 ||
+                     abs(get_property(nu, GenPart_pdgId)) == 16) )
+                {
+                    if( genjetP4.DeltaR( nu.P4() ) < 0.4) gennuP4 = gennuP4 + nu.P4();
+                }
+            }
+            //Add the neutrinos to the genjet
+            genjetwithnuP4 = genjetP4 + gennuP4;
+            //Derive the new values of regressed/smeared pt and energy to build the dedicated regressed p4
+
+            float resSmear;
+            if (breg_jer_dir_      == Variation::NOMINAL)
+                resSmear = 1.1;
+            else if (breg_jer_dir_ == Variation::UP)
+                resSmear = 1.2;
+            else if (breg_jer_dir_ == Variation::DOWN)
+                resSmear = 1.0;
+            else
+                throw std::runtime_error("applyJERAndBregSmearing : did not recognise b jet variation");
+
+            float dpt          = smearedbreg_jetpt - genjetwithnuP4.Pt();
+            smearedbreg_jetpt  = genjetwithnuP4.Pt() + resSmear*dpt;
+            float den          = smearedbreg_jeten - genjetwithnuP4.E();
+            smearedbreg_jeten  = genjetwithnuP4.E()  + resSmear*den;
+            //Save the correct p4 for b-regressed jets
+            TLorentzVector smearedbreg_jetP4;
+            smearedbreg_jetP4.SetPtEtaPhiE(smearedbreg_jetpt,unsmeared_jetP4.Eta(),unsmeared_jetP4.Phi(),smearedbreg_jeten);
+            iJet.setP4Regressed(smearedbreg_jetP4);    
+        }
+        else // Step2: Keep standard smearing and build standard P4Regressed with it
+        {
+           iJet.buildP4Regressed();
+        } 
+  
+    }
+
+    return jets;
+}
+
 // ----------------- Compute JER - END --------------------- //
 
 
@@ -968,7 +1171,7 @@ void OfflineProducerHelper::initializeApplyJESshift(std::string syst_and_directi
     if (syst_and_direction == nominal_jes_syst_shift_name)
     {
         jes_syst_shift_name_ = nominal_jes_syst_shift_name;
-        cout << "[INFO] ... jets will not be shifted because shift is set to : " << syst_and_direction << endl;
+        cout << "[INFO] ... jets will not be shifted for JEC systematics because shift is set to : " << syst_and_direction << endl;
         return;
     }
 
@@ -999,7 +1202,7 @@ void OfflineProducerHelper::initializeApplyJESshift(std::string syst_and_directi
         throw std::runtime_error(msg);
     }
 
-    cout << "[INFO] ... jets will be shifted according to systematic : " << jes_syst_shift_name_ << " : " << (jes_syst_shift_dir_is_up_ ? "up" : "down") << endl;
+    cout << "[INFO] ... jets will be shifted for JEC systematics according to systematic : " << jes_syst_shift_name_ << " : " << (jes_syst_shift_dir_is_up_ ? "up" : "down") << endl;
 
     return;
 }
@@ -1892,7 +2095,7 @@ bool OfflineProducerHelper::select_bbbbjj_jets(NanoAODTree& nat, EventInfo& ei, 
     //If MC sample, then obtain the jet energy resolution correction strategy and apply it before any selection.
     if(parameterList_->find("JetEnergyResolution") != parameterList_->end())
     {   //It is MC
-        jets = JERsmearing(nat,unsmearedjets);
+        jets = JERsmearing(nat, unsmearedjets);
     }
     else
     {   //It is data

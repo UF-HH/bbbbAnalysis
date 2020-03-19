@@ -94,6 +94,10 @@ class OfflineProducerHelper{
         std::unique_ptr<JetCorrectorParameters>   jcp_;
         std::unique_ptr<JetCorrectionUncertainty> jcu_;
 
+        // to define the smearing parameters of all the incoming jets
+        Variation jer_dir_;      // NOMINAL, UP, DOWN
+        Variation breg_jer_dir_; // b regression smearing does not use the same class for the smearing, but I encode nominal, up, down with the same enum
+
         // -------------------------------------------------------------------------------
         // helpers for the BDT evaluation
         std::vector<std::string> float_varlist_BDT1 = {
@@ -259,8 +263,8 @@ class OfflineProducerHelper{
         void CalculateL1prefiringScaleFactor(NanoAODTree& nat,OutputTree &ot, EventInfo& ei);
 
 
-        JME::JetResolutionScaleFactor *jetResolutionScaleFactor_;
-        JME::JetResolution *jetResolution_;
+        std::unique_ptr<JME::JetResolutionScaleFactor> jetResolutionScaleFactor_;
+        std::unique_ptr<JME::JetResolution>            jetResolution_;
         void initializeJERsmearingAndVariations(OutputTree &ot);
         // function pointer to MC jet pt smearing
         // std::vector<Jet> (*JERsmearing)(NanoAODTree& nat, std::vector<Jet> &jets);
@@ -278,6 +282,10 @@ class OfflineProducerHelper{
         // function that applies whatever smearing strategy is defined in the parameters, and returns the jet
         void initializeApplyJESshift(std::string syst_and_direction);
         std::vector<Jet> applyJESshift(NanoAODTree &nat, const std::vector<Jet> &jets, bool direction_is_up);
+
+        // smear the jets (resolution values can be set for up/down with class member parameters for systematic studies)
+        void initializeApplyJERAndBregSmearing(std::string syst_and_direction);
+        std::vector<Jet> applyJERAndBregSmearing(NanoAODTree& nat, std::vector<Jet> jets);
 
         void initializeJECVariations(OutputTree &ot);
         // function pointer for JEC variations

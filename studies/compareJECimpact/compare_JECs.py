@@ -13,7 +13,7 @@ def make_histogram(tIn, expr, cut, hname, nbins, xmin, xmax):
     return out_h
 
 
-var = "H1_b2_pt"
+var = "HH_b1_pt"
 cut = ""
 
 xmin = 0
@@ -26,7 +26,7 @@ xmax = 400
 # xmax = 500
 
 
-# logy = True
+logy = False
 
 if len(sys.argv) > 1:
     var = sys.argv[1]
@@ -39,43 +39,50 @@ if len(sys.argv) > 3:
 print "... var : ", var , "[", xmin, "," , xmax, "]"
 print "... cut : ", cut
 
-syst_list = [
-    'AbsoluteMPFBias',
-    'AbsoluteScale',
-    'AbsoluteStat',
-    'FlavorQCD',
-    'Fragmentation',
-    'PileUpDataMC',
-    'PileUpPtBB',
-    'PileUpPtEC1',
-    'PileUpPtEC2',
-    'PileUpPtHF',
-    'PileUpPtRef',
-    'RelativeFSR',
-    'RelativeJEREC1',
-    'RelativeJEREC2',
-    'RelativeJERHF',
-    'RelativePtBB',
-    'RelativePtEC1',
-    'RelativePtEC2',
-    'RelativePtHF',
-    'RelativeBal',
-    'RelativeSample',
-    'RelativeStatEC',
-    'RelativeStatFSR',
-    'RelativeStatHF',
-    'SinglePionECAL',
-    'SinglePionHCAL',
-    'TimePtEta',
-]
+# ########### JECs
 
-dirlist = ['up', 'down']
+# syst_list = [
+#     'AbsoluteMPFBias',
+#     'AbsoluteScale',
+#     'AbsoluteStat',
+#     'FlavorQCD',
+#     'Fragmentation',
+#     'PileUpDataMC',
+#     'PileUpPtBB',
+#     'PileUpPtEC1',
+#     'PileUpPtEC2',
+#     'PileUpPtHF',
+#     'PileUpPtRef',
+#     'RelativeFSR',
+#     'RelativeJEREC1',
+#     'RelativeJEREC2',
+#     'RelativeJERHF',
+#     'RelativePtBB',
+#     'RelativePtEC1',
+#     'RelativePtEC2',
+#     'RelativePtHF',
+#     'RelativeBal',
+#     'RelativeSample',
+#     'RelativeStatEC',
+#     'RelativeStatFSR',
+#     'RelativeStatHF',
+#     'SinglePionECAL',
+#     'SinglePionHCAL',
+#     'TimePtEta',
+# ]
+# dirlist = ['up', 'down']
 
-# plot_cmd_proto = '%s >> h_{idx} (100, {xmin}, {xmax})'
+# fname_proto = 'root://cmseos.fnal.gov//store/user/lcadamur/bbbb_ntuples/testJEC2018/SKIM_GluGluToHHTo4B_node_SM_TuneCP5_PSWeights_13TeV-madgraph-pythia8_{syst}_{dir}/output/bbbbNtuple_0.root'
+# fname_ref   = 'root://cmseos.fnal.gov//store/user/lcadamur/bbbb_ntuples/testJEC2018/SKIM_GluGluToHHTo4B_node_SM_TuneCP5_PSWeights_13TeV-madgraph-pythia8/output/bbbbNtuple_0.root'
+# ofolder     = 'plots_2018'
 
+################ JERs
+syst_list = [ 'jer', 'bjer']
+dirlist   = ['up', 'down']
+fname_proto = 'root://cmseos.fnal.gov//store/user/lcadamur/bbbb_ntuples/testJER2/SKIM_GluGluToHHTo4B_node_SM_13TeV-madgraph_{syst}_{dir}/output/bbbbNtuple_0.root'
+fname_ref   = 'root://cmseos.fnal.gov//store/user/lcadamur/bbbb_ntuples/testJEC2016/SKIM_GluGluToHHTo4B_node_SM_13TeV-madgraph/output/bbbbNtuple_0.root'
+ofolder     = 'plots'
 
-
-fname_proto = 'root://cmseos.fnal.gov//store/user/lcadamur/bbbb_ntuples/testJECsysts5/SKIM_GluGluToHHTo4B_node_SM_13TeV-madgraph_{syst}_{dir}/output/bbbbNtuple_0.root'
 
 histos_up = []
 histos_down = []
@@ -95,11 +102,12 @@ for syst in syst_list:
             histos_down.append(h)
 
 ## now make the nominal one
-file = ROOT.TFile.Open('root://cmseos.fnal.gov//store/user/lcadamur/bbbb_ntuples/testJECsysts5/SKIM_GluGluToHHTo4B_node_SM_13TeV-madgraph/output/bbbbNtuple_0.root')
+file = ROOT.TFile.Open(fname_ref)
 tree = file.Get('bbbbTree')
 ref  = make_histogram(tree, var, cut, 'h_{syst}_{dir}'.format(syst=syst, dir=dirr), 100, xmin, xmax)
 
 c1 = ROOT.TCanvas('c1', 'c1', 600, 600)
+c1.SetLogy(logy)
 
 ref.SetLineColor(ROOT.kRed)
 ref.SetLineWidth(3)
@@ -109,7 +117,7 @@ for idx in range(len(syst_list)):
     histos_up[idx].Draw('same')
     histos_down[idx].Draw('same')
 
-c1.Print('plots/JECcompare_%s.pdf' % var, 'pdf')
+c1.Print('%s/JECcompare_%s.pdf' % (ofolder, var), 'pdf')
 
 cloneref = ref.Clone('cloneref')
 
@@ -122,4 +130,4 @@ for i, syst in enumerate(syst_list):
     cloneref.Draw()
     h_v1.Draw('same')
     h_v2.Draw('same')
-    c1.Print('plots/comp_%s_%s.pdf' % (var, syst), 'pdf')
+    c1.Print('%s/comp_%s_%s.pdf' % (ofolder, var, syst), 'pdf')

@@ -37,6 +37,8 @@ int main(int argc, char** argv)
         return 1;
     }
 
+    ah.readAltSysSamples(); // for systematics that are associated to alternative filelists - must be *AFTER* readSamples()
+
     // ah.prepareSamplesHistos();
     // ah.prepareSamples2DHistos();
     ah.prepareHistos();

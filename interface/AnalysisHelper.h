@@ -50,6 +50,7 @@ class AnalysisHelper
         void prepareHistos();
         
         void readSamples(); // inits the samles
+        void readAltSysSamples(); // creates the alternative samples for systematics
         void readSelections();
         void readVariables();
 

@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <sstream>
 #include <sys/stat.h>
+#include <regex>
 
 using namespace std;
 
@@ -269,6 +270,139 @@ void AnalysisHelper::readSamples()
     // printSamples(true);
 
     return;
+}
+
+void AnalysisHelper::readAltSysSamples()
+{
+    // no samples declared
+    if (!cutCfg_->hasOpt("altSamplesSystematics::group_list"))
+        return;
+
+    vector<string> group_list = cutCfg_->readStringListOpt("altSamplesSystematics::group_list");
+    
+    // should never happen anyway
+    if (group_list.size() == 0)
+        return;
+
+    cout << "@@ AltSysSamples : an alternative list of samples for systematics is required for groups : " << endl;
+    for (auto gl : group_list)
+        cout << "   - " << gl << endl;
+
+    std::vector < ordered_map <std::string, std::shared_ptr<Sample>> * > all_samples = {
+        &data_samples_,
+        &sig_samples_,
+        &bkg_samples_,
+        &datadriven_samples_,
+    };
+
+    // loop over all samples types
+    for (auto group : group_list)
+    {
+
+        cout << "   -- -> doing : " << group << endl;
+        // read the lists of samples concerned - cfgParser handles errors on missing sections
+        vector<string> apply_to = cutCfg_->readStringListOpt(Form("%s::apply_to", group.c_str()));
+        vector<string> sources  = cutCfg_->readStringListOpt(Form("%s::sources",  group.c_str()));
+
+        // make the carthesian with directions if requested
+        if (cutCfg_->hasOpt(Form("%s::directions",  group.c_str())))
+        {
+            vector<string> directions  = cutCfg_->readStringListOpt(Form("%s::directions",  group.c_str()));
+            std::vector<string> tmp_sources;
+            for (auto s : sources) {
+                for (auto d : directions) {
+                    string tot = s + "_" + d;
+                    tmp_sources.push_back(tot);
+                }
+            }
+            sources = tmp_sources;
+        }
+
+        // cout << "   -- -- -- individual sources are : " << endl;
+        // for (auto s : sources)
+        //     cout << "   -- -- -- -- " << s << endl;
+
+        cout << "      -> this source is applied to the following samples : " << endl;
+        for (auto s : apply_to)
+            cout << "         -- " << s << endl;
+
+        // for every sample, check if it is affected
+        for (auto* samples : all_samples)
+        {
+            std::vector<std::pair<string, shared_ptr<Sample>>> new_samples;
+            for (size_t isample = 0; isample < samples->size(); ++isample)
+            {
+                auto& sample = *(samples->at(isample));
+                std::string samplename = sample.getName();
+
+                // is it a sample that I have to do for systs?
+                if (find(apply_to.begin(), apply_to.end(), samplename) == apply_to.end())
+                    continue;
+
+                // for every source create a new sample
+                for (auto source : sources)
+                {
+                    string newsamplename = Form("%s_%s", samplename.c_str(), source.c_str());
+                    string filelistname = "";
+                    
+                    // look for the new file name - first directly 
+                    if (sampleCfg_->hasOpt( Form("samples_%s::%s", group.c_str(), newsamplename.c_str())))
+                        filelistname = sampleCfg_->readStringOpt( Form("samples_%s::%s", group.c_str(), newsamplename.c_str()));
+
+                    // try to resolve from variable substitution
+                    else
+                    {
+                        std::vector<std::string> options = sampleCfg_->readListOfOpts(Form("samples_%s", group.c_str()));
+                        for (string opt : options)
+                        {
+                            string repl_opt = std::regex_replace(opt, std::regex("\\$SOURCE"), source);
+                            if (repl_opt == newsamplename)
+                            {
+                                filelistname = sampleCfg_->readStringOpt( Form("samples_%s::%s", group.c_str(), opt.c_str()));
+
+                                if (filelistname.find("$SOURCE") == std::string::npos){
+                                    cout << "[ERROR] : you are asking for an alternative sample name with a $SOURCE to be replaced, but the associated filelist has no source" << endl;
+                                    cout << "        : sample name : " << newsamplename << endl;
+                                    cout << "        : this is in principle wrong unless you REALLY want to have all systematics pointing to the same file (hence => no systematics)" << endl;
+                                    cout << "        : aborting. If you want this behavior comment out this control in the code" << endl;
+                                    throw std::runtime_error("AnalysisHelper::readAltSysSamples : malformed filelist of alt sample");
+                                }
+
+                                filelistname = std::regex_replace(filelistname, std::regex("\\$SOURCE"), source);
+                                break;
+                            }
+                        }
+                    }
+
+                    // throw an error if the alt file was not found
+                    if (filelistname.size() == 0)
+                    {
+                        cout << "[ERROR] : I cannot find the file list for the alternative sample " << newsamplename << endl;
+                        cout << "          The options that are listed in the cfg are : " << endl; 
+                        std::vector<std::string> options = sampleCfg_->readListOfOpts(Form("samples_%s", group.c_str()));
+                        for (string opt : options)
+                            cout << "           - " << opt << endl;
+
+                        string msg = Form("AnalysisHelper::readAltSysSamples : cannot find the filelist for syst variation of %s", newsamplename.c_str());
+                        throw std::runtime_error(msg);
+                    }
+
+                    shared_ptr<Sample> newsample (new Sample(newsamplename, filelistname, sample_tree_name_, sample_heff_name_));
+                    bool success = newsample->openFileAndTree(selections_);
+                    if (!success)
+                        throw std::runtime_error("cannot open input file for sample " + newsamplename);
+
+                    newsample->copyStructure(sample);
+
+                    new_samples.push_back(make_pair(newsamplename, newsample));
+                } // loop on sources
+            } // loop on samples in this subset
+
+            for (auto& p : new_samples)
+                samples->append(p.first, p.second);
+
+        } // loop on all_samples
+    } // loop on group lists
 }
 
 shared_ptr<Sample> AnalysisHelper::openSample(string sampleName)

@@ -59,6 +59,16 @@ bool AnalysisHelper::readMainInfo()
     cutCfg_ = unique_ptr<CfgParser>(new CfgParser(cutCfgName));
     sampleCfg_ = unique_ptr<CfgParser>(new CfgParser(sampleCfgName));
 
+    if (!(mainCfg_->hasOpt("general::numberOfThreads"))){
+        multithreaded_ = false;
+        cout << "@@ multithreaded       : " << std::boolalpha << multithreaded_ << std::noboolalpha << endl;
+    }
+    else{
+        multithreaded_ = true;
+        numberOfThreads_ = mainCfg_->readIntOpt("general::numberOfThreads");
+        cout << "@@ multithreaded       : " << std::boolalpha << multithreaded_ << " with " << std::noboolalpha << (int) numberOfThreads_ << " threads" << endl;
+    }
+
     if (!(mainCfg_->hasOpt("general::lumi"))) return false;
     lumi_ = mainCfg_->readFloatOpt("general::lumi");
     cout << "@@ lumi                : " << lumi_ << endl;   
@@ -1078,7 +1088,8 @@ string AnalysisHelper::formHisto2DName (string sample, string sel, string var1, 
     }
     return name;
 }
-void AnalysisHelper::fillHistosSample(Sample& sample)
+
+void AnalysisHelper::fillHistosSample(Sample& sample, std::promise<void> thePromise)
 {
     cout << "@@ Filling histograms of sample " << sample.getName() << endl;
 
@@ -1382,7 +1393,8 @@ void AnalysisHelper::fillHistosSample(Sample& sample)
     if (sample.getType() != Sample::kData && sample.getType() != Sample::kDatadriven)
         sample.scaleAll(lumi_);
 
-
+    if (multithreaded_)
+        thePromise.set_value();
 }
 
 void AnalysisHelper::activateBranches(Sample& sample)
@@ -1525,30 +1537,101 @@ string AnalysisHelper::pack2DName (string name1, string name2)
 
 void AnalysisHelper::fillHistos()
 {
+    // for (uint isample = 0; isample < data_samples_.size(); ++isample) // loop on samples
+    // {             
+    //     fillHistosSample(*(data_samples_.at(isample)));
+    // }
+
+    // // sig
+    // for (uint isample = 0; isample < sig_samples_.size(); ++isample) // loop on samples
+    // {             
+    //     fillHistosSample(*(sig_samples_.at(isample)));
+    // }
+
+    // // bkg    
+    // for (uint isample = 0; isample < bkg_samples_.size(); ++isample) // loop on samples
+    // {             
+    //     fillHistosSample(*(bkg_samples_.at(isample)));
+    // }
+
+    // // datadriven    
+    // for (uint isample = 0; isample < datadriven_samples_.size(); ++isample) // loop on samples
+    // {             
+    //     fillHistosSample(*(datadriven_samples_.at(isample)));
+    // }
+
+    if (multithreaded_)
+        fillHistos_mt();
+    else
+        fillHistos_non_mt();
+}
+
+void AnalysisHelper::fillHistos_non_mt()
+{
     for (uint isample = 0; isample < data_samples_.size(); ++isample) // loop on samples
     {             
-        fillHistosSample(*(data_samples_.at(isample)));
+        fillHistosSample(*(data_samples_.at(isample)), std::promise<void>());
     }
 
     // sig
     for (uint isample = 0; isample < sig_samples_.size(); ++isample) // loop on samples
     {             
-        fillHistosSample(*(sig_samples_.at(isample)));
+        fillHistosSample(*(sig_samples_.at(isample)), std::promise<void>());
     }
 
     // bkg    
     for (uint isample = 0; isample < bkg_samples_.size(); ++isample) // loop on samples
     {             
-        fillHistosSample(*(bkg_samples_.at(isample)));
+        fillHistosSample(*(bkg_samples_.at(isample)), std::promise<void>());
     }
 
     // datadriven    
     for (uint isample = 0; isample < datadriven_samples_.size(); ++isample) // loop on samples
     {             
-        fillHistosSample(*(datadriven_samples_.at(isample)));
+        fillHistosSample(*(datadriven_samples_.at(isample)), std::promise<void>());
+    }
+}
+
+void AnalysisHelper::fillHistos_mt()
+{
+    using namespace std::chrono_literals;
+    std::vector< std::pair<std::future<void>, std::thread> > theThreadVector;
+    auto totalMap = data_samples_ + datadriven_samples_ + sig_samples_ + bkg_samples_;
+
+    for(uint isample = 0; isample < numberOfThreads_; ++isample)
+    {
+        if(isample >= totalMap.size()) break;
+        std::promise<void> thePromise;
+        auto theFuture = thePromise.get_future();
+        theThreadVector.emplace_back( std::move(theFuture), std::thread(&AnalysisHelper::fillHistosSample, this, std::ref(*(totalMap.at(isample))), std::move(thePromise) ));
     }
 
+    uint numberOfSampleSubmitted = numberOfThreads_;
+    while(numberOfSampleSubmitted <totalMap.size())
+    {
+        std::this_thread::sleep_for(1s);
+        size_t completedThreadPosition = 0;
+        for(; completedThreadPosition<numberOfThreads_; ++completedThreadPosition)
+        {
+            if(theThreadVector[completedThreadPosition].first.wait_for(0ms) == std::future_status::ready) 
+            {
+                theThreadVector[completedThreadPosition].second.join();
+                break;
+            }
+        }
+        if(completedThreadPosition<numberOfThreads_)
+        {
+            std::promise<void> thePromise;
+            auto theFuture = thePromise.get_future();
+            theThreadVector[completedThreadPosition] = std::move(make_pair(std::move(theFuture), std::thread(&AnalysisHelper::fillHistosSample, this, std::ref(*(totalMap.at(numberOfSampleSubmitted))), std::move(thePromise)) ));
+            ++numberOfSampleSubmitted;
+        }
+    }
+
+    for(auto &theThread : theThreadVector) theThread.second.join();
+    theThreadVector.clear();
 }
+
 
 void AnalysisHelper::setSplitting (int idxsplit, int nsplit)
 {

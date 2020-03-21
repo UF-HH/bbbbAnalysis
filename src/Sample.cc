@@ -239,3 +239,10 @@ void Sample::initCutHisto(const std::vector<Selection> &selections)
 //     evt_den_ = effHisto->GetBinContent (1) ;
 //     eff_ = (float) evt_num_ / (float) evt_den_ ;
 // }
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+void Sample::copyStructure(const Sample& other_s)
+{
+    setWeights(other_s.getWeights());
+}

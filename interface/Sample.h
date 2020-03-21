@@ -88,6 +88,9 @@ class Sample
         // initialises the structure of the cut flow histo (nbins, labels, etc..)
         void initCutHisto(const std::vector<Selection> &selections);
 
+        // copies the info not related to the input file (plots, weights, ,..) to this histogram
+        void copyStructure (const Sample& other_s);
+
     private:
         // TFile* fIn_;
         std::string filelistname_;

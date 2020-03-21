@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <sstream>
 #include <sys/stat.h>
+#include <regex>
 
 using namespace std;
 
@@ -57,6 +58,16 @@ bool AnalysisHelper::readMainInfo()
     
     cutCfg_ = unique_ptr<CfgParser>(new CfgParser(cutCfgName));
     sampleCfg_ = unique_ptr<CfgParser>(new CfgParser(sampleCfgName));
+
+    if (!(mainCfg_->hasOpt("general::numberOfThreads"))){
+        multithreaded_ = false;
+        cout << "@@ multithreaded       : " << std::boolalpha << multithreaded_ << std::noboolalpha << endl;
+    }
+    else{
+        multithreaded_ = true;
+        numberOfThreads_ = mainCfg_->readIntOpt("general::numberOfThreads");
+        cout << "@@ multithreaded       : " << std::boolalpha << multithreaded_ << " with " << std::noboolalpha << (int) numberOfThreads_ << " threads" << endl;
+    }
 
     if (!(mainCfg_->hasOpt("general::lumi"))) return false;
     lumi_ = mainCfg_->readFloatOpt("general::lumi");
@@ -269,6 +280,139 @@ void AnalysisHelper::readSamples()
     // printSamples(true);
 
     return;
+}
+
+void AnalysisHelper::readAltSysSamples()
+{
+    // no samples declared
+    if (!cutCfg_->hasOpt("altSamplesSystematics::group_list"))
+        return;
+
+    vector<string> group_list = cutCfg_->readStringListOpt("altSamplesSystematics::group_list");
+    
+    // should never happen anyway
+    if (group_list.size() == 0)
+        return;
+
+    cout << "@@ AltSysSamples : an alternative list of samples for systematics is required for groups : " << endl;
+    for (auto gl : group_list)
+        cout << "   - " << gl << endl;
+
+    std::vector < ordered_map <std::string, std::shared_ptr<Sample>> * > all_samples = {
+        &data_samples_,
+        &sig_samples_,
+        &bkg_samples_,
+        &datadriven_samples_,
+    };
+
+    // loop over all samples types
+    for (auto group : group_list)
+    {
+
+        cout << "   -- -> doing : " << group << endl;
+        // read the lists of samples concerned - cfgParser handles errors on missing sections
+        vector<string> apply_to = cutCfg_->readStringListOpt(Form("%s::apply_to", group.c_str()));
+        vector<string> sources  = cutCfg_->readStringListOpt(Form("%s::sources",  group.c_str()));
+
+        // make the carthesian with directions if requested
+        if (cutCfg_->hasOpt(Form("%s::directions",  group.c_str())))
+        {
+            vector<string> directions  = cutCfg_->readStringListOpt(Form("%s::directions",  group.c_str()));
+            std::vector<string> tmp_sources;
+            for (auto s : sources) {
+                for (auto d : directions) {
+                    string tot = s + "_" + d;
+                    tmp_sources.push_back(tot);
+                }
+            }
+            sources = tmp_sources;
+        }
+
+        // cout << "   -- -- -- individual sources are : " << endl;
+        // for (auto s : sources)
+        //     cout << "   -- -- -- -- " << s << endl;
+
+        cout << "      -> this source is applied to the following samples : " << endl;
+        for (auto s : apply_to)
+            cout << "         -- " << s << endl;
+
+        // for every sample, check if it is affected
+        for (auto* samples : all_samples)
+        {
+            std::vector<std::pair<string, shared_ptr<Sample>>> new_samples;
+            for (size_t isample = 0; isample < samples->size(); ++isample)
+            {
+                auto& sample = *(samples->at(isample));
+                std::string samplename = sample.getName();
+
+                // is it a sample that I have to do for systs?
+                if (find(apply_to.begin(), apply_to.end(), samplename) == apply_to.end())
+                    continue;
+
+                // for every source create a new sample
+                for (auto source : sources)
+                {
+                    string newsamplename = Form("%s_%s", samplename.c_str(), source.c_str());
+                    string filelistname = "";
+                    
+                    // look for the new file name - first directly 
+                    if (sampleCfg_->hasOpt( Form("samples_%s::%s", group.c_str(), newsamplename.c_str())))
+                        filelistname = sampleCfg_->readStringOpt( Form("samples_%s::%s", group.c_str(), newsamplename.c_str()));
+
+                    // try to resolve from variable substitution
+                    else
+                    {
+                        std::vector<std::string> options = sampleCfg_->readListOfOpts(Form("samples_%s", group.c_str()));
+                        for (string opt : options)
+                        {
+                            string repl_opt = std::regex_replace(opt, std::regex("\\$SOURCE"), source);
+                            if (repl_opt == newsamplename)
+                            {
+                                filelistname = sampleCfg_->readStringOpt( Form("samples_%s::%s", group.c_str(), opt.c_str()));
+
+                                if (filelistname.find("$SOURCE") == std::string::npos){
+                                    cout << "[ERROR] : you are asking for an alternative sample name with a $SOURCE to be replaced, but the associated filelist has no source" << endl;
+                                    cout << "        : sample name : " << newsamplename << endl;
+                                    cout << "        : this is in principle wrong unless you REALLY want to have all systematics pointing to the same file (hence => no systematics)" << endl;
+                                    cout << "        : aborting. If you want this behavior comment out this control in the code" << endl;
+                                    throw std::runtime_error("AnalysisHelper::readAltSysSamples : malformed filelist of alt sample");
+                                }
+
+                                filelistname = std::regex_replace(filelistname, std::regex("\\$SOURCE"), source);
+                                break;
+                            }
+                        }
+                    }
+
+                    // throw an error if the alt file was not found
+                    if (filelistname.size() == 0)
+                    {
+                        cout << "[ERROR] : I cannot find the file list for the alternative sample " << newsamplename << endl;
+                        cout << "          The options that are listed in the cfg are : " << endl; 
+                        std::vector<std::string> options = sampleCfg_->readListOfOpts(Form("samples_%s", group.c_str()));
+                        for (string opt : options)
+                            cout << "           - " << opt << endl;
+
+                        string msg = Form("AnalysisHelper::readAltSysSamples : cannot find the filelist for syst variation of %s", newsamplename.c_str());
+                        throw std::runtime_error(msg);
+                    }
+
+                    shared_ptr<Sample> newsample (new Sample(newsamplename, filelistname, sample_tree_name_, sample_heff_name_));
+                    bool success = newsample->openFileAndTree(selections_);
+                    if (!success)
+                        throw std::runtime_error("cannot open input file for sample " + newsamplename);
+
+                    newsample->copyStructure(sample);
+
+                    new_samples.push_back(make_pair(newsamplename, newsample));
+                } // loop on sources
+            } // loop on samples in this subset
+
+            for (auto& p : new_samples)
+                samples->append(p.first, p.second);
+
+        } // loop on all_samples
+    } // loop on group lists
 }
 
 shared_ptr<Sample> AnalysisHelper::openSample(string sampleName)
@@ -944,7 +1088,8 @@ string AnalysisHelper::formHisto2DName (string sample, string sel, string var1, 
     }
     return name;
 }
-void AnalysisHelper::fillHistosSample(Sample& sample)
+
+void AnalysisHelper::fillHistosSample(Sample& sample, std::promise<void> thePromise)
 {
     cout << "@@ Filling histograms of sample " << sample.getName() << endl;
 
@@ -1248,7 +1393,8 @@ void AnalysisHelper::fillHistosSample(Sample& sample)
     if (sample.getType() != Sample::kData && sample.getType() != Sample::kDatadriven)
         sample.scaleAll(lumi_);
 
-
+    if (multithreaded_)
+        thePromise.set_value();
 }
 
 void AnalysisHelper::activateBranches(Sample& sample)
@@ -1391,30 +1537,101 @@ string AnalysisHelper::pack2DName (string name1, string name2)
 
 void AnalysisHelper::fillHistos()
 {
+    // for (uint isample = 0; isample < data_samples_.size(); ++isample) // loop on samples
+    // {             
+    //     fillHistosSample(*(data_samples_.at(isample)));
+    // }
+
+    // // sig
+    // for (uint isample = 0; isample < sig_samples_.size(); ++isample) // loop on samples
+    // {             
+    //     fillHistosSample(*(sig_samples_.at(isample)));
+    // }
+
+    // // bkg    
+    // for (uint isample = 0; isample < bkg_samples_.size(); ++isample) // loop on samples
+    // {             
+    //     fillHistosSample(*(bkg_samples_.at(isample)));
+    // }
+
+    // // datadriven    
+    // for (uint isample = 0; isample < datadriven_samples_.size(); ++isample) // loop on samples
+    // {             
+    //     fillHistosSample(*(datadriven_samples_.at(isample)));
+    // }
+
+    if (multithreaded_)
+        fillHistos_mt();
+    else
+        fillHistos_non_mt();
+}
+
+void AnalysisHelper::fillHistos_non_mt()
+{
     for (uint isample = 0; isample < data_samples_.size(); ++isample) // loop on samples
     {             
-        fillHistosSample(*(data_samples_.at(isample)));
+        fillHistosSample(*(data_samples_.at(isample)), std::promise<void>());
     }
 
     // sig
     for (uint isample = 0; isample < sig_samples_.size(); ++isample) // loop on samples
     {             
-        fillHistosSample(*(sig_samples_.at(isample)));
+        fillHistosSample(*(sig_samples_.at(isample)), std::promise<void>());
     }
 
     // bkg    
     for (uint isample = 0; isample < bkg_samples_.size(); ++isample) // loop on samples
     {             
-        fillHistosSample(*(bkg_samples_.at(isample)));
+        fillHistosSample(*(bkg_samples_.at(isample)), std::promise<void>());
     }
 
     // datadriven    
     for (uint isample = 0; isample < datadriven_samples_.size(); ++isample) // loop on samples
     {             
-        fillHistosSample(*(datadriven_samples_.at(isample)));
+        fillHistosSample(*(datadriven_samples_.at(isample)), std::promise<void>());
+    }
+}
+
+void AnalysisHelper::fillHistos_mt()
+{
+    using namespace std::chrono_literals;
+    std::vector< std::pair<std::future<void>, std::thread> > theThreadVector;
+    auto totalMap = data_samples_ + datadriven_samples_ + sig_samples_ + bkg_samples_;
+
+    for(uint isample = 0; isample < numberOfThreads_; ++isample)
+    {
+        if(isample >= totalMap.size()) break;
+        std::promise<void> thePromise;
+        auto theFuture = thePromise.get_future();
+        theThreadVector.emplace_back( std::move(theFuture), std::thread(&AnalysisHelper::fillHistosSample, this, std::ref(*(totalMap.at(isample))), std::move(thePromise) ));
     }
 
+    uint numberOfSampleSubmitted = numberOfThreads_;
+    while(numberOfSampleSubmitted <totalMap.size())
+    {
+        std::this_thread::sleep_for(1s);
+        size_t completedThreadPosition = 0;
+        for(; completedThreadPosition<numberOfThreads_; ++completedThreadPosition)
+        {
+            if(theThreadVector[completedThreadPosition].first.wait_for(0ms) == std::future_status::ready) 
+            {
+                theThreadVector[completedThreadPosition].second.join();
+                break;
+            }
+        }
+        if(completedThreadPosition<numberOfThreads_)
+        {
+            std::promise<void> thePromise;
+            auto theFuture = thePromise.get_future();
+            theThreadVector[completedThreadPosition] = std::move(make_pair(std::move(theFuture), std::thread(&AnalysisHelper::fillHistosSample, this, std::ref(*(totalMap.at(numberOfSampleSubmitted))), std::move(thePromise)) ));
+            ++numberOfSampleSubmitted;
+        }
+    }
+
+    for(auto &theThread : theThreadVector) theThread.second.join();
+    theThreadVector.clear();
 }
+
 
 void AnalysisHelper::setSplitting (int idxsplit, int nsplit)
 {

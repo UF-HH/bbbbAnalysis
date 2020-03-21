@@ -58,6 +58,8 @@ int main(int argc, char** argv)
         ("kl-rew"    , po::value<float>(),  "klambda value for reweighting")
         ("kl-map"    , po::value<string>()->default_value(""), "klambda input map for reweighting")
         // ("kl-histo"  , po::value<string>()->default_value("hhGenLevelDistr"), "klambda histogram name for reweighting")
+        ("jes-shift-syst", po::value<string>()->default_value("nominal"), "Name of the JES (scale) source uncertainty to be shifted. Usage as <name>:<up/down>. Pass -nominal- to not shift the jets")
+        ("jer-shift-syst", po::value<string>()->default_value("nominal"), "Name of the JER (resolution) source uncertainty to be shifted. Usage as <jer/bjer>:<up/down>. Pass -nominal- to not shift the jets")
         // flags
         ("is-data",    po::value<bool>()->zero_tokens()->implicit_value(true)->default_value(false), "mark as a data sample (default is false)")
         ("is-signal",  po::value<bool>()->zero_tokens()->implicit_value(true)->default_value(false), "mark as a HH signal sample (default is false)")
@@ -292,18 +294,27 @@ int main(int argc, char** argv)
 
 
         //JEC 
-        const string JECstrategy = config.readStringOpt("parameters::JetEnergyCorrection");
-        parameterList.emplace("JetEnergyCorrection",JECstrategy);
-        if(JECstrategy == "StandardJEC"){
-            parameterList.emplace("JECFileName"          ,config.readStringOpt    ("parameters::JECFileName"          ));
-            parameterList.emplace("JECListOfCorrections" ,config.readStringListOpt("parameters::JECListOfCorrections" ));
-        }
-        else if(JECstrategy == "None"){
-        }  
-        // else if(other selection type){
-        //     parameters fo be retreived;
+        // const string JECstrategy = config.readStringOpt("parameters::JetEnergyCorrection");
+        // parameterList.emplace("JetEnergyCorrection",JECstrategy);
+        // if(JECstrategy == "StandardJEC"){
+        //     parameterList.emplace("JECFileName"          ,config.readStringOpt    ("parameters::JECFileName"          ));
+        //     parameterList.emplace("JECListOfCorrections" ,config.readStringListOpt("parameters::JECListOfCorrections" ));
+        // }
+        // else if(JECstrategy == "None"){
         // }  
-        else throw std::runtime_error("cannot recognize event choice ObjectsForCut " + JECstrategy);
+        // // else if(other selection type){
+        // //     parameters fo be retreived;
+        // // }  
+        // else throw std::runtime_error("cannot recognize event choice ObjectsForCut " + JECstrategy);
+
+        // as a temporary fix, to avoid clashes with cmd line options, disable the variations from JetEnergyCorrection method by Fabio
+        const string JECstrategy = config.readStringOpt("parameters::JetEnergyCorrection");
+        if(JECstrategy != "None"){
+            throw std::runtime_error("For the resonant analysis the only JetEnergyCorrection strategy accepted is None, use the cmd line option instead of " + JERstrategy);
+        }
+        if (opts["jes-shift-syst"].as<string>() != OfflineProducerHelper::nominal_jes_syst_shift_name)
+            parameterList.emplace("JECFileName", config.readStringOpt("parameters::JECFileName"));
+
     }
 
     OfflineProducerHelper oph;
@@ -358,8 +369,10 @@ int main(int argc, char** argv)
 
     if(!is_data)
     {
-        oph.initializeJERsmearingAndVariations(ot);
-        oph.initializeJECVariations(ot);
+        // oph.initializeJERsmearingAndVariations(ot);
+        // oph.initializeJECVariations(ot);
+        oph.initializeApplyJERAndBregSmearing(opts["jer-shift-syst"].as<string>());
+        oph.initializeApplyJESshift(opts["jes-shift-syst"].as<string>());
         oph.initializeObjectsForEventWeight(ot,ec,opts["puWeight"].as<string>(),xs);
         oph.initializeObjectsBJetForScaleFactors(ot);
         oph.initializeObjectsL1PrefiringForScaleFactors(ot);

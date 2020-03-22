@@ -401,6 +401,24 @@ class HHModel(PhysicsModel):
                 print "[ERROR] : in HH model named", self.name, "there is a double assignment of a scaling : ", key, " ==> ", val
                 raise RuntimeError('HHModel : coudl not uniquely match the scaling to the process')
 
+        ## now check that, if a VBF/GGF scaling exists, there are actually 6/3 samples in the card
+        n_VBF = 0
+        n_GGF = 0
+        for k, i in self.scalingMap.items():
+            # the step above ensured me that the list contains a single element -> i[0]
+            if i[0][1] == "GGF":
+                n_GGF += 1
+            elif i[0][1] == "VBF":
+                n_VBF += 1
+            else:
+                raise RuntimeError("HHModel : unrecognised type %s - should never happen" % i[0][1])
+
+        if n_GGF > 0 and n_GGF != 3:
+            raise RuntimeError("HHModel : you did not pass all the 3 samples needed to build the GGF HH model")
+        
+        if n_VBF > 0 and n_VBF != 6:
+            raise RuntimeError("HHModel : you did not pass all the 6 samples needed to build the VBF HH model")
+
 ########################################################
 # definition of the model inputs
 

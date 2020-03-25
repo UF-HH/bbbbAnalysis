@@ -89,7 +89,7 @@ class OfflineProducerHelper{
 
         // to apply a single jet energy correction to all the incoming jets
         const static std::string nominal_jes_syst_shift_name;
-        std::string jes_syst_shift_name_;
+        std::string jes_syst_shift_name_ = nominal_jes_syst_shift_name;
         bool        jes_syst_shift_dir_is_up_;
         std::unique_ptr<JetCorrectorParameters>   jcp_;
         std::unique_ptr<JetCorrectionUncertainty> jcu_;

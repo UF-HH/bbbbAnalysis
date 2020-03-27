@@ -64,6 +64,7 @@ int main(int argc, char** argv)
         ("is-data",    po::value<bool>()->zero_tokens()->implicit_value(true)->default_value(false), "mark as a data sample (default is false)")
         ("is-signal",  po::value<bool>()->zero_tokens()->implicit_value(true)->default_value(false), "mark as a HH signal sample (default is false)")
         ("is-VBF-sig", po::value<bool>()->zero_tokens()->implicit_value(true)->default_value(false), "mark as a HH VBF signal sample (default is false)")
+        ("is-nlo-sig", po::value<bool>()->zero_tokens()->implicit_value(true)->default_value(false), "mark as NL0-HH sample")
         ("save-p4",    po::value<bool>()->zero_tokens()->implicit_value(true)->default_value(false), "save the tlorentzvectors in the output")
     ;
 
@@ -98,6 +99,9 @@ int main(int argc, char** argv)
     const bool is_VBF_sig = (is_data ? false : opts["is-VBF-sig"].as<bool>());
     cout << "[INFO] ... is a HH VBF sample? " << std::boolalpha << is_VBF_sig << std::noboolalpha << endl;
 
+    const bool is_NLO_sig = (is_data ? false : opts["is-nlo-sig"].as<bool>());
+    cout << "[INFO] ... is a HH NLO sample? " << std::boolalpha << is_NLO_sig << std::noboolalpha << endl;
+
     const float xs = (is_data ? 1.0 : opts["xs"].as<float>());
     cout << "[INFO] ... cross section is : " << xs << " pb" << endl;
 
@@ -113,7 +117,7 @@ int main(int argc, char** argv)
     const string bbbbChoice  = config.readStringOpt("parameters::bbbbChoice");
     const string datasetname = config.readStringOpt("parameters::datasetname");
     parameterList.emplace("is_VBF_sig",is_VBF_sig);
-
+    parameterList.emplace("is_NLO_sig",is_NLO_sig);
     parameterList.emplace("bbbbChoice",bbbbChoice);
     parameterList.emplace("datasetname",datasetname);   
     if(bbbbChoice == "OneClosestToMh"){
@@ -438,7 +442,8 @@ int main(int argc, char** argv)
         double weight = 1.;
         if(!is_data) weight = oph.calculateEventWeight(nat, ei, ot, ec);
 
-        //cout<<"The weight = "<<weight<<endl;
+        if(!is_data && is_NLO_sig && abs(weight)>0.5) continue; //To temporaly address problem in NLO signal genweight
+
         ec.updateProcessed(weight);
 
         if( !nat.getTrgOr() ) continue;

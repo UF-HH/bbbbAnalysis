@@ -703,8 +703,10 @@ float OfflineProducerHelper::calculateEventWeight_AllWeights(NanoAODTree& nat, E
         eventWeight *= w;
     }
 
-    //calculate bins for weights variations
+    //Check only for NLO-HH samples
+    if( any_cast<bool>(parameterList_->at("is_NLO_sig")) && abs(eventWeight) > 0.5) return eventWeight;
 
+    //calculate bins for weights variations
     for(auto & weight : weightMap_)
     {
         for(auto & correction : weight.second.second)

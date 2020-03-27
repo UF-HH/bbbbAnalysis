@@ -30,17 +30,27 @@ couplingname = 'C2V' # the coupling to make eff vs : CV, C2V, kl - note : others
 # ymax = 1.1
 # ymin = 0
 
+# ######################
+# ## for VBF vs GGF categ
+# to_plot = [
+#     'GGFcateg',
+#     'VBFcateg',
+# ]
+# oname = 'frac_categ_GGFvsVBF_VFBsignal_vs_%s.pdf' % couplingname
+# logy = False
+# ymax = 1.1
+# ymin = 0
+
 #######################
-## for VBF vs GGF categ
+## for VBF vs GGF categ on VBFevents only
 to_plot = [
-    'GGFcateg',
-    'VBFcateg',
+    'GGFcategForVBFEvts',
+    'VBFcategForVBFEvts',
 ]
-oname = 'frac_categ_GGFvsVBF_VFBsignal_vs_%s.pdf' % couplingname
+oname = 'frac_categ_GGFvsVBF_ForVBFEvts_VFBsignal_vs_%s.pdf' % couplingname
 logy = False
 ymax = 1.1
 ymin = 0
-
 
 
 ## these samples are added to the plots if required
@@ -152,6 +162,8 @@ entries = {
     'VBF_BSMcat'    : 'Btag4_VBFcateg2_SR_110_Histogram',
     'GGFcateg'      : 'Btag4_GGFcateg_Histogram',
     'VBFcateg'      : 'Btag4_VBFcateg_Histogram',
+    'GGFcategForVBFEvts' : 'Btag4_VBFpreNoGGFKillercut_Histogram',
+    'VBFcategForVBFEvts' : 'Btag4_VBFpreGGFKillercut_Histogram',
 }
 
 colors = {
@@ -159,6 +171,8 @@ colors = {
     'VBF_BSMcat'      : ROOT.kRed,
     'GGFcateg'        : ROOT.kBlue+1,
     'VBFcateg'        : ROOT.kRed,
+    'GGFcategForVBFEvts' : ROOT.kBlue+1,
+    'VBFcategForVBFEvts' : ROOT.kRed,
 }
 
 legends = {
@@ -166,6 +180,8 @@ legends = {
     'VBF_BSMcat' : 'BSM VBF category (cat. 2)',
     'GGFcateg'     : 'ggF category',
     'VBFcateg'     : 'VBF category',
+    'GGFcategForVBFEvts'     : '4b + jj, ggF-killer reject',
+    'VBFcategForVBFEvts'     : '4b + jj, ggF-killer accept',
 }
 
 ### change here to vary the coupling plotted

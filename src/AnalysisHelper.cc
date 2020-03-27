@@ -403,6 +403,7 @@ void AnalysisHelper::readAltSysSamples()
                         throw std::runtime_error("cannot open input file for sample " + newsamplename);
 
                     newsample->copyStructure(sample);
+                    newsample->setType(sample.getType());
 
                     new_samples.push_back(make_pair(newsamplename, newsample));
                 } // loop on sources

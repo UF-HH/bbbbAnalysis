@@ -24,11 +24,12 @@ class effReader:
         if self.counts[self.tot_w_name] == 0:
             print "[WARNING] : sample",  self.process, "has 0 total processed events"
 
-    def correctForLumiXS(self, cfg_file, corr_list = None, tot_w = 'Ntot_w'):
+    # def correctForLumiXS(self, cfg_file, corr_list = None, tot_w = 'Ntot_w'):
+    def correctForXS(self, cfg_file, corr_list = None, tot_w = 'Ntot_w'):
         if not corr_list:
             corr_list = ['Ntot_w', "Ntrg_w", "Nsel_w"]
         cfg  = cfgr.ConfigReader(cfg_file)
-        lumi = float(cfg.readOption ("general::lumi")) ## in pb
+        # lumi = float(cfg.readOption ("general::lumi")) ## in pb
         cfg_samples_name = os.path.basename(cfg.readOption("configs::sampleCfg"))
         cfg_samples_dir  = os.path.join(os.path.dirname(cfg_file), '')
         cfg_lfn          = cfg_samples_dir + cfg_samples_name
@@ -79,16 +80,18 @@ class effReader:
         xs = extract_xs(filelistname)
 
         print "[INFO] For sample", self.process
-        print "....... lumi : ", lumi
+        # print "....... lumi : ", lumi
         print "....... xs   : ", xs
-        print "....... lumi * xs applied to : ", corr_list
+        # print "....... lumi * xs applied to : ", corr_list
+        print "....... xs applied to : ", corr_list
 
         denom = self.counts[tot_w]
         for key in self.counts.keys():
             if key in corr_list:
+                self.counts[key] = self.counts[key] * xs
                 ## convert to number of events : n/ntot * lumi * sigma
                 # print self.counts[key], 'BEFORE', lumi * xs
-                self.counts[key] = self.counts[key]/denom * lumi * xs
+                # self.counts[key] = self.counts[key]/denom * lumi * xs
                 # print self.counts[key], 'AFTER'
 
         # for key, val in self.counts.items():

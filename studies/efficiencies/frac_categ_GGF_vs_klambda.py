@@ -2,9 +2,12 @@ import effutils.EffUtilsNew as eut
 import effutils.HHscalings  as hhs
 import ROOT
 import numpy as np
+import sys
 
 ROOT.gROOT.SetBatch(True)
 
+year      = 2018 ## used for the oname
+title     = "ggF signal, 2018 simulation"
 folder_in = '/uscms/home/guerrero/nobackup/Run2/HH2019/Fall2019/CMSSW_10_2_5/src/bbbbAnalysis/MyHistos/Histos2018'
 fin       = '%s/outPlotter.root' % folder_in
 file_in   = ROOT.TFile.Open(fin)
@@ -12,25 +15,33 @@ cfg_in    = folder_in + '/' + eut.findInFolder(folder_in, 'plotter_*.cfg')
 print "[INFO] : input file is  ", fin
 print "[INFO] : config file is ", cfg_in
 
-# ##### GGF sub-categorisation
-# to_plot = [
-#     'GGF_lowmass',
-#     'GGF_highmass',
-# ]
-# logy = False
-# ymax = 1.4
-# ymin = 0
-# oname = 'frac_categ_GGF_vs_kl.pdf'
+plottype = 'mHHcateg'
+if len(sys.argv) > 1:
+    plottype = sys.argv[1]
 
-##### GGF vs VBF categorisation
-to_plot = [
-    'GGFcateg',
-    'VBFcateg',
-]
-logy = False
-ymax = 1.4
-ymin = 0
-oname = 'frac_categ_GGFvsVBF_vs_kl.pdf'
+print "... plot type : ", plottype
+
+if plottype == 'mHHcateg':
+    ##### GGF sub-categorisation
+    to_plot = [
+        'GGF_lowmass',
+        'GGF_highmass',
+    ]
+    logy = False
+    ymax = 1.4
+    ymin = 0
+    oname = 'frac_categ_%i_GGF_vs_kl.pdf' % year
+
+if plottype == 'GGFvsVBF':
+    ##### GGF vs VBF categorisation
+    to_plot = [
+        'GGFcateg',
+        'VBFcateg',
+    ]
+    logy = False
+    ymax = 1.4
+    ymin = 0
+    oname = 'frac_categ_%i_GGFvsVBF_vs_kl.pdf' % year
 
 # logy = True
 # ymax = 5
@@ -76,10 +87,10 @@ input_samples_pts = [eut.effReader(x['rootfile'], x['name']) for x in single_pts
 
 ## scale by lumi and xs:
 for e in input_samples:
-    e.correctForLumiXS(cfg_in)
+    e.correctForXS(cfg_in)
 
 for i in range(len(input_samples_pts)):
-    input_samples_pts[i].correctForLumiXS(single_pts_list[i]['cfg'])
+    input_samples_pts[i].correctForXS(single_pts_list[i]['cfg'])
 
 ## NOTE : the xs is actually taken from the files, not from val_xs
 GGF_sample_list = [
@@ -218,7 +229,7 @@ mg.Draw('APL')
 # mg.SetMinimum(2e-3)
 mg.SetMaximum(ymax)
 mg.SetMinimum(ymin)
-mg.SetTitle(';#kappa_{#lambda};Fraction')
+mg.SetTitle('%s;#kappa_{#lambda};Fraction' % title)
 mg.GetXaxis().SetTitleSize(0.055)
 mg.GetYaxis().SetTitleSize(0.055)
 mg.GetXaxis().SetLabelSize(0.045)

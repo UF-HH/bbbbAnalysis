@@ -1,10 +1,17 @@
+## to make all plots :
+## for c in CV C2V kl ; do for p in VBFcateg GGFvsVBF GGFvsVBFonVBFevts ; do python frac_categ_VBF_vs_coupling.py $c $p ; done; done
+
 import effutils.EffUtilsNew as eut
 import effutils.HHscalings  as hhs
 import ROOT
 import numpy as np
+import sys
+
 
 ROOT.gROOT.SetBatch(True)
 
+year      = 2018 ## used for the oname
+title     = 'VBF signal, 2018 simulation'
 folder_in = '/uscms/home/guerrero/nobackup/Run2/HH2019/Fall2019/CMSSW_10_2_5/src/bbbbAnalysis/MyHistos/Histos2018'
 fin       = '%s/outPlotter.root' % folder_in
 file_in   = ROOT.TFile.Open(fin)
@@ -18,39 +25,55 @@ print "[INFO] : config file is ", cfg_in
 # ymin = 1.e-3
 
 couplingname = 'C2V' # the coupling to make eff vs : CV, C2V, kl - note : others are fixed to 1
+plottype     = 'VBFcateg'
 
-# #######################
-# ## for VBF SM vs BSM categ
-# to_plot = [
-#     'VBF_SMcat',
-#     'VBF_BSMcat',
-# ]
-# oname = 'frac_categ_VBF_vs_%s.pdf' % couplingname
-# logy = False
-# ymax = 1.1
-# ymin = 0
+if len(sys.argv) > 1:
+    couplingname = sys.argv[1]
 
-# ######################
-# ## for VBF vs GGF categ
-# to_plot = [
-#     'GGFcateg',
-#     'VBFcateg',
-# ]
-# oname = 'frac_categ_GGFvsVBF_VFBsignal_vs_%s.pdf' % couplingname
-# logy = False
-# ymax = 1.1
-# ymin = 0
+if len(sys.argv) > 2:
+    plottype = sys.argv[2]
 
-#######################
-## for VBF vs GGF categ on VBFevents only
-to_plot = [
-    'GGFcategForVBFEvts',
-    'VBFcategForVBFEvts',
-]
-oname = 'frac_categ_GGFvsVBF_ForVBFEvts_VFBsignal_vs_%s.pdf' % couplingname
-logy = False
-ymax = 1.1
-ymin = 0
+print '... doing coupling :', couplingname
+print '... doing plot     :', plottype
+
+
+if plottype == 'VBFcateg':
+    #######################
+    ## for VBF SM vs BSM categ
+    to_plot = [
+        'VBF_SMcat',
+        'VBF_BSMcat',
+    ]
+    oname = 'frac_categ_%i_VBF_vs_%s.pdf' % (year, couplingname)
+    logy = False
+    ymax = 1.1
+    ymin = 0
+
+
+if plottype == 'GGFvsVBF':
+    ######################
+    ## for VBF vs GGF categ
+    to_plot = [
+        'GGFcateg',
+        'VBFcateg',
+    ]
+    oname = 'frac_categ_%i_GGFvsVBF_VFBsignal_vs_%s.pdf' % (year, couplingname)
+    logy = False
+    ymax = 1.1
+    ymin = 0
+
+
+if plottype == 'GGFvsVBFonVBFevts':
+    #######################
+    ## for VBF vs GGF categ on VBFevents only
+    to_plot = [
+        'GGFcategForVBFEvts',
+        'VBFcategForVBFEvts',
+    ]
+    oname = 'frac_categ_%i_GGFvsVBF_ForVBFEvts_VFBsignal_vs_%s.pdf' % (year, couplingname)
+    logy = False
+    ymax = 1.1
+    ymin = 0
 
 
 ## these samples are added to the plots if required
@@ -119,10 +142,10 @@ input_samples_pts = [eut.effReader(x['rootfile'], x['name']) for x in single_pts
 
 ## scale by lumi and xs:
 for e in input_samples:
-    e.correctForLumiXS(cfg_in)
+    e.correctForXS(cfg_in)
 
 for i in range(len(input_samples_pts)):
-    input_samples_pts[i].correctForLumiXS(single_pts_list[i]['cfg'])
+    input_samples_pts[i].correctForXS(single_pts_list[i]['cfg'])
 
 ## NOTE : the xs is actually taken from the files, not from val_xs
 # VBF : val_CV, val_C2V, val_kl
@@ -194,6 +217,13 @@ if couplingname == 'CV':
     C2Vs = np.ones(npts)
     icoupling_of_interest = 0 ## index in the ZIP function below
 
+    # npts = 10
+    # kls  = np.ones(npts)
+    # CVs  = np.linspace(-1.2, -0.3, npts)
+    # C2Vs = np.ones(npts)
+    # icoupling_of_interest = 0 ## index in the ZIP function below
+
+
 if couplingname == 'C2V':
     xtitle       = 'C_{2V}'
     npts = 100
@@ -229,6 +259,10 @@ for tp in to_plot:
 
 for ipt, pt in enumerate(couplings):
     if ipt % 10 == 0 : print '... doing ', pt
+
+    # print "======= DEBUG, couplings[ipt] = ", couplings[ipt]
+
+
     scales = [functions[isample].evalf(subs = {'CV' : pt[0], 'C2V' : pt[1], 'kl' : pt[2]}) for isample in range(len(input_samples))]
 
     values = {}
@@ -238,7 +272,13 @@ for ipt, pt in enumerate(couplings):
         for isample, sample in enumerate(input_samples):
             nthis_tot     = sample.counts[entries[tp]] * scales[isample]
             n_cat  = n_cat + nthis_tot
+            # print isample, sample.counts[entries[tp]], '*', scales[isample], '=', nthis_tot
         values[tp] = n_cat
+        # print tp, '----->', values[tp]
+
+    # print values
+    # print sum(values.values())
+    # print "......"
 
     tot_evts  = sum(values.values())
     for tp in to_plot:
@@ -332,7 +372,7 @@ mg.Draw('APL')
 # mg.SetMinimum(2e-3)
 mg.SetMaximum(ymax)
 mg.SetMinimum(ymin)
-mg.SetTitle(';%s;Fraction' % xtitle)
+mg.SetTitle('%s;%s;Fraction' % (title, xtitle))
 mg.GetXaxis().SetTitleSize(0.055)
 mg.GetYaxis().SetTitleSize(0.055)
 mg.GetXaxis().SetLabelSize(0.045)

@@ -2,13 +2,23 @@ import effutils.EffUtilsNew as eut
 import effutils.HHscalings  as hhs
 import ROOT
 import numpy as np
+import sys
 
 ROOT.gROOT.SetBatch(True)
 
-folder_in = '/uscms/home/guerrero/nobackup/Run2/HH2019/Fall2019/CMSSW_10_2_5/src/bbbbAnalysis/MyHistos/Histos2018'
-fin       = '%s/outPlotter.root' % folder_in
-file_in   = ROOT.TFile.Open(fin)
-cfg_in    = folder_in + '/' + eut.findInFolder(folder_in, 'plotter_*.cfg')
+couplingname = 'kl' # the coupling to make eff vs : CV, C2V, kl - note : others are fixed to 1
+
+if len(sys.argv) > 1:
+    couplingname = sys.argv[1]
+
+print "... coupling name:", couplingname
+
+oname        = 'eff_2018_VBF_vs_%s.pdf' % couplingname
+title        = 'VBF signal, 2018 simulation'
+folder_in    = '/uscms/home/guerrero/nobackup/Run2/HH2019/Fall2019/CMSSW_10_2_5/src/bbbbAnalysis/MyHistos/Histos2018'
+fin          = '%s/outPlotter.root' % folder_in
+file_in      = ROOT.TFile.Open(fin)
+cfg_in       = folder_in + '/' + eut.findInFolder(folder_in, 'plotter_*.cfg')
 print "[INFO] : input file is  ", fin
 print "[INFO] : config file is ", cfg_in
 
@@ -20,7 +30,6 @@ logy = True
 ymax = 5
 ymin = 1.e-3
 
-couplingname = 'CV' # the coupling to make eff vs : CV, C2V, kl - note : others are fixed to 1
 
 ## these samples are added to the plots if required
 ## empty list for none
@@ -88,10 +97,10 @@ input_samples_pts = [eut.effReader(x['rootfile'], x['name']) for x in single_pts
 
 ## scale by lumi and xs:
 for e in input_samples:
-    e.correctForLumiXS(cfg_in)
+    e.correctForXS(cfg_in)
 
 for i in range(len(input_samples_pts)):
-    input_samples_pts[i].correctForLumiXS(single_pts_list[i]['cfg'])
+    input_samples_pts[i].correctForXS(single_pts_list[i]['cfg'])
 
 ## NOTE : the xs is actually taken from the files, not from val_xs
 # VBF : val_CV, val_C2V, val_kl
@@ -304,7 +313,7 @@ mg.Draw('APL')
 # mg.SetMinimum(2e-3)
 mg.SetMaximum(ymax)
 mg.SetMinimum(ymin)
-mg.SetTitle(';%s;#varepsilon' % xtitle)
+mg.SetTitle('%s;%s;#varepsilon' % (title, xtitle))
 mg.GetXaxis().SetTitleSize(0.055)
 mg.GetYaxis().SetTitleSize(0.055)
 mg.GetXaxis().SetLabelSize(0.045)
@@ -319,6 +328,6 @@ for tp in to_plot:
 leg.SetFillStyle(0)
 leg.SetBorderSize(0)
 leg.Draw()
-c1.Print('eff_VBF_vs_%s.pdf' % couplingname, 'pdf')
+c1.Print(oname, 'pdf')
 
 

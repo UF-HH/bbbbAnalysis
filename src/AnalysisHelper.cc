@@ -1427,13 +1427,13 @@ void AnalysisHelper::activateBranches(Sample& sample)
             const Weight& currW = sample.getWeights().at(iw);
 
             // this is not default weight for this sample
-            if (!hasDefaultWeight(currW.getName()))
+            if (hasBranch(tree, currW.getName()))
                 tree->SetBranchStatus(currW.getName().c_str(), 1);
             
             for (int isys = 0; isys < currW.getNSysts(); ++isys)
             {
                //currW.getSyst(isys); // <----- keep an eye on it. It happened to throw range 
-                if (!hasDefaultWeight(currW.getSyst(isys)))
+                if (hasBranch(tree, currW.getSyst(isys)))
                     tree->SetBranchStatus(currW.getSyst(isys).c_str(), 1); 
             }
         }
@@ -1449,11 +1449,11 @@ void AnalysisHelper::activateBranches(Sample& sample)
             for (uint iw = 0; iw < currSel.getWeights().size(); ++iw)
             {
                 const Weight& currW = currSel.getWeights().at(iw);
-                if (!hasDefaultWeight(currW.getName()))
+                if (hasBranch(tree, currW.getName()))
                     tree->SetBranchStatus(currW.getName().c_str(), 1);
                 for (int isys = 0; isys < currW.getNSysts(); ++isys)
                 {
-                    if (!hasDefaultWeight(currW.getSyst(isys)))
+                    if (hasBranch(tree, currW.getSyst(isys)))
                        tree->SetBranchStatus(currW.getSyst(isys).c_str(), 1); 
                 }
             }
@@ -1915,8 +1915,20 @@ bool   AnalysisHelper::hasDefaultWeight(std::string weightName)
     return cutCfg_ -> hasOpt( Form("defaultWeight::%s",weightName.c_str()));
 }
 
+
+
 double AnalysisHelper::getDefaultWeight(std::string weightName)
 {
     double def_val = (double) cutCfg_ -> readFloatOpt( Form("defaultWeight::%s",weightName.c_str()));
     return def_val;
+}
+
+bool AnalysisHelper::hasBranch(TTree* tree, std::string branchName)
+{
+    auto* br = tree->GetListOfBranches()->FindObject(branchName.c_str());
+    
+    if (!br)
+        return false;
+    else
+        return true;
 }

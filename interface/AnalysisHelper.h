@@ -95,6 +95,9 @@ class AnalysisHelper
         bool   hasDefaultWeight(std::string weightName);
         double getDefaultWeight(std::string weightName);
 
+        // check if a Tree has a specific branch
+        bool hasBranch(TTree* tree, std::string branchName);
+
         std::unique_ptr<CfgParser> mainCfg_;
         std::unique_ptr<CfgParser> cutCfg_;
         std::unique_ptr<CfgParser> sampleCfg_;

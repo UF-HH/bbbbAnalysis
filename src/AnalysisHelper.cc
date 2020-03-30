@@ -462,6 +462,7 @@ shared_ptr<Sample> AnalysisHelper::openSample(string sampleName)
             for (auto pp : wsyst) cout << "................>> DEBUG: " << pp.first << " " << pp.second << endl;
         }
         w.addSysts(wsyst); // can be empty as well
+        updateWeightSystAliasesList(wsyst);
         sample->addWeight(w);
     }
 
@@ -902,7 +903,9 @@ Selection AnalysisHelper::readSingleSelection (std::string name)
         // cout << " +++ adding " << wname << endl;
         Weight w (wname);
         vector<pair<string, string> > wsyst = readWeightSysts(wname, "systematics");
+
         w.addSysts(wsyst); // can be empty as well
+        updateWeightSystAliasesList(wsyst);
         s.addWeight(w);
     }
 
@@ -1392,7 +1395,7 @@ void AnalysisHelper::fillHistosSample(Sample& sample, std::promise<void> theProm
 
     // filling is finished, scale to the sample denominator evt sum to include acceptance
     if (sample.getType() != Sample::kData && sample.getType() != Sample::kDatadriven)
-        sample.scaleAll(lumi_);
+        sample.scaleAll(lumi_, weight_aliases_);
 
     if (multithreaded_)
         thePromise.set_value();
@@ -1931,4 +1934,27 @@ bool AnalysisHelper::hasBranch(TTree* tree, std::string branchName)
         return false;
     else
         return true;
+}
+
+
+void AnalysisHelper::updateWeightSystAliasesList(const std::vector<std::pair<std::string, std::string> >& wlist)
+{
+    for (size_t iw = 0; iw < wlist.size(); ++iw)
+    {
+        string key   = wlist.at(iw).first; // my alias in the plot name
+        string value = wlist.at(iw).second; // the actual weight name
+
+        auto it = weight_aliases_.find(key);
+
+        if (it == weight_aliases_.end())
+            weight_aliases_[key] = value; // just save it
+        else
+        {
+            string curr_val = it->second;
+            if (curr_val == value) // was already there with the right name
+                continue;
+            else
+                throw std::runtime_error("Weight systematic with alias " + key + " is doubly defined with different content");
+        }
+    }
 }

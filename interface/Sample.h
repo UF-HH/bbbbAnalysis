@@ -71,7 +71,7 @@ class Sample
         // plot handling
         selColl& plots (){return plots_;}
         selColl2D& plots2D (){return plots2D_;}
-        void scaleAll(double luminosity);
+        void scaleAll(double luminosity, const std::unordered_map<std::string, std::string>& denomBinNameMap);
 
         // specific weights for a certain sample
         void setWeights (std::vector<Weight> weights) {weights_ = weights;}

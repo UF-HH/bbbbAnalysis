@@ -78,6 +78,8 @@ class AnalysisHelper
         Selection readSingleSelection (std::string name);
         std::vector<std::pair<std::string, std::string> > readWeightSysts(std::string name, std::string section); // read w list of section::name
         
+        void updateWeightSystAliasesList(const std::vector<std::pair<std::string, std::string> >& wlist);
+
         // non multithreaded
         void fillHistos_non_mt();
         void fillHistos_mt();
@@ -132,6 +134,8 @@ class AnalysisHelper
 
         bool    multithreaded_;
         uint8_t numberOfThreads_;
+
+        std::unordered_map<std::string, std::string> weight_aliases_;
 };
 
 // used to access the variant that stores weights and variables

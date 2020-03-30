@@ -148,7 +148,7 @@ bool Sample::openFileAndTree(const std::vector<Selection> &selections)
     // cout << "  ---> success, tree contains " << nentries_ << " entries" << endl;
 }
 
-void Sample::scaleAll(double luminosity)
+void Sample::scaleAll(double luminosity, const std::unordered_map<std::string, std::string>& denomBinNameMap)
 {
     
     hCutInSkim_->Scale(luminosity/evt_den_map_["Ntot_w"]);
@@ -165,9 +165,14 @@ void Sample::scaleAll(double luminosity)
                 // cout << "isyst " << isyst << "/" << plots_.at(isel).at(ivar).size() << endl;
                 // cout << " >>>>> : >>>>> scaling histo " << plots_.at(isel).at(ivar).at(isyst)->GetName() << " integral = " << plots_.at(isel).at(ivar).at(isyst)->Integral() << " by " << scale << endl;
                 double_t scale;
-                if(evt_den_map_.find(plots_.at(isel).at(ivar).key(isyst))!=evt_den_map_.end())
+
+                string this_key = plots_.at(isel).at(ivar).key(isyst);
+
+                // the first check on denomBinNameMap is to skip the "NOMINAL" isyst
+                // this function is called a few times so performance of find is not an issue
+                if (denomBinNameMap.find(this_key) != denomBinNameMap.end() && evt_den_map_.find(denomBinNameMap.at(this_key)) != evt_den_map_.end())
                 {
-                    scale = luminosity/evt_den_map_[plots_.at(isel).at(ivar).key(isyst)];
+                    scale = luminosity/evt_den_map_[denomBinNameMap.at(this_key)];
                 }
                 else
                 {

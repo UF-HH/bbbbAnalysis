@@ -554,7 +554,7 @@ void OfflineProducerHelper::initializeObjectsForEventWeight(OutputTree &ot, Skim
 
 }
 
-float OfflineProducerHelper::calculateEventWeight_AllWeights(NanoAODTree& nat, EventInfo& ei, OutputTree &ot, SkimEffCounter &ec)
+float OfflineProducerHelper::calculateEventWeight_AllWeights(NanoAODTree& nat, EventInfo& ei,  OutputTree &ot, SkimEffCounter &ec)
 {
 
     for(auto & weight : weightMap_)
@@ -703,8 +703,6 @@ float OfflineProducerHelper::calculateEventWeight_AllWeights(NanoAODTree& nat, E
         eventWeight *= w;
     }
 
-    //Check only for NLO-HH samples
-    if( any_cast<bool>(parameterList_->at("is_NLO_sig")) && abs(eventWeight) > 0.5) return eventWeight;
 
     //calculate bins for weights variations
     for(auto & weight : weightMap_)
@@ -718,6 +716,60 @@ float OfflineProducerHelper::calculateEventWeight_AllWeights(NanoAODTree& nat, E
     return eventWeight;
 
 }
+
+
+bool OfflineProducerHelper::checkEventWeight(NanoAODTree& nat, OutputTree &ot, SkimEffCounter &ec)
+{
+
+    float eventWeight = 1.; 
+    float tmpWeight = 1.;
+    bool pass;
+    std::string branchName;
+
+    // PUWeight need get pu from histograms
+    branchName = "PUWeight";
+    float eventPU = *(nat.Pileup_nTrueInt);
+    for(const auto & puWeightBin : PUWeightMap_[branchName])
+    {
+        if(eventPU >= puWeightBin.first.first && eventPU < puWeightBin.first.second)
+        {
+            tmpWeight = puWeightBin.second;
+            break;
+        }
+    }
+    tmpWeight = tmpWeight==0 ? 1 : tmpWeight; //set to 1 if weight is 0
+    eventWeight *= tmpWeight;
+    //genWeight (no weight variations)
+    branchName = "genWeight";
+    float genWeight = *(nat.genWeight);
+    tmpWeight = genWeight;
+    tmpWeight = tmpWeight==0 ? 1 : tmpWeight; //set to 1 if weight is 0
+    eventWeight *= tmpWeight;
+    // LHEPdfWeight
+    branchName = "LHEPdfWeight";
+    tmpWeight = 1.;
+    tmpWeight = tmpWeight==0 ? 1 : tmpWeight; //set to 1 if weight is 0
+    eventWeight *= tmpWeight;
+    // LHEScaleWeight
+    branchName = "LHEScaleWeight";
+    tmpWeight = 1;
+    tmpWeight = tmpWeight==0 ? 1 : tmpWeight; //set to 1 if weight is 0
+    eventWeight *= tmpWeight;
+    // PSWeight
+    branchName = "PSWeight";
+    tmpWeight = 1;
+    tmpWeight = tmpWeight==0 ? 1 : tmpWeight; //set to 1 if weight is 0
+    eventWeight *= tmpWeight;
+
+    //Check only for NLO-HH samples
+    if( abs(eventWeight) > 0.5) pass = false;
+    else pass = true;
+
+    return pass;
+
+}
+
+
 
 // ----------------- Compute shape weights - END ----------------- //
 

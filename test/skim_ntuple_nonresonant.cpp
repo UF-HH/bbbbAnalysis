@@ -422,7 +422,12 @@ int main(int argc, char** argv)
         if (is_data && !jlf.isValid(*nat.run, *nat.luminosityBlock)){
             continue; // not a valid lumi
         }
-              
+        
+        //To address problem in NLO signal genweight      
+        bool weight_check = true;      
+        if(!is_data && is_NLO_sig) weight_check = oph.checkEventWeight(nat, ot, ec);
+        if(!weight_check) continue;
+
         ot.clear();
         EventInfo ei;
 
@@ -441,8 +446,6 @@ int main(int argc, char** argv)
         
         double weight = 1.;
         if(!is_data) weight = oph.calculateEventWeight(nat, ei, ot, ec);
-
-        if(!is_data && is_NLO_sig && abs(weight)>0.5) continue; //To temporaly address problem in NLO signal genweight
 
         ec.updateProcessed(weight);
 

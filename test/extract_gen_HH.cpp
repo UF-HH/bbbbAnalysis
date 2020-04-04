@@ -147,6 +147,10 @@ int main(int argc, char** argv)
     float gen_costh_H1_cm;
     float gen_costh_H2_cm;
 
+    float LHE_weight;
+    float gen_weight;
+    float LHE_Njets;
+
     // branches
     tOut->Branch("gen_H1_m",   &gen_H1_m);
     tOut->Branch("gen_H1_pt",  &gen_H1_pt);
@@ -163,6 +167,10 @@ int main(int argc, char** argv)
     tOut->Branch("gen_mHH",         &gen_mHH);
     tOut->Branch("gen_costh_H1_cm", &gen_costh_H1_cm);
     tOut->Branch("gen_costh_H2_cm", &gen_costh_H2_cm);
+
+    tOut->Branch("LHE_weight", &LHE_weight);
+    tOut->Branch("gen_weight", &gen_weight);
+    tOut->Branch("LHE_Njets",  &LHE_Njets);
 
     std::vector<float>  klambdas_branch(klambdas.size());
     std::vector<string> klambdas_names(klambdas.size());
@@ -215,6 +223,10 @@ int main(int argc, char** argv)
         if (iEv % 10000 == 0) cout << "... processing event " << iEv << endl;
               
         EventInfo ei;
+
+        LHE_weight = *(nat.LHEWeight_originalXWGTUP);
+        gen_weight = *(nat.genWeight);
+        LHE_Njets  = *(nat.LHE_Njets);
 
         oph.select_gen_HH(nat, ei);
         // oph.select_gen_bb_bb(nat, ei);            

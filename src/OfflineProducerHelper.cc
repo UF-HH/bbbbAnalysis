@@ -2397,6 +2397,9 @@ void OfflineProducerHelper::AddVBFCategoryVariables(NanoAODTree& nat, EventInfo&
        ei.hhj1_deltaEta = abs( ei.HH->P4().Eta() - ei.JJ_j1->P4().Eta());
        ei.hhj2_deltaEta = abs( ei.HH->P4().Eta() - ei.JJ_j2->P4().Eta());
        ei.hhjj_deltaEta = abs( ei.HH->P4().Eta() - ei.JJ->P4().Eta());
+
+       ei.hhjj_pt       = (ei.HH->P4() + ei.JJ->P4()).Pt();
+
        //VBF-jet location categories
        if ( abs( ei.JJ_j1->P4().Eta()) < 1.4){ei.JJ_j1_location=1;}
        else if ( abs( ei.JJ_j1->P4().Eta()) >= 1.4 && abs( ei.JJ_j1->P4().Eta()) < 2.4){ei.JJ_j1_location=2;}

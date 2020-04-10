@@ -307,6 +307,7 @@ void SkimUtils::fill_output_tree(OutputTree& ot, NanoAODTree& nat, EventInfo& ei
     if( ei.hhj1_deltaEta) ot.hhj1_deltaEta = *ei.hhj1_deltaEta; 
     if( ei.hhj2_deltaEta) ot.hhj2_deltaEta = *ei.hhj2_deltaEta; 
     if( ei.hhjj_deltaEta) ot.hhjj_deltaEta = *ei.hhjj_deltaEta;
+    if( ei.hhjj_pt)       ot.hhjj_pt       = *ei.hhjj_pt;
     if(ei.VBFEvent) ot.VBFEvent  = *ei.VBFEvent;
     if(ei.nBtag) ot.nBtag  = *ei.nBtag;
     if(ei.VBFEventLocation) ot.VBFEventLocation  = *ei.VBFEventLocation;

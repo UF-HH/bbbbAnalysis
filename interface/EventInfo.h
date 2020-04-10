@@ -253,7 +253,8 @@ struct EventInfo{
     boost::optional<float> h2jj_deltaEta; 
     boost::optional<float> hhj1_deltaEta; 
     boost::optional<float> hhj2_deltaEta; 
-    boost::optional<float> hhjj_deltaEta; 
+    boost::optional<float> hhjj_deltaEta;
+    boost::optional<float> hhjj_pt;
     boost::optional<float> costh_H1_vbfcm   ;
     boost::optional<float> costh_H2_vbfcm   ;
     boost::optional<float> costh_HH_vbfcm   ;
@@ -319,6 +320,7 @@ struct EventInfo{
     boost::optional<float> BDT3cat1;
     boost::optional<float> BDT3cat2;
     boost::optional<int> nPVgood;   
+
     //TTEMU Events
     boost::optional<Jet> TT_b1;
     boost::optional<Jet> TT_b2;

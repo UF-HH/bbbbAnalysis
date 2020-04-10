@@ -424,6 +424,7 @@ class OutputTree {
         float hhj1_deltaEta; 
         float hhj2_deltaEta; 
         float hhjj_deltaEta;    
+        float hhjj_pt;
     private:
         void init_branches();
         std::unique_ptr<TTree> tree_;

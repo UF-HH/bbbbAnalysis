@@ -267,6 +267,7 @@ void OutputTree::init_branches()
     tree_->Branch("hhj1_deltaEta",&hhj1_deltaEta); 
     tree_->Branch("hhj2_deltaEta",&hhj2_deltaEta); 
     tree_->Branch("hhjj_deltaEta",&hhjj_deltaEta);
+    tree_->Branch("hhjj_pt",      &hhjj_pt);
     tree_->Branch("VBFEvent", &VBFEvent);
     tree_->Branch("nBtag", &nBtag);
     tree_->Branch("VBFEventLocation", &VBFEventLocation);
@@ -660,6 +661,7 @@ void OutputTree::clear()
     hhj1_deltaEta = 0.; 
     hhj2_deltaEta = 0.; 
     hhjj_deltaEta = 0.;
+    hhjj_pt       = 0.;
     costh_H1_vbfcm=0;       
     costh_H2_vbfcm=0;   
     costh_HH_vbfcm=0;   

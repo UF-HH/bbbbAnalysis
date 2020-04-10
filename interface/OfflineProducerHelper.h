@@ -252,6 +252,8 @@ class OfflineProducerHelper{
         std::function<float (NanoAODTree&,  EventInfo& ei, OutputTree&, SkimEffCounter &ec)> calculateEventWeight;
         // reject events with leptons that may come from W and Z decays
         float calculateEventWeight_AllWeights(NanoAODTree& nat, EventInfo& ei, OutputTree &ot, SkimEffCounter &ec);
+        // reject nlo-hh events with large weights |w|>0.1
+        bool checkEventWeight(NanoAODTree& nat, OutputTree &ot, SkimEffCounter &ec);
         
 
         void initializeObjectsBJetForScaleFactors(OutputTree &ot);

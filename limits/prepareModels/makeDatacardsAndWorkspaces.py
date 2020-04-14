@@ -118,7 +118,6 @@ apply_rename(process_rename, bkgs)
 ## processes are matched with wildcards
 systs = collections.OrderedDict()
 for line in cfgparser.items('datacard_systematics'):
-    print line
     systs[line[0]] = ast.literal_eval(line[1])
 
 # ############################################################################################

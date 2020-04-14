@@ -164,7 +164,7 @@ for categ in categories:
     # for data in datas: writeln    (fcard, 'shapes %s bin1 %s %s'%(data,inputfile,data) )
     # for bkg  in bkgs : writeln    (fcard, 'shapes %s bin1 %s %s'%(bkg,inputfile,bkg) )
     # for sig  in sigs : writeln    (fcard, 'shapes %s bin1 %s %s'%(sig,inputfile,sig) )
-    writeln    (fcard, 'shapes * bin1 %s $PROCESS $PROCESS_$SYSTEMATIC'%(inputfile) )
+    writeln    (fcard, 'shapes * %s %s $PROCESS $PROCESS_$SYSTEMATIC'%(categ, inputfile) )
 
 
     # if args.QCDsyst: writeln    (fcard, 'shapes QCD bin1 {} {} {}'.format(fIn_name, hname, hname + "_$SYSTEMATIC"))
@@ -172,7 +172,7 @@ for categ in categories:
 
     writeln    (fcard, '----------------------------------------------------------------------------------------------------------------------------------')
     ## observation
-    writelnarr (fcard, ('bin', 'bin1'))
+    writelnarr (fcard, ('bin', categ))
     writelnarr (fcard, ('observation', '-1'))
     writeln    (fcard, '----------------------------------------------------------------------------------------------------------------------------------')
     writeln    (fcard, '# list the expected events for signal and all backgrounds in that bin')
@@ -180,7 +180,7 @@ for categ in categories:
     nsig = len(sigs)
     nbkg = len(bkgs)
     ntot = nsig + nbkg
-    writelnarr (fcard, ['bin'] + (['bin1',]*ntot) , addEmptyAtIdx=1)
+    writelnarr (fcard, ['bin'] + ([categ,]*ntot) , addEmptyAtIdx=1)
     writelnarr (fcard, ['process'] + sigs + bkgs ,  addEmptyAtIdx=1)
     writelnarr (fcard, ['process'] + range(-len(sigs)+1, 1) + range(1, len(bkgs)+1), addEmptyAtIdx=1)
     writelnarr (fcard, ['rate']
@@ -210,6 +210,8 @@ for categ in categories:
         for proc in sigs + bkgs: ## loop through the datacard columns
             iaffect = []
             for idx, el in enumerate(elemts):
+                if len(el) > 2 and not fnmatch.fnmatch(categ, el[2]):
+                        continue # does not apply to this category
                 if fnmatch.fnmatch(proc, el[0]):
                     iaffect.append(idx)
             ## multiple assignments?

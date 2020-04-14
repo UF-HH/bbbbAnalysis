@@ -25,7 +25,7 @@ def get_histo (fIn, proc, selection, var):
 def writeln (f, txt):
     f.write(txt + '\n')
 
-def writelnarr(f, txtarr, align='{:>25}', firstAlign = '{:<18}', secondAlign = '{:<6}', addEmptyAtIdx = None):
+def writelnarr(f, txtarr, align='{:>25}', firstAlign = '{:<35}', secondAlign = '{:<6}', addEmptyAtIdx = None):
     if addEmptyAtIdx:
         txtarr = txtarr[0:addEmptyAtIdx] + [''] + txtarr[addEmptyAtIdx:]
     str_proto = ''
@@ -81,9 +81,12 @@ parser.add_argument('--no-comb',   dest='docombination',  help='Do not make the 
 parser.add_argument('--no-bbb',    dest='dobbb',          help='Do not add the bin-by-bin uncs',            action='store_false', default=True)
 args = parser.parse_args()
 configfilename = args.cfgfile
+
 print "[INFO] Reading configuration file "
 cfgparser = ConfigParser()
+cfgparser.optionxform = lambda option: option # preserve lower-upper case
 cfgparser.read('%s'%configfilename)
+
 categandobs = ast.literal_eval(cfgparser.get("configuration","categandobs"))
 ##########Get variables for datacard preparation
 folder       = ast.literal_eval(cfgparser.get("configuration","folder"))
@@ -107,61 +110,24 @@ apply_rename(process_rename, datas)
 apply_rename(process_rename, sigs)
 apply_rename(process_rename, bkgs)
 
+## parse systematics from cfg
+##
 ## SYSTEMATICS - list the name and the process affected by how much
 ## syst types that have 'fromInput:lnN' are read from the matching name and converted to lnN
 ## syst types that have 'fromInput:shape' are read from the matching name and set as shape unc.
 ## processes are matched with wildcards
 systs = collections.OrderedDict()
-# systs['bTag'    ] = ['lnN' , ('qqHH_CV_*', '1.086'), ('ggHH_kl_*', '1.086') ]
-# systs['JER'     ] = ['lnN' , ('qqHH_CV_*', '1.021'), ('ggHH_kl_*', '1.021') ]
-# systs['JEC'     ] = ['lnN' , ('qqHH_CV_*', '1.029'), ('ggHH_kl_*', '1.029') ]
-# systs['trigger' ] = ['lnN' , ('qqHH_CV_*', '1.10'), ('ggHH_kl_*', '1.10') ]
-# systs['PDF'     ] = ['lnN' , ('qqHH_CV_*', '1.035'), ('ggHH_kl_*', '1.035') ]
-# systs['xS'      ] = ['lnN' , ('qqHH_CV_*', '1.050'), ('ggHH_kl_*', '1.050') ]
-# systs['xB'      ] = ['lnN' , ('MODEL*', '1.050')]
-###
-# systs['RelativeStatHF'  ] = ['fromInput:lnN' ,   ('qqHH_CV_*', None),  ('ggHH_kl_*', None) ]
-# systs['Fragmentation'  ]  = ['fromInput:shape' , ('qqHH_CV_*', '1'),   ('ggHH_kl_*', '1') ]
+for line in cfgparser.items('datacard_systematics'):
+    print line
+    systs[line[0]] = ast.literal_eval(line[1])
 
+# ############################################################################################
 
-systs['cms_bngnorm' ]    = ['lnN' , ('MODEL*', '1.050')]
-#
-systs['cms_lumi'    ]    = ['lnN' , ('qqHH_CV_*', '1.025'), ('ggHH_kl_*', '1.025') ]
-systs['cms_trigger' ]    = ['lnN' , ('qqHH_CV_*', '1.10'), ('ggHH_kl_*', '1.10') ]
-#
-systs['cms_btag_b'    ]  = ['fromInput:lnN', ('qqHH_CV_*', None),  ('ggHH_kl_*', None) ]
-systs['cms_btag_c'    ]  = ['fromInput:lnN', ('qqHH_CV_*', None),  ('ggHH_kl_*', None) ]
-systs['cms_btag_udsg' ]  = ['fromInput:lnN', ('qqHH_CV_*', None),  ('ggHH_kl_*', None) ]
-###
-systs['cms_PU'        ]  = ['fromInput:lnN', ('qqHH_CV_*', None),  ('ggHH_kl_*', None) ]
-###
-systs['AbsoluteMPFBias'    ] = ['fromInput:lnN', ('qqHH_CV_*', None),  ('ggHH_kl_*', None) ]
-systs['AbsoluteScale'      ] = ['fromInput:lnN', ('qqHH_CV_*', None),  ('ggHH_kl_*', None) ]
-systs['AbsoluteStat'       ] = ['fromInput:lnN', ('qqHH_CV_*', None),  ('ggHH_kl_*', None) ]
-systs['FlavorQCD'          ] = ['fromInput:lnN', ('qqHH_CV_*', None),  ('ggHH_kl_*', None) ]
-systs['Fragmentation'      ] = ['fromInput:lnN', ('qqHH_CV_*', None),  ('ggHH_kl_*', None) ]
-systs['PileUpDataMC'       ] = ['fromInput:lnN', ('qqHH_CV_*', None),  ('ggHH_kl_*', None) ]
-systs['PileUpPtBB'         ] = ['fromInput:lnN', ('qqHH_CV_*', None),  ('ggHH_kl_*', None) ]
-systs['PileUpPtEC1'        ] = ['fromInput:lnN', ('qqHH_CV_*', None),  ('ggHH_kl_*', None) ]
-systs['PileUpPtEC2'        ] = ['fromInput:lnN', ('qqHH_CV_*', None),  ('ggHH_kl_*', None) ]
-systs['PileUpPtHF'         ] = ['fromInput:lnN', ('qqHH_CV_*', None),  ('ggHH_kl_*', None) ]
-systs['PileUpPtRef'        ] = ['fromInput:lnN', ('qqHH_CV_*', None),  ('ggHH_kl_*', None) ]
-systs['RelativeFSR'        ] = ['fromInput:lnN', ('qqHH_CV_*', None),  ('ggHH_kl_*', None) ]
-systs['RelativeJEREC1'     ] = ['fromInput:lnN', ('qqHH_CV_*', None),  ('ggHH_kl_*', None) ]
-systs['RelativeJEREC2'     ] = ['fromInput:lnN', ('qqHH_CV_*', None),  ('ggHH_kl_*', None) ]
-systs['RelativeJERHF'      ] = ['fromInput:lnN', ('qqHH_CV_*', None),  ('ggHH_kl_*', None) ]
-systs['RelativePtBB'       ] = ['fromInput:lnN', ('qqHH_CV_*', None),  ('ggHH_kl_*', None) ]
-systs['RelativePtEC1'      ] = ['fromInput:lnN', ('qqHH_CV_*', None),  ('ggHH_kl_*', None) ]
-systs['RelativePtEC2'      ] = ['fromInput:lnN', ('qqHH_CV_*', None),  ('ggHH_kl_*', None) ]
-systs['RelativePtHF'       ] = ['fromInput:lnN', ('qqHH_CV_*', None),  ('ggHH_kl_*', None) ]
-systs['RelativeBal'        ] = ['fromInput:lnN', ('qqHH_CV_*', None),  ('ggHH_kl_*', None) ]
-systs['RelativeSample'     ] = ['fromInput:lnN', ('qqHH_CV_*', None),  ('ggHH_kl_*', None) ]
-systs['RelativeStatEC'     ] = ['fromInput:lnN', ('qqHH_CV_*', None),  ('ggHH_kl_*', None) ]
-systs['RelativeStatFSR'    ] = ['fromInput:lnN', ('qqHH_CV_*', None),  ('ggHH_kl_*', None) ]
-systs['RelativeStatHF'     ] = ['fromInput:lnN', ('qqHH_CV_*', None),  ('ggHH_kl_*', None) ]
-systs['SinglePionECAL'     ] = ['fromInput:lnN', ('qqHH_CV_*', None),  ('ggHH_kl_*', None) ]
-systs['SinglePionHCAL'     ] = ['fromInput:lnN', ('qqHH_CV_*', None),  ('ggHH_kl_*', None) ]
-systs['TimePtEta'          ] = ['fromInput:lnN', ('qqHH_CV_*', None),  ('ggHH_kl_*', None) ]
+groups = collections.OrderedDict()
+for line in cfgparser.items('datacard_groups'):
+    groups[line[0]] = ast.literal_eval(line[1])
+
+############################################################################################
 
 syst_lnN_prune_value   = 0.01 # None to skip
 
@@ -170,8 +136,8 @@ print "[INFO] systs from histos ignored if error is less than", syst_lnN_prune_v
 ##################################################################################
 # filter systematics
 
-frominput_shape_syst = [x for x in systs.keys() if 'fromInput:shape' in systs[x][0]]
-frominput_lnN_syst   = [x for x in systs.keys() if 'fromInput:lnN'   in systs[x][0]]
+# frominput_shape_syst = [x for x in systs.keys() if 'fromInput:shape' in systs[x][0]]
+# frominput_lnN_syst   = [x for x in systs.keys() if 'fromInput:lnN'   in systs[x][0]]
 
 # print frominput_shape_syst
 # print frominput_lnN_syst
@@ -228,7 +194,7 @@ for categ in categories:
         elemts = systs[syst_source][1:]
         
         ln_from_histo    = False
-        shape_from_histo = False
+        # shape_from_histo = False
 
         if not affects_any(syst_source, systs, sigs + bkgs):
             continue    
@@ -238,7 +204,7 @@ for categ in categories:
             ln_from_histo = True
         if sytype == 'fromInput:shape':
             sytype           = 'shape'
-            shape_from_histo = True
+            # shape_from_histo = True
 
         line_tokens = [syst_source, sytype]
 
@@ -270,6 +236,10 @@ for categ in categories:
             print "... [INFO] : systematics   {:<30} has no effects and will be removed".format(line_tokens[0])
             continue
         writelnarr (fcard, line_tokens)
+
+    for idx, (grname, grelems) in enumerate(groups.items()):
+        if idx == 0: writeln (fcard, '')
+        writeln (fcard, '{} group = {}'.format(grname, ' '.join(grelems)))
 
     if args.dobbb:
         writeln (fcard, '')

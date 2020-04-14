@@ -69,6 +69,10 @@ def combine_histos_maxmin (histo_list, h_nominal, name):
 	return (h_up, h_dn)
 
 
+def get_h_nominal_name(process, categ, obs):
+	s = "{process}/Btag4_{categ}_SR_110_Histogram/{process}_Btag4_{categ}_SR_110_Histogram_{obs}".format(process=process, categ=categ, obs=obs)
+	return s
+
 def RunPreparation(dataset,directory,processes,categandobs,tag, process_rename, syst_list, syst_to_comb):
 	#Get root file
 	# file = ROOT.TFile.Open("../../MyHistos/%s/outPlotter.root"%directory)
@@ -82,12 +86,11 @@ def RunPreparation(dataset,directory,processes,categandobs,tag, process_rename, 
 			#Get histograms
 			# h=ROOT.TH1F()
 			#print "%s/Btag4_%s_SR_110_Histogram/%s_Btag4_%s_SR_110_Histogram_%s"%(process,categandobs[k][0],process,categandobs[k][0],categandobs[k][1])
-			h = file.Get("%s/Btag4_%s_SR_110_Histogram/%s_Btag4_%s_SR_110_Histogram_%s"%(process,categandobs[k][0],process,categandobs[k][0],categandobs[k][1]) ) 
+			
+			h = file.Get(get_h_nominal_name(process, categandobs[k][0], categandobs[k][1])) 
 			
 			newname = process if process not in process_rename else process_rename[process]
 			h.SetName("%s" % newname)
-
-			h_nominal = h # for systematics after
 
 			#Write data and bkg:
 			h.Write()
@@ -96,6 +99,8 @@ def RunPreparation(dataset,directory,processes,categandobs,tag, process_rename, 
 		for process in processes:
 			newname = process if process not in process_rename else process_rename[process]
 			
+			h_nominal = file.Get(get_h_nominal_name(process, categandobs[k][0], categandobs[k][1]))
+
 			# parsing the input systematics
 			for sys_desc in syst_list:
 				sys_name    = sys_desc[0]
@@ -177,9 +182,14 @@ def RunPreparation(dataset,directory,processes,categandobs,tag, process_rename, 
 				else:
 					raise RuntimeError('the combination type -%s- is not implemented' % comb_desc['combine'])
 
-				h_up   .SetName(outname_proto.format(sample=process, syst=comb_desc['name'], Dir='Up'))
-				h_down .SetName(outname_proto.format(sample=process, syst=comb_desc['name'], Dir='Down'))
+				h_up   .SetName(outname_proto.format(sample=newname, syst=comb_desc['name'], Dir='Up'))
+				h_down .SetName(outname_proto.format(sample=newname, syst=comb_desc['name'], Dir='Down'))
 				
+				# print " --------- ", process,categandobs[k][0],process,categandobs[k][0],categandobs[k][1]
+				# print h_nominal.GetName(), h_nominal.Integral()
+				# print h_up.GetName(), h_up.Integral()
+				# print h_down.GetName(), h_down.Integral()
+
 				h_up   .Write()
 				h_down .Write()
 

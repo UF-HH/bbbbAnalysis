@@ -2304,10 +2304,10 @@ void OfflineProducerHelper::AddInclusiveCategoryVariables(NanoAODTree& nat, Even
        ei.HH_2DdeltaM  = pow(ei.H1rand->P4().M() - mHHcenter,2) + pow(ei.H2rand->P4().M() - mHHcenter,2);
        //dR,dPhi and dEta between pair b's
        ei.H1_bb_deltaR = ei.H1_b1->P4().DeltaR(ei.H1_b2->P4());
-       ei.H1_bb_deltaPhi = ei.H1_b1->P4().DeltaPhi(ei.H1_b2->P4());
+       ei.H1_bb_deltaPhi = abs(ei.H1_b1->P4().DeltaPhi(ei.H1_b2->P4()));
        ei.H1_bb_deltaEta = abs(ei.H1_b1->P4().Eta() - ei.H1_b2->P4().Eta() );
        ei.H2_bb_deltaR = ei.H2_b1->P4().DeltaR(ei.H2_b2->P4());
-       ei.H2_bb_deltaPhi = ei.H2_b1->P4().DeltaPhi(ei.H2_b2->P4());
+       ei.H2_bb_deltaPhi = abs(ei.H2_b1->P4().DeltaPhi(ei.H2_b2->P4()));
        ei.H2_bb_deltaEta = abs(ei.H2_b1->P4().Eta() - ei.H2_b2->P4().Eta() );
        //Special variables:deltaR between jets
        ei.b1b2_deltaR = ei.HH_b1->P4().DeltaR(ei.HH_b2->P4());
@@ -2316,12 +2316,12 @@ void OfflineProducerHelper::AddInclusiveCategoryVariables(NanoAODTree& nat, Even
        ei.b2b3_deltaR = ei.HH_b2->P4().DeltaR(ei.HH_b3->P4());
        ei.b2b4_deltaR = ei.HH_b2->P4().DeltaR(ei.HH_b4->P4());
        ei.b3b4_deltaR = ei.HH_b3->P4().DeltaR(ei.HH_b4->P4());
-       ei.b1b2_deltaPhi = ei.HH_b1->P4().DeltaPhi(ei.HH_b2->P4());
-       ei.b1b3_deltaPhi = ei.HH_b1->P4().DeltaPhi(ei.HH_b3->P4());
-       ei.b1b4_deltaPhi = ei.HH_b1->P4().DeltaPhi(ei.HH_b4->P4());
-       ei.b2b3_deltaPhi = ei.HH_b2->P4().DeltaPhi(ei.HH_b3->P4());
-       ei.b2b4_deltaPhi = ei.HH_b2->P4().DeltaPhi(ei.HH_b4->P4());
-       ei.b3b4_deltaPhi = ei.HH_b3->P4().DeltaPhi(ei.HH_b4->P4());
+       ei.b1b2_deltaPhi = abs(ei.HH_b1->P4().DeltaPhi(ei.HH_b2->P4()));
+       ei.b1b3_deltaPhi = abs(ei.HH_b1->P4().DeltaPhi(ei.HH_b3->P4()));
+       ei.b1b4_deltaPhi = abs(ei.HH_b1->P4().DeltaPhi(ei.HH_b4->P4()));
+       ei.b2b3_deltaPhi = abs(ei.HH_b2->P4().DeltaPhi(ei.HH_b3->P4()));
+       ei.b2b4_deltaPhi = abs(ei.HH_b2->P4().DeltaPhi(ei.HH_b4->P4()));
+       ei.b3b4_deltaPhi = abs(ei.HH_b3->P4().DeltaPhi(ei.HH_b4->P4()));
        ei.b1b2_deltaEta = abs(ei.HH_b1->P4().Eta() - ei.HH_b2->P4().Eta() );
        ei.b1b3_deltaEta = abs(ei.HH_b1->P4().Eta() - ei.HH_b3->P4().Eta() );
        ei.b1b4_deltaEta = abs(ei.HH_b1->P4().Eta() - ei.HH_b4->P4().Eta() );
@@ -2329,8 +2329,8 @@ void OfflineProducerHelper::AddInclusiveCategoryVariables(NanoAODTree& nat, Even
        ei.b2b4_deltaEta = abs(ei.HH_b2->P4().Eta() - ei.HH_b4->P4().Eta() );
        ei.b3b4_deltaEta = abs(ei.HH_b3->P4().Eta() - ei.HH_b4->P4().Eta() );
        //Special variables between Higgses
-       ei.h1h2_deltaR = ei.H1->P4().DeltaR(ei.H2->P4());
-       ei.h1h2_deltaPhi = abs(ei.H1->P4().DeltaPhi(ei.H2->P4())) ;
+       ei.h1h2_deltaR   = ei.H1->P4().DeltaR(ei.H2->P4());
+       ei.h1h2_deltaPhi = abs(ei.H1->P4().DeltaPhi(ei.H2->P4()));
        ei.h1h2_deltaEta = abs( ei.H1->P4().Eta() - ei.H2->P4().Eta());
        //Number of jets (bMinPt,bMaxAbsEta)
        int njec=0,njhf=0;
@@ -2398,15 +2398,15 @@ void OfflineProducerHelper::AddVBFCategoryVariables(NanoAODTree& nat, EventInfo&
        ei.b4j2_deltaR = ei.HH_b4->P4().DeltaR(ei.JJ_j2->P4());
        ei.j1j2_deltaR = ei.JJ_j1->P4().DeltaR(ei.JJ_j2->P4());
        //Special variables:deltaPhi between jets
-       ei.b1j1_deltaPhi = ei.HH_b1->P4().DeltaPhi(ei.JJ_j1->P4());
-       ei.b1j2_deltaPhi = ei.HH_b1->P4().DeltaPhi(ei.JJ_j2->P4());
-       ei.b2j1_deltaPhi = ei.HH_b2->P4().DeltaPhi(ei.JJ_j1->P4());
-       ei.b2j2_deltaPhi = ei.HH_b2->P4().DeltaPhi(ei.JJ_j2->P4());
-       ei.b3j1_deltaPhi = ei.HH_b3->P4().DeltaPhi(ei.JJ_j1->P4());
-       ei.b3j2_deltaPhi = ei.HH_b3->P4().DeltaPhi(ei.JJ_j2->P4());
-       ei.b4j1_deltaPhi = ei.HH_b4->P4().DeltaPhi(ei.JJ_j1->P4());
-       ei.b4j2_deltaPhi = ei.HH_b4->P4().DeltaPhi(ei.JJ_j2->P4());
-       ei.j1j2_deltaPhi = ei.JJ_j1->P4().DeltaPhi(ei.JJ_j2->P4());
+       ei.b1j1_deltaPhi = abs(ei.HH_b1->P4().DeltaPhi(ei.JJ_j1->P4()));
+       ei.b1j2_deltaPhi = abs(ei.HH_b1->P4().DeltaPhi(ei.JJ_j2->P4()));
+       ei.b2j1_deltaPhi = abs(ei.HH_b2->P4().DeltaPhi(ei.JJ_j1->P4()));
+       ei.b2j2_deltaPhi = abs(ei.HH_b2->P4().DeltaPhi(ei.JJ_j2->P4()));
+       ei.b3j1_deltaPhi = abs(ei.HH_b3->P4().DeltaPhi(ei.JJ_j1->P4()));
+       ei.b3j2_deltaPhi = abs(ei.HH_b3->P4().DeltaPhi(ei.JJ_j2->P4()));
+       ei.b4j1_deltaPhi = abs(ei.HH_b4->P4().DeltaPhi(ei.JJ_j1->P4()));
+       ei.b4j2_deltaPhi = abs(ei.HH_b4->P4().DeltaPhi(ei.JJ_j2->P4()));
+       ei.j1j2_deltaPhi = abs(ei.JJ_j1->P4().DeltaPhi(ei.JJ_j2->P4()));
        //Special variables:deltaEta between jets
        ei.b1j1_deltaEta = abs(ei.HH_b1->P4().Eta() - ei.JJ_j1->P4().Eta() );
        ei.b1j2_deltaEta = abs(ei.HH_b1->P4().Eta() - ei.JJ_j2->P4().Eta() );
@@ -2430,15 +2430,15 @@ void OfflineProducerHelper::AddVBFCategoryVariables(NanoAODTree& nat, EventInfo&
        ei.hhj2_deltaR = ei.HH->P4().DeltaR(ei.JJ_j2->P4());
        ei.hhjj_deltaR = ei.HH->P4().DeltaR(ei.JJ->P4());
        //Special variables: deltaPhi between h1,h2,j1,j2,HH,JJ
-       ei.h1j1_deltaPhi = ei.H1->P4().DeltaPhi(ei.JJ_j1->P4());
-       ei.h1j2_deltaPhi = ei.H1->P4().DeltaPhi(ei.JJ_j2->P4());
-       ei.h2j1_deltaPhi = ei.H2->P4().DeltaPhi(ei.JJ_j1->P4());
-       ei.h2j2_deltaPhi = ei.H2->P4().DeltaPhi(ei.JJ_j2->P4());
-       ei.h1jj_deltaPhi = ei.H1->P4().DeltaPhi(ei.JJ->P4());
-       ei.h2jj_deltaPhi = ei.H2->P4().DeltaPhi(ei.JJ->P4());
-       ei.hhj1_deltaPhi = ei.HH->P4().DeltaPhi(ei.JJ_j1->P4());
-       ei.hhj2_deltaPhi = ei.HH->P4().DeltaPhi(ei.JJ_j2->P4());
-       ei.hhjj_deltaPhi = ei.HH->P4().DeltaPhi(ei.JJ->P4());
+       ei.h1j1_deltaPhi = abs(ei.H1->P4().DeltaPhi(ei.JJ_j1->P4()));
+       ei.h1j2_deltaPhi = abs(ei.H1->P4().DeltaPhi(ei.JJ_j2->P4()));
+       ei.h2j1_deltaPhi = abs(ei.H2->P4().DeltaPhi(ei.JJ_j1->P4()));
+       ei.h2j2_deltaPhi = abs(ei.H2->P4().DeltaPhi(ei.JJ_j2->P4()));
+       ei.h1jj_deltaPhi = abs(ei.H1->P4().DeltaPhi(ei.JJ->P4()));
+       ei.h2jj_deltaPhi = abs(ei.H2->P4().DeltaPhi(ei.JJ->P4()));
+       ei.hhj1_deltaPhi = abs(ei.HH->P4().DeltaPhi(ei.JJ_j1->P4()));
+       ei.hhj2_deltaPhi = abs(ei.HH->P4().DeltaPhi(ei.JJ_j2->P4()));
+       ei.hhjj_deltaPhi = abs(ei.HH->P4().DeltaPhi(ei.JJ->P4()));
        //Special variables: deltaEta between h1,h2,j1,j2,HH,JJ
        ei.h1j1_deltaEta = abs( ei.H1->P4().Eta() - ei.JJ_j1->P4().Eta());
        ei.h1j2_deltaEta = abs( ei.H1->P4().Eta() - ei.JJ_j2->P4().Eta());

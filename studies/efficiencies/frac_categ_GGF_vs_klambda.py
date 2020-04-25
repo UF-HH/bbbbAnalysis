@@ -3,23 +3,30 @@ import effutils.HHscalings  as hhs
 import ROOT
 import numpy as np
 import sys
+import sympy
 
 ROOT.gROOT.SetBatch(True)
 
-year      = 2018 ## used for the oname
-title     = "ggF signal, 2018 simulation"
-folder_in = '/uscms/home/guerrero/nobackup/Run2/HH2019/Fall2019/CMSSW_10_2_5/src/bbbbAnalysis/MyHistos/Histos2018'
+plottype = 'mHHcateg'
+year     = 2018 ## used for the oname
+
+if len(sys.argv) > 1:
+    plottype = sys.argv[1]
+if len(sys.argv) > 2:
+    year = int(sys.argv[2])
+
+print "... plot type  :" , plottype
+print '... doing year :' , year
+
+title     = "ggF signal, %i simulation" % year
+folder_in = '/uscms/home/guerrero/nobackup/Run2/HH2020/Spring/CMSSW_10_2_13/src/bbbbAnalysis/MyDataMCHistos/DataMCHistos%i' % year
 fin       = '%s/outPlotter.root' % folder_in
 file_in   = ROOT.TFile.Open(fin)
 cfg_in    = folder_in + '/' + eut.findInFolder(folder_in, 'plotter_*.cfg')
 print "[INFO] : input file is  ", fin
 print "[INFO] : config file is ", cfg_in
 
-plottype = 'mHHcateg'
-if len(sys.argv) > 1:
-    plottype = sys.argv[1]
 
-print "... plot type : ", plottype
 
 if plottype == 'mHHcateg':
     ##### GGF sub-categorisation
@@ -77,10 +84,10 @@ single_pts_list = [
 ]
 
 input_samples = [
-    # eut.effReader(file_in, 'ggHH_kl_0_kt_1'),
+    eut.effReader(file_in, 'ggHH_kl_0_kt_1'),
     eut.effReader(file_in, 'ggHH_kl_1_kt_1'),
     eut.effReader(file_in, 'ggHH_kl_2p45_kt_1'),
-    eut.effReader(file_in, 'ggHH_kl_5_kt_1'),
+    # eut.effReader(file_in, 'ggHH_kl_5_kt_1'),
 ]
 
 input_samples_pts = [eut.effReader(x['rootfile'], x['name']) for x in single_pts_list]
@@ -94,10 +101,10 @@ for i in range(len(input_samples_pts)):
 
 ## NOTE : the xs is actually taken from the files, not from val_xs
 GGF_sample_list = [
-    # hhs.GGFHHSample(0,1,    val_xs = 0.06007, label = 'ggHH_kl_0_kt_1'  ),
+    hhs.GGFHHSample(0,1,    val_xs = 0.06007, label = 'ggHH_kl_0_kt_1'  ),
     hhs.GGFHHSample(1,1,    val_xs = 0.02675, label = 'ggHH_kl_1_kt_1'  ),
     hhs.GGFHHSample(2.45,1, val_xs = 0.01133, label = 'ggHH_kl_2p45_kt_1'  ),
-    hhs.GGFHHSample(5,1,    val_xs = 0.07903, label = 'ggHH_kl_5_kt_1'  ),
+    # hhs.GGFHHSample(5,1,    val_xs = 0.07903, label = 'ggHH_kl_5_kt_1'  ),
 ]
 
 
@@ -117,6 +124,7 @@ for i in range(len(input_samples)):
 if len(functions) != len(input_samples):
     raise RuntimeError("cannot match inputs to scalings")
 
+functions_lam = [sympy.utilities.lambdify((sympy.Symbol('kl'), sympy.Symbol('kt')), fdesc) for fdesc in functions]
 
 # for f in functions:
 #     print f.evalf(subs = {'kl' : 1, 'kt' : 1})
@@ -147,7 +155,7 @@ legends = {
     'VBFcateg'     : 'VBF category',
 }
 
-klambdas = np.linspace(-20, 20, 100)
+klambdas = np.linspace(-20, 20, 101)
 
 #########################################################################
 # make the plot
@@ -158,8 +166,9 @@ for tp in to_plot:
 
 for ikl, kl in enumerate(klambdas):
     if ikl % 10 == 0 : print '... doing ', kl
-    scales = [functions[isample].evalf(subs = {'kl' : kl, 'kt' : 1}) for isample in range(len(input_samples))]
-    
+    # scales = [functions[isample].evalf(subs = {'kl' : kl, 'kt' : 1}) for isample in range(len(input_samples))]
+    scales = [functions_lam[isample](kl, 1) for isample in range(len(input_samples))]
+
     values = {}
     for tp in to_plot:
         n_cat  = 0

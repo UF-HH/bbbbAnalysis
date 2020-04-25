@@ -3,19 +3,24 @@ import effutils.HHscalings  as hhs
 import ROOT
 import numpy as np
 import sys
+import sympy
 
 ROOT.gROOT.SetBatch(True)
 
 couplingname = 'kl' # the coupling to make eff vs : CV, C2V, kl - note : others are fixed to 1
+year         = 2018
 
 if len(sys.argv) > 1:
     couplingname = sys.argv[1]
+if len(sys.argv) > 2:
+    year = int(sys.argv[2])
 
 print "... coupling name:", couplingname
+print '... doing year :' , year
 
-oname        = 'eff_2018_VBF_vs_%s.pdf' % couplingname
-title        = 'VBF signal, 2018 simulation'
-folder_in    = '/uscms/home/guerrero/nobackup/Run2/HH2019/Fall2019/CMSSW_10_2_5/src/bbbbAnalysis/MyHistos/Histos2018'
+oname        = 'eff_%i_VBF_vs_%s.pdf' % (year, couplingname)
+title        = 'VBF signal, %i simulation' % year
+folder_in    = '/uscms/home/guerrero/nobackup/Run2/HH2020/Spring/CMSSW_10_2_13/src/bbbbAnalysis/MyDataMCHistos/DataMCHistos%i' % year
 fin          = '%s/outPlotter.root' % folder_in
 file_in      = ROOT.TFile.Open(fin)
 cfg_in       = folder_in + '/' + eut.findInFolder(folder_in, 'plotter_*.cfg')
@@ -129,6 +134,7 @@ for i in range(len(input_samples)):
 if len(functions) != len(input_samples):
     raise RuntimeError("cannot match inputs to scalings")
 
+functions_lam = [sympy.utilities.lambdify((sympy.Symbol('CV'), sympy.Symbol('C2V'), sympy.Symbol('kl')), fdesc) for fdesc in functions]
 
 #########################################################################
 
@@ -171,7 +177,7 @@ legends = {
 
 if couplingname == 'CV':
     xtitle       = 'C_{V}'
-    npts = 100
+    npts = 101
     kls  = np.ones(npts)
     CVs  = np.linspace(-5, 5, npts)
     C2Vs = np.ones(npts)
@@ -179,7 +185,7 @@ if couplingname == 'CV':
 
 if couplingname == 'C2V':
     xtitle       = 'C_{2V}'
-    npts = 100
+    npts = 101
     kls  = np.ones(npts)
     CVs  = np.ones(npts)
     C2Vs = np.linspace(-5, 5, npts)
@@ -188,7 +194,7 @@ if couplingname == 'C2V':
 if couplingname == 'kl':
     xtitle       = '#kappa_{#lambda}'
     couplingname = 'kl'
-    npts = 100
+    npts = 101
     kls  = np.linspace(-20, 20, npts)
     CVs  = np.ones(npts)
     C2Vs = np.ones(npts)
@@ -211,7 +217,8 @@ for tp in to_plot:
 
 for ipt, pt in enumerate(couplings):
     if ipt % 10 == 0 : print '... doing ', pt
-    scales = [functions[isample].evalf(subs = {'CV' : pt[0], 'C2V' : pt[1], 'kl' : pt[2]}) for isample in range(len(input_samples))]
+    # scales = [functions[isample].evalf(subs = {'CV' : pt[0], 'C2V' : pt[1], 'kl' : pt[2]}) for isample in range(len(input_samples))]
+    scales = [functions_lam[isample](pt[0], pt[1], pt[2]) for isample in range(len(input_samples))]
     for tp in to_plot:
         ntot  = 0
         npass = 0

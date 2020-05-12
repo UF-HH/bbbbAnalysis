@@ -122,13 +122,11 @@ if args.quit : ROOT.gROOT.SetBatch(True)
 
 cfgName        = Tools.findInFolder  (args.dir+"/", '*plotter*.cfg')
 outplotterName = Tools.findInFolder  (args.dir+"/", 'outPlotter.root')
-# outplotterName = Tools.findInFolder  (args.dir+"/", 'analyzedOutPlotter.root')
 
 cfg = cfgr.ConfigReader (args.dir + "/" + cfgName)
 dataList = cfg.readListOption("general::data")
 # dataList = ['data_obs'] ## data are merged by hand into a single collection
 sigList         = cfg.readListOption("general::signals")
-#bkgList         = cfg.readListOption("general::backgrounds")
 bkgList         = cfg.readListOption("general::datadriven")
 
 if not dataList : dataList = []
@@ -221,41 +219,35 @@ titles     = dict(plotStyles.titles)
 ######### Things to plot ##################
 sigToPlot = collections.OrderedDict()
 bkgToPlot = collections.OrderedDict()
+
 if args.DataCond == 2016:
-		sigToPlot['GGF_HH']              = ['GGHH4B_rew_kl_p_1']
-		sigToPlot['GGHH4B_rew_kl_p_10']  = ['GGHH4B_rew_kl_p_10']
-		sigToPlot['VBF_1_2_1']  = ['VBF_1_2_1']
-		sigToPlot['VBF_HH']  = ['VBF_HH']
-#		sigToPlot['QCD']     = ['QCD']
-#		sigToPlot['TT']      = ['TT'] #['TTTo2L2Nu', 'TTToHadronic', 'TTToSemiLeptonic']
-#		sigToPlot['SingleH'] = ['SingleH'] #['GGF_H','VBF_H','Z_H', 'Wp_H', 'Wm_H','TT_H']
-#		sigToPlot['ZZ_4Q']   = ['ZZ_4Q']
-		bkgToPlot['MODEL']   = ['MODEL']		
-#      bkgToPlot['QCD']  = ['QCD_HT_200_300','QCD_HT_300_500', 'QCD_HT_500_700', 'QCD_HT_700_1000', 'QCD_HT_1000_1500', 'QCD_HT_1500_2000', 'QCD_HT_2000_Inf']
-elif args.DataCond == 2017:
-#		sigToPlot = ['GGF_HH','VBF_HH','ZZ_4B','GGF_H','VBF_H','Z_H', 'Wp_H', 'Wm_H', 'TT_H','TT']   
-		sigToPlot['GGF_HH']              = ['GGHH4B_rew_kl_p_1']
-		sigToPlot['GGHH4B_rew_kl_p_10']  = ['GGHH4B_rew_kl_p_10']
-		sigToPlot['VBF_1_2_1']  = ['VBF_1_2_1']
-		sigToPlot['VBF_HH']  = ['VBF_HH']
-#		sigToPlot['QCD']     = ['QCD']
-#		sigToPlot['TT']      = ['TT'] #['TTTo2L2Nu', 'TTToHadronic', 'TTToSemiLeptonic']
-#		sigToPlot['SingleH'] = ['SingleH'] #['GGF_H','VBF_H','Z_H', 'Wp_H', 'Wm_H','TT_H']
+		sigToPlot['qqHH_CV_1_C2V_2_kl_1'] = ['qqHH_CV_1_C2V_2_kl_1']
+#		sigToPlot['qqHH_CV_1_C2V_1_kl_1'] = ['qqHH_CV_1_C2V_1_kl_1']
+		sigToPlot['ggHH_kl_1_kt_1']       = ['ggHH_kl_1_kt_1']
+#		sigToPlot['ggHH_kl_2p45_kt_1']    = ['ggHH_kl_2p45_kt_1']
 #		sigToPlot['ZZ_4B']   = ['ZZ_4B']
+		sigToPlot['SingleH'] = ['SingleH']
+		sigToPlot['TT']      = ['TT']
 		bkgToPlot['MODEL']   = ['MODEL'] 
-#    bkgToPlot['QCD']  = ['QCD_HT_300_500', 'QCD_HT_500_700', 'QCD_HT_700_1000', 'QCD_HT_1000_1500', 'QCD_HT_1500_2000', 'QCD_HT_2000_Inf']
+elif args.DataCond == 2017:   
+		sigToPlot['qqHH_CV_1_C2V_2_kl_1'] = ['qqHH_CV_1_C2V_2_kl_1']
+#		sigToPlot['qqHH_CV_1_C2V_1_kl_1'] = ['qqHH_CV_1_C2V_1_kl_1']
+		sigToPlot['ggHH_kl_1_kt_1']       = ['ggHH_kl_1_kt_1']
+#		sigToPlot['ggHH_kl_5_kt_1']       = ['ggHH_kl_5_kt_1']
+#		sigToPlot['ZZ_4B']      = ['ZZ_4B']
+		sigToPlot['SingleH']    = ['SingleH'] 
+		sigToPlot['TT']         = ['TT'] 
+		bkgToPlot['MODEL']   = ['MODEL'] 
 else:
-		sigToPlot['GGF_HH']              = ['GGHH4B_rew_kl_p_1']
-		sigToPlot['GGHH4B_rew_kl_p_10']  = ['GGHH4B_rew_kl_p_10']
-		sigToPlot['VBF_1_2_1']  = ['VBF_1_2_1']
-		sigToPlot['VBF_HH']  = ['VBF_HH']
-#		sigToPlot['QCD']     = ['QCD']
-#		sigToPlot['TT']      = ['TT'] #['TTTo2L2Nu', 'TTToHadronic', 'TTToSemiLeptonic']
-#		sigToPlot['SingleH'] = ['SingleH'] #['GGF_H','VBF_H','Z_H', 'Wp_H', 'Wm_H','TT_H']
-#		sigToPlot['ZZ_4B']   = ['ZZ_4B']
+		sigToPlot['qqHH_CV_1_C2V_2_kl_1'] = ['qqHH_CV_1_C2V_2_kl_1']
+#		sigToPlot['qqHH_CV_1_C2V_1_kl_1'] = ['qqHH_CV_1_C2V_1_kl_1']
+		sigToPlot['ggHH_kl_1_kt_1']       = ['ggHH_kl_1_kt_1']
+#		sigToPlot['ggHH_kl_5_kt_1']       = ['ggHH_kl_5_kt_1']
+#		sigToPlot['ZZ_4B']      = ['ZZ_4B']
+		sigToPlot['SingleH']    = ['SingleH'] 
+		sigToPlot['TT']         = ['TT']
 		bkgToPlot['MODEL']   = ['MODEL'] 
-#    bkgToPlot['QCD']  = ['QCD_HT_300_500', 'QCD_HT_500_700', 'QCD_HT_700_1000', 'QCD_HT_1000_1500', 'QCD_HT_1500_2000', 'QCD_HT_2000_Inf']
-### decide what to plot - a plain list of signals
+
 
 ### check that I am not forgetting any background
 check_selected_bkg(allbkg = bkgList, chosenbkg=bkgToPlot)
@@ -265,17 +257,14 @@ check_selected_bkg(allbkg = bkgList, chosenbkg=bkgToPlot)
 ###########################################
 myselreg = args.sel.split("_")
 
-if myselreg[1]=="VBFcateg":myselreg[1]="VBF-HH Categ"
 if myselreg[1]=="VBFcateg1":myselreg[1]="VBF-HH Categ1"
 if myselreg[1]=="VBFcateg2":myselreg[1]="VBF-HH Categ2"
-if myselreg[1]=="GGFcateg":myselreg[1]="ggF-HH Categ"
+if myselreg[1]=="GGFcateg1":myselreg[1]="ggF-HH Categ1"
+if myselreg[1]=="GGFcateg2":myselreg[1]="ggF-HH Categ2"
 if myselreg[3]=="110":myselreg[3]="A"
 if myselreg[3]=="210":myselreg[3]="V"
 if myselreg[0]=="Btag4":regionlabel="%s_{%s}(4b)"%(myselreg[3],myselreg[2])
 selectionlabel ="%s"%(myselreg[1]) 
-
-#regionlabel="(4b)"
-#selectionlabel ="_"
 
 shc = sh.SampleHistColl()
 shc.stackErrorHist = histoErr
@@ -367,8 +356,9 @@ if args.printplot:
 		outname = '_'.join(['plotsDatadriven/plot%s'%args.DataCond, args.var, args.sel])
 		if args.log: outname += ('_'+'log')
 		if args.postfit: outname += '_postfit'
+		outname += '.pdf'
+		shc.c1.Print(outname, 'pdf')
 		outname += '.png'
-		# print outname
 		shc.c1.Print(outname, 'png')
 
 if args.root:

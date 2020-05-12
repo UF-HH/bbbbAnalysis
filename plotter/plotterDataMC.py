@@ -129,7 +129,6 @@ dataList = cfg.readListOption("general::data")
 # dataList = ['data_obs'] ## data are merged by hand into a single collection
 sigList         = cfg.readListOption("general::signals")
 bkgList         = cfg.readListOption("general::backgrounds")
-#bkgList         = cfg.readListOption("general::datadriven")
 
 if not dataList : dataList = []
 if not sigList  : sigList  = []
@@ -223,32 +222,32 @@ titles     = dict(plotStyles.titles)
 sigToPlot = collections.OrderedDict()
 bkgToPlot = collections.OrderedDict()
 if args.DataCond == 2016:
-		sigToPlot['VBF_1_2_1']  = ['VBF_1_2_1']
-		sigToPlot['VBF_HH']     = ['VBF_HH']
-		sigToPlot['GGF_HH']     = ['GGF_HH']
-		bkgToPlot['ZZ_4Q']   = ['ZZ_4Q']
+		sigToPlot['qqHH_CV_1_C2V_2_kl_1'] = ['qqHH_CV_1_C2V_2_kl_1']
+		sigToPlot['qqHH_CV_1_C2V_1_kl_1'] = ['qqHH_CV_1_C2V_1_kl_1']
+		sigToPlot['ggHH_kl_1_kt_1']       = ['ggHH_kl_1_kt_1']
+#		sigToPlot['ggHH_kl_2p45_kt_1']    = ['ggHH_kl_2p45_kt_1']
+		bkgToPlot['ZZ_4B']   = ['ZZ_4B']
 		bkgToPlot['SingleH'] = ['SingleH']
 		bkgToPlot['TT']      = ['TT']
-		bkgToPlot['QCD']     = ['QCD']
-#		bkgToPlot['MODEL']   = ['MODEL']		
+		bkgToPlot['QCD']     = ['QCD']	
 elif args.DataCond == 2017:   
-		sigToPlot['VBF_1_2_1']  = ['VBF_1_2_1']
-		sigToPlot['VBF_HH']     = ['VBF_HH']
-		sigToPlot['GGF_HH']     = ['GGF_HH']
+		sigToPlot['qqHH_CV_1_C2V_2_kl_1'] = ['qqHH_CV_1_C2V_2_kl_1']
+		sigToPlot['qqHH_CV_1_C2V_1_kl_1'] = ['qqHH_CV_1_C2V_1_kl_1']
+		sigToPlot['ggHH_kl_1_kt_1']       = ['ggHH_kl_1_kt_1']
+#		sigToPlot['ggHH_kl_5_kt_1']       = ['ggHH_kl_5_kt_1']
 		bkgToPlot['ZZ_4B']      = ['ZZ_4B']
 		bkgToPlot['SingleH']    = ['SingleH'] 
 		bkgToPlot['TT']         = ['TT'] 
 		bkgToPlot['QCD']        = ['QCD']
-#		bkgToPlot['MODEL']   = ['MODEL'] 
-
 else:
-		sigToPlot['VBF_1_2_1']  = ['VBF_1_2_1']
-		sigToPlot['VBF_HH']     = ['VBF_HH']
-		sigToPlot['GGF_HH']     = ['GGF_HH']
+		sigToPlot['qqHH_CV_1_C2V_2_kl_1'] = ['qqHH_CV_1_C2V_2_kl_1']
+		sigToPlot['qqHH_CV_1_C2V_1_kl_1'] = ['qqHH_CV_1_C2V_1_kl_1']
+		sigToPlot['ggHH_kl_1_kt_1']       = ['ggHH_kl_1_kt_1']
+#		sigToPlot['ggHH_kl_5_kt_1']       = ['ggHH_kl_5_kt_1']
 		bkgToPlot['ZZ_4B']      = ['ZZ_4B']
 		bkgToPlot['SingleH']    = ['SingleH'] 
 		bkgToPlot['TT']         = ['TT']
- 		bkgToPlot['QCD']        = ['QCD']
+		bkgToPlot['QCD']        = ['QCD']
 ### decide what to plot - a plain list of signals
 
 ### check that I am not forgetting any background
@@ -260,12 +259,12 @@ check_selected_bkg(allbkg = bkgList, chosenbkg=bkgToPlot)
 myselreg = args.sel.split("_")
 if myselreg[0]=="Btag4":regionlabel="4-btag"
 if myselreg[0]=="Btag3":regionlabel="3-btag"
-if myselreg[1]=="VBFcateg":myselreg[1]="VBFCateg"
+if myselreg[1]=="VBFcateg":myselreg[1]="VBF-HH"
 if myselreg[1]=="VBFcateg1":myselreg[1]="VBF1"
 if myselreg[1]=="VBFcateg2":myselreg[1]="VBF2"
-if myselreg[1]=="GGFcateg":myselreg[1]="GGFCateg"
-if myselreg[1]=="GGFpre":myselreg[1]="PreGGF"
-if myselreg[1]=="VBFpre":myselreg[1]="PreVBF"
+if myselreg[1]=="GGFcateg":myselreg[1]="ggF-HH"
+if myselreg[1]=="GGFpre":myselreg[1]="Pre-GGF"
+if myselreg[1]=="VBFpre":myselreg[1]="Pre-VBF"
 if len(myselreg)>=4:
  if myselreg[3]=="110":myselreg[3]="A" 
  if myselreg[3]=="210":myselreg[3]="V" 
@@ -361,8 +360,10 @@ if args.printplot:
 		outname = '_'.join(['plotsdatamc/plot%s'%args.DataCond, args.var, args.sel])
 		if args.log: outname += ('_'+'log')
 		if args.postfit: outname += '_postfit'
+		# print outname pdf
+		outname += '.pdf'
+		shc.c1.Print(outname, 'pdf')
 		outname += '.png'
-		# print outname
 		shc.c1.Print(outname, 'png')
 
 if args.root:

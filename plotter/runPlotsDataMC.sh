@@ -1,8 +1,8 @@
-datasets=(2016 2017 2018) 
-selections=(GGFcateg VBFcateg)
+datasets=(2016) 
+selections=(GGFcateg1_SR_110 GGFcateg2_SR_110 VBFcateg1_SR_110 VBFcateg2_SR_110) 
 regions=(Histogram)
 
-rm -r plotsdatamc
+#rm -r plotsdatamc
 mkdir plotsdatamc
  
 for dataset in ${datasets[@]}
@@ -15,7 +15,7 @@ do
                 mkdir plotsdatamc/$dataset/$selection
                 mkdir plotsdatamc/$dataset/$selection/$region
                 source do_all_plots_datamc.sh $dataset $selection $region
-                mv plotsdatamc/*.png plotsdatamc/$dataset/$selection/$region
+                mv plotsdatamc/*.pdf plotsdatamc/$dataset/$selection/$region
           done
      done   
 done

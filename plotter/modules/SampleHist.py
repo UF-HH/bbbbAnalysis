@@ -363,7 +363,7 @@ class SampleHistColl:
             legymax = self.legcoords[3]
         self.legend = ROOT.TLegend (legxmin, legymin, legxmax, legymax)
         self.legend.SetFillStyle(0)
-        self.legend.SetNColumns(1)
+        self.legend.SetNColumns(2)
         self.legend.SetBorderSize(0)
         self.legend.SetTextFont(self.textfont)
         self.legend.SetTextSize(self.legtextsize)
@@ -927,7 +927,7 @@ class SampleHistColl:
         else:
             return (decoded[0], decoded[1], decoded[2])
 
-    def printTable(self, uoflow=False, printMCstat=False, floatFormat='.2'):
+    def printTable(self, uoflow=False, printMCstat=False, floatFormat='.2', blinded=False):
         """ print a table containing the event and yields """
         
         ############# BKGS
@@ -990,7 +990,14 @@ class SampleHistColl:
         tab.float_format = floatFormat ## means print line %.<float_format>f
 
         print "--- table : DATA"
-        print tab
+        if blinded==False: 
+            print tab
+        else:
+            print "+-----------+------------+"
+            print "|  process  |  num evts  |"
+            print "+-----------+------------+"
+            print "|   Data    |   blinded  |"
+            print "+-----------+------------+"
         print ''
 
 

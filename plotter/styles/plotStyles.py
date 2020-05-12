@@ -1,15 +1,16 @@
 import ROOT
 
 titles = {
-    'MODEL'   : 'Bkg. model',
-    'QCD'   : 'Multijet',
-    'TT'    : "t#bar{t}",
-    'ZZTo4B': "ZZ#rightarrow4b",
-    'VBF_HH'     : "VBF-HH x 10",
-    'VBF_1_2_1'  : "VBF-HH (c2v=2) x10",
-    'GGHH4B_rew_kl_p_1'     : "GGF-HH x 10",
-    'GGF_HH'     : "GGF-HH x 10",
-    'GGHH4B_rew_kl_m_5'     : "GGF-HH (k#lambda=-5) x 10",
+    'MODEL'                 : 'Bkg. model',
+    'QCD'                   : 'Multijet',
+    'TT'                    : "t#bar{t}",
+    'SingleH'               : "Single H",    
+    'ZZ_4B'                 : "ZZ#rightarrow4b",
+    'ggHH_kl_1_kt_1'      : "ggF-HH",     
+    'ggHH_kl_2p45_kt_1'   : "ggF-HH(kl=2.45)",   
+    'ggHH_kl_5_kt_1'      : "ggF-HH(kl=5)",   
+    'qqHH_CV_1_C2V_1_kl_1': "VBF-HH", 
+    'qqHH_CV_1_C2V_2_kl_1': "VBF-HH(c2v=2)", 
 }
 
 #########################################################################################
@@ -21,15 +22,16 @@ linestyles = {
 #########################################################################################
 
 linecolors = {
-    'TT'          : ROOT.kGreen+3,
-    'ZZTo4B'      : ROOT.kAzure+3,
+    'TT'          : ROOT.kGreen+2,
+    'SingleH'     : ROOT.kViolet-9,
+    'ZZ_4B'       : ROOT.kGray,
     'QCD'         : 94,
     'MODEL'       : ROOT.kAzure+3,
-    'VBF_HH'                 : ROOT.kBlue+1,
-    'VBF_1_2_1'              : ROOT.kOrange+2,
-    'GGHH4B_rew_kl_p_1'      : ROOT.kRed,
-    'GGF_HH'      : ROOT.kRed,
-    'GGHH4B_rew_kl_m_5'      : ROOT.kGreen+3,
+    'ggHH_kl_1_kt_1'      : ROOT.kBlue+1,     
+    'ggHH_kl_2p45_kt_1'   : ROOT.kOrange+2,   
+    'ggHH_kl_5_kt_1'      : ROOT.kOrange+2,   
+    'qqHH_CV_1_C2V_1_kl_1': ROOT.kBlack, 
+    'qqHH_CV_1_C2V_2_kl_1': ROOT.kRed, 
 }
 
 ## here are some colors for reference
@@ -52,7 +54,8 @@ linecolors = {
 fillcolors = {
     'TT'    : 8,
     'MODEL' : ROOT.kAzure+1,
-    'ZZTo4B' : ROOT.kAzure+2,
+    'SingleH'     : ROOT.kViolet-9,
+    'ZZ_4B' : ROOT.kGray,
     'QCD'    : 92,
     'QCD_HT_200_300' :   ROOT.kRed+1,
     'QCD_HT_300_500' :   ROOT.kRed+2,

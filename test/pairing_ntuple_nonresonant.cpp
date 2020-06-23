@@ -64,6 +64,7 @@ int main(int argc, char** argv)
         ("bbbbChoice"    , po::value<string>()->default_value("BothClosestToDiagonal"), "bbbb pairing choice")
         ("mh1mh2"        , po::value<float>()->default_value(1.05), "Ratio Xo/Yo or 1/slope of the diagonal") 
         ("option"        , po::value<int>()->default_value(0), "Option: 0=Nominal, 1=Alternative 1, 2=Alternative 2") 
+        ("slopeparameter", po::value<float>()->default_value(1.), "X parameter in |mH1/mH2-X|")                
         // flags
         ("is-data",    po::value<bool>()->zero_tokens()->implicit_value(true)->default_value(false), "mark as a data sample (default is false)")
         ("is-signal",  po::value<bool>()->zero_tokens()->implicit_value(true)->default_value(false), "mark as a HH signal sample (default is false)")
@@ -111,6 +112,7 @@ int main(int argc, char** argv)
 
     const float mh1mh2 = opts["mh1mh2"].as<float>();
     const int   option = opts["option"].as<int>();
+    const float slopeparameter = opts["slopeparameter"].as<float>();
 
     CfgParser config;
     if (!config.init(opts["cfg"].as<string>())) return 1;
@@ -121,21 +123,25 @@ int main(int argc, char** argv)
     ////////////////////////////////////////////////////////////////////////
 
     std::map<std::string,std::any> parameterList;
-    const string bbbbChoice  = config.readStringOpt("parameters::bbbbChoice");
+    const string bbbbChoice  = opts["bbbbChoice"].as<string>();
     const string datasetname = config.readStringOpt("parameters::datasetname");
+    parameterList.emplace("is_signal",is_signal);
     parameterList.emplace("is_VBF_sig",is_VBF_sig);
     parameterList.emplace("is_NLO_sig",is_NLO_sig);
     parameterList.emplace("bbbbChoice",bbbbChoice);
     parameterList.emplace("datasetname",datasetname);   
     if(bbbbChoice == "OneClosestToMh"){
-        parameterList.emplace("HiggsMass",config.readFloatOpt("parameters::HiggsMass"));
+        parameterList.emplace("bbbbChoice""HiggsMass",config.readFloatOpt("parameters::HiggsMass"));
     }
     else if(bbbbChoice == "BothClosestToMh"){
         parameterList.emplace("HiggsMass",config.readFloatOpt("parameters::HiggsMass"));
     }
     else if(bbbbChoice == "BothClosestToDiagonal"){
-        parameterList.emplace("TargetHiggsMass1Mass2",config.readFloatOpt("parameters::TargetHiggsMass1Mass2"));
-        parameterList.emplace("Option",config.readIntOpt("parameters::Option"));
+        parameterList.emplace("TargetHiggsMass1Mass2",mh1mh2);
+        parameterList.emplace("Option",option);
+    }
+    else if(bbbbChoice == "BothClosestToSlope"){
+        parameterList.emplace("SlopeParameter",slopeparameter);
     }
     else if(bbbbChoice == "MinMassDifference"){
     //No parameters are needed
@@ -164,6 +170,7 @@ int main(int argc, char** argv)
 
     cout << "[INFO] ... chosing bb bb jet pairs with strategy : " << bbbbChoice << endl;
     if(bbbbChoice == "BothClosestToDiagonal") cout << "          ... the Xo/Yo ratio is " <<mh1mh2<<", and option is "<<option<<endl;
+    if(bbbbChoice == "BothClosestToSlope")    cout << "          ... the slopeparameter: " <<slopeparameter<<endl;
 
     const string preselectionCutStrategy = config.readStringOpt("parameters::PreselectionCut");
     parameterList.emplace("PreselectionCut",preselectionCutStrategy);
@@ -303,22 +310,6 @@ int main(int argc, char** argv)
         //     parameters fo be retreived;
         // }  
         else throw std::runtime_error("cannot recognize event choice ObjectsForCut " + JERstrategy);
-
-
-        //JEC 
-        // const string JECstrategy = config.readStringOpt("parameters::JetEnergyCorrection");
-        // parameterList.emplace("JetEnergyCorrection",JECstrategy);
-        // if(JECstrategy == "StandardJEC"){
-        //     parameterList.emplace("JECFileName"          ,config.readStringOpt    ("parameters::JECFileName"          ));
-        //     parameterList.emplace("JECListOfCorrections" ,config.readStringListOpt("parameters::JECListOfCorrections" ));
-        // }
-        // else if(JECstrategy == "None"){
-        // }  
-        // // else if(other selection type){
-        // //     parameters fo be retreived;
-        // // }  
-        // else throw std::runtime_error("cannot recognize event choice ObjectsForCut " + JECstrategy);
-
         // as a temporary fix, to avoid clashes with cmd line options, disable the variations from JetEnergyCorrection method by Fabio
         const string JECstrategy = config.readStringOpt("parameters::JetEnergyCorrection");
         if(JECstrategy != "None"){
@@ -411,6 +402,182 @@ int main(int argc, char** argv)
     for (auto trg : config.readStringListOpt("triggers::makeORof"))
        triggers.push_back(trg);
     ot.declareUserFloatBranch("XS",-1);
+
+    //DeclareUser Branches for Pairing study
+    ot.declareUserFloatBranch("dhh_delta12",-1.0);
+    ot.declareUserFloatBranch("dhh_delta13",-1.0);
+    ot.declareUserFloatBranch("dhh_delta23",-1.0);
+
+    ot.declareUserIntBranch("thetrh_sort", -1);
+    ot.declareUserIntBranch("thefst_qual", -1);
+    ot.declareUserIntBranch("thesnd_qual", -1);
+    ot.declareUserIntBranch("thetrd_qual", -1);
+    ot.declareUserIntBranch("theop0_qual", -1);
+    ot.declareUserIntBranch("theop1_qual", -1);
+    ot.declareUserIntBranch("theop2_qual", -1);
+
+    ot.declareUserFloatBranch("thetrh_cm_abscostheta", -1.0);
+    ot.declareUserFloatBranch("thefst_cm_abscostheta", -1.0);
+    ot.declareUserFloatBranch("thesnd_cm_abscostheta", -1.0);
+    ot.declareUserFloatBranch("thetrd_cm_abscostheta", -1.0);
+    ot.declareUserFloatBranch("theop0_cm_abscostheta", -1.0);
+    ot.declareUserFloatBranch("theop1_cm_abscostheta", -1.0);
+    ot.declareUserFloatBranch("theop2_cm_abscostheta", -1.0);
+
+    ot.declareUserFloatBranch("thefst_H1_cm_boost", -1.0);
+    ot.declareUserFloatBranch("thesnd_H1_cm_boost", -1.0);
+    ot.declareUserFloatBranch("thetrd_H1_cm_boost", -1.0);
+    ot.declareUserFloatBranch("thetrh_H1_cm_boost", -1.0);
+    ot.declareUserFloatBranch("thefst_H2_cm_boost", -1.0);
+    ot.declareUserFloatBranch("thesnd_H2_cm_boost", -1.0);
+    ot.declareUserFloatBranch("thetrd_H2_cm_boost", -1.0);
+    ot.declareUserFloatBranch("thetrh_H2_cm_boost", -1.0);
+    ot.declareUserFloatBranch("theop0_H1_cm_boost", -1.0);
+    ot.declareUserFloatBranch("theop1_H1_cm_boost", -1.0);
+    ot.declareUserFloatBranch("theop2_H1_cm_boost", -1.0);
+    ot.declareUserFloatBranch("theop0_H2_cm_boost", -1.0);
+    ot.declareUserFloatBranch("theop1_H2_cm_boost", -1.0);
+    ot.declareUserFloatBranch("theop2_H2_cm_boost", -1.0);
+
+    ot.declareUserFloatBranch("thefst_H1_cm_pt", -1.0);
+    ot.declareUserFloatBranch("thesnd_H1_cm_pt", -1.0);
+    ot.declareUserFloatBranch("thetrd_H1_cm_pt", -1.0);
+    ot.declareUserFloatBranch("thetrh_H1_cm_pt", -1.0);
+    ot.declareUserFloatBranch("thefst_H2_cm_pt", -1.0);
+    ot.declareUserFloatBranch("thesnd_H2_cm_pt", -1.0);
+    ot.declareUserFloatBranch("thetrd_H2_cm_pt", -1.0);
+    ot.declareUserFloatBranch("thetrh_H2_cm_pt", -1.0);
+    ot.declareUserFloatBranch("theop0_H1_cm_pt", -1.0);
+    ot.declareUserFloatBranch("theop1_H1_cm_pt", -1.0);
+    ot.declareUserFloatBranch("theop2_H1_cm_pt", -1.0);
+    ot.declareUserFloatBranch("theop0_H2_cm_pt", -1.0);
+    ot.declareUserFloatBranch("theop1_H2_cm_pt", -1.0);
+    ot.declareUserFloatBranch("theop2_H2_cm_pt", -1.0);
+
+
+    ot.declareUserFloatBranch("thefst_cm_boost_h1h2ratio", -1.0);
+    ot.declareUserFloatBranch("thesnd_cm_boost_h1h2ratio", -1.0);
+    ot.declareUserFloatBranch("thetrd_cm_boost_h1h2ratio", -1.0);
+    ot.declareUserFloatBranch("thetrh_cm_boost_h1h2ratio", -1.0);
+    ot.declareUserFloatBranch("theop0_cm_boost_h1h2ratio", -1.0);
+    ot.declareUserFloatBranch("theop1_cm_boost_h1h2ratio", -1.0);
+    ot.declareUserFloatBranch("theop2_cm_boost_h1h2ratio", -1.0);
+    ot.declareUserFloatBranch("thefst_cm_pt_h1h2ratio", -1.0);
+    ot.declareUserFloatBranch("thesnd_cm_pt_h1h2ratio", -1.0);
+    ot.declareUserFloatBranch("thetrd_cm_pt_h1h2ratio", -1.0);
+    ot.declareUserFloatBranch("thetrh_cm_pt_h1h2ratio", -1.0);
+    ot.declareUserFloatBranch("theop0_cm_pt_h1h2ratio", -1.0);
+    ot.declareUserFloatBranch("theop1_cm_pt_h1h2ratio", -1.0);
+    ot.declareUserFloatBranch("theop2_cm_pt_h1h2ratio", -1.0);
+
+    ot.declareUserFloatBranch("thefst_h1h2deltaR", -1.0);
+    ot.declareUserFloatBranch("thesnd_h1h2deltaR", -1.0);
+    ot.declareUserFloatBranch("thetrd_h1h2deltaR", -1.0);
+    ot.declareUserFloatBranch("thetrh_h1h2deltaR", -1.0);
+    ot.declareUserFloatBranch("theop0_h1h2deltaR", -1.0);
+    ot.declareUserFloatBranch("theop1_h1h2deltaR", -1.0);
+    ot.declareUserFloatBranch("theop2_h1h2deltaR", -1.0); 
+
+    ot.declareUserFloatBranch("thefst_dhh", -1.0);
+    ot.declareUserFloatBranch("thesnd_dhh", -1.0);
+    ot.declareUserFloatBranch("thetrd_dhh", -1.0);
+    ot.declareUserFloatBranch("thetrh_dhh", -1.0);    
+    ot.declareUserFloatBranch("theop0_dhh", -1.0);
+    ot.declareUserFloatBranch("theop1_dhh", -1.0);
+    ot.declareUserFloatBranch("theop2_dhh", -1.0); 
+
+    ot.declareUserFloatBranch("thefst_H1_m",-1.0);
+    ot.declareUserFloatBranch("thesnd_H1_m",-1.0);
+    ot.declareUserFloatBranch("thetrd_H1_m",-1.0);
+    ot.declareUserFloatBranch("thetrh_H1_m",-1.0);
+    ot.declareUserFloatBranch("thefst_H2_m",-1.0);
+    ot.declareUserFloatBranch("thesnd_H2_m",-1.0);
+    ot.declareUserFloatBranch("thetrd_H2_m",-1.0);
+    ot.declareUserFloatBranch("thetrh_H2_m",-1.0);
+    ot.declareUserFloatBranch("theop0_H1_m", -1.0);
+    ot.declareUserFloatBranch("theop1_H1_m", -1.0);
+    ot.declareUserFloatBranch("theop2_H1_m", -1.0); 
+    ot.declareUserFloatBranch("theop0_H2_m", -1.0);
+    ot.declareUserFloatBranch("theop1_H2_m", -1.0);
+    ot.declareUserFloatBranch("theop2_H2_m", -1.0); 
+
+    ot.declareUserFloatBranch("thefst_H1_bsum",-1.0);
+    ot.declareUserFloatBranch("thesnd_H1_bsum",-1.0);
+    ot.declareUserFloatBranch("thetrd_H1_bsum",-1.0);
+    ot.declareUserFloatBranch("thetrh_H1_bsum",-1.0);
+    ot.declareUserFloatBranch("thefst_H2_bsum",-1.0);
+    ot.declareUserFloatBranch("thesnd_H2_bsum",-1.0);
+    ot.declareUserFloatBranch("thetrd_H2_bsum",-1.0);
+    ot.declareUserFloatBranch("thetrh_H2_bsum",-1.0);
+    ot.declareUserFloatBranch("theop0_H1_bsum", -1.0);
+    ot.declareUserFloatBranch("theop1_H1_bsum", -1.0);
+    ot.declareUserFloatBranch("theop2_H1_bsum", -1.0); 
+    ot.declareUserFloatBranch("theop0_H2_bsum", -1.0);
+    ot.declareUserFloatBranch("theop1_H2_bsum", -1.0);
+    ot.declareUserFloatBranch("theop2_H2_bsum", -1.0); 
+
+    ot.declareUserFloatBranch("thefst_HH_m",-1.0);
+    ot.declareUserFloatBranch("thesnd_HH_m",-1.0);
+    ot.declareUserFloatBranch("thetrd_HH_m",-1.0);
+    ot.declareUserFloatBranch("thetrh_HH_m",-1.0);
+    ot.declareUserFloatBranch("theop0_HH_m", -1.0);
+    ot.declareUserFloatBranch("theop1_HH_m", -1.0);
+    ot.declareUserFloatBranch("theop2_HH_m", -1.0); 
+
+    ot.declareUserFloatBranch("thefst_H1_pt",-1.0);
+    ot.declareUserFloatBranch("thesnd_H1_pt",-1.0);
+    ot.declareUserFloatBranch("thetrd_H1_pt",-1.0);
+    ot.declareUserFloatBranch("thetrh_H1_pt",-1.0);
+    ot.declareUserFloatBranch("thefst_H2_pt",-1.0);
+    ot.declareUserFloatBranch("thesnd_H2_pt",-1.0);
+    ot.declareUserFloatBranch("thetrd_H2_pt",-1.0);
+    ot.declareUserFloatBranch("thetrh_H2_pt",-1.0);
+    ot.declareUserFloatBranch("theop0_H1_pt", -1.0);
+    ot.declareUserFloatBranch("theop1_H1_pt", -1.0);
+    ot.declareUserFloatBranch("theop2_H1_pt", -1.0); 
+    ot.declareUserFloatBranch("theop0_H2_pt", -1.0);
+    ot.declareUserFloatBranch("theop1_H2_pt", -1.0);
+    ot.declareUserFloatBranch("theop2_H2_pt", -1.0); 
+
+    ot.declareUserFloatBranch("thefst_H1_dRbb",-1.0);
+    ot.declareUserFloatBranch("thesnd_H1_dRbb",-1.0);
+    ot.declareUserFloatBranch("thetrd_H1_dRbb",-1.0);
+    ot.declareUserFloatBranch("thetrh_H1_dRbb",-1.0);
+    ot.declareUserFloatBranch("thefst_H2_dRbb",-1.0);
+    ot.declareUserFloatBranch("thesnd_H2_dRbb",-1.0);
+    ot.declareUserFloatBranch("thetrd_H2_dRbb",-1.0);
+    ot.declareUserFloatBranch("thetrh_H2_dRbb",-1.0);
+    ot.declareUserFloatBranch("theop0_H1_dRbb", -1.0);
+    ot.declareUserFloatBranch("theop1_H1_dRbb", -1.0);
+    ot.declareUserFloatBranch("theop2_H1_dRbb", -1.0); 
+    ot.declareUserFloatBranch("theop0_H2_dRbb", -1.0);
+    ot.declareUserFloatBranch("theop1_H2_dRbb", -1.0);
+    ot.declareUserFloatBranch("theop2_H2_dRbb", -1.0); 
+
+    ot.declareUserFloatBranch("thefst_HH_pt",-1.0);
+    ot.declareUserFloatBranch("thesnd_HH_pt",-1.0);
+    ot.declareUserFloatBranch("thetrd_HH_pt",-1.0);
+    ot.declareUserFloatBranch("thetrh_HH_pt",-1.0);
+    ot.declareUserFloatBranch("theop0_HH_pt", -1.0);
+    ot.declareUserFloatBranch("theop1_HH_pt", -1.0);
+    ot.declareUserFloatBranch("theop2_HH_pt", -1.0); 
+
+    ot.declareUserFloatBranch("thefst_mindR",-1.0);
+    ot.declareUserFloatBranch("thesnd_mindR",-1.0);
+    ot.declareUserFloatBranch("thetrd_mindR",-1.0);
+    ot.declareUserFloatBranch("thetrh_mindR",-1.0);
+    ot.declareUserFloatBranch("theop0_mindR", -1.0);
+    ot.declareUserFloatBranch("theop1_mindR", -1.0);
+    ot.declareUserFloatBranch("theop2_mindR", -1.0); 
+
+    ot.declareUserFloatBranch("thefst_maxdR",-1.0);
+    ot.declareUserFloatBranch("thesnd_maxdR",-1.0);
+    ot.declareUserFloatBranch("thetrd_maxdR",-1.0);
+    ot.declareUserFloatBranch("thetrh_maxdR",-1.0);
+    ot.declareUserFloatBranch("theop0_maxdR", -1.0);
+    ot.declareUserFloatBranch("theop1_maxdR", -1.0);
+    ot.declareUserFloatBranch("theop2_maxdR", -1.0); 
+
     ////////////////////////////////////////////////////////////////////////
     // Execute event loop
     ////////////////////////////////////////////////////////////////////////
@@ -457,13 +624,20 @@ int main(int argc, char** argv)
 
         ec.updateProcessed(weight);
 
+        // HH and VBF partons (if existing) will be match geometrically 
+        if (is_signal) oph.match_gen_recojets(nat, ei, is_VBF_sig);
+
         if( !nat.getTrgOr() ) continue;
 
         ec.updateTriggered(weight);
-         
+        
         //Select our jets
-        if (!oph.select_bbbbjj_jets(nat, ei, ot)) continue; 
-        //Event weights not included in the denominator (bTagSF, L1prefiring, XS)
+        if (!oph.select_bbbbjj_jets(nat, ei, ot)) continue;
+        //dedicated jet studies
+        if (is_signal) oph.study_gen_selectedjets(nat, ei);
+        oph.study_diagonal_selectedjets(nat,ei,ot);
+
+        //Event weights not included in the denominator (bTagSF, L1prefiring)
         if (is_signal) oph.CalculateEventbyEventScaleFactors(nat,ot,ei,xs);
 
         oph.save_objects_for_cut(nat, ot,ei);

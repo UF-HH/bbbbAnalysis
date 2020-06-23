@@ -263,7 +263,7 @@ class OfflineProducerHelper{
         void compute_scaleFactors_fourBtag_eventScaleFactor (const std::vector<Jet> &jets, NanoAODTree& nat, OutputTree &ot);
         void CalculateBtagScaleFactor(const std::vector<Jet> presel_bjets,NanoAODTree& nat,OutputTree &ot);
         void CalculateL1prefiringScaleFactor(NanoAODTree& nat,OutputTree &ot, EventInfo& ei);
-
+        void CalculateEventbyEventScaleFactors(NanoAODTree& nat,OutputTree &ot, EventInfo& ei, float xs);
 
         std::unique_ptr<JME::JetResolutionScaleFactor> jetResolutionScaleFactor_;
         std::unique_ptr<JME::JetResolution>            jetResolution_;
@@ -312,16 +312,21 @@ class OfflineProducerHelper{
         float Get_bRegRes(Jet jet);
         float Get_bRegCorr(Jet jet);
         //functions fo apply preselection cuts:
-        void bJets_PreselectionCut(std::vector<Jet> &jets);
+        void bJets_PreselectionCut(std::vector<Jet> &jets); ///Fabio's function
         std::vector<Jet> bjJets_PreselectionCut(NanoAODTree& nat, EventInfo& ei, OutputTree &ot, std::vector<Jet> jets);
-        std::vector<Jet> bjJets_2016_PreselectionCut(NanoAODTree& nat, EventInfo& ei, OutputTree &ot, std::vector<Jet> jets);
-        std::vector<int> QuarkToJetMatcher(const std::vector<GenPart> quarks,const std::vector<Jet> jets);
-        std::vector<int> AddGenMatchingInfo(NanoAODTree& nat, EventInfo& ei, std::vector<Jet> jets);
         std::vector<Jet> OppositeEtaJetPair(std::vector<Jet> jjets);
         std::vector<Jet> HighestPtJetPair(std::vector<Jet> jjets); 
         std::vector<Jet> ExternalEtaJetPair(std::vector<Jet> jjets, std::vector<Jet> bjets);  
         //functions for gen-level studies
-        void AddVBFGenMatchVariables(NanoAODTree& nat, EventInfo& ei);
+        void match_gen_recojets(NanoAODTree& nat, EventInfo& ei, bool vbfmode);
+        std::vector<int> GetMatchedJetIdx(NanoAODTree& nat, EventInfo& ei,const std::vector<Jet> jets, bool vbfmode);
+        std::vector<int> JetToQuarkMatcher(const std::vector<GenPart> quarks,const std::vector<Jet> jets, bool vbfmode);
+        int GetQuarkIdentifier(EventInfo& ei, Jet jet);
+        void study_gen_selectedjets(NanoAODTree& nat, EventInfo& ei);
+        void study_diagonal_selectedjets(NanoAODTree& nat, EventInfo& ei, OutputTree &ot);
+        void compute_pairingvariables(EventInfo& ei, OutputTree &ot, std::vector<Jet> jets, float distance, int sort, std::string tag);
+        float compute_higgsptcm(std::vector<Jet> jets);        
+        float MindR(std::vector<Jet> jets, bool min);
         // functions that act on the EventInfo
         bool select_bbbb_jets (NanoAODTree& nat, EventInfo& ei, OutputTree &ot, std::vector<std::string> listOfPassedTriggers);
         bool select_bbbbjj_jets (NanoAODTree& nat, EventInfo& ei, OutputTree &ot);
@@ -343,16 +348,15 @@ class OfflineProducerHelper{
         std::vector<Jet> bbbb_jets_idxs_HighestCSVandClosestToMh(const std::vector<Jet> *presel_jets);
         //A la ATLAS
         std::vector<Jet> bbbb_jets_idxs_BothClosestToDiagonal(const std::vector<Jet> *presel_jets);
+        //Luca's idea
+        std::vector<Jet> bbbb_jets_idxs_BothClosestToSlope(const std::vector<Jet> *presel_jets);
         // A la 2016 paper
         std::vector<Jet> bbbb_jets_idxs_MinMassDifference(const std::vector<Jet> *presel_jets);
 
         //Additional kinematic variables
         void ApplyBjetRegression(std::vector<Jet> bjets);
-
         void AddVBFCategoryVariables(NanoAODTree& nat, EventInfo& ei,std::vector<Jet> ordered_jets);
         void AddInclusiveCategoryVariables(NanoAODTree& nat, EventInfo& ei,std::vector<Jet> ordered_jets);    
-        float MindRToAJet(const GenPart quark,const std::vector<Jet> jets);
-        float MindRToAGenJet(const GenPart quark,const std::vector<GenJet> jets);
         // float GetBDT1Score(EventInfo& ei, std::string weights);//GGFHHKiller
         // float GetBDT2Score(EventInfo& ei, std::string weights);//VBFQCDKiller
         // float GetBDT3Score(EventInfo& ei, std::string weights);//GGFQCDHHKiller
@@ -362,8 +366,6 @@ class OfflineProducerHelper{
         float GetBDT3cat1Score(EventInfo& ei);//GGFQCDHHKillercat1
         float GetBDT3cat2Score(EventInfo& ei);//GGFQCDHHKillercat2
         float GetDNNScore(EventInfo& ei);
-        float GenJetToPartonPt(const GenPart quark,const std::vector<GenJet> jets);
-
         // combines a collection of type C of jets (either std::vector or std::array) into a collection of H H possible combinations
         // (i.e. all possible H1 = (jA, jB) and H2 = (jC, jD) choices)
         template <typename C>

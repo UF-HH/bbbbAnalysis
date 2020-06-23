@@ -82,25 +82,30 @@ class OutputTree {
         float H1_b1_deepJet;
         int H1_b1_jetId;
         int H1_b1_puId;
+        float H1_b1_qgl;
         DECLARE_m_pt_ptRegressed_eta_phi_p4(H1_b2)
         float H1_b2_deepCSV;
         float H1_b2_deepJet;
         int H1_b2_jetId;
         int H1_b2_puId;
+        float H1_b2_qgl;
         DECLARE_m_pt_ptRegressed_eta_phi_p4(H2_b1)
         float H2_b1_deepCSV;
         float H2_b1_deepJet;
         int H2_b1_jetId;
         int H2_b1_puId;
+        float H2_b1_qgl;
         DECLARE_m_pt_ptRegressed_eta_phi_p4(H2_b2)
         float H2_b2_deepCSV;
         float H2_b2_deepJet;
         int H2_b2_jetId;
         int H2_b2_puId;
+        float H2_b2_qgl;
         //////////////////----- gen level
         float gen_mHH;
         float gen_mJJ;
         float gen_deltaEtaJJ;
+        int gen_etapairsign;
         DECLARE_m_pt_eta_phi_p4(gen_H1)
         DECLARE_m_pt_eta_phi_p4(gen_H2)
         DECLARE_m_pt_eta_phi_p4(gen_H1_last)
@@ -118,18 +123,7 @@ class OutputTree {
         DECLARE_m_pt_eta_phi_p4(gen_q1_out)
         DECLARE_m_pt_eta_phi_p4(gen_q2_out)
 
-        //TTEMU events
-        DECLARE_m_pt_ptRegressed_eta_phi_p4(TT_b1)
-        float TT_b1_deepCSV;
-        DECLARE_m_pt_ptRegressed_eta_phi_p4(TT_b2)
-        float TT_b2_deepCSV;
-        DECLARE_m_pt_eta_phi_p4(TT_e)
-        DECLARE_m_pt_eta_phi_p4(TT_mu)
-        float TT_m;
-        int TT_nPV;
-        int TT_nPVgood;
-        int TT_nJet;                        
-        /////////////////---Non-resonant analysis and studies
+                              /////////////////---Non-resonant analysis and studies
         int btaggerID;
         int EventCount;
         float H1_b1_bRegRes;
@@ -144,54 +138,28 @@ class OutputTree {
         float HH_btag_b2_bRegRes;
         float HH_btag_b3_bRegRes;
         float HH_btag_b4_bRegRes;
-        float H1_b1_genJetIdx;
-        float H1_b2_genJetIdx;
-        float H2_b1_genJetIdx;
-        float H2_b2_genJetIdx;
+        int H1_b1_genJetIdx;
+        int H1_b2_genJetIdx;
+        int H2_b1_genJetIdx;
+        int H2_b2_genJetIdx;
         float H1_b1_rawpt;
         float H1_b2_rawpt;
         float H2_b1_rawpt;
         float H2_b2_rawpt;
-        float gen_H1_b1_mindRgenjet;
-        float gen_H1_b2_mindRgenjet;
-        float gen_H2_b1_mindRgenjet;
-        float gen_H2_b2_mindRgenjet;
-        float gen_q1_out_mindRgenjet;
-        float gen_q2_out_mindRgenjet;
-        float gen_H1_b1_mindRjet;
-        float gen_H1_b2_mindRjet;
-        float gen_H2_b1_mindRjet;
-        float gen_H2_b2_mindRjet;
-        float gen_q1_out_mindRjet;
-        float gen_q2_out_mindRjet;
-        int gen_H1_b1_matched;
-        int gen_H1_b2_matched;
-        int gen_H2_b1_matched;
-        int gen_H2_b2_matched;
-        int gen_q1_out_matched;
-        int gen_q2_out_matched;
-        float gen_H1_b1_ptratio;
-        float gen_H1_b2_ptratio;
-        float gen_H2_b1_ptratio;
-        float gen_H2_b2_ptratio;
-        float gen_q1_out_ptratio;
-        float gen_q2_out_ptratio;
-        float gen_H1_b1_pz;
-        float gen_H1_b2_pz;
-        float gen_H2_b1_pz;
-        float gen_H2_b2_pz;
-        float gen_q1_out_pz;
-        float gen_q2_out_pz;
-        int gen_H1_b1_pdgId;
-        int gen_H1_b2_pdgId;
-        int gen_H2_b1_pdgId;
-        int gen_H2_b2_pdgId;
-        int gen_q1_out_pdgId;
-        int gen_q2_out_pdgId;
-        int H1_b1_quarkID;
-        int H1_b2_quarkID;
-        int H2_b1_quarkID;
-        int H2_b2_quarkID;
+        int gen_H1_b1_jetidx;
+        int gen_H1_b2_jetidx;
+        int gen_H2_b1_jetidx;
+        int gen_H2_b2_jetidx;
+        int gen_q1_out_jetidx;
+        int gen_q2_out_jetidx;
+         int gen_H1_b1_jetmatched;
+         int gen_H1_b2_jetmatched;
+         int gen_H2_b1_jetmatched;
+         int gen_H2_b2_jetmatched;
+        int gen_q1_out_jetmatched;
+        int gen_q2_out_jetmatched;
+        int gen_HH_qual;
+        int gen_qq_qual;
         int H1_b1_partonFlavour;
         int H1_b2_partonFlavour;
         int H2_b1_partonFlavour;
@@ -207,7 +175,6 @@ class OutputTree {
         float HH_b1_rawpt;
         int HH_b1_jetId;
         int HH_b1_puId;
-        int HH_b1_quarkID;
         int HH_b1_genJetIdx;
         int HH_b1_partonFlavour;
         int HH_b1_hadronFlavour;
@@ -217,8 +184,7 @@ class OutputTree {
         float HH_b2_qgl;        
         float HH_b2_rawpt;
         int HH_b2_jetId;
-        int HH_b2_puId;
-        int HH_b2_quarkID;      
+        int HH_b2_puId;     
         int HH_b2_genJetIdx;
         int HH_b2_partonFlavour;
         int HH_b2_hadronFlavour;        
@@ -229,7 +195,6 @@ class OutputTree {
         float HH_b3_rawpt;
         int HH_b3_jetId;
         int HH_b3_puId;
-        int HH_b3_quarkID;
         int HH_b3_genJetIdx;
         int HH_b3_partonFlavour; 
         int HH_b3_hadronFlavour; 
@@ -240,7 +205,6 @@ class OutputTree {
         float HH_b4_rawpt;
         int HH_b4_jetId;
         int HH_b4_puId;
-        int HH_b4_quarkID;
         int HH_b4_genJetIdx;
         int HH_b4_partonFlavour;                
         int HH_b4_hadronFlavour; 
@@ -251,7 +215,6 @@ class OutputTree {
         float JJ_j1_rawpt;
         int JJ_j1_jetId;
         int JJ_j1_puId;
-        int JJ_j1_quarkID;
         int JJ_j1_genJetIdx;        
         int JJ_j1_partonFlavour;
         int JJ_j1_hadronFlavour;
@@ -262,8 +225,7 @@ class OutputTree {
         float JJ_j2_qgl;
         float JJ_j2_rawpt;
         int JJ_j2_jetId;
-        int JJ_j2_puId;
-        int JJ_j2_quarkID;      
+        int JJ_j2_puId;     
         int JJ_j2_genJetIdx;
         int JJ_j2_partonFlavour;
         int JJ_j2_hadronFlavour;        
@@ -288,61 +250,41 @@ class OutputTree {
         int nJet; 
         int nJet_ec;
         int nJet_hf;
-        int NVBFCandidates;
+        float HT_PT30;
+        float HT_PT40;
         float j1etaj2eta;
         float maxj1etaj2eta;
-        float ptbalance; 
-        float ptcentrality;
-        float etacentrality;  
-        int H1_quality;
-        int H2_quality;
-        int H1_wpflag;
-        int H2_wpflag;
-        int H1_ukflag;
-        int H2_ukflag;
-        int HH_quality;
-        int JJ_quality;
-        int HH_1wflag;
-        int HH_2wflag;
-        int HH_3wflag;
-        int HH_4wflag; 
-        int JJ_1wflag;
-        int JJ_2wflag;               
-        int HHJJ_quality;
-        int NPartonsMatchedToJets;
-        int NVBFCandidateswithVBFMatch;
-        int VBFMatchedCandidatesEtaSign;
-        float VBFMatchedCandidatesDeltaEta;
-        float VBFSelectedDeltaEta;
-        int VBFSelectedEtaSign;
-        float VBFGeneratedDeltaEta;
-        int VBFGeneratedEtaSign;
         float BDT1; 
         float BDT2;
         float BDT3;
         float BDT3cat1;
-        float BDT3cat2;
-        int ExtraVBFJetDecision;
-        float ExtraVBFJetPt;
-        float ExtraVBFJetEta;  
+        float BDT3cat2; 
         DECLARE_m_pt_eta_phi_p4(H1rand);
         DECLARE_m_pt_eta_phi_p4(H2rand);
-        float costh_H1_vbfcm   ;
-        float costh_H2_vbfcm   ;
-        float costh_HH_vbfcm   ;
-        float costh_JJ_vbfcm   ;
-        float costh_HH_b1_vbfcm;
-        float costh_HH_b2_vbfcm;
-        float costh_HH_b3_vbfcm;
-        float costh_HH_b4_vbfcm;
-        float costh_JJ_j1_vbfcm;
-        float costh_JJ_j2_vbfcm;        
-        float costh_HH_b1_ggfcm;
-        float costh_HH_b2_ggfcm;
-        float costh_HH_b3_ggfcm;
-        float costh_HH_b4_ggfcm;
-        float costh_H1_ggfcm   ;
-        float costh_H2_ggfcm   ;
+        float abs_costh_H1_vbfcm   ;
+        float abs_costh_H2_vbfcm   ;
+        float abs_costh_HH_vbfcm   ;
+        float abs_costh_JJ_vbfcm   ;
+        float abs_costh_HH_b1_vbfcm;
+        float abs_costh_HH_b2_vbfcm;
+        float abs_costh_HH_b3_vbfcm;
+        float abs_costh_HH_b4_vbfcm;
+        float abs_costh_JJ_j1_vbfcm;
+        float abs_costh_JJ_j2_vbfcm;        
+        float abs_costh_HH_b1_ggfcm;
+        float abs_costh_HH_b2_ggfcm;
+        float abs_costh_HH_b3_ggfcm;
+        float abs_costh_HH_b4_ggfcm;
+        float abs_costh_H1_ggfcm   ;
+        float abs_costh_H2_ggfcm   ;
+        float abs_costh_H1_b1_h1cm ; 
+        float abs_costh_H1_b2_h1cm ;
+        float abs_costh_H2_b1_h2cm ;
+        float abs_costh_H2_b2_h2cm ;
+        float abs_costh_JJ_j1_jjcm ;
+        float abs_costh_JJ_j2_jjcm ;
+        float sum_4b_pt            ;
+        float sum_3b_bscore        ;
         float H1_bb_deltaR;
         float H2_bb_deltaR;
         float H1_bb_deltaPhi;
@@ -425,6 +367,34 @@ class OutputTree {
         float hhj2_deltaEta; 
         float hhjj_deltaEta;    
         float hhjj_pt;
+        int   H1_b1_qid;
+        int   H1_b2_qid;
+        int   H2_b1_qid;
+        int   H2_b2_qid;
+        int   JJ_j1_qid;
+        int   JJ_j2_qid;
+        int   H1_b1_qual;
+        int   H1_b2_qual;
+        int   H2_b1_qual;
+        int   H2_b2_qual;
+        int   JJ_j1_qual;
+        int   JJ_j2_qual;
+        int   H1_qual;
+        int   H2_qual;
+        int   HH_qual;
+        int   JJ_qual;
+
+        //TTEMU events
+        DECLARE_m_pt_ptRegressed_eta_phi_p4(TT_b1)
+        float TT_b1_deepCSV;
+        DECLARE_m_pt_ptRegressed_eta_phi_p4(TT_b2)
+        float TT_b2_deepCSV;
+        DECLARE_m_pt_eta_phi_p4(TT_e)
+        DECLARE_m_pt_eta_phi_p4(TT_mu)
+        float TT_m;
+        int TT_nPV;
+        int TT_nPVgood;
+        int TT_nJet;  
     private:
         void init_branches();
         std::unique_ptr<TTree> tree_;

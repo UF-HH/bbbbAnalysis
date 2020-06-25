@@ -109,9 +109,6 @@ int main(int argc, char** argv)
     const float xs = (is_data ? 1.0 : opts["xs"].as<float>());
     cout << "[INFO] ... cross section is : " << xs << " pb" << endl;
 
-    const float mh1mh2 = opts["mh1mh2"].as<float>();
-    const int   option = opts["option"].as<int>();
-
     CfgParser config;
     if (!config.init(opts["cfg"].as<string>())) return 1;
     cout << "[INFO] ... using config file " << opts["cfg"].as<string>() << endl;
@@ -163,7 +160,7 @@ int main(int argc, char** argv)
     else throw std::runtime_error("cannot recognize bbbb pair choice strategy " + bbbbChoice);
 
     cout << "[INFO] ... chosing bb bb jet pairs with strategy : " << bbbbChoice << endl;
-    if(bbbbChoice == "BothClosestToDiagonal") cout << "          ... the Xo/Yo ratio is " <<mh1mh2<<", and option is "<<option<<endl;
+    if(bbbbChoice == "BothClosestToDiagonal") cout << "          ... the Xo/Yo ratio is " <<config.readFloatOpt("parameters::TargetHiggsMass1Mass2")<<", and option is "<<config.readIntOpt("parameters::Option")<<endl;
 
     const string preselectionCutStrategy = config.readStringOpt("parameters::PreselectionCut");
     parameterList.emplace("PreselectionCut",preselectionCutStrategy);

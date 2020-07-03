@@ -461,7 +461,7 @@ int main(int argc, char** argv)
         //Select our jets
         if (!oph.select_bbbbjj_jets(nat, ei, ot)) continue; 
         //Event weights not included in the denominator (bTagSF, L1prefiring, XS)
-        if (is_signal) oph.CalculateEventbyEventScaleFactors(nat,ot,ei,xs);
+        if (!is_data) oph.CalculateEventbyEventScaleFactors(nat,ot,ei,xs);
 
         oph.save_objects_for_cut(nat, ot,ei);
 

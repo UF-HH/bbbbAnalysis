@@ -107,6 +107,7 @@ def MakeOutputSkims(samples,branches,case,directory,lepveto,ggfkillerfile,ggfmva
 	for sample in samples:
 		#Create a list of files and dataframe (but edit eos address accordingly)
 		print "[INFO] Sample in process: %s"%sample
+		#Here point the skim towards the right eos directory
 		filelist   = data.GetFileList('/eos/uscms/store/user/guerrero/bbbb_ntuples/%s/%s/SKIM_%s/output/*.root'%(case,directory,sample),'bbbbTree')
 		branchlist = MakeBranchList(sample,filelist,branches)
 		skim       = TreeDevelopment(sample,filelist,branchlist,case,directory,lepveto,ggfkillerfile,ggfmva1file,ggfmva2file) 

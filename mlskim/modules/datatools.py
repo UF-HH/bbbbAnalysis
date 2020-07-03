@@ -32,6 +32,19 @@ def PrepareFeaturesFromSkim(skim,features,tag):
 	X = scaler.transform(X)
 	return X
 
+def CalculateSumw2Errors(original,original_weights,variable,fmt):
+	sumw2 = [] 
+	nbins = fmt[0]
+	binwidth = (fmt[2]-fmt[1])/fmt[0]
+	bines = [ [((x)*binwidth)+ fmt[1], ((x+1)*binwidth)+fmt[1]] for x in range(0,int(nbins)) ]
+	for x in range(0,int(nbins)):
+		ws=0 
+		for k in range(0,len(original[variable])): 
+			if original[variable][k]<=bines[x][1] and original[variable][k]>bines[x][0]: ws+= (original_weights[k]*original_weights[k])
+		sumw2.append(ws)
+	entries_original_error = numpy.sqrt(sumw2)
+	return entries_original_error
+
 def PrepareModel(tag):
 	model = load_model(tag)
 	print("Loaded model and weights from mymodels")	
@@ -44,12 +57,18 @@ def GetFileList(files_path,tree_name):
 	# -- check that the file has the bbbbTree, otherwise don't add it
 	for file in filelist:
 		ftmp       = ROOT.TFile.Open(file)
+		if ftmp.GetListOfKeys().Contains(tree_name)==False: 
+			print "This file doesn't have a tree, have a look at it: ",file	
+			continue		
+		if ftmp.GetListOfKeys().Contains('eff_histo')==False: 
+			print "This file doesn't have a eff_histo, have a look at it: ",file
+			continue
 		tree       = ftmp.Get(tree_name)
 		events     = tree.GetEntries()
 		if events!=0: 
 			files.append(file)
 		else:
-			print "This file doesn't have a tree, have a look at it: ",file		
+			print "This file doesn't have entries in the tree, have a look at it: ",file		
 		ftmp.Close()
 	return files	
 
@@ -81,9 +100,14 @@ def preparedataforprediction(ioriginal,tfactor, variables):
 	original_weights = numpy.ones(dtype='float64',shape=len(original))
 	original_weights = numpy.multiply(original_weights,tfactor)
 	return original,original_weights
-   
+
+def preparemcforprediction(ioriginal,variables):
+	original         = ioriginal[variables].reset_index(drop=True)
+	original_weights = ioriginal['MC_Weight']
+	return original,original_weights 
+
 def fitreweightermodel(original,target,original_weights,target_weights,tfactor, model_args):
-	print "[INFO] Fitting BDT-reweighter ..."
+	print "[INFO] Fitting BDT-reweighter model ..."
 	model                = bdtreweighter.reweightermodel(original,target,original_weights,target_weights,model_args) 
 	ws_unnormalized      = model.predict_weights(original,original_weights,lambda x: numpy.mean(x, axis=0))
 	#Normalized all reweighter weights to 1
@@ -97,6 +121,14 @@ def fitreweightermodel(original,target,original_weights,target_weights,tfactor, 
 	print "   -The transfer factor                         = ",tfactor,"+/-",tfactor*math.sqrt(  (math.sqrt(len(target))/len(target))**2 + (math.sqrt(len(original))/len(original))**2   )
 	print "   -The sum of model weights                    = ",weights.sum(),"+/-",math.sqrt(numpy.square(weights).sum() )
 	return weights,model
+
+def fittransferfactormodel(original,target,original_weights,target_weights,tfactor):
+	print "[INFO] Fitting transfer factor model ..."
+	print "[INFO] Event yields report in control region derivation:"
+	print "   -The sum of original weights                 = ",int(len(original)),"+/-",math.sqrt(len(original) )
+	print "   -The sum of target weights                   = ",int(len(target)),"+/-",math.sqrt(len(target))
+	print "   -The transfer factor                         = ",tfactor,"+/-",tfactor*math.sqrt(  (math.sqrt(len(target))/len(target))**2 + (math.sqrt(len(original))/len(original))**2   )
+	print "   -The sum of model weights                    = ",original_weights.sum(),"+/-",math.sqrt(numpy.square(original_weights).sum() )
 
 def getmodelweights(original,original_weights,target,target_weights,model,tfactor,valflag,srflag):
 	print "[INFO] Running prediction from BDT-reweighter ..."
@@ -113,6 +145,43 @@ def getmodelweights(original,original_weights,target,target_weights,model,tfacto
 		print "   -The sum of target weights                       =  Blinded" 
 	else:
 		print "   -The sum of target weights                       = ",int(len(target)),"+/-",math.sqrt(len(target))
+	return weights
+
+def getmodeltransferfactorweights(original,original_weights,target,target_weights,tfactor,valflag,srflag):
+	print "[INFO] Running prediction from transferfactor model ..."
+	print "[INFO] Event yields report in prediction:"
+	print "   -The renormalization factor from control regions = ",tfactor
+	print "   -The sum of model weights                        = ",original_weights.sum(),"+/-",math.sqrt(numpy.square(original_weights).sum() )
+	if valflag==False and srflag==True:
+		print "   -The sum of target weights                       =  Blinded" 
+	else:
+		print "   -The sum of target weights                       = ",int(len(target)),"+/-",math.sqrt(len(target))
+
+def getmodelweightsformc(original,original_weights,model,tfactor):
+	print "[INFO] Running prediction from BDT-reweighter ..."
+	ws_unnormalized = model.predict_weights(original,original_weights,lambda x: numpy.mean(x, axis=0))
+	#Normalized all reweighter weights to 1
+	weights = numpy.multiply(ws_unnormalized, (1/ws_unnormalized.sum())  )	
+	#Give them the normalization using the transfer factor derived in control regions
+	totalnorm  = original_weights.sum()*tfactor
+	weights    = numpy.multiply(weights,totalnorm)
+	print "[INFO] Event yields report in prediction:"
+	print "   -The sum of model weights (before factor)        = ",original_weights.sum(),"+/-",math.sqrt(numpy.square(original_weights).sum() )
+	print "   -The renormalization factor from control regions = ",tfactor
+	print "   -The sum of model weights (after factor)         = ",weights.sum(),"+/-",math.sqrt(numpy.square(weights).sum() )
+	return weights
+
+def getmodeltransferfactorweightsformc(original,original_weights,tfactor):
+	print "[INFO] Running prediction from transferfactor model ..."
+	#Normalized all reweighter weights to 1
+	weights = numpy.multiply(original_weights, (1/original_weights.sum())  )	
+	#Give them the normalization using the transfer factor derived in control regions
+	totalnorm  = original_weights.sum()*tfactor
+	weights    = numpy.multiply(weights,totalnorm)
+	print "[INFO] Event yields report in prediction:"
+	print "   -The sum of model weights (before factor)        = ",original_weights.sum(),"+/-",math.sqrt(numpy.square(original_weights).sum() )
+	print "   -The renormalization factor from control regions = ",tfactor
+	print "   -The sum of model weights (after factor)         = ",weights.sum(),"+/-",math.sqrt(numpy.square(weights).sum() )
 	return weights
 
 def pandas2root(tree_dataframe, tree_name, rootfile_name):
@@ -137,12 +206,7 @@ def roothist2root(inputrootfile_name, hist_name, outputrootfile_name):
 	histo.Write()
 	hfile.Write()
 	hfile.Close()  
-#	file = ROOT.TFile.Open('%s'%inputrootfile_name)
-#	hfile =  ROOT.TFile('%s'%outputrootfile_name, 'RECREATE')
-#	h=file.Get(hist_name)
-#	h.Write()
-#	hfile.Write()
-#	hfile.Close()
+
 
 def pandas2historoot(dataframe,hist_name, rootfile_name):
 	ntotal = len(dataframe)
@@ -171,6 +235,12 @@ def TotalMCEvents(sample):
 	h=ROOT.TH1D()
 	h=file.Get('eff_histo')
 	htmp=h.Clone()
-	w=htmp.GetBinContent(1)
+	w=htmp.GetBinContent(2)
 	file.Close()
 	return w
+
+def AddMCWeight(dataframe,lumi,file):
+	print TotalMCEvents(file)
+	scale                   = float((lumi*dataframe.iloc[0]['XS']))/TotalMCEvents(file)
+	dataframe['MC_Weight']  = scale*dataframe['bTagScaleFactor_central']*dataframe['PUWeight']*dataframe['genWeight']
+	return dataframe

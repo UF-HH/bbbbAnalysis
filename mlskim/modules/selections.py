@@ -18,39 +18,51 @@ def eventbtagregion(data,btagregion):
 	else:
 			selected = data
 			rejected = pandas.DataFrame()
-			print "[INFO] The b-tagging region was not specify, the data is b-tagging inclusive! Then rejected dataframe is empty!" 
+			print "[INFO] The b-tagging region was not specified, the data is b-tagging inclusive! Then rejected dataframe is empty!" 
 	return  selected,rejected	
 	
 def eventcategory(data,category):
 	if   category == 'VBF':
-		 selected = data[ data.BDT1 >=0]
-		 rejected = data[ data.BDT1 <0 ] 
+		 selected = data[ ((data.GGFKiller >=0.5) & (data.VBFEvent==1)) ]
+		 rejected = data[~((data.GGFKiller >=0.5) & (data.VBFEvent==1)) ] 
+	elif category == 'VBF1':
+		 selected = data[ ((data.GGFKiller >=0.5) & (data.VBFEvent==1) & (data.GGFKiller < 0.975)) ]
+		 rejected = data[~((data.GGFKiller >=0.5) & (data.VBFEvent==1) & (data.GGFKiller < 0.975)) ]		 
+	elif category == 'VBF2':
+		 selected = data[ ((data.GGFKiller >=0.5) & (data.VBFEvent==1) & (data.GGFKiller >= 0.975)) ]
+		 rejected = data[~((data.GGFKiller >=0.5) & (data.VBFEvent==1) & (data.GGFKiller >= 0.975)) ]
 	elif category == 'GGF':
-		 selected = data[ data.BDT1 <0 ]    	
-		 rejected = data[ data.BDT1 >=0]
+		 selected = data[ (((data.GGFKiller <0.5) & (data.VBFEvent==1)) | (data.VBFEvent==0)) ]    	
+		 rejected = data[~(((data.GGFKiller <0.5) & (data.VBFEvent==1)) | (data.VBFEvent==0)) ]
+	elif category == 'GGF1':
+		 selected = data[ (  ((data.GGFKiller <0.5) & (data.VBFEvent==1) & (data.HH_m<450)) | ((data.VBFEvent==0) & (data.HH_m<450))  )  ]    	
+		 rejected = data[~(  ((data.GGFKiller <0.5) & (data.VBFEvent==1) & (data.HH_m<450)) | ((data.VBFEvent==0) & (data.HH_m<450))  )  ]
+	elif category == 'GGF2':
+		 selected = data[ (  ((data.GGFKiller <0.5) & (data.VBFEvent==1) & (data.HH_m>=450)) | ((data.VBFEvent==0) & (data.HH_m>=450))  )  ]    	
+		 rejected = data[~(  ((data.GGFKiller <0.5) & (data.VBFEvent==1) & (data.HH_m>=450)) | ((data.VBFEvent==0) & (data.HH_m>=450))  )  ]
 	elif category == 'preVBF':
 		 selected = data[ (data.VBFEvent==1)]
 		 rejected = data[~(data.VBFEvent==1)]
 	else:
 		 selected = data
 		 rejected = pandas.DataFrame()
-		 print "[INFO] The hh-category was not specify, the data is category inclusive! Then rejected dataframe is empty!"
+		 print "[INFO] The hh-category was not specified, the data is category inclusive! Then rejected dataframe is empty!"
 	return selected,rejected
 
 def eventmassregion(data,massregion,validation=False):
-	# 2016 is (115,)
+	#The radius of the circles
+	radius1  = 25
+	radius2  = 50
+	# is it validation regions or analysis region?
 	if validation:
 		center1 = 182
 		center2 = 175
 	else:
 		center1 = 125
 		center2 = 120    	
-	radius1  = 25
-	radius2  = 50
-
 	if   massregion == 'CR':
 		selected = data[ (((data.H1_m-center1)**2+(data.H2_m-center2)**2)**(0.5) >= radius1) & (((data.H1_m-center1)**2+(data.H2_m-center2)**2)**(0.5) <= radius2) ]
-		rejected = data[ (((data.H1_m-center1)**2+(data.H2_m-center2)**2)**(0.5) >= radius1) & (((data.H1_m-center1)**2+(data.H2_m-center2)**2)**(0.5) >  radius2) |  (((data.H1_m-center1)**2 +(data.H2_m-center2)**2)**(0.5) < radius1) ] 
+		rejected = data[  ~(   (((data.H1_m-center1)**2+(data.H2_m-center2)**2)**(0.5) >= radius1) & (((data.H1_m-center1)**2+(data.H2_m-center2)**2)**(0.5) <= radius2)  )  ] 
 	elif massregion == 'SR':
 		selected = data[((data.H1_m-center1)**2+(data.H2_m-center2)**2)**(0.5) <  radius1 ]
 		rejected = data[((data.H1_m-center1)**2+(data.H2_m-center2)**2)**(0.5) >= radius1 ]
@@ -59,6 +71,7 @@ def eventmassregion(data,massregion,validation=False):
 		rejected = pandas.DataFrame()
 		print "[INFO] The mass region was not specify, the data is mass region inclusive! Then rejected dataframe is empty!"
 	return selected,rejected
+
 
 def eventselection(data,btagregion=None,category=None,massregion=None,validation=None):
 
@@ -72,17 +85,18 @@ def eventselection(data,btagregion=None,category=None,massregion=None,validation
 	if validation==False: valname='anareg'
 	else: valname='valreg'
 	selectionname="%s/%s/%s/%s"%(btagname,categname,massname,valname)
-	blindname    ="%s/%s/%s"%(btagname,massname,valname)  
-
+	blindname    ="%s/%s/%s"%(btagname,massname,valname)
+ 
+	#selected data
 	databtagregionselected,databtagregionrejected = eventbtagregion(data,btagregion)
-	datacategoryselected,datacategoryrejected     = eventcategory(databtagregionselected,category) 
-	datamassregionselected,datamassregionrejected = eventmassregion(datacategoryselected,massregion,validation) 
-	dataselected = datamassregionselected
-	del datamassregionselected
-	datarejected12  = pandas.concat((databtagregionrejected,datacategoryrejected), ignore_index=True)
-	del databtagregionrejected,datacategoryrejected
-	datarejected    = pandas.concat((datarejected12,datamassregionrejected), ignore_index=True)
-	del datarejected12,datamassregionrejected
+	datacategoryselected,datacategoryrejected     = eventcategory(databtagregionselected,category)
+	dataselected,datamassregionrejected           = eventmassregion(datacategoryselected,massregion,validation) 
+
+	#rejected data
+	datarejected    = pandas.concat((databtagregionrejected,datacategoryrejected,datamassregionrejected), ignore_index=True)
+	del databtagregionrejected,datacategoryrejected,datamassregionrejected
+
+    #printout
 	print "[INFO] DATAFRAME SLICING CHECK FOR %s"%selectionname   
 	print "    -Number of events in dataset (before) = ",len(data) 
 	if blindname != '4b/SR/anareg': print "    -Number of selected events            = ",len(dataselected)  

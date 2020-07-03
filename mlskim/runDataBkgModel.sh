@@ -1,3 +1,5 @@
-python DataBackgroundModel.py --config config/outputskim_2016.cfg --casename FullNtuples
-python DataBackgroundModel.py --config config/outputskim_2017.cfg --casename FullNtuples
-python DataBackgroundModel.py --config config/outputskim_2018.cfg --casename FullNtuples
+YEAR=$1
+mkdir bkgtraining
+mkdir bkgtraining/mylogs
+
+python DataBackgroundModel.py --config config/outputskim_${YEAR}.cfg --casename NtuplesV7 | tee "bkgtraining/mylogs/training_bkgmodel_${YEAR}v7.txt"

@@ -20,33 +20,6 @@ import modules.plotter as plotter
 import modules.bdtreweighter as bdtreweighter
 import modules.selections as selector
 
-def SaveReweighterModel(vars_training,modelargs,bdtreweighter,transferfactor,label):
-	## save the model as pickle
-	outname   = 'bkgtraining/mymodels/%s_bkgmodel.pkl'%label
-	print '[INFO] Pickling bdtreweighter training as', outname
-	outfile   = open(outname, 'wb')
-	to_save   = {
-		'name'     : label,
-		'vars'     : vars_training,
-		'modelargs': modelargs,
-		'model'    : bdtreweighter,
-		'tfactor'  : transferfactor,
-	}
-	pickle.dump (to_save, outfile)
-	outfile.close()
-
-def SaveTransferFactorModel(vars_training,transferfactor,label):
-	## save the model as pickle
-	outname   = 'bkgtraining/mymodels/%s_bkgmodel.pkl'%label
-	print '[INFO] Pickling transferfactor training as', outname
-	outfile   = open(outname, 'wb')
-	to_save   = {
-		'name'    : label,
-		'vars'    : vars_training,
-		'tfactor' : transferfactor,
-	}
-	pickle.dump (to_save, outfile)
-	outfile.close()
 
 def SelectRegions(sample,btagregion,category,validation):
 	datacr,samplerest = selector.eventselection(sample,btagregion,category,'CR',validation)
@@ -67,9 +40,7 @@ def BuildReweightingModel(data_3b, data_4b,category,tag,bkgclassifierparams,bkgp
 	elif category == 'VBF' or category =='VBF1' or category =='VBF2':
 		 variablescr = ['H1_b1_ptRegressed','H1_b2_ptRegressed','H2_b1_ptRegressed','H2_b2_ptRegressed','H1_m','H2_m','HH_m','H1_pt','H2_pt','h1h2_deltaEta','h1h2_deltaPhi','JJ_m','j1j2_deltaEta','GGFKiller']
 	else:
-		 variablescr = ['HH_m']  		
-
-#'HH_b1_ptRegressed','HH_b2_ptRegressed','HH_b3_ptRegressed','HH_b4_ptRegressed','HH_b1_eta','HH_b2_eta','HH_b3_eta','HH_b4_eta','JJ_j1_pt','JJ_j2_pt','JJ_j1_eta','JJ_j2_eta',
+		 variablescr = ['HH_m']   		
 	#######################################
 	##Prepare data to create the model
 	#######################################
@@ -101,10 +72,7 @@ def BuildReweightingModel(data_3b, data_4b,category,tag,bkgclassifierparams,bkgp
 	roc_auc_nowts  = bdtreweighter.discrimination_test(originalcr,targetcr,originalcr_weights,bkgclassifierparams,"%s"%tag,"original",False)
 	roc_auc_wts    = bdtreweighter.discrimination_test(originalcr,targetcr,foldingcr_weights,bkgclassifierparams,"%s"%tag,"model",False)
 	passedresult   = bdtreweighter.discrimination_comparison(roc_auc_nowts,roc_auc_wts)
-	##############################################################
-	## Save training information only if found a set candidate
-	##############################################################
-	#SaveReweighterModel(variablescr,modelargs,reweightermodel,transferfactor,tag)
+
 	return foldingcr_weights,reweightermodel,transferfactor
 
 def BuildTransferFactorModel(data_3b, data_4b,category,tag):
@@ -133,7 +101,7 @@ def ApplyReweightingModel(reweightermodel,transferfactor,data_3b,data_4b,tag,bkg
 	elif category == 'VBF' or category =='VBF1' or category =='VBF2':
 		 variables = ['H1_b1_ptRegressed','H1_b2_ptRegressed','H2_b1_ptRegressed','H2_b2_ptRegressed','H1_m','H2_m','HH_m','H1_pt','H2_pt','h1h2_deltaEta','h1h2_deltaPhi','JJ_m','j1j2_deltaEta','GGFKiller']
 	else:
-		 variables = ['HH_m']          
+		 variables = ['HH_m']         
 	original,original_weights = data.preparedataforprediction(data_3b,transferfactor,variables)
 	target,target_weights     = data.preparedataforprediction(data_4b,1,variables)
 
@@ -332,23 +300,13 @@ dataset  = data.root2pandas(datalist,'bbbbTree')
 classifierparams=[40,0.3,2020]
 
 starttime = time.time()
-#Add for analysis region
-dataset = RunReweightingModel(dataset,ggf1anabkgparams,classifierparams,case,directory,tag,False,False,1)
-dataset = RunReweightingModel(dataset,ggf2anabkgparams,classifierparams,case,directory,tag,False,False,2)
-dataset = RunReweightingModel(dataset,vbfanabkgparams,classifierparams,case,directory,tag,False,True,1)
-dataset = RunReweightingModel(dataset,vbfanabkgparams,classifierparams,case,directory,tag,False,True,2)
-
-###Add for validation region
-dataset = RunReweightingModel(dataset,ggf1valbkgparams,classifierparams,case,directory,tag,True,False,1)
-dataset = RunReweightingModel(dataset,ggf2valbkgparams,classifierparams,case,directory,tag,True,False,2)
-dataset = RunReweightingModel(dataset,vbfvalbkgparams,classifierparams,case,directory,tag,True,True,1)
-dataset = RunReweightingModel(dataset,vbfvalbkgparams,classifierparams,case,directory,tag,True,True,2)
+dataset = RunReweightingModel(dataset,vbfanabkgparams,classifierparams,case,directory,tag,False,True,0)
 
 ##Save everything in a root file
 print "[INFO] Saving background model weight in file . . . "
-data.pandas2root(dataset,'bbbbTree',   'outputskims/%s/%s/SKIM_BKG_MODEL_tree.root'%(case,directory)  )
-data.roothist2root(datalist,'eff_histo','outputskims/%s/%s/SKIM_BKG_MODEL_hist.root'%(case,directory)  )
-os.system("hadd -f outputskims/%s/%s/SKIM_BKG_MODEL.root outputskims/%s/%s/SKIM_BKG_MODEL_tree.root outputskims/%s/%s/SKIM_BKG_MODEL_hist.root"%(case,directory,case,directory,case,directory))
-os.system("rm outputskims/%s/%s/SKIM_BKG_MODEL_tree.root outputskims/%s/%s/SKIM_BKG_MODEL_hist.root"%(case,directory,case,directory) )			
+data.pandas2root(dataset,'bbbbTree',   'outputskims/%s/%s/SKIM_GGFKILLER_BKG_MODEL_tree.root'%(case,directory)  )
+data.roothist2root(datalist,'eff_histo','outputskims/%s/%s/SKIM_GGFKILLER_BKG_MODEL_hist.root'%(case,directory)  )
+os.system("hadd -f outputskims/%s/%s/SKIM_GGFKILLER_BKG_MODEL.root outputskims/%s/%s/SKIM_GGFKILLER_BKG_MODEL_tree.root outputskims/%s/%s/SKIM_GGFKILLER_BKG_MODEL_hist.root"%(case,directory,case,directory,case,directory))
+os.system("rm outputskims/%s/%s/SKIM_GGFKILLER_BKG_MODEL_tree.root outputskims/%s/%s/SKIM_GGFKILLER_BKG_MODEL_hist.root"%(case,directory,case,directory) )			
 
 print('Running the background model took {} seconds'.format(time.time() - starttime))

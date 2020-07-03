@@ -11,191 +11,150 @@ from  ConfigParser import *
 from hep_ml import reweight
 from root_numpy import root2array
 from numpy.lib.recfunctions import stack_arrays
+import pickle
 #My modules
 import modules.datatools as data
 import modules.plotter as plotter
 import modules.bdtreweighter as bdtreweighter
 import modules.selections as selector
 
-def SelectRegionforBackgroundRejectionTraining(sample,btagregion,category,validation):
-	datacr,datasrrest = selector.eventselection(sample,btagregion,category,'CR',validation)
-	datasr,datarest   = selector.eventselection(datasrrest,btagregion,category,'SR',validation)
+def ReadReweightingModel(bkdtrainingfile):
+	# open picked file and use it back again
+	infile     = open(bkdtrainingfile,'rb')
+	training   = pickle.load(infile)
+	infile.close()
+	#Get training information
+	variables       = training.get('vars')
+	bdtreweighter   = training.get('model')
+	transferfactor  = training.get('tfactor')
+	return variables,bdtreweighter,transferfactor
+
+def ReadTransferFactorModel(bkdtrainingfile):
+	# open picked file and use it back again
+	infile     = open(bkdtrainingfile,'rb')
+	training   = pickle.load(infile)
+	infile.close()
+	#Get training information
+	variables       = training.get('vars')
+	transferfactor  = training.get('tfactor')
+	return variables,transferfactor
+
+def SelectRegions(sample,btagregion,category,validation):
+	datacr,samplerest = selector.eventselection(sample,btagregion,category,'CR',validation)
+	del sample
+	datasr,datarest   = selector.eventselection(samplerest,btagregion,category,'SR',validation)	
+	del samplerest
 	return datacr,datasr,datarest
 
-def SelectRegionforProductionModeTraining(sample,btagregion,category,validation):
-	dataselected,datarest = selector.eventselection(sample,btagregion,category,'None',validation)
-	return dataselected
-
-def BuildReweightingModel(data_3b, data_4b,category,tag,seed):
-	print "[INFO] Processing predicted model for %s"%(tag)
+def ApplyReweightingModel(reweightermodel,transferfactor,variables,mcdata):
 	############################################################################
-	##Let's slice data one more time to have the inputs for the bdt reweighting#700/600/300/200
-	############################################################################
-	if category =='GGF':
-		 variablescr = ['nJet_ec','H1_pt','H2_pt','H1_m','H2_m', 'HH_m','h1h2_deltaEta','H1_bb_deltaR','H2_bb_deltaR','costh_HH_b1_ggfcm','costh_HH_b2_ggfcm']
-		 modelargs= [55,0.1,2,50,0.5,seed] 
-	else:
-		 variablescr = ['H1_pt', 'H2_pt','H1_eta', 'H2_eta']  	
-		 modelargs= [50,0.1,5,100,0.5,seed]
-	originalcr,targetcr,originalcr_weights,targetcr_weights,transferfactor = data.preparedataformodel(data_3b,data_4b,variablescr)
-	plotter.Draw1DHistosComparison(originalcr, targetcr, variablescr, originalcr_weights,True,"original_%s"%tag)
-	#######################################
-	##Folding Gradient Boosted Reweighter
-	#######################################
-	foldingcr_weights,reweightermodel,renormtransferfactor = data.fitreweightermodel(originalcr,targetcr,originalcr_weights,targetcr_weights,transferfactor,modelargs)  
-	plotter.Draw1DHistosComparison(originalcr, targetcr, variablescr, foldingcr_weights,True,"model_%s"%tag)
-	########################################
-	##GB ROC AUC
-	########################################
-	bdtreweighter.roc_auc_measurement(originalcr,targetcr,originalcr_weights,foldingcr_weights)
-	########################################
-	##Update 3b dataframe for modeling
-	########################################
-	return foldingcr_weights,reweightermodel,transferfactor,renormtransferfactor
-
-def CreatePredictionModel(reweightermodel,transferfactor,renormtransferfactor,data_3b,category):
-	############################################################################
-	##Let's slice data one more time to have the inputs for the bdt reweighting#
-	############################################################################
-	if category =='GGF':
-		 variables = ['nJet_ec','H1_pt','H2_pt','H1_m','H2_m', 'HH_m','h1h2_deltaEta','H1_bb_deltaR','H2_bb_deltaR','costh_HH_b1_ggfcm','costh_HH_b2_ggfcm']
-	elif category == 'VBF':
-		 variables = ['H1_pt', 'H2_pt','H1_eta','H2_eta']
-	else:
-		 variables = ['H1_pt', 'H2_pt']          
-	original,original_weights = data.preparedataforprediction(data_3b,transferfactor,variables)
+	##Let's slice data one more time to have the inputs for the bdt reweighting
+	############################################################################    
+	original,original_weights = data.preparemcforprediction(mcdata,variables)
 	########################################3############
 	##Folding Gradient Boosted Reweighter (and DQM plots)
 	#####################################################
-	folding_weights= data.getmodelweights(original,original_weights,reweightermodel,transferfactor,renormtransferfactor)
+	folding_weights = data.getmodelweightsformc(original,original_weights,reweightermodel,transferfactor)
+
 	return folding_weights
 
+def ApplyTransferFactorModel(transferfactor,variables,mcdata):
+	############################################################################
+	##Let's slice data one more time to have the inputs for the bdt reweighting
+	############################################################################    
+	original,original_weights = data.preparemcforprediction(mcdata,variables)
+	########################################3############
+	##Transfer facotr weights
+	#####################################################
+	folding_weights = data.getmodeltransferfactorweightsformc(original,original_weights,transferfactor)
 
-def AddModelWeight(case,directory,mcsample,dataset,weightname,categ,valflag,tag,seed):
+	return folding_weights
+
+def AddModelWeights(dataset,weightname,categ,valflag,tag):
 	#Slice the data sample to take only events with three/four b-tags among the two categories
-	data_cr_3b_categ,data_sr_3b_categ,data_rest_3b_categ = SelectRegionforBackgroundRejectionTraining(dataset,'3b',categ,valflag)
-	data_cr_4b_categ,data_sr_4b_categ,data_rest_4b_categ = SelectRegionforBackgroundRejectionTraining(dataset,'4b',categ,valflag)
-	#Get weights ,model, transferfactor for CR data
-	print "[INFO] Building BDT-reweighting model for %s in the CR MC"%weightname
-	weights_cr_categ,reweightermodel_categ,transferfactor_categ,renormtransferfactor_categ=BuildReweightingModel(data_cr_3b_categ,data_cr_4b_categ,categ,'%s_CR_%s_%s'%(tag,categ,weightname),seed)
-	#Get weights for the dataset
-	print "[INFO] Calculating BDT-reweighting model prediction %s in the SR MC"%weightname
-	weights_sr_categ=CreatePredictionModel(reweightermodel_categ,transferfactor_categ,renormtransferfactor_categ,data_sr_3b_categ,categ)
-	#Add the weights to the CR & the rest
-	print "[INFO] Adding weight %s to the dataframes"%weightname
-	data_cr_3b_categ[weightname]     = weights_cr_categ
-	data_cr_3b_categ["GGFSignalRegion"] = 0	 
-	data_sr_3b_categ[weightname]     = weights_sr_categ
-	data_sr_3b_categ["GGFSignalRegion"] = 1
-	#Compute the sample efficiency
-	srefficiency    = float (len(data_sr_4b_categ) / data.TotalMCEvents('outputskims/%s/%s/SKIM_%s.root'%(case,directory,mcsample)))
-	crefficiency    = float (len(data_cr_4b_categ) / data.TotalMCEvents('outputskims/%s/%s/SKIM_%s.root'%(case,directory,mcsample)))
-	print "[INFO] Adding efficiency branch to the dataframes"
-	data_sr_3b_categ["SelEff"]        = srefficiency 
-	data_cr_3b_categ["SelEff"]        = crefficiency 		
-	#Merge (concatenate) them
-	print "[INFO] Returning dataframe"
-	datasetwithweight = pandas.concat( (data_cr_3b_categ,data_sr_3b_categ), ignore_index=True   )
-	value = numpy.ones(dtype='float64',shape=len(datasetwithweight))
-	valuef = numpy.multiply(value,transferfactor_categ)
-	datasetwithweight[weightname+"_tfactor"] = valuef
+	print "\n"*2
+	print "[INFO] Preparing data and building BDT-reweighting model for %s using the 3b/4b CR data"%weightname
+	data_cr_3b_categ,data_sr_3b_categ,data_rt_3b_categ = SelectRegions(dataset,'3b',categ,valflag)
 	del dataset
+	#Get weights ,model, transferfactor 
+	if 'VBF2' in weightname:
+		variables,transferfactor = ReadTransferFactorModel('bkgtraining/mymodels/%s_%s_bkgmodel.pkl'%(tag,weightname))
+		#Get weights for the MC dataset
+		print "[INFO] Calculating BDT-reweighting model prediction %s in the 3b SR MC"%weightname
+		weights_sr_categ = ApplyTransferFactorModel(transferfactor,variables,data_sr_3b_categ)		
+		print "[INFO] Calculating BDT-reweighting model prediction %s in the 3b CR MC"%weightname
+		weights_cr_categ = ApplyTransferFactorModel(transferfactor,variables,data_cr_3b_categ)		
+		print "[INFO] Calculating BDT-reweighting model prediction %s in the rest of the MC"%weightname
+		weights_rt_categ = ApplyTransferFactorModel(transferfactor,variables,data_rt_3b_categ)
+	else: 
+		variables,bdtreweighter,transferfactor = ReadReweightingModel('bkgtraining/mymodels/%s_%s_bkgmodel.pkl'%(tag,weightname))
+		#Get weights for the MC dataset
+		print "[INFO] Calculating BDT-reweighting model prediction %s in the 3b SR MC"%weightname
+		weights_sr_categ = ApplyReweightingModel(bdtreweighter,transferfactor,variables,data_sr_3b_categ)		
+		print "[INFO] Calculating BDT-reweighting model prediction %s in the 3b CR MC"%weightname
+		weights_cr_categ = ApplyReweightingModel(bdtreweighter,transferfactor,variables,data_cr_3b_categ)		
+		print "[INFO] Calculating BDT-reweighting model prediction %s in the rest of the MC"%weightname
+		weights_rt_categ = ApplyReweightingModel(bdtreweighter,transferfactor,variables,data_rt_3b_categ)
+	#Add the weights to the CR & the rest
+	print "[INFO] Adding weight %s"%weightname
+	data_cr_3b_categ[weightname] = weights_cr_categ 
+	data_sr_3b_categ[weightname] = weights_sr_categ
+	data_rt_3b_categ[weightname] = weights_rt_categ
+	#Merge (concatenate) them
+	print "[INFO] Concatenating all events in the dataframe"
+	datasetwithweight = pandas.concat( (data_cr_3b_categ,data_sr_3b_categ,data_rt_3b_categ), ignore_index=True   )
+	del data_cr_3b_categ,data_sr_3b_categ,data_rt_3b_categ
+	value  = numpy.ones(dtype='float64',shape=len(datasetwithweight))
+	datasetwithweight[weightname+"_tfactor"] = numpy.multiply(value,transferfactor)
+	datasetwithweight                        = datasetwithweight.reset_index(drop=True)
 	return datasetwithweight
 
-def RunReweightingModel(mcsamples,case,directory,tag,seed):
-	os.system('mkdir trainingbdts')
-	os.system('mkdir trainingbdts/%s'%case)
-	os.system('mkdir trainingbdts/%s/%s'%(case,directory) )	
-	for mcsample in mcsamples:
-		#Get data and create panda dataframes with specific variables, a.k.a. slicing the data. Then, create background model based on control region data
-		mcsampleframe = data.root2pandas('outputskims/%s/%s/SKIM_%s.root'%(case,directory,mcsample),'bbbbTree')
-		datasetwithweights = AddModelWeight(case,directory,mcsample,mcsampleframe,'Weight_SR_GGF','GGF',False,"%s_%s"%(tag,mcsample),seed)
-		print 'Saving mc sample with reweighting-model weights . . .'
-		#Save modeling dataframe tree to a root file
-		if seed!=2019:
-		   data.pandas2root(datasetwithweights,'bbbbTree', 'trainingbdts/%s/%s/SKIM_%s_BR_%s.root'%(case,directory,mcsample,seed)  )
+def RunReweightingModel(dataset,case,directory,tag,valflag,catflag,subcatflag):
+	#Add weights for analysis
+	if valflag==True and catflag==False:
+		if subcatflag==1: 
+			dataset=AddModelWeights(dataset,'Weight_ValGGF1', 'GGF1',valflag,'%s'%(tag))
+		elif subcatflag==2:
+			dataset=AddModelWeights(dataset,'Weight_ValGGF2','GGF2',valflag,'%s'%(tag))
 		else:
-		   data.pandas2root(datasetwithweights,'bbbbTree', 'trainingbdts/%s/%s/SKIM_%s_BR.root'%(case,directory,mcsample)  )
-		del datasetwithweights,mcsampleframe  
+			dataset=AddModelWeights(dataset,'Weight_ValGGF','GGF',valflag,'%s'%(tag))
 
-def RunSignalSelection(signalsamples,case,directory,tag):
-	os.system('mkdir trainingbdts')
-	os.system('mkdir trainingbdts/%s'%case)
-	os.system('mkdir trainingbdts/%s/%s'%(case,directory) )	
-	#First prepare data to train for background rejection
-	for mcsample in signalsamples:
-		#Get data and create panda dataframes with specific variables, a.k.a. slicing the data. Then, create background model based on control region data
-		mcsampleframe = data.root2pandas('outputskims/%s/%s/SKIM_%s.root'%(case,directory,mcsample),'bbbbTree')
-		#Slice the data sample to take only events with three/four b-tags among the two categories
-		data_cr_4b_categ,data_sr_4b_categ,data_rest_4b_categ = SelectRegionforBackgroundRejectionTraining(mcsampleframe,'4b','GGF',False)
-		#Add the weights to the CR & the rest
-		print "[INFO] Adding branches to the dataframes"
-		data_cr_4b_categ['Weight_SR_GGF']     = 1
-		data_cr_4b_categ["GGFSignalRegion"]      = 0	 
-		data_sr_4b_categ['Weight_SR_GGF']     = 1
-		data_sr_4b_categ["GGFSignalRegion"]      = 1
-		data_rest_4b_categ['Weight_SR_GGF']   = 1
-		data_rest_4b_categ["GGFSignalRegion"]    = -1
-		#Compute the sample efficiency
-		srefficiency    = float (len(data_sr_4b_categ)   / data.TotalMCEvents('outputskims/%s/%s/SKIM_%s.root'%(case,directory,mcsample)))
-		crefficiency    = float (len(data_cr_4b_categ)   / data.TotalMCEvents('outputskims/%s/%s/SKIM_%s.root'%(case,directory,mcsample)))
-		restefficiency  = float (len(data_rest_4b_categ) / data.TotalMCEvents('outputskims/%s/%s/SKIM_%s.root'%(case,directory,mcsample)))
-		print "[INFO] Adding efficiency branch to the dataframes"
-		data_sr_4b_categ["SelEff"]        = srefficiency 
-		data_cr_4b_categ["SelEff"]        = crefficiency			 
-		#Merge (concatenate) them
-		print "[INFO] Saving mc signal sample for background rejection"
-		dataset = pandas.concat( (data_cr_4b_categ,data_sr_4b_categ,data_rest_4b_categ), ignore_index=True   )
-		data.pandas2root(dataset,'bbbbTree', 'trainingbdts/%s/%s/SKIM_%s_BR.root'%(case,directory,mcsample)  )
-		del dataset
-	#Second prepare data to train for production mode
-	for mcsample in signalsamples:
-		#Get data and create panda dataframes with specific variables, a.k.a. slicing the data. Then, create background model based on control region data
-		mcsampleframe = data.root2pandas('outputskims/%s/%s/SKIM_%s.root'%(case,directory,mcsample),'bbbbTree')
-		#Slice the data sample to take only events with three/four b-tags among the two categories
-		data_4b_prevbf_categ = SelectRegionforProductionModeTraining(mcsampleframe,'4b','preVBF',False)
-		#Compute the sample efficiency
-		preVBFefficiency    = float (len(data_4b_prevbf_categ)   / data.TotalMCEvents('outputskims/%s/%s/SKIM_%s.root'%(case,directory,mcsample)))
-		print "[INFO] Adding efficiency branch to the dataframes: ",preVBFefficiency
-		data_4b_prevbf_categ["preVBFSelEff"] = preVBFefficiency
-		#Merge (concatenate) them
-		print "[INFO] Saving mc signal sample for background rejection"
-		data.pandas2root(data_4b_prevbf_categ,'bbbbTree', 'trainingbdts/%s/%s/SKIM_%s_PM.root'%(case,directory,mcsample)  )
-		del data_4b_prevbf_categ       
+	elif valflag==True and catflag==True:
+		if subcatflag==1:
+			dataset=AddModelWeights(dataset,'Weight_ValVBF1','VBF1',valflag,'%s'%(tag))
+		elif subcatflag==2:
+			dataset=AddModelWeights(dataset,'Weight_ValVBF2','VBF2',valflag,'%s'%(tag))
+		else:
+			dataset=AddModelWeights(dataset,'Weight_ValVBF','VBF',valflag,'%s'%(tag))
 
-def RunBkgModelSelection(bkgmodel,case,directory,tag):
-	os.system('mkdir trainingbdts')
-	os.system('mkdir trainingbdts/%s'%case)
-	os.system('mkdir trainingbdts/%s/%s'%(case,directory) )	
-	#First prepare data to train for background rejection
-	#Get data and create panda dataframes with specific variables, a.k.a. slicing the data. Then, create background model based on control region data
-	sampleframe = data.root2pandas('outputskims/%s/%s/SKIM_%s.root'%(case,directory,bkgmodel),'bbbbTree')
-	#Slice the data sample to take only events with three/four b-tags among the two categories
-	data_cr_4b_categ,data_sr_4b_categ,data_rest_4b_categ = SelectRegionforBackgroundRejectionTraining(sampleframe,'3b','GGF',False)
-	#Add the weights to the CR & the rest
-	print "[INFO] Adding branches to the dataframes"	 
-	data_sr_4b_categ['Weight_SR_GGF']   = 1
-	data_sr_4b_categ["GGFSignalRegion"] = 1
-	#Compute the sample efficiency
-	print "[INFO] Adding efficiency branch to the dataframes"
-	data_sr_4b_categ["SelEff"]          = 1 		 
-	data_sr_4b_categ["XS"]              = 1
-	#Merge (concatenate) them
-	print "[INFO] Saving mc signal sample for background rejection"
-	data.pandas2root(data_sr_4b_categ,'bbbbTree', 'trainingbdts/%s/%s/SKIM_%s_BR.root'%(case,directory,bkgmodel)  )
-	del sampleframe 
+	elif valflag==False and catflag==False:
+		if subcatflag==1: 
+			dataset=AddModelWeights(dataset,'Weight_AnaGGF1','GGF1',valflag,'%s'%(tag))
+		elif subcatflag==2:
+			dataset=AddModelWeights(dataset,'Weight_AnaGGF2','GGF2',valflag,'%s'%(tag))
+		else:
+			dataset=AddModelWeights(dataset,'Weight_AnaGGF','GGF',valflag,'%s'%(tag))		
+	elif valflag==False and catflag==True:
+		if subcatflag==1: 
+			dataset=AddModelWeights(dataset,'Weight_AnaVBF1','VBF1',valflag,'%s'%(tag))
+		elif subcatflag==2:
+			dataset=AddModelWeights(dataset,'Weight_AnaVBF2','VBF2',valflag,'%s'%(tag))
+		else:
+			dataset=AddModelWeights(dataset,'Weight_AnaVBF','VBF',valflag,'%s'%(tag))			
+	else:
+		print "[ERROR] No weights are calculated, incorrect selection!"   	
+	return dataset
 
 #############COMMAND CODE IS BELOW ######################
 
 ###########OPTIONS
 parser = argparse.ArgumentParser(description='Command line parser of skim options')
-parser.add_argument('--config',   dest='cfgfile',   help='Name of config file',   required = True)
-parser.add_argument('--sample',   dest='samplename',   help='Type of sample: 0 signal, 1 bkg, 2 both',   required = True)
-parser.add_argument('--casename', dest='casename',  help='Case name',   required = True)
+parser.add_argument('--config',  dest='cfgfile',  help='Name of config file',   required = True)
+parser.add_argument('--casename',dest='casename', help='Case name',   required = True)
 args = parser.parse_args()
 configfilename = args.cfgfile
-sampletorun    = args.samplename
 case           = args.casename
+#weight         = args.weight
 ###########Read Config file
 print "[INFO] Reading skim configuration file . . ."
 cfgparser = ConfigParser()
@@ -205,35 +164,55 @@ print "[INFO] Getting configuration parameters . . ."
 directory   = ast.literal_eval(cfgparser.get("configuration","directory"))
 print "    -The directory:"
 print "      *",directory
-randseed    = ast.literal_eval(cfgparser.get("configuration","seed"))
-print "    -The random seed:"
-print "      *",randseed 
-signalsamples  = ast.literal_eval(cfgparser.get("configuration","signalsamples"))
-print "    -The list of signal samples:"
-for x in range(len(signalsamples)):
-  print "      *",signalsamples[x]
-qcdsamples     = ast.literal_eval(cfgparser.get("configuration","qcdsamples"))
-print "    -The list of qcd samples:"
-for x in range(len(qcdsamples)):
-  print "      *",qcdsamples[x]
-bdtbkgsamples  = ast.literal_eval(cfgparser.get("configuration","bdtbkgsamples"))
-print "    -The list of bdtbkg samples:"
-print "      *",bdtbkgsamples[0] 
 tag         = ast.literal_eval(cfgparser.get("configuration","tag"))
-print "    -The tag:"
-print "      *",tag  
-##########Make samples to train
-if sampletorun=='2':
-   print "[INFO] Preparing bdt-background model"
-   #Create signal sample in signal region
-   RunBkgModelSelection(bdtbkgsamples[0],case,directory,tag)
-elif sampletorun=='1':
-   print "[INFO] Preparing MC background model"
-   #Create background sample with bdt weights model in signal region
-   RunReweightingModel(qcdsamples,case,directory,tag,randseed)
-elif sampletorun=='0':   
-   print "[INFO] Preparing MC signal model"
-   #Create signal sample in signal region
-   RunSignalSelection(signalsamples,case,directory,tag)
-else:
-   print "[WARNING] Type of sample is not specified"
+print "    -The tag name:"
+print "      *",tag 
+sigsamples  = ast.literal_eval(cfgparser.get("configuration","sigsamplesforselfbias"))
+print "    -The list of MC signal samples:"
+for x in range(len(sigsamples)):
+  print "      *",sigsamples[x]
+siginjs     = ast.literal_eval(cfgparser.get("configuration","siginjs"))
+print "    -The injected signal strenghts (u_inj):"
+for x in range(len(siginjs)):
+  print "      *",siginjs[x]
+lumi         = ast.literal_eval(cfgparser.get("configuration","lumi"))
+print "    -The lumi:"
+print "      *",lumi   
+##########Appy background miodel to MC sample
+print "[INFO] Apply background model in MC sample  ... "
+#Create folder to save training information
+for sample in sigsamples:
+	 #Get data and create panda dataframes with specific variables, a.k.a. slicing the data. Then, create background model based on control region data
+	 datalist = []
+	 datalist.append('outputskims/%s/%s/SKIM_%s.root'%(case,directory,sample))
+	 dataset = data.root2pandas(datalist,'bbbbTree')
+	 #Add MC event weight to have right normalization afterwards
+	 dataset = data.AddMCWeight(dataset,lumi,'outputskims/%s/%s/SKIM_%s.root'%(case,directory,sample))
+
+	 #Add GGF1 weights for analysis/validation region
+	 dataset = RunReweightingModel(dataset,case,directory,tag,False,False,1)
+	 dataset = RunReweightingModel(dataset,case,directory,tag,True,False,1)
+	 #Add GGF2 weights for analysis/validation region
+	 dataset = RunReweightingModel(dataset,case,directory,tag,False,False,2)
+	 dataset = RunReweightingModel(dataset,case,directory,tag,True,False,2)
+	 #Add VBF1 weights for analysis/validation region
+	 dataset = RunReweightingModel(dataset,case,directory,tag,False,True,1)
+	 dataset = RunReweightingModel(dataset,case,directory,tag,True,True,1)
+	 #Add VBF2 weights for analysis/validation region
+	 dataset = RunReweightingModel(dataset,case,directory,tag,False,True,2)
+	 dataset = RunReweightingModel(dataset,case,directory,tag,True,True,2)
+
+	 #Before saving it, reset the MC weights=1, the bkg-model weight already includes the correct normalization. Then, pass it as data-driven estimate
+	 weights = ['XS','bTagScaleFactor_central','PUWeight','genWeight']
+	 value   = numpy.ones(dtype='float64',shape=len(dataset))
+	 for w in weights: dataset[w]=value
+	 #Save everything in a root file with several u_inj scenarios
+	 for u_inj in siginjs:
+		 print "[INFO] Saving MC background model (u_inj=%.1f) in a root file"%u_inj
+		 dataset_uinj       = dataset.copy()
+		 dataset_uinj['XS'] = dataset_uinj['XS'].apply(lambda x: x*u_inj)
+		 data.pandas2root(dataset_uinj,'bbbbTree',    'outputskims/%s/%s/SKIM_%s_MODEL_%.1f_tree.root'%(case,directory,sample,u_inj)  )
+		 data.roothist2root(datalist,'eff_histo','outputskims/%s/%s/SKIM_%s_MODEL_%.1f_hist.root'%(case,directory,sample,u_inj)  )
+		 os.system("hadd -f outputskims/%s/%s/SKIM_%s_MODEL_%.1f_uinj.root outputskims/%s/%s/SKIM_%s_MODEL_%.1f_tree.root outputskims/%s/%s/SKIM_%s_MODEL_%.1f_hist.root"%(case,directory,sample,u_inj,case,directory,sample,u_inj,case,directory,sample,u_inj))
+		 os.system("rm outputskims/%s/%s/SKIM_%s_MODEL_%.1f_tree.root outputskims/%s/%s/SKIM_%s_MODEL_%.1f_hist.root"%(case,directory,sample,u_inj,case,directory,sample,u_inj) )	
+		 del dataset_uinj

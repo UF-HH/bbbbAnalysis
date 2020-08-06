@@ -24,6 +24,8 @@ struct EventInfo{
     boost::optional<unsigned int>           LumiSec;
     boost::optional<unsigned long long int> Event;
 
+    boost::optional<double> event_weight;
+
     boost::optional<GenPart> gen_X;
     boost::optional<GenPart> gen_H1;
     boost::optional<GenPart> gen_H2;

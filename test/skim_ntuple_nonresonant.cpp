@@ -243,6 +243,10 @@ int main(int argc, char** argv)
             parameterList.emplace("BJetScaleFactorsFile"               ,config.readStringOpt("parameters::BJetScaleFactorsFile"    ));
             parameterList.emplace("BJetScaleFactorsFileAlternative"    ,config.readStringOpt("parameters::BJetScaleFactorsFileAlternative"));
         }
+        else if(bTagscaleFactorMethod == "Reshaping"){
+            parameterList.emplace("BJetScaleFactorsFile"               ,config.readStringOpt("parameters::BJetScaleFactorsFile"    ));
+            parameterList.emplace("BJetScaleFactorsFileAlternative"    ,config.readStringOpt("parameters::BJetScaleFactorsFileAlternative"));
+        }
         else if(bTagscaleFactorMethod == "None"){
         }  
         // else if(other selection type){
@@ -475,6 +479,11 @@ int main(int argc, char** argv)
     outputFile.cd();
     ot.write();
     ec.write();
+
+    // for reshaping scale factors, save additionally the extra histogram with the partial normalisations
+    if (config.readStringOpt("parameters::BTagScaleFactorMethod") == "Reshaping"){
+        oph.writebTagReshapingHisto();
+    }
 
 }
 

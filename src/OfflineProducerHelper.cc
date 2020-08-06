@@ -362,6 +362,7 @@ void OfflineProducerHelper::initializeObjectsBJetForScaleFactors(OutputTree &ot)
             btagger= "DeepCSV";btaggingfile = any_cast<string>(parameterList_->at("BJetScaleFactorsFile"));
         }
 
+        cout << "[INFO] ... btag SF FourBtag_ScaleFactor method, loading : " << btagger << " " << btaggingfile << endl;
         BTagCalibration btagCalibration(btagger,btaggingfile);
         btagCalibrationReader_lightJets_ = new BTagCalibrationReader(BTagEntry::OP_MEDIUM,"central",{"up", "down"});
         btagCalibrationReader_cJets_     = new BTagCalibrationReader(BTagEntry::OP_MEDIUM,"central",{"up", "down"});
@@ -369,7 +370,62 @@ void OfflineProducerHelper::initializeObjectsBJetForScaleFactors(OutputTree &ot)
         btagCalibrationReader_lightJets_->load(btagCalibration, BTagEntry::FLAV_UDSG, "incl"  );
         btagCalibrationReader_cJets_    ->load(btagCalibration, BTagEntry::FLAV_C   , "comb");//mujets is for top physics in dilepton channel
         btagCalibrationReader_bJets_    ->load(btagCalibration, BTagEntry::FLAV_B   , "comb");//mujets is for top physics in dilepton channel 
+    }
 
+    else if (scaleFactorsMethod == "Reshaping")
+    {
+        // build the values needed to be looked up - by name : central + variations
+        // do not edit after it has been prepared! This vector is used to loop over the central + uncertainties and fill the corresponding branches
+        
+        btag_sf_reshaping_full_list_.push_back("central");
+        for (string sfunc : btag_sf_reshaping_unc_sources_)
+        {
+            for (string dir : {"up", "down"})
+            {
+                string uncname = dir;
+                uncname += string("_");
+                uncname += sfunc;
+                btag_sf_reshaping_full_list_.push_back(uncname);
+            }
+        }
+
+        // allocate the vector for the sum weights for partial normalisation
+        btag_sf_reshaping_full_list_sumw_.resize(btag_sf_reshaping_full_list_.size());
+        for (uint isf = 0; isf < btag_sf_reshaping_full_list_sumw_.size(); ++isf){
+            btag_sf_reshaping_full_list_sumw_.at(isf) = 0;
+        }
+        btag_sf_reshaping_sumw_denom_ = 0;
+
+        // create branches
+        for (string sfunc : btag_sf_reshaping_full_list_)
+        {
+            string sfbrname = "bSFshape_";
+            sfbrname += sfunc;
+            ot.declareUserFloatBranch(sfbrname, 1.);
+        }
+
+        string btaggingfile,btagger;
+        if(eventselection=="VBFJetCut")
+        {
+          if( any_cast<bool>(parameterList_->at("NewestBtaggingAlgorithm"))  )
+          {
+            btagger= "DeepJet";btaggingfile = any_cast<string>(parameterList_->at("BJetScaleFactorsFileAlternative"));
+          }
+          else
+          {
+            btagger= "DeepCSV";btaggingfile = any_cast<string>(parameterList_->at("BJetScaleFactorsFile"));
+          }
+        }
+        else{
+            btagger= "DeepCSV";btaggingfile = any_cast<string>(parameterList_->at("BJetScaleFactorsFile"));
+        }
+
+        cout << "[INFO] ... btag SF Reshaping method, loading : " << btagger << " " << btaggingfile << endl;
+        BTagCalibration btagCalibration(btagger,btaggingfile);
+        btagCalibrationReader_all_ = std::unique_ptr<BTagCalibrationReader> (new BTagCalibrationReader(BTagEntry::OP_RESHAPING, "central", btag_sf_reshaping_full_list_));
+        btagCalibrationReader_all_->load(btagCalibration,  BTagEntry::FLAV_B,    "iterativefit");
+        btagCalibrationReader_all_->load(btagCalibration,  BTagEntry::FLAV_C,    "iterativefit");
+        btagCalibrationReader_all_->load(btagCalibration,  BTagEntry::FLAV_UDSG, "iterativefit");
     }
 
     return;
@@ -416,6 +472,77 @@ void OfflineProducerHelper::compute_scaleFactors_fourBtag_eventScaleFactor (cons
     ot.userFloat("bTagScaleFactor_lightJets_down"   ) = tmpScaleFactor_bJets_central * tmpScaleFactor_cJets_central * tmpScaleFactor_lightJets_down    ;
 
     return;
+}
+
+void OfflineProducerHelper::compute_scaleFactors_bTagReshaping (const std::vector<Jet> &jets, NanoAODTree& nat, OutputTree &ot, double event_weight)
+{
+    for (uint isf = 0; isf < btag_sf_reshaping_full_list_.size(); ++isf)
+    {
+        string sfname = btag_sf_reshaping_full_list_.at(isf);
+
+        double bSF = 1.0;
+        for (const auto& jet : jets)
+        {
+            int jetFlavour = abs(get_property(jet, Jet_hadronFlavour));
+            
+            BTagEntry::JetFlavor jf = BTagEntry::FLAV_UDSG;
+            if (jetFlavour == 5)
+                jf = BTagEntry::FLAV_B;
+            else if (jetFlavour == 4)
+                jf = BTagEntry::FLAV_C;
+
+            double b_score = -1;
+            if(any_cast<bool>(parameterList_->at("NewestBtaggingAlgorithm")))
+                b_score = get_property(jet, Jet_btagDeepFlavB);
+            else
+                b_score = get_property(jet, Jet_btagDeepB);
+
+            double aeta = std::abs(jet.P4().Eta());
+            double pt   = jet.P4().Pt();
+
+            double w = btagCalibrationReader_all_->eval_auto_bounds(sfname, jf, aeta, pt, b_score);
+            
+            // 0 is the default value for a missing line in the .csv file (e.g., an uncertainty available only for one flavour but not the others)
+            // but there is not a way to check if the value was available or the default was returned
+            // (who developed this horrible tool?)
+            if (b_score >= 0 && w == 0)
+                w = 1;
+
+            bSF *= w; // the SF is the product over the preselected jets - IMPORTANT : must be before cuts on b tag! (because it is a reshape)
+        }
+
+        // save in output
+        string sfbrname = "bSFshape_";
+        sfbrname += sfname;
+        ot.userFloat(sfbrname) = bSF; // the product of the 4 b tag SF (*before* cuts) is my weight
+
+        // store partial sum
+        btag_sf_reshaping_full_list_sumw_.at(isf) += (bSF * event_weight); // to ensure normalisation I store bSF times weight
+    }
+    btag_sf_reshaping_sumw_denom_ += event_weight;
+}
+
+void OfflineProducerHelper::writebTagReshapingHisto()
+{
+    // convert map to histogram
+    const uint nbin = btag_sf_reshaping_full_list_sumw_.size();
+    TH1D h_out ("btag_reshaping_sums", "btag_reshaping_sums", nbin+1, 0, nbin+1); // last bin for total normalisation
+
+    // set labels    
+    for (uint ibin = 0; ibin < nbin; ++ibin){
+        string bname = "bSFshape_";
+        bname += btag_sf_reshaping_full_list_.at(ibin);
+        h_out.GetXaxis()->SetBinLabel(ibin+1, bname.c_str());
+    }
+    h_out.GetXaxis()->SetBinLabel(nbin+1, "SUMW_NORM");
+
+    // copy values
+    for (uint ibin = 0; ibin < nbin; ++ibin){
+        h_out.SetBinContent(ibin+1, btag_sf_reshaping_full_list_sumw_.at(ibin));
+    }
+    h_out.SetBinContent(nbin+1, btag_sf_reshaping_sumw_denom_);
+
+    h_out.Write();
 }
 
 void OfflineProducerHelper::CalculateL1prefiringScaleFactor(NanoAODTree& nat,OutputTree &ot, EventInfo& ei)
@@ -556,7 +683,6 @@ void OfflineProducerHelper::initializeObjectsForEventWeight(OutputTree &ot, Skim
 
 float OfflineProducerHelper::calculateEventWeight_AllWeights(NanoAODTree& nat, EventInfo& ei,  OutputTree &ot, SkimEffCounter &ec)
 {
-
     for(auto & weight : weightMap_)
     {
         weight.second.first = 1.;
@@ -713,6 +839,7 @@ float OfflineProducerHelper::calculateEventWeight_AllWeights(NanoAODTree& nat, E
         }
     }
 
+    ei.event_weight = eventWeight;
     return eventWeight;
 
 }
@@ -3036,6 +3163,7 @@ std::vector<Jet> OfflineProducerHelper::bjJets_PreselectionCut(NanoAODTree& nat,
         ++it;
     }
     if(jets.size() < 4) return outputJets;
+
     ///////////// Apply BTAGGING requirements
     //Do we want antibtag information or not?
     int MinimumNumberOfBTags=0;
@@ -3055,6 +3183,13 @@ std::vector<Jet> OfflineProducerHelper::bjJets_PreselectionCut(NanoAODTree& nat,
           stable_sort(jets.begin(), jets.end(), [](const Jet & a, const Jet & b) -> bool
           { return ( get_property(a, Jet_btagDeepB) > get_property(b, Jet_btagDeepB) );}); 
     }
+
+    //////////////////////////////////////////////////////////
+    // the b tag SF for RESHAPING must be evaluated here, before applying any requirement on the b tag
+    if (any_cast<string>(parameterList_->at("BTagScaleFactorMethod")) == "Reshaping"){
+        compute_scaleFactors_bTagReshaping ({{*(jets.begin()+0),*(jets.begin()+1),*(jets.begin()+2),*(jets.begin()+3)}}, nat, ot, *ei.event_weight);
+    }
+
     if(btags<MinimumNumberOfBTags) return outputJets;
     outputJets = {{*(jets.begin()+0),*(jets.begin()+1),*(jets.begin()+2),*(jets.begin()+3)}};
     int c=0; while (c<4){jets.erase(jets.begin());c++;}

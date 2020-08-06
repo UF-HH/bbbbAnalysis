@@ -261,9 +261,12 @@ class OfflineProducerHelper{
         std::function<void (NanoAODTree&, OutputTree&, EventInfo& ei)>  save_objects_for_l1prefiring;
         // compute events weight for four b
         void compute_scaleFactors_fourBtag_eventScaleFactor (const std::vector<Jet> &jets, NanoAODTree& nat, OutputTree &ot);
+        void compute_scaleFactors_bTagReshaping (const std::vector<Jet> &jets, NanoAODTree& nat, OutputTree &ot, double event_weight);
         void CalculateBtagScaleFactor(const std::vector<Jet> presel_bjets,NanoAODTree& nat,OutputTree &ot);
         void CalculateL1prefiringScaleFactor(NanoAODTree& nat,OutputTree &ot, EventInfo& ei);
         void CalculateEventbyEventScaleFactors(NanoAODTree& nat,OutputTree &ot, EventInfo& ei, float xs);
+
+        void writebTagReshapingHisto();
 
         std::unique_ptr<JME::JetResolutionScaleFactor> jetResolutionScaleFactor_;
         std::unique_ptr<JME::JetResolution>            jetResolution_;
@@ -308,6 +311,13 @@ class OfflineProducerHelper{
         BTagCalibrationReader *btagCalibrationReader_lightJets_;
         BTagCalibrationReader *btagCalibrationReader_cJets_;
         BTagCalibrationReader *btagCalibrationReader_bJets_;
+
+        std::unique_ptr<BTagCalibrationReader> btagCalibrationReader_all_; // used for reshaping
+        const std::vector<std::string> btag_sf_reshaping_unc_sources_ = {"jes", "hf", "lf", "lfstats1", "lfstats2", "hfstats1", "hfstats2", "cferr1", "cferr2"}; // x {up, down} in the code
+        std::vector<std::string> btag_sf_reshaping_full_list_; // a buffer to store all the values to read from the csv. Will contain {central} + btag_sf_reshaping_unc_sources_ x {up, down}
+        std::vector<double> btag_sf_reshaping_full_list_sumw_; // a buffer to store the sum weights for the b tag scale factor
+        double btag_sf_reshaping_sumw_denom_; // sum of the weights to ensure the normalisation of the reshaping scale factors
+
         //Functions to be applied in the bjetregression scores
         float Get_bRegRes(Jet jet);
         float Get_bRegCorr(Jet jet);

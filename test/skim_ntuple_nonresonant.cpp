@@ -243,6 +243,10 @@ int main(int argc, char** argv)
             parameterList.emplace("BJetScaleFactorsFile"               ,config.readStringOpt("parameters::BJetScaleFactorsFile"    ));
             parameterList.emplace("BJetScaleFactorsFileAlternative"    ,config.readStringOpt("parameters::BJetScaleFactorsFileAlternative"));
         }
+        else if(bTagscaleFactorMethod == "Reshaping"){
+            parameterList.emplace("BJetScaleFactorsFile"               ,config.readStringOpt("parameters::BJetScaleFactorsFile"    ));
+            parameterList.emplace("BJetScaleFactorsFileAlternative"    ,config.readStringOpt("parameters::BJetScaleFactorsFileAlternative"));
+        }
         else if(bTagscaleFactorMethod == "None"){
         }  
         // else if(other selection type){
@@ -461,7 +465,7 @@ int main(int argc, char** argv)
         //Select our jets
         if (!oph.select_bbbbjj_jets(nat, ei, ot)) continue; 
         //Event weights not included in the denominator (bTagSF, L1prefiring, XS)
-        if (is_signal) oph.CalculateEventbyEventScaleFactors(nat,ot,ei,xs);
+        if (!is_data) oph.CalculateEventbyEventScaleFactors(nat,ot,ei,xs);
 
         oph.save_objects_for_cut(nat, ot,ei);
 
@@ -475,6 +479,11 @@ int main(int argc, char** argv)
     outputFile.cd();
     ot.write();
     ec.write();
+
+    // for reshaping scale factors, save additionally the extra histogram with the partial normalisations
+    if (config.readStringOpt("parameters::BTagScaleFactorMethod") == "Reshaping"){
+        oph.writebTagReshapingHisto();
+    }
 
 }
 

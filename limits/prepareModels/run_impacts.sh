@@ -1,15 +1,12 @@
-WSPACE=datacard2018_comb_GGFcateg1GGFcateg2.root
-FOLDER=physicsmodel2018
-# WSPACE=datacard2018_GGFcateg2.root
-EXPECT_SIGNAL=10
+#GGF impacts
 
-HERE=`pwd`
-echo "... working in", $FOLDER
-cd ${FOLDER}
+#source make_impacts.sh 2016 1 13.0
+#source make_impacts.sh 2017 1 15.5
+#source make_impacts.sh 2018 1 10.0
 
-combineTool.py -M Impacts -d ${WSPACE}  --doInitialFit --robustFit 1 --freezeParameters r_gghh,r_qqhh,CV,C2V,kl,kt --setParameterRanges r=-20,20 --redefineSignalPOIs r -m 125 --expectSignal ${EXPECT_SIGNAL} -t -1
-combineTool.py -M Impacts -d ${WSPACE}  --doFits       --robustFit 1 --freezeParameters r_gghh,r_qqhh,CV,C2V,kl,kt --setParameterRanges r=-20,20 --redefineSignalPOIs r -m 125 --expectSignal ${EXPECT_SIGNAL} -t -1 --parallel 4
-combineTool.py -M Impacts -d ${WSPACE}  -o impacts_sig_inj${EXPECT_SIGNAL}.json              --freezeParameters r_gghh,r_qqhh,CV,C2V,kl,kt --setParameterRanges r=-20,20 --redefineSignalPOIs r -m 125
-plotImpacts.py -i impacts_sig_inj${EXPECT_SIGNAL}.json -o impacts_sig_inj${EXPECT_SIGNAL}
+#VBF impacts
 
-cd $HERE
+source make_impacts.sh 2016 2 680.0
+#source make_impacts.sh 2017 2 760.0
+#source make_impacts.sh 2018 2 580.0
+

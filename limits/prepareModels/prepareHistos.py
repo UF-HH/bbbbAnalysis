@@ -128,9 +128,9 @@ def RunPreparation(dataset,directory,processes,categandobs,tag, process_rename, 
 						continue ## some cases (e.g. the data) won't have it
 
 					outname_proto = '{sample}_{syst}{Dir}'
-					if sd == 'up':
+					if sd == 'up' or sd == 'Up':
 						Dir = 'Up'
-					elif sd == 'down':
+					elif sd == 'down' or sd == 'Dn':
 						Dir = 'Down'
 					elif sd is None:
 						Dir = ''

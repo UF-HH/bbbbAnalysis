@@ -116,13 +116,14 @@ def calculatecoeffients(sample_list,couplingstoscan):
 print "WELCOME TO THE VBF-HH CALCULATOR"
 #################################################################################################
 #Create an array with samples couplings(cv,c2v,kl) and their L0 xs
+
 sample_list = [
     sample(1,1,1,   val_xs = 0.000585),
-    sample(1,2,1,   val_xs = 0.004688),
+    sample(1,2,1,   val_xs = 0.004823),
     sample(1,1,2,   val_xs = 0.000482),
-    sample(1,1,0,   val_xs = 0.001585),
-    sample(0.5,1,1, val_xs = 0.003586),
-    sample(1.5,1,1, val_xs = 0.022297)
+    sample(1,1,0,   val_xs = 0.001558),
+    sample(0.5,1,1, val_xs = 0.003656),
+    sample(1.5,1,1, val_xs = 0.022412)
 ]  
 #Create an array with couplings (cv,c2v,kl) to scan. In our case is c2v scan.
 couplingstoscan_list = [ [1,-5.0 + (x*0.1),1] for x in range(0,121)]     

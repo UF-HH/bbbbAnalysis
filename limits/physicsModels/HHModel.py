@@ -429,20 +429,20 @@ class HHModel(PhysicsModel):
 
 # VBF : val_CV, val_C2V, val_kl
 VBF_sample_list = [
-    VBFHHSample(1,1,1,   val_xs = 0.00054/(0.3364), label = 'qqHH_CV_1_C2V_1_kl_1'  ),
-    VBFHHSample(1,2,1,   val_xs = 0.00472/(0.3364), label = 'qqHH_CV_1_C2V_2_kl_1'  ),
-    VBFHHSample(1,1,2,   val_xs = 0.00044/(0.3364), label = 'qqHH_CV_1_C2V_1_kl_2'  ),
-    VBFHHSample(1,1,0,   val_xs = 0.00145/(0.3364), label = 'qqHH_CV_1_C2V_1_kl_0'  ),
-    VBFHHSample(0.5,1,1, val_xs = 0.00353/(0.3364), label = 'qqHH_CV_0p5_C2V_1_kl_1'),
-    VBFHHSample(1.5,1,1, val_xs = 0.02149/(0.3364), label = 'qqHH_CV_1p5_C2V_1_kl_1'),
+    VBFHHSample(1,1,1,   val_xs = 0.000585, label = 'qqHH_CV_1_C2V_1_kl_1'  ),
+    VBFHHSample(1,2,1,   val_xs = 0.004823, label = 'qqHH_CV_1_C2V_2_kl_1'  ),
+    VBFHHSample(1,1,2,   val_xs = 0.000482, label = 'qqHH_CV_1_C2V_1_kl_2'  ),
+    VBFHHSample(1,1,0,   val_xs = 0.001558, label = 'qqHH_CV_1_C2V_1_kl_0'  ),
+    VBFHHSample(0.5,1,1, val_xs = 0.003656, label = 'qqHH_CV_0p5_C2V_1_kl_1'),
+    VBFHHSample(1.5,1,1, val_xs = 0.022412, label = 'qqHH_CV_1p5_C2V_1_kl_1'),
 ]
 
 # VBF : val_kl, val_kt
 GGF_sample_list = [
-    GGFHHSample(1,1,   val_xs = 0.02675, label = 'ggHH_kl_1_kt_1'  ),
-    GGFHHSample(0,1,   val_xs = 0.06007, label = 'ggHH_kl_0_kt_1'  ),
-    GGFHHSample(5,1,   val_xs = 0.07903, label = 'ggHH_kl_5_kt_1'  ),
-    # GGFHHSample(2.45,1,   val_xs = 0.01133, label = 'ggHH_kl_2p45_kt_1'  ),
+    GGFHHSample(1,1,   val_xs = 0.010517, label = 'ggHH_kl_1_kt_1'  ),
+    GGFHHSample(0,1,   val_xs = 0.023618, label = 'ggHH_kl_0_kt_1'  ),
+    GGFHHSample(5,1,   val_xs = 0.031072, label = 'ggHH_kl_5_kt_1'  ),
+    #GGFHHSample(2.45,1,   val_xs = 0.004455, label = 'ggHH_kl_2p45_kt_1'  ),
 ]
 
 HHdefault = HHModel(

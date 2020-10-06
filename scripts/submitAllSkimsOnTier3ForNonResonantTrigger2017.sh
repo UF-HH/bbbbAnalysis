@@ -1,0 +1,21 @@
+# this prepares the tar and ships it to EOS - do not remove this line!
+python scripts/submitSkimOnTier3Trigger.py --tag=$1 --xrdcp-tar-only --do-tar --do-xrdcp-tar
+
+#############################################################################################
+
+##Data
+python scripts/submitSkimOnTier3Trigger.py --exc skim_ntuple_triggerstudies --input inputFiles/2017NonResonantDiHiggs4BDataSets/Data.txt --cfg config/skim_2017NonResonantDiHiggs4B.cfg --tag=$1  --is-data --njobs=1000 
+
+#####Signals
+python scripts/submitSkimOnTier3Trigger.py --exc skim_ntuple_triggerstudies --input=inputFiles/2017NonResonantDiHiggs4BDataSets/GluGluToHHTo4B_node_cHHH1_TuneCP5_PSWeights_13TeV-powheg-pythia8.txt                  --puWeight=weights/2017/PUweights_2017.root  --tag=$1 --cfg=config/skim_2017NonResonantDiHiggs4B.cfg --is-signal  --xs=0.010517  --njobs=10  --is-nlo-sig
+python scripts/submitSkimOnTier3Trigger.py --exc skim_ntuple_triggerstudies --input=inputFiles/2017NonResonantDiHiggs4BDataSets/GluGluToHHTo4B_node_cHHH0_TuneCP5_PSWeights_13TeV-powheg-pythia8.txt                  --puWeight=weights/2017/PUweights_2017.root  --tag=$1 --cfg=config/skim_2017NonResonantDiHiggs4B.cfg --is-signal  --xs=0.023618  --njobs=10  --is-nlo-sig
+python scripts/submitSkimOnTier3Trigger.py --exc skim_ntuple_triggerstudies --input=inputFiles/2017NonResonantDiHiggs4BDataSets/GluGluToHHTo4B_node_cHHH2p45_TuneCP5_PSWeights_13TeV-powheg-pythia8.txt               --puWeight=weights/2017/PUweights_2017.root  --tag=$1 --cfg=config/skim_2017NonResonantDiHiggs4B.cfg --is-signal  --xs=0.004455  --njobs=10  --is-nlo-sig
+python scripts/submitSkimOnTier3Trigger.py --exc skim_ntuple_triggerstudies --input=inputFiles/2017NonResonantDiHiggs4BDataSets/GluGluToHHTo4B_node_cHHH5_TuneCP5_PSWeights_13TeV-powheg-pythia8.txt                  --puWeight=weights/2017/PUweights_2017.root  --tag=$1 --cfg=config/skim_2017NonResonantDiHiggs4B.cfg --is-signal  --xs=0.031072  --njobs=10  --is-nlo-sig
+python scripts/submitSkimOnTier3Trigger.py --exc skim_ntuple_triggerstudies --input=inputFiles/2017NonResonantDiHiggs4BDataSets/VBF_HH_CV_1_C2V_0_C3_1_dipoleRecoilOff-TuneCP5_PSweights_13TeV-madgraph-pythia8.txt   --puWeight=weights/2017/PUweights_2017.root  --tag=$1 --cfg=config/skim_2017NonResonantDiHiggs4B.cfg --is-signal  --xs=0.009169  --njobs=10
+python scripts/submitSkimOnTier3Trigger.py --exc skim_ntuple_triggerstudies --input=inputFiles/2017NonResonantDiHiggs4BDataSets/VBF_HH_CV_1_C2V_1_C3_1_dipoleRecoilOff-TuneCP5_PSweights_13TeV-madgraph-pythia8.txt   --puWeight=weights/2017/PUweights_2017.root  --tag=$1 --cfg=config/skim_2017NonResonantDiHiggs4B.cfg --is-signal  --xs=0.000585  --njobs=10
+python scripts/submitSkimOnTier3Trigger.py --exc skim_ntuple_triggerstudies --input=inputFiles/2017NonResonantDiHiggs4BDataSets/VBF_HH_CV_1_C2V_2_C3_1_dipoleRecoilOff-TuneCP5_PSweights_13TeV-madgraph-pythia8.txt   --puWeight=weights/2017/PUweights_2017.root  --tag=$1 --cfg=config/skim_2017NonResonantDiHiggs4B.cfg --is-signal  --xs=0.004823  --njobs=10
+
+#####Bkgs
+python scripts/submitSkimOnTier3Trigger.py --exc skim_ntuple_triggerstudies --input=inputFiles/2017NonResonantDiHiggs4BDataSets/TTToHadronic_TuneCP5_13TeV-powheg-pythia8.txt                                         --puWeight=weights/2017/PUweights_2017.root  --tag=$1  --cfg=config/skim_2017NonResonantDiHiggs4B.cfg  --xs=377.96    --njobs=100
+python scripts/submitSkimOnTier3Trigger.py --exc skim_ntuple_triggerstudies --input=inputFiles/2017NonResonantDiHiggs4BDataSets/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8.txt                                     --puWeight=weights/2017/PUweights_2017.root  --tag=$1  --cfg=config/skim_2017NonResonantDiHiggs4B.cfg  --xs=365.34    --njobs=100
+python scripts/submitSkimOnTier3Trigger.py --exc skim_ntuple_triggerstudies --input=inputFiles/2017NonResonantDiHiggs4BDataSets/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8.txt                                            --puWeight=weights/2017/PUweights_2017.root  --tag=$1  --cfg=config/skim_2017NonResonantDiHiggs4B.cfg  --xs=88.29     --njobs=100

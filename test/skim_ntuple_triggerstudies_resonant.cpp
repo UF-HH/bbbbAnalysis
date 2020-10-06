@@ -1,3 +1,10 @@
+/*
+** class  : skim_ntuple.cpp
+** author : L. Cadamuro (UF)
+** date   : 31/12/2017
+** brief  : transforms a NanoAOD into a bbbb ntuple for the subsequent plots/analysis
+*/
+
 #include <iostream>
 #include <string>
 #include <iomanip>
@@ -45,7 +52,9 @@ int main(int argc, char** argv)
         ("input" , po::value<string>()->required(), "input file list")
         ("output", po::value<string>()->required(), "output file LFN")
         // optional
+        ("maxDeltaR" , po::value<float>()->default_value(0.25), "max deltaR for gen matching ")
         ("xs"        , po::value<float>(), "cross section [pb]")
+        ("yMassSelection", po::value<string>()->default_value("None"), "Y mass selection")
         ("maxEvts"   , po::value<int>()->default_value(-1), "max number of events to process")
         ("puWeight"  , po::value<string>()->default_value(""), "PU weight file name")
         ("seed"      , po::value<int>()->default_value(-1), "seed to be used in systematic uncertainties such as JEC, JER,etc")
@@ -103,6 +112,9 @@ int main(int argc, char** argv)
 
     const float xs = (is_data ? 1.0 : opts["xs"].as<float>());
     cout << "[INFO] ... cross section is : " << xs << " pb" << endl;
+
+    const float maxDeltaR = opts["maxDeltaR"].as<float>();
+    cout << "[INFO] ... max deltaR is : " << maxDeltaR << endl;
 
     CfgParser config;
     if (!config.init(opts["cfg"].as<string>())) return 1;
@@ -314,7 +326,6 @@ int main(int argc, char** argv)
     OfflineProducerHelper oph;
     oph.initializeOfflineProducerHelper(&parameterList);
 
-
     ////////////////////////////////////////////////////////////////////////
     // Prepare event loop
     ////////////////////////////////////////////////////////////////////////
@@ -413,7 +424,6 @@ int main(int argc, char** argv)
     bool useTriggerScaleFactors     =  config.readBoolOpt("triggers::UseScaleFactor");
     bool matchedTriggerScaleFactors =  config.readBoolOpt("triggers::MatchedScaleFactor");
     parameterList.emplace("UseTriggerScaleFactor", useTriggerScaleFactors);     
-
     if(useTriggerScaleFactors)
     {
         parameterList.emplace("SimulateTrigger", config.readBoolOpt("triggers::SimulateTrigger"));
@@ -428,6 +438,7 @@ int main(int argc, char** argv)
     }
     int datasetYear = config.readIntOpt("triggers::DatasetYear");
     parameterList.emplace("DatasetYear", datasetYear); 
+
     parameterList.emplace("TriggerObjectAndMinNumberMap", triggerObjectAndMinNumberMap);
     nat.triggerReader().setTriggers(triggerVector);
     //---------Trigger section--end
@@ -443,13 +454,18 @@ int main(int argc, char** argv)
         opts["save-p4"].as<bool>()
     );
 
+    std::string yMassSelection = opts["yMassSelection"].as<std::string>();
+    if(yMassSelection != "None") nat.attachCustomValueBranch<Bool_t>("GenModel_YMass_" + yMassSelection, true, false);
+    else ot.declareUserIntBranchList(nat.attachAllMatchingBranch<Bool_t>("GenModel_YMass_", true, false));
+
     SkimEffCounter ec;
 
     oph.initializeObjectsForCuts(ot);
     ot.declareUserFloatBranch("XS",-1);
-    
+
     if(!is_data)
     {
+
         oph.initializeApplyJERAndBregSmearing(opts["jer-shift-syst"].as<string>());
         oph.initializeApplyJESshift(opts["jes-shift-syst"].as<string>());
         oph.initializeObjectsForEventWeight(ot,ec,opts["puWeight"].as<string>(),xs);
@@ -460,7 +476,7 @@ int main(int argc, char** argv)
           if(matchedTriggerScaleFactors){oph.initializeTriggerScaleFactors_TriggerMatched(nat, ot);}
           else{oph.initializeTriggerScaleFactors(nat, ot);} 
         }
-
+  
         // MC reweight initialization
         if (opts.find("kl-rew") != opts.end()) // a kl value was passed
         {
@@ -473,9 +489,8 @@ int main(int argc, char** argv)
             oph.hhreweighter_kl_ = kl_rew;
         }
     }
-
-    // Initialize trigger matching in Data/MC
-    if (useTriggerMatching)  oph.initializeTriggerMatching(ot, 4);
+  
+    if (useTriggerMatching) oph.initializeTriggerMatching(ot, 4);
 
     jsonLumiFilter jlf;
     if (is_data)
@@ -500,6 +515,8 @@ int main(int argc, char** argv)
         if (is_data && !jlf.isValid(*nat.run, *nat.luminosityBlock)){
             continue; // not a valid lumi
         }
+
+        if(yMassSelection != "None") if(!nat.readCustomValueBranch<Bool_t>("GenModel_YMass_" + yMassSelection)) continue;
         
         //To address problem in NLO signal genweight      
         bool weight_check = true;      
@@ -510,7 +527,7 @@ int main(int argc, char** argv)
         EventInfo ei;
 
         // HH reweight needs the GEN info -> keep first
-        if (is_signal){
+        if (is_signal && yMassSelection == "None"){
             oph.select_gen_HH(nat, ei);
             oph.select_gen_bb_bb(nat, ei);            
             if (is_VBF_sig) {
@@ -521,13 +538,13 @@ int main(int argc, char** argv)
                 }
             }
         }
-
+  
         //Event weights included in the denominator        
         double weight = 1.;
         if(!is_data) weight = oph.calculateEventWeight(nat, ei, ot, ec);
         ec.updateProcessed(weight);
-        
-        //Trigger cut (only if asked explicitly in cfg file)
+
+        //Trigger cut (only if asked in cfg)
         std::vector<std::string> listOfPassedTriggers = nat.getTrgPassed();
         if( listOfPassedTriggers.size() == 0  && triggerVector.size()>0 ) continue;
         ec.updateTriggered(weight);
@@ -535,11 +552,22 @@ int main(int argc, char** argv)
         //Preselecting jets
         if (!oph.select_bbbbjj_jets(nat, ei, ot)) continue;
 
-        //Calculate event weights not included in the denominator (Trigger, WP bTagSF, L1prefiring, XS)
+        //Event weights not included in the denominator (bTagSF, L1prefiring, XS)
         if (!is_data) oph.CalculateEventbyEventScaleFactors(nat,ot,ei,xs);
-        
-        //Trigger matching using preselected objects (only if asked explicitly in cfg file)
-        if (useTriggerMatching) oph.TriggerMatchingModule(nat,ot,ei, listOfPassedTriggers);
+
+        //Trigger matching information using preselected objects (only if asked in cfg)
+        if (useTriggerMatching) oph.TriggerMatchingModule(nat,ot,ei,listOfPassedTriggers);
+
+        //if XYH signal gen-level info
+        if (is_signal && yMassSelection != "None")
+        {
+            oph.select_gen_YH(nat, ei);
+            if (!oph.select_gen_bb_bb_forXYH(nat, ei, maxDeltaR))
+            {
+                std::cout << __PRETTY_FUNCTION__ << __LINE__ << "no gen matching found!!!" << std::endl;
+                continue; 
+            }
+        }
 
         oph.save_objects_for_cut(nat, ot,ei);
 
@@ -558,5 +586,6 @@ int main(int argc, char** argv)
     }
 
 }
+
 
 

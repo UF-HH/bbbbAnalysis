@@ -63,7 +63,7 @@ int main(int argc, char** argv)
         // pairing variables
         ("bbbbChoice"    , po::value<string>()->default_value("BothClosestToDiagonal"), "bbbb pairing choice")
         ("mh1mh2"        , po::value<float>()->default_value(1.05), "Ratio Xo/Yo or 1/slope of the diagonal") 
-        ("option"        , po::value<int>()->default_value(0), "Option: 0=Nominal, 1=Alternative 1, 2=Alternative 2") 
+        ("option"        , po::value<int>()->default_value(0), "Option: 0=Old nominal, 1=Alternative 1 (Current nominal), 2=Alternative 2") 
         ("slopeparameter", po::value<float>()->default_value(1.), "X parameter in |mH1/mH2-X|")                
         // flags
         ("is-data",    po::value<bool>()->zero_tokens()->implicit_value(true)->default_value(false), "mark as a data sample (default is false)")
@@ -253,6 +253,10 @@ int main(int argc, char** argv)
             parameterList.emplace("BJetScaleFactorsFile"               ,config.readStringOpt("parameters::BJetScaleFactorsFile"    ));
             parameterList.emplace("BJetScaleFactorsFileAlternative"    ,config.readStringOpt("parameters::BJetScaleFactorsFileAlternative"));
         }
+        else if(bTagscaleFactorMethod == "Reshaping"){
+            parameterList.emplace("BJetScaleFactorsFile"               ,config.readStringOpt("parameters::BJetScaleFactorsFile"    ));
+            parameterList.emplace("BJetScaleFactorsFileAlternative"    ,config.readStringOpt("parameters::BJetScaleFactorsFileAlternative"));
+        }
         else if(bTagscaleFactorMethod == "None"){
         }  
         // else if(other selection type){
@@ -310,6 +314,7 @@ int main(int argc, char** argv)
         //     parameters fo be retreived;
         // }  
         else throw std::runtime_error("cannot recognize event choice ObjectsForCut " + JERstrategy);
+
         // as a temporary fix, to avoid clashes with cmd line options, disable the variations from JetEnergyCorrection method by Fabio
         const string JECstrategy = config.readStringOpt("parameters::JetEnergyCorrection");
         if(JECstrategy != "None"){
@@ -321,8 +326,6 @@ int main(int argc, char** argv)
     }
 
     OfflineProducerHelper oph;
-
-    // oph::initializeOfflineProducerHelper(&parameterList);
     oph.initializeOfflineProducerHelper(&parameterList);
 
     ////////////////////////////////////////////////////////////////////////
@@ -353,7 +356,94 @@ int main(int argc, char** argv)
     cout << "[INFO] ... loading the following triggers" << endl;
     for (auto trg : config.readStringListOpt("triggers::makeORof"))
         cout << "   - " << trg << endl;
-    nat.triggerReader().setTriggers(config.readStringListOpt("triggers::makeORof"));
+
+    //---------Trigger section--begin  
+    bool check_trigger =  config.readBoolOpt("triggers::checktrigger");
+    bool skipTriggerCheck = !check_trigger;
+    //Matching trigger objects
+    std::vector<std::string> triggerAndNameVector;
+    if(!skipTriggerCheck) triggerAndNameVector = config.readStringListOpt("triggers::makeORof");
+    std::vector<std::string> triggerVector;
+    // <triggerName , < objectBit, minNumber> >
+    std::map<std::string, std::map< std::pair<int,int>, int > > triggerObjectAndMinNumberMap;
+    
+
+    for (auto & trigger : triggerAndNameVector)
+    {
+        if(trigger=="") continue;
+
+        std::string delimiter = ":";
+        size_t pos = 0;
+        std::vector<std::string> triggerTokens;
+        while ((pos = trigger.find(delimiter)) != std::string::npos)
+        {
+            triggerTokens.push_back(trigger.substr(0, pos));
+            trigger.erase(0, pos + delimiter.length());
+        }
+        triggerTokens.push_back(trigger); // last part splitted
+        if (triggerTokens.size() != 2)
+        {
+            throw std::runtime_error("** skim_ntuple : could not parse trigger entry " + trigger + " , aborting");
+        }
+
+        triggerVector.push_back(triggerTokens[1]);
+        cout << "   - " << triggerTokens[1] << endl;
+
+        if(!config.hasOpt( Form("triggers::%s_ObjectRequirements",triggerTokens[0].data()) ))
+        {
+            cout<<Form("triggers::%s_ObjectRequirements",triggerTokens[0].data())<<std::endl;
+            cout<<"Trigger "<< triggerTokens[1] <<" does not have ObjectRequirements are not defined";
+            continue;
+        }
+
+        triggerObjectAndMinNumberMap[triggerTokens[1]] = std::map< std::pair<int,int>, int>();   
+
+        std::vector<std::string> triggerObjectMatchingVector = config.readStringListOpt(Form("triggers::%s_ObjectRequirements",triggerTokens[0].data()));
+
+        for (auto & triggerObject : triggerObjectMatchingVector)
+        {
+
+            std::vector<std::string> triggerObjectTokens;
+            while ((pos = triggerObject.find(delimiter)) != std::string::npos)
+            {
+                triggerObjectTokens.push_back(triggerObject.substr(0, pos));
+                triggerObject.erase(0, pos + delimiter.length());
+            }
+            triggerObjectTokens.push_back(triggerObject); // last part splitted
+            if (triggerObjectTokens.size() != 3)
+            {
+                throw std::runtime_error("** skim_ntuple : could not parse trigger entry " + triggerObject + " , aborting");
+            }
+
+            triggerObjectAndMinNumberMap[triggerTokens[1]][std::pair<int,int>(atoi(triggerObjectTokens[0].data()),atoi(triggerObjectTokens[1].data()))] = atoi(triggerObjectTokens[2].data());
+        }
+
+    }    
+
+    parameterList.emplace("MaxDeltaR",                config.readFloatOpt("triggers::MaxDeltaR")     );     
+    parameterList.emplace("MatchWithSelectedObjects", config.readBoolOpt("triggers::MatchWithSelectedObjects")     );
+    bool useTriggerMatching         =  config.readBoolOpt("triggers::MatchWithSelectedObjects");
+    bool useTriggerScaleFactors     =  config.readBoolOpt("triggers::UseScaleFactor");
+    bool matchedTriggerScaleFactors =  config.readBoolOpt("triggers::MatchedScaleFactor");
+    parameterList.emplace("UseTriggerScaleFactor", useTriggerScaleFactors);     
+
+    if(useTriggerScaleFactors)
+    {
+        parameterList.emplace("SimulateTrigger", config.readBoolOpt("triggers::SimulateTrigger"));
+        if(matchedTriggerScaleFactors)
+        {
+            parameterList.emplace("TriggerEfficiencyFileName", config.readStringOpt("triggers::TriggerEfficiencyFileName_TriggerMatched"));
+        }
+        else{
+            parameterList.emplace("TriggerEfficiencyFileName", config.readStringOpt("triggers::TriggerEfficiencyFileName_NotTriggerMatched"));
+        }
+
+    }
+    int datasetYear = config.readIntOpt("triggers::DatasetYear");
+    parameterList.emplace("DatasetYear", datasetYear); 
+    parameterList.emplace("TriggerObjectAndMinNumberMap", triggerObjectAndMinNumberMap);
+    nat.triggerReader().setTriggers(triggerVector);
+    //---------Trigger section--end
 
     ////////////////////////////////////////////////////////////////////////
     // Prepare the output
@@ -369,17 +459,21 @@ int main(int argc, char** argv)
     SkimEffCounter ec;
 
     oph.initializeObjectsForCuts(ot);
+    ot.declareUserFloatBranch("XS",-1);
 
     if(!is_data)
     {
-        // oph.initializeJERsmearingAndVariations(ot);
-        // oph.initializeJECVariations(ot);
         oph.initializeApplyJERAndBregSmearing(opts["jer-shift-syst"].as<string>());
         oph.initializeApplyJESshift(opts["jes-shift-syst"].as<string>());
         oph.initializeObjectsForEventWeight(ot,ec,opts["puWeight"].as<string>(),xs);
         oph.initializeObjectsBJetForScaleFactors(ot);
         oph.initializeObjectsL1PrefiringForScaleFactors(ot);
-  
+        if(useTriggerScaleFactors)
+        {
+          if(matchedTriggerScaleFactors){oph.initializeTriggerScaleFactors_TriggerMatched(nat, ot);}
+          else{oph.initializeTriggerScaleFactors(nat, ot);} 
+        }
+
         // MC reweight initialization
         if (opts.find("kl-rew") != opts.end()) // a kl value was passed
         {
@@ -393,21 +487,17 @@ int main(int argc, char** argv)
         }
     }
 
+    // Initialize trigger matching in Data/MC
+    if (useTriggerMatching)  oph.initializeTriggerMatching(ot, 4);
+
     jsonLumiFilter jlf;
     if (is_data)
         jlf.loadJSON(config.readStringOpt("data::lumimask")); // just read the info for data, so if I just skim MC I'm not forced to parse a JSON
-
-    //DeclareUser Branches for TriggerInformation
-    vector <string> triggers;
-    for (auto trg : config.readStringListOpt("triggers::makeORof"))
-       triggers.push_back(trg);
-    ot.declareUserFloatBranch("XS",-1);
 
     //DeclareUser Branches for Pairing study
     ot.declareUserFloatBranch("dhh_delta12",-1.0);
     ot.declareUserFloatBranch("dhh_delta13",-1.0);
     ot.declareUserFloatBranch("dhh_delta23",-1.0);
-
     ot.declareUserIntBranch("thetrh_sort", -1);
     ot.declareUserIntBranch("thefst_qual", -1);
     ot.declareUserIntBranch("thesnd_qual", -1);
@@ -415,7 +505,6 @@ int main(int argc, char** argv)
     ot.declareUserIntBranch("theop0_qual", -1);
     ot.declareUserIntBranch("theop1_qual", -1);
     ot.declareUserIntBranch("theop2_qual", -1);
-
     ot.declareUserFloatBranch("thetrh_cm_abscostheta", -1.0);
     ot.declareUserFloatBranch("thefst_cm_abscostheta", -1.0);
     ot.declareUserFloatBranch("thesnd_cm_abscostheta", -1.0);
@@ -423,7 +512,6 @@ int main(int argc, char** argv)
     ot.declareUserFloatBranch("theop0_cm_abscostheta", -1.0);
     ot.declareUserFloatBranch("theop1_cm_abscostheta", -1.0);
     ot.declareUserFloatBranch("theop2_cm_abscostheta", -1.0);
-
     ot.declareUserFloatBranch("thefst_H1_cm_boost", -1.0);
     ot.declareUserFloatBranch("thesnd_H1_cm_boost", -1.0);
     ot.declareUserFloatBranch("thetrd_H1_cm_boost", -1.0);
@@ -438,7 +526,6 @@ int main(int argc, char** argv)
     ot.declareUserFloatBranch("theop0_H2_cm_boost", -1.0);
     ot.declareUserFloatBranch("theop1_H2_cm_boost", -1.0);
     ot.declareUserFloatBranch("theop2_H2_cm_boost", -1.0);
-
     ot.declareUserFloatBranch("thefst_H1_cm_pt", -1.0);
     ot.declareUserFloatBranch("thesnd_H1_cm_pt", -1.0);
     ot.declareUserFloatBranch("thetrd_H1_cm_pt", -1.0);
@@ -453,8 +540,6 @@ int main(int argc, char** argv)
     ot.declareUserFloatBranch("theop0_H2_cm_pt", -1.0);
     ot.declareUserFloatBranch("theop1_H2_cm_pt", -1.0);
     ot.declareUserFloatBranch("theop2_H2_cm_pt", -1.0);
-
-
     ot.declareUserFloatBranch("thefst_cm_boost_h1h2ratio", -1.0);
     ot.declareUserFloatBranch("thesnd_cm_boost_h1h2ratio", -1.0);
     ot.declareUserFloatBranch("thetrd_cm_boost_h1h2ratio", -1.0);
@@ -469,7 +554,6 @@ int main(int argc, char** argv)
     ot.declareUserFloatBranch("theop0_cm_pt_h1h2ratio", -1.0);
     ot.declareUserFloatBranch("theop1_cm_pt_h1h2ratio", -1.0);
     ot.declareUserFloatBranch("theop2_cm_pt_h1h2ratio", -1.0);
-
     ot.declareUserFloatBranch("thefst_h1h2deltaR", -1.0);
     ot.declareUserFloatBranch("thesnd_h1h2deltaR", -1.0);
     ot.declareUserFloatBranch("thetrd_h1h2deltaR", -1.0);
@@ -477,7 +561,6 @@ int main(int argc, char** argv)
     ot.declareUserFloatBranch("theop0_h1h2deltaR", -1.0);
     ot.declareUserFloatBranch("theop1_h1h2deltaR", -1.0);
     ot.declareUserFloatBranch("theop2_h1h2deltaR", -1.0); 
-
     ot.declareUserFloatBranch("thefst_dhh", -1.0);
     ot.declareUserFloatBranch("thesnd_dhh", -1.0);
     ot.declareUserFloatBranch("thetrd_dhh", -1.0);
@@ -485,7 +568,6 @@ int main(int argc, char** argv)
     ot.declareUserFloatBranch("theop0_dhh", -1.0);
     ot.declareUserFloatBranch("theop1_dhh", -1.0);
     ot.declareUserFloatBranch("theop2_dhh", -1.0); 
-
     ot.declareUserFloatBranch("thefst_H1_m",-1.0);
     ot.declareUserFloatBranch("thesnd_H1_m",-1.0);
     ot.declareUserFloatBranch("thetrd_H1_m",-1.0);
@@ -500,7 +582,6 @@ int main(int argc, char** argv)
     ot.declareUserFloatBranch("theop0_H2_m", -1.0);
     ot.declareUserFloatBranch("theop1_H2_m", -1.0);
     ot.declareUserFloatBranch("theop2_H2_m", -1.0); 
-
     ot.declareUserFloatBranch("thefst_H1_bsum",-1.0);
     ot.declareUserFloatBranch("thesnd_H1_bsum",-1.0);
     ot.declareUserFloatBranch("thetrd_H1_bsum",-1.0);
@@ -515,7 +596,6 @@ int main(int argc, char** argv)
     ot.declareUserFloatBranch("theop0_H2_bsum", -1.0);
     ot.declareUserFloatBranch("theop1_H2_bsum", -1.0);
     ot.declareUserFloatBranch("theop2_H2_bsum", -1.0); 
-
     ot.declareUserFloatBranch("thefst_HH_m",-1.0);
     ot.declareUserFloatBranch("thesnd_HH_m",-1.0);
     ot.declareUserFloatBranch("thetrd_HH_m",-1.0);
@@ -523,7 +603,6 @@ int main(int argc, char** argv)
     ot.declareUserFloatBranch("theop0_HH_m", -1.0);
     ot.declareUserFloatBranch("theop1_HH_m", -1.0);
     ot.declareUserFloatBranch("theop2_HH_m", -1.0); 
-
     ot.declareUserFloatBranch("thefst_H1_pt",-1.0);
     ot.declareUserFloatBranch("thesnd_H1_pt",-1.0);
     ot.declareUserFloatBranch("thetrd_H1_pt",-1.0);
@@ -538,7 +617,6 @@ int main(int argc, char** argv)
     ot.declareUserFloatBranch("theop0_H2_pt", -1.0);
     ot.declareUserFloatBranch("theop1_H2_pt", -1.0);
     ot.declareUserFloatBranch("theop2_H2_pt", -1.0); 
-
     ot.declareUserFloatBranch("thefst_H1_dRbb",-1.0);
     ot.declareUserFloatBranch("thesnd_H1_dRbb",-1.0);
     ot.declareUserFloatBranch("thetrd_H1_dRbb",-1.0);
@@ -553,7 +631,6 @@ int main(int argc, char** argv)
     ot.declareUserFloatBranch("theop0_H2_dRbb", -1.0);
     ot.declareUserFloatBranch("theop1_H2_dRbb", -1.0);
     ot.declareUserFloatBranch("theop2_H2_dRbb", -1.0); 
-
     ot.declareUserFloatBranch("thefst_HH_pt",-1.0);
     ot.declareUserFloatBranch("thesnd_HH_pt",-1.0);
     ot.declareUserFloatBranch("thetrd_HH_pt",-1.0);
@@ -561,7 +638,6 @@ int main(int argc, char** argv)
     ot.declareUserFloatBranch("theop0_HH_pt", -1.0);
     ot.declareUserFloatBranch("theop1_HH_pt", -1.0);
     ot.declareUserFloatBranch("theop2_HH_pt", -1.0); 
-
     ot.declareUserFloatBranch("thefst_mindR",-1.0);
     ot.declareUserFloatBranch("thesnd_mindR",-1.0);
     ot.declareUserFloatBranch("thetrd_mindR",-1.0);
@@ -569,7 +645,6 @@ int main(int argc, char** argv)
     ot.declareUserFloatBranch("theop0_mindR", -1.0);
     ot.declareUserFloatBranch("theop1_mindR", -1.0);
     ot.declareUserFloatBranch("theop2_mindR", -1.0); 
-
     ot.declareUserFloatBranch("thefst_maxdR",-1.0);
     ot.declareUserFloatBranch("thesnd_maxdR",-1.0);
     ot.declareUserFloatBranch("thetrd_maxdR",-1.0);
@@ -619,26 +694,31 @@ int main(int argc, char** argv)
             }
         }
         
+        //Event weights included in the denominator        
         double weight = 1.;
         if(!is_data) weight = oph.calculateEventWeight(nat, ei, ot, ec);
-
         ec.updateProcessed(weight);
 
-        // HH and VBF partons (if existing) will be match geometrically 
+        // HH and VBF partons (if existing) will be matched geometrically to jets 
         if (is_signal) oph.match_gen_recojets(nat, ei, is_VBF_sig);
 
-        if( !nat.getTrgOr() ) continue;
-
+        //Trigger cut (only if asked explicitly in cfg file)
+        std::vector<std::string> listOfPassedTriggers = nat.getTrgPassed();
+        if( listOfPassedTriggers.size() == 0  && triggerVector.size()>0 ) continue;
         ec.updateTriggered(weight);
         
         //Select our jets
         if (!oph.select_bbbbjj_jets(nat, ei, ot)) continue;
-        //dedicated jet studies
+        //Dedicated gen studies on selected jets
         if (is_signal) oph.study_gen_selectedjets(nat, ei);
+        
         oph.study_diagonal_selectedjets(nat,ei,ot);
 
-        //Event weights not included in the denominator (bTagSF, L1prefiring)
-        if (is_signal) oph.CalculateEventbyEventScaleFactors(nat,ot,ei,xs);
+        //Calculate event weights not included in the denominator (Trigger, WP bTagSF, L1prefiring, XS)
+        if (!is_data) oph.CalculateEventbyEventScaleFactors(nat,ot,ei,xs);
+        
+        //Trigger matching using preselected objects (only if asked explicitly in cfg file)
+        if (useTriggerMatching) oph.TriggerMatchingModule(nat,ot,ei, listOfPassedTriggers);
 
         oph.save_objects_for_cut(nat, ot,ei);
 
@@ -647,11 +727,14 @@ int main(int argc, char** argv)
 
     }
 
-    // oph.clean();
-
     outputFile.cd();
     ot.write();
     ec.write();
+
+    // for reshaping scale factors, save additionally the extra histogram with the partial normalisations
+    if (config.readStringOpt("parameters::BTagScaleFactorMethod") == "Reshaping"){
+        oph.writebTagReshapingHisto();
+    }
 
 }
 

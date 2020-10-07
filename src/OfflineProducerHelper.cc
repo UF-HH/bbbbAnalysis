@@ -2914,6 +2914,9 @@ void OfflineProducerHelper::AddInclusiveCategoryVariables(NanoAODTree& nat, Even
        ei.max_4b_deltaR   = get<1>(MinMax_Delta(presel_bjets_p4,0));
        ei.max_4b_deltaPhi = get<1>(MinMax_Delta(presel_bjets_p4,1));
        ei.max_4b_deltaEta = get<1>(MinMax_Delta(presel_bjets_p4,2));
+       ei.min_hbb_deltaR  = std::min({ei.H1_b1->P4().DeltaR(ei.H1_b2->P4()) , ei.H2_b1->P4().DeltaR(ei.H2_b2->P4())});
+       ei.max_hbb_deltaR  = std::max({ei.H1_b1->P4().DeltaR(ei.H1_b2->P4()) , ei.H2_b1->P4().DeltaR(ei.H2_b2->P4())});
+
        //Special variables between Higgses
        ei.h1h2_deltaR   = ei.H1->P4().DeltaR(ei.H2->P4());
        ei.h1h2_deltaPhi = abs(ei.H1->P4().DeltaPhi(ei.H2->P4()));
@@ -3025,6 +3028,7 @@ void OfflineProducerHelper::AddInclusiveCategoryVariables(NanoAODTree& nat, Even
        ei.BDT3     = GetBDT3Score(ei);
        ei.BDT3cat1 = GetBDT3cat1Score(ei);
        ei.BDT3cat2 = GetBDT3cat2Score(ei);
+
        return;
 }
 

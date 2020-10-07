@@ -359,6 +359,8 @@ void SkimUtils::fill_output_tree(OutputTree& ot, NanoAODTree& nat, EventInfo& ei
     if(ei.max_4b_cm_deltaR   ) ot.max_4b_cm_deltaR   = *ei.max_4b_cm_deltaR  ;
     if(ei.max_4b_cm_deltaPhi ) ot.max_4b_cm_deltaPhi = *ei.max_4b_cm_deltaPhi;
     if(ei.max_4b_cm_deltaEta ) ot.max_4b_cm_deltaEta = *ei.max_4b_cm_deltaEta;
+    if(ei.min_hbb_deltaR) ot.min_hbb_deltaR = *ei.min_hbb_deltaR;
+    if(ei.max_hbb_deltaR) ot.max_hbb_deltaR = *ei.max_hbb_deltaR;
 
     COPY_OPTIONAL_m_pt_eta_phi_p4(H1rand)
     COPY_OPTIONAL_m_pt_eta_phi_p4(H2rand)
@@ -405,7 +407,21 @@ void SkimUtils::fill_output_tree(OutputTree& ot, NanoAODTree& nat, EventInfo& ei
     COPY_OPTIONAL_m_pt_eta_phi_p4(gen_q2_in)
     COPY_OPTIONAL_m_pt_eta_phi_p4(gen_q1_out)
     COPY_OPTIONAL_m_pt_eta_phi_p4(gen_q2_out) 
-  
+    
+    if (ei.gen_H1_b1 && ei.gen_H1_b2 && ei.gen_H2_b1 && ei.gen_H2_b2)
+    {
+      float dR1 =  ei.gen_H1_b1->P4().DeltaR(ei.gen_H1_b2->P4());
+      float dR2 =  ei.gen_H1_b1->P4().DeltaR(ei.gen_H2_b1->P4());
+      float dR3 =  ei.gen_H1_b1->P4().DeltaR(ei.gen_H2_b2->P4());
+      float dR4 =  ei.gen_H1_b2->P4().DeltaR(ei.gen_H2_b1->P4());
+      float dR5 =  ei.gen_H1_b2->P4().DeltaR(ei.gen_H2_b2->P4());
+      float dR6 =  ei.gen_H2_b1->P4().DeltaR(ei.gen_H2_b2->P4());
+      ot.gen_min_4b_deltaR  = std::min({dR1,dR2,dR3,dR4,dR5,dR6});
+      ot.gen_max_4b_deltaR  = std::max({dR1,dR2,dR3,dR4,dR5,dR6});
+      ot.gen_min_hbb_deltaR = std::min({dR1,dR6});
+      ot.gen_max_hbb_deltaR = std::min({dR1,dR6});
+    }
+
     if (ei.gen_q1_out && ei.gen_q2_out)
     {
         TLorentzVector p4_JJ = ei.gen_q1_out->P4() + ei.gen_q2_out->P4();
@@ -414,16 +430,16 @@ void SkimUtils::fill_output_tree(OutputTree& ot, NanoAODTree& nat, EventInfo& ei
         ot.gen_deltaEtaJJ  = abs( ei.gen_q1_out->P4().Eta() - ei.gen_q2_out->P4().Eta() );
     }    
 
-     if(ei.gen_H1_b1_jetidx)  ot.gen_H1_b1_jetidx =  *ei.gen_H1_b1_jetidx;
-     if(ei.gen_H1_b2_jetidx)  ot.gen_H1_b2_jetidx =  *ei.gen_H1_b2_jetidx;
-     if(ei.gen_H2_b1_jetidx)  ot.gen_H2_b1_jetidx =  *ei.gen_H2_b1_jetidx;
-     if(ei.gen_H2_b2_jetidx)  ot.gen_H2_b2_jetidx =  *ei.gen_H2_b2_jetidx;
+    if(ei.gen_H1_b1_jetidx)  ot.gen_H1_b1_jetidx =  *ei.gen_H1_b1_jetidx;
+    if(ei.gen_H1_b2_jetidx)  ot.gen_H1_b2_jetidx =  *ei.gen_H1_b2_jetidx;
+    if(ei.gen_H2_b1_jetidx)  ot.gen_H2_b1_jetidx =  *ei.gen_H2_b1_jetidx;
+    if(ei.gen_H2_b2_jetidx)  ot.gen_H2_b2_jetidx =  *ei.gen_H2_b2_jetidx;
     if(ei.gen_q1_out_jetidx) ot.gen_q1_out_jetidx = *ei.gen_q1_out_jetidx; 
     if(ei.gen_q2_out_jetidx) ot.gen_q2_out_jetidx = *ei.gen_q2_out_jetidx;
-     if(ei.gen_H1_b1_jetmatched)  ot.gen_H1_b1_jetmatched =  *ei.gen_H1_b1_jetmatched;
-     if(ei.gen_H1_b2_jetmatched)  ot.gen_H1_b2_jetmatched =  *ei.gen_H1_b2_jetmatched;
-     if(ei.gen_H2_b1_jetmatched)  ot.gen_H2_b1_jetmatched =  *ei.gen_H2_b1_jetmatched;
-     if(ei.gen_H2_b2_jetmatched)  ot.gen_H2_b2_jetmatched =  *ei.gen_H2_b2_jetmatched;
+    if(ei.gen_H1_b1_jetmatched)  ot.gen_H1_b1_jetmatched =  *ei.gen_H1_b1_jetmatched;
+    if(ei.gen_H1_b2_jetmatched)  ot.gen_H1_b2_jetmatched =  *ei.gen_H1_b2_jetmatched;
+    if(ei.gen_H2_b1_jetmatched)  ot.gen_H2_b1_jetmatched =  *ei.gen_H2_b1_jetmatched;
+    if(ei.gen_H2_b2_jetmatched)  ot.gen_H2_b2_jetmatched =  *ei.gen_H2_b2_jetmatched;
     if(ei.gen_q1_out_jetmatched) ot.gen_q1_out_jetmatched = *ei.gen_q1_out_jetmatched; 
     if(ei.gen_q2_out_jetmatched) ot.gen_q2_out_jetmatched = *ei.gen_q2_out_jetmatched;
     if(ei.gen_HH_qual) ot.gen_HH_qual = *ei.gen_HH_qual;

@@ -107,6 +107,9 @@ class OutputTree {
         float gen_mHH;
         float gen_mJJ;
         float gen_deltaEtaJJ;
+        float gen_min_4b_deltaR;
+        float gen_max_4b_deltaR;
+
         int gen_etapairsign;
         DECLARE_m_pt_eta_phi_p4(gen_H1)
         DECLARE_m_pt_eta_phi_p4(gen_H2)
@@ -322,6 +325,10 @@ class OutputTree {
         float max_4b_cm_deltaR  ;
         float max_4b_cm_deltaPhi;
         float max_4b_cm_deltaEta;
+        float min_hbb_deltaR  ;
+        float max_hbb_deltaR  ;
+        float gen_min_hbb_deltaR  ;
+        float gen_max_hbb_deltaR  ;
 
         float H1_bb_deltaR;
         float H2_bb_deltaR;

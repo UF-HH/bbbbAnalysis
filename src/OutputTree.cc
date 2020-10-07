@@ -338,6 +338,9 @@ void OutputTree::init_branches()
     tree_->Branch("max_4b_cm_deltaR",   &max_4b_cm_deltaR);    
     tree_->Branch("max_4b_cm_deltaEta", &max_4b_cm_deltaEta); 
     tree_->Branch("max_4b_cm_deltaPhi", &max_4b_cm_deltaPhi);
+    tree_->Branch("min_hbb_deltaR", &min_hbb_deltaR);
+    tree_->Branch("max_hbb_deltaR", &max_hbb_deltaR);
+
     //COSTHETA IN VBF CM
     tree_->Branch("abs_costh_H1_vbfcm",    &abs_costh_H1_vbfcm);     
     tree_->Branch("abs_costh_H2_vbfcm",    &abs_costh_H2_vbfcm); 
@@ -367,10 +370,6 @@ void OutputTree::init_branches()
     tree_->Branch("abs_costh_JJ_j2_jjcm",    &abs_costh_JJ_j2_jjcm);
 
     //generator level information
-    tree_->Branch("gen_mJJ", &gen_mJJ);
-    tree_->Branch("gen_etapairsign", &gen_etapairsign);
-    tree_->Branch("gen_deltaEtaJJ", &gen_deltaEtaJJ);
-    tree_->Branch("gen_mHH", &gen_mHH);
     BRANCH_m_pt_eta_phi_p4(gen_H1)
     BRANCH_m_pt_eta_phi_p4(gen_H2)
     BRANCH_m_pt_eta_phi_p4(gen_H1_last)
@@ -383,6 +382,15 @@ void OutputTree::init_branches()
     BRANCH_m_pt_eta_phi_p4(gen_q2_in)
     BRANCH_m_pt_eta_phi_p4(gen_q1_out)
     BRANCH_m_pt_eta_phi_p4(gen_q2_out)
+    tree_->Branch("gen_mJJ", &gen_mJJ);
+    tree_->Branch("gen_etapairsign", &gen_etapairsign);
+    tree_->Branch("gen_deltaEtaJJ", &gen_deltaEtaJJ);
+    tree_->Branch("gen_mHH", &gen_mHH);
+    tree_->Branch("gen_min_4b_deltaR",  &gen_min_4b_deltaR);
+    tree_->Branch("gen_max_4b_deltaR",  &gen_max_4b_deltaR);
+    tree_->Branch("gen_min_hbb_deltaR", &gen_min_hbb_deltaR);
+    tree_->Branch("gen_max_hbb_deltaR", &gen_max_hbb_deltaR);
+
     tree_->Branch( "gen_H1_b1_jetidx",  &gen_H1_b1_jetidx);
     tree_->Branch( "gen_H1_b2_jetidx",  &gen_H1_b2_jetidx);
     tree_->Branch( "gen_H2_b1_jetidx",  &gen_H2_b1_jetidx);
@@ -756,6 +764,11 @@ void OutputTree::clear()
     CLEAR_m_pt_eta_phi_p4(gen_q2_in)
     CLEAR_m_pt_eta_phi_p4(gen_q1_out)
     CLEAR_m_pt_eta_phi_p4(gen_q2_out)
+    gen_min_4b_deltaR = -1;
+    gen_max_4b_deltaR = -1;
+    gen_min_hbb_deltaR = -1;
+    gen_max_hbb_deltaR = -1;
+
     gen_q1_out_jetidx=-1;
     gen_q2_out_jetidx=-1;
     gen_H1_b1_jetidx=-1;
@@ -770,6 +783,7 @@ void OutputTree::clear()
     gen_H2_b2_jetmatched=-1;
     gen_HH_qual = -1;
     gen_qq_qual = -1;
+
 
     ///TTEMU events
     CLEAR_m_pt_ptRegressed_eta_phi_p4(TT_b1)

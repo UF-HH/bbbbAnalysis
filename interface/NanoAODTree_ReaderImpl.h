@@ -63,6 +63,40 @@ class NanoAODTree_ReaderImpl {
         const bool is_2016_MC_;
         bool proc_first_ev_;
 
+        //XYH nat class
+        template<class T> 
+        void attachCustomValueBranch(const std::string& branchName, bool returnDefault = false, const T& defaultValue = T())
+        {
+            fCustomBranchMap.emplace(branchName, std::make_unique<NanoReaderValue<T>>(fReader, branchName.data()));
+            static_cast<NanoReaderValue<T>*>(fCustomBranchMap[branchName].get())->SetReturnDefault(returnDefault, defaultValue);
+        }
+
+        template<class T> 
+        std::vector<std::string> attachAllMatchingBranch(const std::string branchNameTemplate, bool returnDefault = false, const T& defaultValue = T())
+        {
+            TObjArray* theBranchList = fReader.GetTree()->GetListOfBranches();
+            std::vector<std::string> listOfBranchNames;
+            for(const auto & branch : *theBranchList)
+            {
+                std::string branchName = branch->GetName();
+                if(branchName.find(branchNameTemplate) != std::string::npos)
+                {
+                    attachCustomValueBranch<T>(branchName,returnDefault, defaultValue);
+                    listOfBranchNames.emplace_back(branchName);
+                }
+            }
+            return listOfBranchNames;
+        }
+
+        template<class T> 
+        T readCustomValueBranch(const std::string branchName)
+        {
+            if(static_cast<NanoReaderValue<T>*>(fCustomBranchMap.at(branchName).get()) == nullptr) std::cout<<"Merda"<<std::endl;
+            return *static_cast<NanoReaderValue<T>*>(fCustomBranchMap.at(branchName).get())->Get();
+        }        
+
+        std::map<std::string, std::unique_ptr<NanoReaderValueBase>> fCustomBranchMap;
+
         // tree readers
         NanoReaderValue<UInt_t>    run                                  {fReader, "run"};
         NanoReaderValue<UInt_t>    luminosityBlock                      {fReader, "luminosityBlock"};

@@ -38,6 +38,16 @@ struct EventInfo{
     boost::optional<GenPart> gen_H2_b1;
     boost::optional<GenPart> gen_H2_b2;
 
+    //XYH stuff
+    boost::optional<int>     gen_H1_b1_matchedflag;
+    boost::optional<int>     gen_H1_b2_matchedflag;
+    boost::optional<int>     gen_H2_b1_matchedflag;
+    boost::optional<int>     gen_H2_b2_matchedflag;
+    boost::optional<int>     recoJetMatchedToGenJet1;
+    boost::optional<int>     recoJetMatchedToGenJet2;
+    boost::optional<int>     recoJetMatchedToGenJet3;
+    boost::optional<int>     recoJetMatchedToGenJet4;
+    //XYH stuff
 
     // VBF incoming and outcoming partons
     // hard scatter gen particles
@@ -249,6 +259,23 @@ struct EventInfo{
     boost::optional<float> abs_costh_JJ_j2_jjcm ;
     boost::optional<float> sum_4b_pt            ;
     boost::optional<float> sum_3b_bscore        ;
+    boost::optional<float> sum_3b_bres          ;
+    boost::optional<float> min_4b_deltaR  ;
+    boost::optional<float> min_4b_deltaPhi;
+    boost::optional<float> min_4b_deltaEta;
+    boost::optional<float> max_4b_deltaR  ;
+    boost::optional<float> max_4b_deltaPhi;
+    boost::optional<float> max_4b_deltaEta;
+    boost::optional<float> min_4b_cm_deltaR  ;
+    boost::optional<float> min_4b_cm_deltaPhi;
+    boost::optional<float> min_4b_cm_deltaEta;
+    boost::optional<float> max_4b_cm_deltaR  ;
+    boost::optional<float> max_4b_cm_deltaPhi;
+    boost::optional<float> max_4b_cm_deltaEta;
+    boost::optional<int> nJet_brl;
+    boost::optional<int> nJet_edc;
+    boost::optional<int> nJet_fwd;
+    boost::optional<int> nJet_tot;
     boost::optional<int> nJet;
     boost::optional<int> nJet_ec;
     boost::optional<int> nJet_hf;

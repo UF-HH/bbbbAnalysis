@@ -13,7 +13,10 @@ bool NanoAODTree_ReaderImpl::Next()
         fReader.Restart();
         for (auto& rd : trg_reader_.getRefToReadersPtrVector())
             rd->Verify(fReader.GetTree());
-
+        //Stuff for XYH  
+        for (auto& customBranch : fCustomBranchMap)
+            customBranch.second->Verify(fReader.GetTree());
+        //Stuff for XYH
         fReader.SetEntry(entry);
         old_tree_nr_ = t_tmp;
     }

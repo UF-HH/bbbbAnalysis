@@ -15,7 +15,17 @@
 
 // #define VERBOSE false
 
-template <typename T> class NanoReaderValue
+//XYH stuff
+class NanoReaderValueBase
+{
+    public:
+        NanoReaderValueBase(){}
+        ~NanoReaderValueBase(){}
+        virtual void Verify(TTree* tree) = 0;
+};
+//XYH stuff
+
+template <typename T> class NanoReaderValue : public NanoReaderValueBase
 {
     public:
         NanoReaderValue(TTreeReader &tr, const char *branchname);
@@ -54,7 +64,7 @@ T* NanoReaderValue<T>::Get()
 }
 
 template <typename T>
-NanoReaderValue<T>::NanoReaderValue(TTreeReader &tr, const char *branchname)
+NanoReaderValue<T>::NanoReaderValue(TTreeReader &tr, const char *branchname) : NanoReaderValueBase()
 {
     reader_ = &tr;
     branchname_ = branchname;

@@ -305,7 +305,10 @@ void SkimUtils::fill_output_tree(OutputTree& ot, NanoAODTree& nat, EventInfo& ei
     if(ei.VBFEvent) ot.VBFEvent  = *ei.VBFEvent;
     if(ei.nBtag) ot.nBtag  = *ei.nBtag;
     if(ei.VBFEventLocation) ot.VBFEventLocation  = *ei.VBFEventLocation;
-
+    if( ei.nJet_brl ) ot.nJet_brl = *ei.nJet_brl;
+    if( ei.nJet_edc ) ot.nJet_edc = *ei.nJet_edc;
+    if( ei.nJet_fwd ) ot.nJet_fwd = *ei.nJet_fwd;
+    if( ei.nJet_tot ) ot.nJet_tot = *ei.nJet_tot;
     if(ei.nJet) ot.nJet = *ei.nJet;
     if(ei.nPVgood) ot.nPVgood  = *ei.nPVgood;
     if(ei.nJet_ec) ot.nJet_ec = *ei.nJet_ec;
@@ -343,6 +346,20 @@ void SkimUtils::fill_output_tree(OutputTree& ot, NanoAODTree& nat, EventInfo& ei
     if(ei.abs_costh_JJ_j2_jjcm ) ot.abs_costh_JJ_j2_jjcm = *ei.abs_costh_JJ_j2_jjcm ; 
     if(ei.sum_4b_pt )            ot.sum_4b_pt            = *ei.sum_4b_pt; 
     if(ei.sum_3b_bscore )        ot.sum_3b_bscore        = *ei.sum_3b_bscore; 
+    if(ei.sum_3b_bres   )        ot.sum_3b_bres          = *ei.sum_3b_bres; 
+    if(ei.min_4b_deltaR   ) ot.min_4b_deltaR   = *ei.min_4b_deltaR  ;
+    if(ei.min_4b_deltaPhi ) ot.min_4b_deltaPhi = *ei.min_4b_deltaPhi;
+    if(ei.min_4b_deltaEta ) ot.min_4b_deltaEta = *ei.min_4b_deltaEta;
+    if(ei.max_4b_deltaR   ) ot.max_4b_deltaR   = *ei.max_4b_deltaR  ;
+    if(ei.max_4b_deltaPhi ) ot.max_4b_deltaPhi = *ei.max_4b_deltaPhi;
+    if(ei.max_4b_deltaEta ) ot.max_4b_deltaEta = *ei.max_4b_deltaEta;
+    if(ei.min_4b_cm_deltaR   ) ot.min_4b_cm_deltaR   = *ei.min_4b_cm_deltaR  ;
+    if(ei.min_4b_cm_deltaPhi ) ot.min_4b_cm_deltaPhi = *ei.min_4b_cm_deltaPhi;
+    if(ei.min_4b_cm_deltaEta ) ot.min_4b_cm_deltaEta = *ei.min_4b_cm_deltaEta;
+    if(ei.max_4b_cm_deltaR   ) ot.max_4b_cm_deltaR   = *ei.max_4b_cm_deltaR  ;
+    if(ei.max_4b_cm_deltaPhi ) ot.max_4b_cm_deltaPhi = *ei.max_4b_cm_deltaPhi;
+    if(ei.max_4b_cm_deltaEta ) ot.max_4b_cm_deltaEta = *ei.max_4b_cm_deltaEta;
+
     COPY_OPTIONAL_m_pt_eta_phi_p4(H1rand)
     COPY_OPTIONAL_m_pt_eta_phi_p4(H2rand)
     if(ei.H1_bb_deltaR) ot.H1_bb_deltaR= *ei.H1_bb_deltaR;
@@ -412,6 +429,15 @@ void SkimUtils::fill_output_tree(OutputTree& ot, NanoAODTree& nat, EventInfo& ei
     if(ei.gen_HH_qual) ot.gen_HH_qual = *ei.gen_HH_qual;
     if(ei.gen_qq_qual) ot.gen_qq_qual = *ei.gen_qq_qual;
 
+    //XYH stuff
+    if(ei.gen_H1_b1_matchedflag) ot.gen_H1_b1_matchedflag  = *ei.gen_H1_b1_matchedflag;
+    if(ei.gen_H1_b2_matchedflag) ot.gen_H1_b2_matchedflag  = *ei.gen_H1_b2_matchedflag;
+    if(ei.gen_H2_b1_matchedflag) ot.gen_H2_b1_matchedflag  = *ei.gen_H2_b1_matchedflag;
+    if(ei.gen_H2_b2_matchedflag) ot.gen_H2_b2_matchedflag = *ei.gen_H2_b2_matchedflag;
+    if(ei.recoJetMatchedToGenJet1) ot.recoJetMatchedToGenJet1 = *ei.recoJetMatchedToGenJet1;
+    if(ei.recoJetMatchedToGenJet2) ot.recoJetMatchedToGenJet2 = *ei.recoJetMatchedToGenJet2;
+    if(ei.recoJetMatchedToGenJet3) ot.recoJetMatchedToGenJet3 = *ei.recoJetMatchedToGenJet3;
+    if(ei.recoJetMatchedToGenJet4) ot.recoJetMatchedToGenJet4 = *ei.recoJetMatchedToGenJet4;
 
     // fill the tree
     ot.fill();

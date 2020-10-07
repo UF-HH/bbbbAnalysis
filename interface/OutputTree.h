@@ -52,6 +52,8 @@ class OutputTree {
         // thje second optional value specifies what the branch should be reset to at clear()
         bool declareUserIntBranch   (std::string name, int defaultClearValue = 0);
         bool declareUserFloatBranch (std::string name, float defaultClearValue = 0.0);
+        //XYH
+        bool declareUserIntBranchList(std::vector<std::string> nameList, int defaultClearValue = 0);
 
         // throws an exception if the branch name was not declared
         int&   userInt   (std::string name) {return userInts_   . getVal(name);}
@@ -122,6 +124,24 @@ class OutputTree {
         DECLARE_m_pt_eta_phi_p4(gen_q2_in)
         DECLARE_m_pt_eta_phi_p4(gen_q1_out)
         DECLARE_m_pt_eta_phi_p4(gen_q2_out)
+
+        //XYH stuff
+        float recoJetMatchedToGenJet1;
+        float recoJetMatchedToGenJet2;
+        float recoJetMatchedToGenJet3;
+        float recoJetMatchedToGenJet4;
+
+
+        float triggerScaleFactor       ;
+        float triggerDataEfficiency    ;
+        float triggerMcEfficiency      ;
+        float triggerScaleFactorUp     ;
+        float triggerDataEfficiencyUp  ;
+        float triggerMcEfficiencyUp    ;
+        float triggerScaleFactorDown   ;
+        float triggerDataEfficiencyDown;
+        float triggerMcEfficiencyDown  ;
+
 
                               /////////////////---Non-resonant analysis and studies
         int btaggerID;
@@ -247,6 +267,10 @@ class OutputTree {
         int nBtag;
         int VBFEventLocation;
         int nPVgood;
+        int nJet_brl;
+        int nJet_edc;
+        int nJet_fwd;
+        int nJet_tot;
         int nJet; 
         int nJet_ec;
         int nJet_hf;
@@ -285,6 +309,20 @@ class OutputTree {
         float abs_costh_JJ_j2_jjcm ;
         float sum_4b_pt            ;
         float sum_3b_bscore        ;
+        float sum_3b_bres          ;
+        float min_4b_deltaR  ;
+        float min_4b_deltaPhi;
+        float min_4b_deltaEta;
+        float max_4b_deltaR  ;
+        float max_4b_deltaPhi;
+        float max_4b_deltaEta;
+        float min_4b_cm_deltaR  ;
+        float min_4b_cm_deltaPhi;
+        float min_4b_cm_deltaEta;
+        float max_4b_cm_deltaR  ;
+        float max_4b_cm_deltaPhi;
+        float max_4b_cm_deltaEta;
+
         float H1_bb_deltaR;
         float H2_bb_deltaR;
         float H1_bb_deltaPhi;

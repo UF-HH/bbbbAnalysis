@@ -28,6 +28,8 @@
 #include "SkimEffCounter.h"
 #include "BDTEval.h"
 #include "HHReweight5D.h"
+#include "TriggerEfficiencyCalculator.h"
+#include "TriggerEfficiencyCalculator_TriggerMatched.h"
 
 #include <array>
 #include <utility>
@@ -64,6 +66,8 @@ class OfflineProducerHelper{
         std::unique_ptr<HHReweight5D> hhreweighter_;
         float hhreweighter_kl_;
 
+        TriggerEfficiencyCalculator *theTriggerEfficiencyCalculator_ {nullptr};
+        TriggerEfficiencyCalculator_TriggerMatched *theTriggerEfficiencyCalculator_TriggerMatched_ {nullptr};
         bool debug = true;
         // Load configurations to match the b jets
         // bool loadConfiguration(CfgParser config);
@@ -83,6 +87,13 @@ class OfflineProducerHelper{
         // < <particleId, filterId> numberOfObjects> 
         std::map<std::pair<int,int>, int> mapTriggerMatching_;
 
+        std::map< std::string, std::vector<std::map<std::pair<int,int>, bool>>> triggerObjectPerJetCount_;
+        std::map< std::string, std::map<std::pair<int,int>, int>> triggerObjectTotalCount_;
+        void initializeTriggerMatching(OutputTree &ot, int numberOfCandidates);
+        void calculateTriggerMatching(const std::vector< std::unique_ptr<const Candidate> > &candidateList, NanoAODTree& nat);
+        bool checkTriggerObjectMatching(std::vector<std::string>, OutputTree &ot);
+        void CalculateTriggerScaleFactor(NanoAODTree& nat,OutputTree &ot, EventInfo& ei, std::vector<Jet> presel_jets);
+        void TriggerMatchingModule(NanoAODTree& nat,OutputTree &ot, EventInfo& ei,std::vector<std::string> listOfPassedTriggers);
         // branch Name, default value
         std::map<std::string, float> branchesAffectedByJetEnergyVariations_;
         float sampleCrossSection_;
@@ -226,6 +237,70 @@ class OfflineProducerHelper{
             //         std::any_cast<std::string>(parameterList_->at("kl_map")),
             //         std::any_cast<std::string>(parameterList_->at("kl_histo")));
         }
+        //for TriggerSFs without matching
+        void initializeTriggerScaleFactors(NanoAODTree& nat, OutputTree& ot)
+        {
+            if( std::any_cast<bool>(parameterList_->at("UseTriggerScaleFactor")) )
+            {
+                int year = std::any_cast<int>(parameterList_->at("DatasetYear"));
+                std::string triggerEfficiencyFileName = std::any_cast<std::string>(parameterList_->at("TriggerEfficiencyFileName"));
+                //bool matchWithTriggerObjects = std::any_cast<bool>(parameterList_->at("MatchWithSelectedObjects"));
+                bool matchWithTriggerObjects = false;
+
+                if(year == 2016) 
+                {
+                    theTriggerEfficiencyCalculator_ = new TriggerEfficiencyCalculator_2016(triggerEfficiencyFileName, nat, matchWithTriggerObjects);
+                }
+                else if(year == 2017) 
+                {
+                    theTriggerEfficiencyCalculator_ = new TriggerEfficiencyCalculator_2017(triggerEfficiencyFileName, nat, matchWithTriggerObjects);
+                }
+                else if(year == 2018)
+                {
+                    theTriggerEfficiencyCalculator_ = new TriggerEfficiencyCalculator_2018(triggerEfficiencyFileName, nat, matchWithTriggerObjects);
+                }
+                else
+                {
+                    std::cout<<"Trigger scale factor year can be 2016, 2017 or 2018. Aborting..." << std::endl;
+                    abort();
+                }
+                bool simulateTrigger = std::any_cast<bool>(parameterList_->at("SimulateTrigger"));
+                if(simulateTrigger) theTriggerEfficiencyCalculator_->simulateTrigger(&ot);
+                //theTriggerEfficiencyCalculator_->applyTurnOnCut(std::any_cast<bool>(parameterList_->at("ApplyTurnOnCuts")));
+            }
+        }
+
+        void initializeTriggerScaleFactors_TriggerMatched(NanoAODTree& nat, OutputTree& ot)
+        {
+            if( std::any_cast<bool>(parameterList_->at("UseTriggerScaleFactor")) )
+            {
+                int year = std::any_cast<int>(parameterList_->at("DatasetYear"));
+                std::string triggerEfficiencyFileName = std::any_cast<std::string>(parameterList_->at("TriggerEfficiencyFileName"));
+                // bool matchWithTriggerObjects = std::any_cast<bool>(parameterList_->at("MatchWithSelectedObjects"));
+                if(year == 2016) 
+                {
+                    theTriggerEfficiencyCalculator_TriggerMatched_ = new TriggerEfficiencyCalculator_TriggerMatched_2016(triggerEfficiencyFileName, nat);
+                }
+                else if(year == 2017) 
+                {
+                    theTriggerEfficiencyCalculator_TriggerMatched_ = new TriggerEfficiencyCalculator_TriggerMatched_2017(triggerEfficiencyFileName, nat);
+                }
+                else if(year == 2018)
+                {
+                    theTriggerEfficiencyCalculator_TriggerMatched_ = new TriggerEfficiencyCalculator_TriggerMatched_2018(triggerEfficiencyFileName, nat);
+                }
+                else
+                {
+                    std::cout<<"Trigger scale factor year can be 2016, 2017 or 2018. Aborting..." << std::endl;
+                    abort();
+                }
+
+                bool simulateTrigger = std::any_cast<bool>(parameterList_->at("SimulateTrigger"));
+                if(simulateTrigger) theTriggerEfficiencyCalculator_TriggerMatched_->simulateTrigger(&ot);
+                //theTriggerEfficiencyCalculator_->applyTurnOnCut(std::any_cast<bool>(parameterList_->at("ApplyTurnOnCuts")));
+            }
+        }
+
 
         void initializeObjectsForCuts(OutputTree &ot);
         // functions to select events based on non-jet particles:
@@ -237,14 +312,14 @@ class OfflineProducerHelper{
         // save trigger Objects for trigger studies
         void save_TriggerObjects (NanoAODTree& nat, OutputTree &ot, EventInfo& ei);
         // Calculate trigger map
-        void calculateTriggerMatching(const std::vector< std::unique_ptr<Candidate> > &candidateList, NanoAODTree& nat);
+        //void calculateTriggerMatching(const std::vector< std::unique_ptr<Candidate> > &candidateList, NanoAODTree& nat);
         // save good isolated leptons
         void save_IsolatedLeptons (NanoAODTree& nat, OutputTree &ot, EventInfo& ei);
  
         //Initialize trigger Matching variables
-        void initializeTriggerMatching(OutputTree &ot);
+        //void initializeTriggerMatching(OutputTree &ot);
         //Function to check that the selected objects are the one that fired at list one of the triggers
-        bool checkTriggerObjectMatching(std::vector<std::string>, OutputTree &ot);
+       // bool checkTriggerObjectMatching(std::vector<std::string>, OutputTree &ot);
 
 
         void initializeObjectsForEventWeight(OutputTree &ot, SkimEffCounter &ec, std::string PUWeightFileName, float crossSection);
@@ -337,6 +412,7 @@ class OfflineProducerHelper{
         void compute_pairingvariables(EventInfo& ei, OutputTree &ot, std::vector<Jet> jets, float distance, int sort, std::string tag);
         float compute_higgsptcm(std::vector<Jet> jets);        
         float MindR(std::vector<Jet> jets, bool min);
+        std::tuple<float,float> MinMax_Delta(std::vector<TLorentzVector> presel_jets_p4, int option);
         // functions that act on the EventInfo
         bool select_bbbb_jets (NanoAODTree& nat, EventInfo& ei, OutputTree &ot, std::vector<std::string> listOfPassedTriggers);
         bool select_bbbbjj_jets (NanoAODTree& nat, EventInfo& ei, OutputTree &ot);
@@ -366,7 +442,7 @@ class OfflineProducerHelper{
         //Additional kinematic variables
         void ApplyBjetRegression(std::vector<Jet> bjets);
         void AddVBFCategoryVariables(NanoAODTree& nat, EventInfo& ei,std::vector<Jet> ordered_jets);
-        void AddInclusiveCategoryVariables(NanoAODTree& nat, EventInfo& ei,std::vector<Jet> ordered_jets);    
+        void AddInclusiveCategoryVariables(NanoAODTree& nat, EventInfo& ei,std::vector<Jet> ordered_jets, std::vector<Jet> fulljets);    
         // float GetBDT1Score(EventInfo& ei, std::string weights);//GGFHHKiller
         // float GetBDT2Score(EventInfo& ei, std::string weights);//VBFQCDKiller
         // float GetBDT3Score(EventInfo& ei, std::string weights);//GGFQCDHHKiller
@@ -401,7 +477,10 @@ class OfflineProducerHelper{
         bool select_gen_HH    (NanoAODTree& nat, EventInfo& ei); // for HH samples
         bool select_gen_XYH   (NanoAODTree& nat, EventInfo& ei); // for NMSSM X->YH samples. NB: ei.gen_H1 -> Y, ei.gen_H2 -> H (same order as X->YH)
         bool select_gen_bb_bb (NanoAODTree& nat, EventInfo& ei);
+        bool select_gen_bb_bb_forXYH (NanoAODTree& nat, EventInfo& ei, const float deltaR_threshold);
+        bool select_gen_YH           (NanoAODTree& nat, EventInfo& ei);
         bool select_gen_VBF_partons (NanoAODTree& nat, EventInfo& ei);
+
 
         // other utilities
         void dump_gen_part (NanoAODTree& nat, bool printFlags = true);
@@ -419,7 +498,14 @@ class OfflineProducerHelper{
         // the function returns true if the objects were swapped, or false if they were left unchanged
         // if max_first = true, pt (val1) > pt (val2), if max_first = false the opposite
         template <typename T>
+
         bool order_by_pT(T& val1, T& val2, bool max_first = true);
+
+        static float deltaPhi(float phi1, float phi2)
+        {
+            float delphi = TMath::Abs(TMath::Abs(TMath::Abs(phi1 - phi2) - TMath::Pi())-TMath::Pi());
+            return delphi;
+        }
 
 };
 

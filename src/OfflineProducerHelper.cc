@@ -692,8 +692,9 @@ void OfflineProducerHelper::compute_scaleFactors_bTagReshaping (const std::vecto
             // 0 is the default value for a missing line in the .csv file (e.g., an uncertainty available only for one flavour but not the others)
             // but there is not a way to check if the value was available or the default was returned
             // (who developed this horrible tool?)
+            // in that case, replace the syst-varied SF with the nominal one for this jet
             if (b_score >= 0 && w == 0)
-                w = 1;
+                w = btagCalibrationReader_all_->eval_auto_bounds("central", jf, aeta, pt, b_score);
 
             bSF *= w; // the SF is the product over the preselected jets - IMPORTANT : must be before cuts on b tag! (because it is a reshape)
         }
@@ -3504,11 +3505,12 @@ std::vector<Jet> OfflineProducerHelper::bjJets_PreselectionCut(NanoAODTree& nat,
     }
 
 
-    //////////////////////////////////////////////////////////Crashes with data!!!
     //// the b tag SF for RESHAPING must be evaluated here, before applying any requirement on the b tag
-    //if (any_cast<string>(parameterList_->at("BTagScaleFactorMethod")) == "Reshaping"){
-    //    compute_scaleFactors_bTagReshaping ({{*(jets.begin()+0),*(jets.begin()+1),*(jets.begin()+2),*(jets.begin()+3)}}, nat, ot, *ei.event_weight);
-    //}
+    if(parameterList_->find("BTagScaleFactorMethod") != parameterList_->end()){ //is it a MC event
+        if (any_cast<string>(parameterList_->at("BTagScaleFactorMethod")) == "Reshaping"){
+           compute_scaleFactors_bTagReshaping ({{*(jets.begin()+0),*(jets.begin()+1),*(jets.begin()+2),*(jets.begin()+3)}}, nat, ot, *ei.event_weight);
+        }
+    }
 
     if(btags<MinimumNumberOfBTags) return outputJets;
     outputJets = {{*(jets.begin()+0),*(jets.begin()+1),*(jets.begin()+2),*(jets.begin()+3)}};

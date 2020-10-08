@@ -397,7 +397,7 @@ void OfflineProducerHelper::calculateTriggerMatching(const std::vector< std::uni
                 if(triggerObjectId != triggerFilter.first.first) continue;
                 if( (triggerFilterBitSum >> triggerFilter.first.second) & 0x1 ) //check object passes the filter
                 {
-                    int bestMatchingIndex = getClosestJetIndexToTriggerObject(nat.TrigObj_eta.At(trigObjIt), nat.TrigObj_phi.At(trigObjIt), candidateList, 0.5);
+                    int bestMatchingIndex = getClosestJetIndexToTriggerObject(nat.TrigObj_eta.At(trigObjIt), nat.TrigObj_phi.At(trigObjIt), candidateList, any_cast<float>(parameterList_->at("MaxDeltaR")) );
                     if(bestMatchingIndex>=0)
                     {
                         triggerAndJetsFilterMap.second.at(bestMatchingIndex).at(triggerFilter.first) = true;

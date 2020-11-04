@@ -337,9 +337,12 @@ class OfflineProducerHelper{
         // compute events weight for four b
         void compute_scaleFactors_fourBtag_eventScaleFactor (const std::vector<Jet> &jets, NanoAODTree& nat, OutputTree &ot);
         void compute_scaleFactors_bTagReshaping (const std::vector<Jet> &jets, NanoAODTree& nat, OutputTree &ot, double event_weight);
+        void compute_scaleFactors_fourBtag_TightonMediumWP (const std::vector<Jet> &jets, NanoAODTree& nat, OutputTree &ot);
         void CalculateBtagScaleFactor(const std::vector<Jet> presel_bjets,NanoAODTree& nat,OutputTree &ot);
         void CalculateL1prefiringScaleFactor(NanoAODTree& nat,OutputTree &ot, EventInfo& ei);
         void CalculateEventbyEventScaleFactors(NanoAODTree& nat,OutputTree &ot, EventInfo& ei, float xs);
+
+        double getContentHisto2D(TH2* histo, double x, double y);
 
         void writebTagReshapingHisto();
 
@@ -386,6 +389,19 @@ class OfflineProducerHelper{
         BTagCalibrationReader *btagCalibrationReader_lightJets_;
         BTagCalibrationReader *btagCalibrationReader_cJets_;
         BTagCalibrationReader *btagCalibrationReader_bJets_;
+
+        BTagCalibrationReader *btagCalibrationReader_tight_lightJets_;
+        BTagCalibrationReader *btagCalibrationReader_tight_cJets_;
+        BTagCalibrationReader *btagCalibrationReader_tight_bJets_;
+
+        std::vector<float> deepJet_WP_cut_; // 0: loose, 1: medium, 2: tight
+        std::vector<float> deepCSV_WP_cut_; // 0: loose, 1: medium, 2: tight
+        TH2* h_eff_btag_b_M_; // efficiencies binned in pt, eta
+        TH2* h_eff_btag_b_T_; // efficiencies binned in pt, eta
+        TH2* h_eff_btag_c_M_; // efficiencies binned in pt, eta
+        TH2* h_eff_btag_c_T_; // efficiencies binned in pt, eta
+        TH2* h_eff_btag_udsg_M_; // efficiencies binned in pt, eta
+        TH2* h_eff_btag_udsg_T_; // efficiencies binned in pt, eta
 
         std::unique_ptr<BTagCalibrationReader> btagCalibrationReader_all_; // used for reshaping
         const std::vector<std::string> btag_sf_reshaping_unc_sources_ = {"jes", "hf", "lf", "lfstats1", "lfstats2", "hfstats1", "hfstats2", "cferr1", "cferr2"}; // x {up, down} in the code

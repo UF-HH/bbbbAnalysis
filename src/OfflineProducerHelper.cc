@@ -2416,7 +2416,7 @@ std::tuple<float,float> OfflineProducerHelper::MinMax_Delta(std::vector<TLorentz
             for (uint j = i+1; j < presel_jets_p4.size(); ++j)
             {
                 float dphi;
-                dphi = (presel_jets_p4.at(i)).DeltaR( presel_jets_p4.at(j) );
+                dphi = (presel_jets_p4.at(i)).DeltaPhi( presel_jets_p4.at(j) );
                 distances.emplace_back(dphi);
             }
     }

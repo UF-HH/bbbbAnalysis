@@ -325,6 +325,7 @@ class OutputTree {
         float max_4b_cm_deltaR  ;
         float max_4b_cm_deltaPhi;
         float max_4b_cm_deltaEta;
+        int nBtagTightonMediumWP;
         float min_hbb_deltaR  ;
         float max_hbb_deltaR  ;
         float gen_min_hbb_deltaR  ;

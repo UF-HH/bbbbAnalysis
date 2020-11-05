@@ -274,6 +274,7 @@ struct EventInfo{
     boost::optional<float> max_4b_cm_deltaEta;
     boost::optional<float> min_hbb_deltaR;
     boost::optional<float> max_hbb_deltaR;
+    boost::optional<int> nBtagTightonMediumWP;
     boost::optional<int> nJet_brl;
     boost::optional<int> nJet_edc;
     boost::optional<int> nJet_fwd;

@@ -7,7 +7,7 @@ python scripts/submitSkimOnTier3.py --tag=$1 --xrdcp-tar-only --do-tar --do-xrdc
 python scripts/submitSkimOnTier3.py --input=inputFiles/2016NonResonantDiHiggs4BDataSets/Data.txt  --tag=$1 --cfg=config/skim_2016NonResonantDiHiggs4B.cfg --is-data  --njobs=500
 
 #######Signals
-python scripts/submitSkimOnTier3.py --input=inputFiles/2016NonResonantDiHiggs4BDataSets/GluGluToHHTo4B_node_cHHH1_TuneCUETP8M1_PSWeights_13TeV-powheg-pythia8.txt                     --puWeight=weights/2016/PUweights_2016.root  --tag=$1 --cfg=config/skim_2016NonResonantDiHiggs4B.cfg --is-signal --xs=0.010517   --njobs=10  --is-nlo-sig
+python scripts/submitSkimOnTier3.py --input=inputFiles/2016NonResonantDiHiggs4BDataSets/GluGluToHHTo4B_node_cHHH1_TuneCUETP8M1_PSWeights_13TeV-powheg-pythia8.txt                     --puWeight=weights/2016/PUweights_2016.root   --tag=$1 --cfg=config/skim_2016NonResonantDiHiggs4B.cfg --is-signal --xs=0.010517   --njobs=10  --is-nlo-sig
 python scripts/submitSkimOnTier3.py --input=inputFiles/2016NonResonantDiHiggs4BDataSets/GluGluToHHTo4B_node_cHHH0_TuneCUETP8M1_PSWeights_13TeV-powheg-pythia8.txt                     --puWeight=weights/2016/PUweights_2016.root   --tag=$1 --cfg=config/skim_2016NonResonantDiHiggs4B.cfg --is-signal --xs=0.023618   --njobs=10  --is-nlo-sig
 python scripts/submitSkimOnTier3.py --input=inputFiles/2016NonResonantDiHiggs4BDataSets/GluGluToHHTo4B_node_cHHH2p45_TuneCUETP8M1_PSWeights_13TeV-powheg-pythia8.txt                  --puWeight=weights/2016/PUweights_2016.root   --tag=$1 --cfg=config/skim_2016NonResonantDiHiggs4B.cfg --is-signal --xs=0.004455   --njobs=10  --is-nlo-sig
 python scripts/submitSkimOnTier3.py --input=inputFiles/2016NonResonantDiHiggs4BDataSets/GluGluToHHTo4B_node_cHHH5_TuneCUETP8M1_PSWeights_13TeV-powheg-pythia8.txt                     --puWeight=weights/2016/PUweights_2016.root   --tag=$1 --cfg=config/skim_2016NonResonantDiHiggs4B.cfg --is-signal --xs=0.031072   --njobs=10  --is-nlo-sig
@@ -41,7 +41,7 @@ python scripts/submitSkimOnTier3.py --input=inputFiles/2016NonResonantDiHiggs4BD
 #######################################################################################################################
 
 #### block for systematics variations of JEC
-jecSystList=(
+jecSystFullList=(
     AbsoluteMPFBias
     AbsoluteScale
     AbsoluteStat
@@ -69,6 +69,20 @@ jecSystList=(
     SinglePionECAL
     SinglePionHCAL
     TimePtEta
+)
+
+jecSystList=(
+  Absolute
+  Absolute_2016
+  BBEC1
+  BBEC1_2016
+  EC2
+  EC2_2016
+  FlavorQCD
+  HF
+  HF_2016
+  RelativeBal
+  RelativeSample_2016
 )
 
 for jecsyst in "${jecSystList[@]}"; do
@@ -108,16 +122,16 @@ done
 
 ########################################################################################################################
 
-## klambda reweighting skims using EFTnodes sample
-#kl=1  #-20
-#klname=${kl/./d}
-#if [[ $klname == *-* ]]; then
-#    klname=${klname/-/m_};
-#else
-#    klname=p_${klname}
-#fi
-#python scripts/submitSkimOnTier3.py --kl-rew $kl --kl-map weights/gg_HH_4B_EFTnodes_2016.root --outputName GGHH4B_rew_kl_${klname} \
-#        --input=inputFiles/2016NonResonantDiHiggs4BDataSets/GluGluToHHTo4B_EFTnodes_13TeV-madgraph.txt     --puWeight=weights/2016/PUweights_2016.root     --tag=$1 --cfg=config/skim_2016NonResonantDiHiggs4B.cfg --is-signal  --xs=0.010517 --njobs=200
+# klambda reweighting skims using EFTnodes sample
+kl=1  #-20
+klname=${kl/./d}
+if [[ $klname == *-* ]]; then
+    klname=${klname/-/m_};
+else
+    klname=p_${klname}
+fi
+python scripts/submitSkimOnTier3.py --kl-rew $kl --kl-map weights/gg_HH_4B_EFTnodes_2016.root --outputName GGHH4B_rew_kl_${klname} \
+        --input=inputFiles/2016NonResonantDiHiggs4BDataSets/GluGluToHHTo4B_EFTnodes_13TeV-madgraph.txt     --puWeight=weights/2016/PUweights_2016.root     --tag=$1 --cfg=config/skim_2016NonResonantDiHiggs4B.cfg --is-signal  --xs=0.010517 --njobs=200
 
 ####for kl in `seq -f %g -19 1 20`; do
 ####    klname=${kl/./d}

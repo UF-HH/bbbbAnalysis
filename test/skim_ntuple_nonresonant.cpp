@@ -238,6 +238,9 @@ int main(int argc, char** argv)
         if(bTagscaleFactorMethod == "FourBtag_ScaleFactor"){
             parameterList.emplace("BJetScaleFactorsFile"               ,config.readStringOpt("parameters::BJetScaleFactorsFile"    ));
             parameterList.emplace("BJetScaleFactorsFileAlternative"    ,config.readStringOpt("parameters::BJetScaleFactorsFileAlternative"));
+            parameterList.emplace("deepJet_WP_cut"                     ,config.readFloatListOpt("parameters::deepJet_WP_cut"));
+            parameterList.emplace("deepCSV_WP_cut"                     ,config.readFloatListOpt("parameters::deepCSV_WP_cut"));
+            parameterList.emplace("bTagEffFile"                        ,config.readStringOpt("parameters::bTagEffFile"));
         }
         else if(bTagscaleFactorMethod == "Reshaping"){
             parameterList.emplace("BJetScaleFactorsFile"               ,config.readStringOpt("parameters::BJetScaleFactorsFile"    ));

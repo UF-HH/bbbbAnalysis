@@ -359,8 +359,10 @@ void SkimUtils::fill_output_tree(OutputTree& ot, NanoAODTree& nat, EventInfo& ei
     if(ei.max_4b_cm_deltaR   ) ot.max_4b_cm_deltaR   = *ei.max_4b_cm_deltaR  ;
     if(ei.max_4b_cm_deltaPhi ) ot.max_4b_cm_deltaPhi = *ei.max_4b_cm_deltaPhi;
     if(ei.max_4b_cm_deltaEta ) ot.max_4b_cm_deltaEta = *ei.max_4b_cm_deltaEta;
+    if(ei.max_4b_cm_deltaEta ) ot.max_4b_cm_deltaEta = *ei.max_4b_cm_deltaEta;
     if(ei.min_hbb_deltaR) ot.min_hbb_deltaR = *ei.min_hbb_deltaR;
     if(ei.max_hbb_deltaR) ot.max_hbb_deltaR = *ei.max_hbb_deltaR;
+    if(ei.nBtagTightonMediumWP) ot.nBtagTightonMediumWP = *ei.nBtagTightonMediumWP;
 
     COPY_OPTIONAL_m_pt_eta_phi_p4(H1rand)
     COPY_OPTIONAL_m_pt_eta_phi_p4(H2rand)

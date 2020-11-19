@@ -532,6 +532,15 @@ void OfflineProducerHelper::initializeObjectsBJetForScaleFactors(OutputTree &ot)
         ot.declareUserFloatBranch("bTagScaleFactor_lightJets_up"     , 1.);
         ot.declareUserFloatBranch("bTagScaleFactor_lightJets_down"   , 1.);
 
+        // b-tag scale factors for tight WP
+        ot.declareUserFloatBranch("bTagScaleFactor_tight_central"          , 1.);
+        ot.declareUserFloatBranch("bTagScaleFactor_tight_bJets_up"         , 1.);
+        ot.declareUserFloatBranch("bTagScaleFactor_tight_bJets_down"       , 1.);
+        ot.declareUserFloatBranch("bTagScaleFactor_tight_cJets_up"         , 1.);
+        ot.declareUserFloatBranch("bTagScaleFactor_tight_cJets_down"       , 1.);
+        ot.declareUserFloatBranch("bTagScaleFactor_tight_lightJets_up"     , 1.);
+        ot.declareUserFloatBranch("bTagScaleFactor_tight_lightJets_down"   , 1.);
+
         // branchesAffectedByJetEnergyVariations_["bTagScaleFactor_central"] = 1.;
         string btaggingfile,btagger;
         if(eventselection=="VBFJetCut")
@@ -557,6 +566,37 @@ void OfflineProducerHelper::initializeObjectsBJetForScaleFactors(OutputTree &ot)
         btagCalibrationReader_lightJets_->load(btagCalibration, BTagEntry::FLAV_UDSG, "incl"  );
         btagCalibrationReader_cJets_    ->load(btagCalibration, BTagEntry::FLAV_C   , "comb");//mujets is for top physics in dilepton channel
         btagCalibrationReader_bJets_    ->load(btagCalibration, BTagEntry::FLAV_B   , "comb");//mujets is for top physics in dilepton channel 
+
+        btagCalibrationReader_tight_lightJets_ = new BTagCalibrationReader(BTagEntry::OP_TIGHT,"central",{"up", "down"});
+        btagCalibrationReader_tight_cJets_     = new BTagCalibrationReader(BTagEntry::OP_TIGHT,"central",{"up", "down"});
+        btagCalibrationReader_tight_bJets_     = new BTagCalibrationReader(BTagEntry::OP_TIGHT,"central",{"up", "down"});
+        btagCalibrationReader_tight_lightJets_->load(btagCalibration, BTagEntry::FLAV_UDSG, "incl"  );
+        btagCalibrationReader_tight_cJets_    ->load(btagCalibration, BTagEntry::FLAV_C   , "comb");//mujets is for top physics in dilepton channel
+        btagCalibrationReader_tight_bJets_    ->load(btagCalibration, BTagEntry::FLAV_B   , "comb");//mujets is for top physics in dilepton channel 
+
+        deepJet_WP_cut_ = any_cast<std::vector<float>>(parameterList_->at("deepJet_WP_cut"));
+        deepCSV_WP_cut_ = any_cast<std::vector<float>>(parameterList_->at("deepCSV_WP_cut"));
+        cout << "[INFO] ... the WP for the b tag used are (L/M/T): "<< endl;
+        cout << "       - DeepJet : " << deepJet_WP_cut_.at(0) << " " << deepJet_WP_cut_.at(1) << " " << deepJet_WP_cut_.at(2) << endl;
+        cout << "       - DeepCSV : " << deepCSV_WP_cut_.at(0) << " " << deepCSV_WP_cut_.at(1) << " " << deepCSV_WP_cut_.at(2) << endl;
+
+        // read the b tag maps
+        std::string fbtag = any_cast<std::string> (parameterList_->at("bTagEffFile"));
+        cout << "[INFO] ... reading the b tag efficiencies from the file : " << fbtag << endl;
+        TFile* rfbtag = TFile::Open(fbtag.c_str());
+        h_eff_btag_b_M_    = (TH2*) rfbtag->Get("h_eff_b_medium"); 
+        h_eff_btag_b_T_    = (TH2*) rfbtag->Get("h_eff_b_tight"); 
+        h_eff_btag_c_M_    = (TH2*) rfbtag->Get("h_eff_c_medium"); 
+        h_eff_btag_c_T_    = (TH2*) rfbtag->Get("h_eff_c_tight"); 
+        h_eff_btag_udsg_M_ = (TH2*) rfbtag->Get("h_eff_udsg_medium"); 
+        h_eff_btag_udsg_T_ = (TH2*) rfbtag->Get("h_eff_udsg_tight");
+        h_eff_btag_b_M_    ->SetDirectory(0);
+        h_eff_btag_b_T_    ->SetDirectory(0);
+        h_eff_btag_c_M_    ->SetDirectory(0);
+        h_eff_btag_c_T_    ->SetDirectory(0);
+        h_eff_btag_udsg_M_ ->SetDirectory(0);
+        h_eff_btag_udsg_T_ ->SetDirectory(0);
+        rfbtag->Close();
     }
 
     else if (scaleFactorsMethod == "Reshaping")
@@ -710,6 +750,199 @@ void OfflineProducerHelper::compute_scaleFactors_bTagReshaping (const std::vecto
     btag_sf_reshaping_sumw_denom_ += event_weight;
 }
 
+void OfflineProducerHelper::compute_scaleFactors_fourBtag_TightonMediumWP (const std::vector<Jet> &jets, NanoAODTree& nat, OutputTree &ot)
+{
+
+    // cout << " xxx xxx RUNNING compute_scaleFactors_fourBtag_TightonMediumWP with " << jets.size() << " jets" << endl;
+    // float tmpScaleFactor_bJets_central     = 1.;
+    // float tmpScaleFactor_bJets_up          = 1.;
+    // float tmpScaleFactor_bJets_down        = 1.;
+    // float tmpScaleFactor_cJets_central     = 1.;
+    // float tmpScaleFactor_cJets_up          = 1.;
+    // float tmpScaleFactor_cJets_down        = 1.;
+    // float tmpScaleFactor_lightJets_central = 1.;
+    // float tmpScaleFactor_lightJets_up      = 1.;
+    // float tmpScaleFactor_lightJets_down    = 1.;
+
+    double P_MC   = 1.0;
+    double P_data = 1.0;
+
+    // variations of the various SFs
+    double P_data_bUp    = 1.0;
+    double P_data_bDo    = 1.0;
+    double P_data_cUp    = 1.0;
+    double P_data_cDo    = 1.0;
+    double P_data_udsgUp = 1.0;
+    double P_data_udsgDo = 1.0;
+
+    for(const auto &iJet : jets){
+
+        double pT         = iJet.P4().Pt();
+        double eta        = iJet.P4().Eta();
+        double absEta     = std::abs(iJet.P4().Eta());
+        int    jetFlavour = abs(get_property(iJet,Jet_hadronFlavour));
+
+        bool pass_T, pass_M;
+        if(any_cast<bool>(parameterList_->at("NewestBtaggingAlgorithm"))){
+            double b_score = get_property(iJet, Jet_btagDeepFlavB);
+            pass_T = (b_score > deepJet_WP_cut_.at(2));
+            pass_M = (b_score > deepJet_WP_cut_.at(1));
+        }
+        else{
+            double b_score = get_property(iJet, Jet_btagDeepB);
+            pass_T = (b_score > deepCSV_WP_cut_.at(2));
+            pass_M = (b_score > deepCSV_WP_cut_.at(1));
+        }
+
+        double eff_M;
+        double eff_T;
+        double SF_T;
+        double SF_M;
+
+        double SF_T_bUp;
+        double SF_T_bDo;
+        double SF_M_bUp;
+        double SF_M_bDo;
+
+        double SF_T_cUp;
+        double SF_T_cDo;
+        double SF_M_cUp;
+        double SF_M_cDo;
+
+        double SF_T_udsgUp;
+        double SF_T_udsgDo;
+        double SF_M_udsgUp;
+        double SF_M_udsgDo;
+
+        if(jetFlavour==5){
+            eff_M = getContentHisto2D(h_eff_btag_b_M_, pT, absEta);
+            eff_T = getContentHisto2D(h_eff_btag_b_T_, pT, absEta);
+            SF_T = btagCalibrationReader_tight_bJets_ ->eval_auto_bounds("central", BTagEntry::FLAV_B, eta, pT);
+            SF_M = btagCalibrationReader_bJets_       ->eval_auto_bounds("central", BTagEntry::FLAV_B, eta, pT);
+            
+            SF_T_bUp    = btagCalibrationReader_tight_bJets_ -> eval_auto_bounds("up",   BTagEntry::FLAV_B, eta, pT);
+            SF_T_bDo    = btagCalibrationReader_tight_bJets_ -> eval_auto_bounds("down", BTagEntry::FLAV_B, eta, pT);
+            SF_M_bUp    = btagCalibrationReader_bJets_       -> eval_auto_bounds("up",   BTagEntry::FLAV_B, eta, pT);
+            SF_M_bDo    = btagCalibrationReader_bJets_       -> eval_auto_bounds("down", BTagEntry::FLAV_B, eta, pT);
+            
+            SF_T_cUp    = SF_T_cDo    = SF_T;
+            SF_T_udsgUp = SF_T_udsgDo = SF_T;
+            SF_M_cUp    = SF_M_cDo    = SF_M;
+            SF_M_udsgUp = SF_M_udsgDo = SF_M;
+        }
+
+        else if(jetFlavour==4){
+            eff_M = getContentHisto2D(h_eff_btag_c_M_, pT, absEta);
+            eff_T = getContentHisto2D(h_eff_btag_c_T_, pT, absEta);
+            SF_T = btagCalibrationReader_tight_cJets_ ->eval_auto_bounds("central", BTagEntry::FLAV_C, eta, pT);
+            SF_M = btagCalibrationReader_cJets_       ->eval_auto_bounds("central", BTagEntry::FLAV_C, eta, pT);
+
+            SF_T_cUp    = btagCalibrationReader_tight_cJets_ -> eval_auto_bounds("up",   BTagEntry::FLAV_C, eta, pT);
+            SF_T_cDo    = btagCalibrationReader_tight_cJets_ -> eval_auto_bounds("down", BTagEntry::FLAV_C, eta, pT);
+            SF_M_cUp    = btagCalibrationReader_cJets_       -> eval_auto_bounds("up",   BTagEntry::FLAV_C, eta, pT);
+            SF_M_cDo    = btagCalibrationReader_cJets_       -> eval_auto_bounds("down", BTagEntry::FLAV_C, eta, pT);
+            
+            SF_T_bUp    = SF_T_bDo    = SF_T;
+            SF_T_udsgUp = SF_T_udsgDo = SF_T;
+            SF_M_bUp    = SF_M_bDo    = SF_M;
+            SF_M_udsgUp = SF_M_udsgDo = SF_M;
+
+        }
+
+        else{
+            eff_M = getContentHisto2D(h_eff_btag_udsg_M_, pT, absEta);
+            eff_T = getContentHisto2D(h_eff_btag_udsg_T_, pT, absEta);
+            SF_T = btagCalibrationReader_tight_lightJets_ ->eval_auto_bounds("central", BTagEntry::FLAV_UDSG, eta, pT);
+            SF_M = btagCalibrationReader_lightJets_       ->eval_auto_bounds("central", BTagEntry::FLAV_UDSG, eta, pT);
+
+            SF_T_udsgUp    = btagCalibrationReader_tight_lightJets_ -> eval_auto_bounds("up",   BTagEntry::FLAV_UDSG, eta, pT);
+            SF_T_udsgDo    = btagCalibrationReader_tight_lightJets_ -> eval_auto_bounds("down", BTagEntry::FLAV_UDSG, eta, pT);
+            SF_M_udsgUp    = btagCalibrationReader_lightJets_       -> eval_auto_bounds("up",   BTagEntry::FLAV_UDSG, eta, pT);
+            SF_M_udsgDo    = btagCalibrationReader_lightJets_       -> eval_auto_bounds("down", BTagEntry::FLAV_UDSG, eta, pT);
+            
+            SF_T_bUp    = SF_T_bDo = SF_T;
+            SF_T_cUp    = SF_T_cDo = SF_T;
+            SF_M_bUp    = SF_M_bDo = SF_M;
+            SF_M_cUp    = SF_M_cDo = SF_M;
+        }
+
+        P_MC    *= (pass_T ? eff_T :
+                    pass_M ? (eff_T - eff_M) :
+                            (1. - eff_M));
+        P_data  *= (pass_T ? (SF_T*eff_T) :
+                    pass_M ? (SF_T*eff_T - SF_M*eff_M) :
+                            (1. - SF_M*eff_M));
+
+        P_data_bUp  *= (pass_T ? (SF_T_bUp*eff_T) :
+                    pass_M ? (SF_T_bUp*eff_T - SF_M_bUp*eff_M) :
+                            (1. - SF_M_bUp*eff_M));
+
+        P_data_bDo  *= (pass_T ? (SF_T_bDo*eff_T) :
+                    pass_M ? (SF_T_bDo*eff_T - SF_M_bDo*eff_M) :
+                            (1. - SF_M_bDo*eff_M));
+
+        P_data_cUp  *= (pass_T ? (SF_T_cUp*eff_T) :
+                    pass_M ? (SF_T_cUp*eff_T - SF_M_cUp*eff_M) :
+                            (1. - SF_M_cUp*eff_M));
+
+        P_data_cDo  *= (pass_T ? (SF_T_cDo*eff_T) :
+                    pass_M ? (SF_T_cDo*eff_T - SF_M_cDo*eff_M) :
+                            (1. - SF_M_cDo*eff_M));
+
+        P_data_udsgUp  *= (pass_T ? (SF_T_udsgUp*eff_T) :
+                    pass_M ? (SF_T_udsgUp*eff_T - SF_M_udsgUp*eff_M) :
+                            (1. - SF_M_udsgUp*eff_M));
+
+        P_data_udsgDo  *= (pass_T ? (SF_T_udsgDo*eff_T) :
+                    pass_M ? (SF_T_udsgDo*eff_T - SF_M_udsgDo*eff_M) :
+                            (1. - SF_M_udsgDo*eff_M));
+
+
+        // if(jetFlavour==5){
+        //     tmpScaleFactor_bJets_central     *= btagCalibrationReader_bJets_    ->eval_auto_bounds("central", BTagEntry::FLAV_B   , iJet.P4().Eta(), iJet.P4().Pt());
+        //     tmpScaleFactor_bJets_up          *= btagCalibrationReader_bJets_    ->eval_auto_bounds("up"     , BTagEntry::FLAV_B   , iJet.P4().Eta(), iJet.P4().Pt());
+        //     tmpScaleFactor_bJets_down        *= btagCalibrationReader_bJets_    ->eval_auto_bounds("down"   , BTagEntry::FLAV_B   , iJet.P4().Eta(), iJet.P4().Pt());
+        // }
+        // else if(jetFlavour==4){
+        //     tmpScaleFactor_cJets_central     *= btagCalibrationReader_cJets_    ->eval_auto_bounds("central", BTagEntry::FLAV_C   , iJet.P4().Eta(), iJet.P4().Pt());
+        //     tmpScaleFactor_cJets_up          *= btagCalibrationReader_cJets_    ->eval_auto_bounds("up"     , BTagEntry::FLAV_C   , iJet.P4().Eta(), iJet.P4().Pt());
+        //     tmpScaleFactor_cJets_down        *= btagCalibrationReader_cJets_    ->eval_auto_bounds("down"   , BTagEntry::FLAV_C   , iJet.P4().Eta(), iJet.P4().Pt());
+        // }
+        // else{
+        //     tmpScaleFactor_lightJets_central *= btagCalibrationReader_lightJets_->eval_auto_bounds("central", BTagEntry::FLAV_UDSG, iJet.P4().Eta(), iJet.P4().Pt());
+        //     tmpScaleFactor_lightJets_up      *= btagCalibrationReader_lightJets_->eval_auto_bounds("up"     , BTagEntry::FLAV_UDSG, iJet.P4().Eta(), iJet.P4().Pt());
+        //     tmpScaleFactor_lightJets_down    *= btagCalibrationReader_lightJets_->eval_auto_bounds("down"   , BTagEntry::FLAV_UDSG, iJet.P4().Eta(), iJet.P4().Pt());
+        // }
+    }
+
+    ot.userFloat("bTagScaleFactor_tight_central"          ) = P_data / P_MC ;
+    ot.userFloat("bTagScaleFactor_tight_bJets_up"         ) = P_data_bUp / P_MC;
+    ot.userFloat("bTagScaleFactor_tight_bJets_down"       ) = P_data_bDo / P_MC;
+    ot.userFloat("bTagScaleFactor_tight_cJets_up"         ) = P_data_cUp / P_MC;
+    ot.userFloat("bTagScaleFactor_tight_cJets_down"       ) = P_data_cDo / P_MC;
+    ot.userFloat("bTagScaleFactor_tight_lightJets_up"     ) = P_data_udsgUp / P_MC;
+    ot.userFloat("bTagScaleFactor_tight_lightJets_down"   ) = P_data_udsgDo / P_MC;
+
+    return;    
+}
+
+double OfflineProducerHelper::getContentHisto2D(TH2* histo, double x, double y)
+{
+  int nbinsx = histo->GetNbinsX();
+  int nbinsy = histo->GetNbinsY();
+  int ibinx = histo->GetXaxis()->FindBin(x);
+  int ibiny = histo->GetYaxis()->FindBin(y);
+
+  if (ibinx == 0)     ibinx = 1;
+  if (ibinx > nbinsx) ibinx = nbinsx;
+
+  if (ibiny == 0)     ibiny = 1;
+  if (ibiny > nbinsy) ibiny = nbinsy;
+  
+  return histo->GetBinContent(ibinx, ibiny);
+}
+
+
 void OfflineProducerHelper::writebTagReshapingHisto()
 {
     // convert map to histogram
@@ -773,6 +1006,7 @@ void OfflineProducerHelper::CalculateBtagScaleFactor(const std::vector<Jet> pres
             }
 
             compute_scaleFactors_fourBtag_eventScaleFactor(jetsforbSF,nat,ot);
+            compute_scaleFactors_fourBtag_TightonMediumWP (presel_bjets,nat,ot); // the tightOnMedium SF are done with all the 4 jets
         }
     }
     return;
@@ -2183,7 +2417,7 @@ std::tuple<float,float> OfflineProducerHelper::MinMax_Delta(std::vector<TLorentz
             for (uint j = i+1; j < presel_jets_p4.size(); ++j)
             {
                 float dphi;
-                dphi = (presel_jets_p4.at(i)).DeltaR( presel_jets_p4.at(j) );
+                dphi = (presel_jets_p4.at(i)).DeltaPhi( presel_jets_p4.at(j) );
                 distances.emplace_back(dphi);
             }
     }

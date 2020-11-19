@@ -48,7 +48,7 @@ python scripts/submitSkimOnTier3.py --input=inputFiles/2018NonResonantDiHiggs4BD
 #######################################################################################################################
 
 ################# block for systematics variations of JEC
-jecSystList=(
+jecSystFullList=(
     AbsoluteMPFBias
     AbsoluteScale
     AbsoluteStat
@@ -77,6 +77,21 @@ jecSystList=(
     SinglePionHCAL
     TimePtEta
 )
+
+jecSystList=(
+  Absolute
+  Absolute_2017
+  BBEC1
+  BBEC1_2017
+  EC2
+  EC2_2017
+  FlavorQCD
+  HF
+  HF_2017
+  RelativeBal
+  RelativeSample_2017
+)
+
 
 for jecsyst in "${jecSystList[@]}"; do
     for systdir in up down ; do
@@ -115,23 +130,16 @@ done
 
 ####################################################################################################################################
 
-#######python scripts/submitSkimOnTier3.py --input=inputFiles/2018NonResonantDiHiggs4BDataSets/QCD_bEnriched_HT300to500_TuneCP5_13TeV-madgraphMLM-pythia8.txt    --puWeight=weights/2018/QCD_HT300to500_TuneCP5_13TeV-madgraphMLM-pythia8_PUweights.root     --tag=$1  --cfg=config/skim_2018NonResonantDiHiggs4B.cfg --xs=16620.0   --njobs=400
-#######python scripts/submitSkimOnTier3.py --input=inputFiles/2018NonResonantDiHiggs4BDataSets/QCD_bEnriched_HT500to700_TuneCP5_13TeV-madgraphMLM-pythia8.txt    --puWeight=weights/2018/QCD_HT500to700_TuneCP5_13TeV-madgraphMLM-pythia8_PUweights.root     --tag=$1  --cfg=config/skim_2018NonResonantDiHiggs4B.cfg --xs=1487.0    --njobs=400
-#######python scripts/submitSkimOnTier3.py --input=inputFiles/2018NonResonantDiHiggs4BDataSets/QCD_bEnriched_HT700to1000_TuneCP5_13TeV-madgraphMLM-pythia8.txt   --puWeight=weights/2018/QCD_HT700to1000_TuneCP5_13TeV-madgraphMLM-pythia8_PUweights.root    --tag=$1  --cfg=config/skim_2018NonResonantDiHiggs4B.cfg --xs=296.5     --njobs=400
-#######python scripts/submitSkimOnTier3.py --input=inputFiles/2018NonResonantDiHiggs4BDataSets/QCD_bEnriched_HT1000to1500_TuneCP5_13TeV-madgraphMLM-pythia8.txt  --puWeight=weights/2018/QCD_HT1000to1500_TuneCP5_13TeV-madgraphMLM-pythia8_PUweights.root   --tag=$1  --cfg=config/skim_2018NonResonantDiHiggs4B.cfg --xs=46.61     --njobs=400
-#######python scripts/submitSkimOnTier3.py --input=inputFiles/2018NonResonantDiHiggs4BDataSets/QCD_bEnriched_HT1500to2000_TuneCP5_13TeV-madgraphMLM-pythia8.txt  --puWeight=weights/2018/QCD_HT1500to2000_TuneCP5_13TeV-madgraphMLM-pythia8_PUweights.root   --tag=$1  --cfg=config/skim_2018NonResonantDiHiggs4B.cfg --xs=3.72      --njobs=400
-#######python scripts/submitSkimOnTier3.py --input=inputFiles/2018NonResonantDiHiggs4BDataSets/QCD_bEnriched_HT2000toInf_TuneCP5_13TeV-madgraphMLM-pythia8.txt   --puWeight=weights/2018/QCD_HT2000toInf_TuneCP5_13TeV-madgraphMLM-pythia8_PUweights.root    --tag=$1  --cfg=config/skim_2018NonResonantDiHiggs4B.cfg --xs=0.6462     --njobs=400
-
-################################################## klambda reweighting skims using EFTnodes at LO
-#kl=1 #-20
-#klname=${kl/./d}
-#if [[ $klname == *-* ]]; then
-#    klname=${klname/-/m_};
-#else
-#    klname=p_${klname}
-#fi
-#python scripts/submitSkimOnTier3.py --kl-rew $kl --kl-map weights/gg_HH_4B_EFTnodes_2018.root --outputName GGHH4B_rew_kl_${klname} \
-#        --input=inputFiles/2018NonResonantDiHiggs4BDataSets/GluGluToHHTo4B_EFTnodes_TuneCP5_PSWeights_13TeV-madgraph-pythia8.txt     --puWeight=weights/2018/PUweights_2018.root     --tag=$1 --cfg=config/skim_2018NonResonantDiHiggs4B.cfg --is-signal  --xs=0.010517 --njobs=200
+################################################# klambda reweighting skims using EFTnodes at LO
+kl=1 #-20
+klname=${kl/./d}
+if [[ $klname == *-* ]]; then
+    klname=${klname/-/m_};
+else
+    klname=p_${klname}
+fi
+python scripts/submitSkimOnTier3.py --kl-rew $kl --kl-map weights/gg_HH_4B_EFTnodes_2018.root --outputName GGHH4B_rew_kl_${klname} \
+        --input=inputFiles/2018NonResonantDiHiggs4BDataSets/GluGluToHHTo4B_EFTnodes_TuneCP5_PSWeights_13TeV-madgraph-pythia8.txt     --puWeight=weights/2018/PUweights_2018.root     --tag=$1 --cfg=config/skim_2018NonResonantDiHiggs4B.cfg --is-signal  --xs=0.010517 --njobs=200
 
 ####for kl in `seq -f %g -19 1 20`; do
 ####    klname=${kl/./d}
@@ -144,3 +152,10 @@ done
 ####    python scripts/submitSkimOnTier3.py --kl-rew $kl --kl-map weights/gg_HH_4B_EFTnodes_2018.root --outputName GGHH4B_rew_kl_${klname} \
 ####        --input=inputFiles/2018NonResonantDiHiggs4BDataSets/GluGluToHHTo4B_EFTnodes_TuneCP5_PSWeights_13TeV-madgraph-pythia8.txt     --puWeight=weights/2018/PUweights_2018.root     --tag=$1 --cfg=config/skim_2018NonResonantDiHiggs4B.cfg --is-signal  --xs=0.010517    --njobs=200
 ####done
+
+#######python scripts/submitSkimOnTier3.py --input=inputFiles/2018NonResonantDiHiggs4BDataSets/QCD_bEnriched_HT300to500_TuneCP5_13TeV-madgraphMLM-pythia8.txt    --puWeight=weights/2018/QCD_HT300to500_TuneCP5_13TeV-madgraphMLM-pythia8_PUweights.root     --tag=$1  --cfg=config/skim_2018NonResonantDiHiggs4B.cfg --xs=16620.0   --njobs=400
+#######python scripts/submitSkimOnTier3.py --input=inputFiles/2018NonResonantDiHiggs4BDataSets/QCD_bEnriched_HT500to700_TuneCP5_13TeV-madgraphMLM-pythia8.txt    --puWeight=weights/2018/QCD_HT500to700_TuneCP5_13TeV-madgraphMLM-pythia8_PUweights.root     --tag=$1  --cfg=config/skim_2018NonResonantDiHiggs4B.cfg --xs=1487.0    --njobs=400
+#######python scripts/submitSkimOnTier3.py --input=inputFiles/2018NonResonantDiHiggs4BDataSets/QCD_bEnriched_HT700to1000_TuneCP5_13TeV-madgraphMLM-pythia8.txt   --puWeight=weights/2018/QCD_HT700to1000_TuneCP5_13TeV-madgraphMLM-pythia8_PUweights.root    --tag=$1  --cfg=config/skim_2018NonResonantDiHiggs4B.cfg --xs=296.5     --njobs=400
+#######python scripts/submitSkimOnTier3.py --input=inputFiles/2018NonResonantDiHiggs4BDataSets/QCD_bEnriched_HT1000to1500_TuneCP5_13TeV-madgraphMLM-pythia8.txt  --puWeight=weights/2018/QCD_HT1000to1500_TuneCP5_13TeV-madgraphMLM-pythia8_PUweights.root   --tag=$1  --cfg=config/skim_2018NonResonantDiHiggs4B.cfg --xs=46.61     --njobs=400
+#######python scripts/submitSkimOnTier3.py --input=inputFiles/2018NonResonantDiHiggs4BDataSets/QCD_bEnriched_HT1500to2000_TuneCP5_13TeV-madgraphMLM-pythia8.txt  --puWeight=weights/2018/QCD_HT1500to2000_TuneCP5_13TeV-madgraphMLM-pythia8_PUweights.root   --tag=$1  --cfg=config/skim_2018NonResonantDiHiggs4B.cfg --xs=3.72      --njobs=400
+#######python scripts/submitSkimOnTier3.py --input=inputFiles/2018NonResonantDiHiggs4BDataSets/QCD_bEnriched_HT2000toInf_TuneCP5_13TeV-madgraphMLM-pythia8.txt   --puWeight=weights/2018/QCD_HT2000toInf_TuneCP5_13TeV-madgraphMLM-pythia8_PUweights.root    --tag=$1  --cfg=config/skim_2018NonResonantDiHiggs4B.cfg --xs=0.6462     --njobs=400

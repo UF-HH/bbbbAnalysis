@@ -341,6 +341,9 @@ void OutputTree::init_branches()
     tree_->Branch("min_hbb_deltaR", &min_hbb_deltaR);
     tree_->Branch("max_hbb_deltaR", &max_hbb_deltaR);
 
+    //EXTRA B-TAGGING
+    tree_->Branch("nBtagTightonMediumWP", &nBtagTightonMediumWP);
+
     //COSTHETA IN VBF CM
     tree_->Branch("abs_costh_H1_vbfcm",    &abs_costh_H1_vbfcm);     
     tree_->Branch("abs_costh_H2_vbfcm",    &abs_costh_H2_vbfcm); 
@@ -708,6 +711,7 @@ void OutputTree::clear()
     max_4b_cm_deltaR   = 0.;
     max_4b_cm_deltaPhi = 0.;
     max_4b_cm_deltaEta = 0.;
+    nBtagTightonMediumWP = 0.;
     abs_costh_H1_vbfcm=0;       
     abs_costh_H2_vbfcm=0;   
     abs_costh_HH_vbfcm=0;   

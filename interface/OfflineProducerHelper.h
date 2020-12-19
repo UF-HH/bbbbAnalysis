@@ -53,7 +53,11 @@ class OfflineProducerHelper{
             eval_BDT3cat2_ = std::unique_ptr<BDTEval> (new BDTEval (float_varlist_BDT3cat2, std::vector<std::string>(0)) );
             // HH reweighters
             hhreweighter_    = std::unique_ptr<HHReweight5D>(nullptr);
-            hhreweighter_kl_ = 1.0;
+            hhreweighter_kl_  = 1.0;
+            hhreweighter_kt_  = 1.0;
+            hhreweighter_c2_  = 0.0;
+            hhreweighter_cg_  = 0.0;
+            hhreweighter_c2g_ = 0.0;
         };
 
         ~OfflineProducerHelper() {};
@@ -65,6 +69,10 @@ class OfflineProducerHelper{
         std::unique_ptr<BDTEval> eval_BDT3cat2_;
         std::unique_ptr<HHReweight5D> hhreweighter_;
         float hhreweighter_kl_;
+        float hhreweighter_kt_;
+        float hhreweighter_c2_;
+        float hhreweighter_cg_;
+        float hhreweighter_c2g_;
 
         TriggerEfficiencyCalculator *theTriggerEfficiencyCalculator_ {nullptr};
         TriggerEfficiencyCalculator_TriggerMatched *theTriggerEfficiencyCalculator_TriggerMatched_ {nullptr};
@@ -462,6 +470,8 @@ class OfflineProducerHelper{
         // float GetBDT1Score(EventInfo& ei, std::string weights);//GGFHHKiller
         // float GetBDT2Score(EventInfo& ei, std::string weights);//VBFQCDKiller
         // float GetBDT3Score(EventInfo& ei, std::string weights);//GGFQCDHHKiller
+        void AddBoostedVariables(NanoAODTree& nat, EventInfo& ei, int year);
+
         float GetBDT1Score(EventInfo& ei);//GGFHHKiller
         float GetBDT2Score(EventInfo& ei);//VBFQCDKiller
         float GetBDT3Score(EventInfo& ei);//GGFQCDHHKiller

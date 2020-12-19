@@ -457,6 +457,18 @@ void SkimUtils::fill_output_tree(OutputTree& ot, NanoAODTree& nat, EventInfo& ei
     if(ei.recoJetMatchedToGenJet3) ot.recoJetMatchedToGenJet3 = *ei.recoJetMatchedToGenJet3;
     if(ei.recoJetMatchedToGenJet4) ot.recoJetMatchedToGenJet4 = *ei.recoJetMatchedToGenJet4;
 
+    //boosted classification
+    if (ei.pass_VBFboosted_sel)        ot.pass_VBFboosted_sel        = *ei.pass_VBFboosted_sel;
+    if (ei.pass_VBFboosted_sel_nodPhi) ot.pass_VBFboosted_sel_nodPhi = *ei.pass_VBFboosted_sel_nodPhi;
+    if (ei.pass_VBFboosted_sel_nodEta) ot.pass_VBFboosted_sel_nodEta = *ei.pass_VBFboosted_sel_nodEta;
+    if (ei.pass_VBFboosted_sel_noang)  ot.pass_VBFboosted_sel_noang  = *ei.pass_VBFboosted_sel_noang;
+    if (ei.n_fatjet_gt250)                 ot.n_fatjet_gt250                 = *ei.n_fatjet_gt250;
+    if (ei.n_fatjet_gt300)                 ot.n_fatjet_gt300                 = *ei.n_fatjet_gt300;
+    if (ei.n_fatjet_gt250_twosubj)         ot.n_fatjet_gt250_twosubj         = *ei.n_fatjet_gt250_twosubj;
+    if (ei.n_fatjet_gt300_twosubj)         ot.n_fatjet_gt300_twosubj         = *ei.n_fatjet_gt300_twosubj;
+    if (ei.n_fatjet_gt250_twosubj_msdgt30) ot.n_fatjet_gt250_twosubj_msdgt30 = *ei.n_fatjet_gt250_twosubj_msdgt30;
+    if (ei.n_fatjet_gt300_twosubj_msdgt30) ot.n_fatjet_gt300_twosubj_msdgt30 = *ei.n_fatjet_gt300_twosubj_msdgt30;
+
     // fill the tree
     ot.fill();
 

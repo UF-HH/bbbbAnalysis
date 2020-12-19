@@ -431,6 +431,18 @@ void OutputTree::init_branches()
     tree_->Branch("recoJetMatchedToGenJet3", &recoJetMatchedToGenJet3);
     tree_->Branch("recoJetMatchedToGenJet4", &recoJetMatchedToGenJet4);
 
+    //boosted classification
+    tree_->Branch("pass_VBFboosted_sel",            &pass_VBFboosted_sel);
+    tree_->Branch("pass_VBFboosted_sel_nodPhi",     &pass_VBFboosted_sel_nodPhi);
+    tree_->Branch("pass_VBFboosted_sel_nodEta",     &pass_VBFboosted_sel_nodEta);
+    tree_->Branch("pass_VBFboosted_sel_noang",      &pass_VBFboosted_sel_noang);
+    tree_->Branch("n_fatjet_gt250",                 &n_fatjet_gt250);
+    tree_->Branch("n_fatjet_gt300",                 &n_fatjet_gt300);
+    tree_->Branch("n_fatjet_gt250_twosubj",         &n_fatjet_gt250_twosubj);
+    tree_->Branch("n_fatjet_gt300_twosubj",         &n_fatjet_gt300_twosubj);
+    tree_->Branch("n_fatjet_gt250_twosubj_msdgt30", &n_fatjet_gt250_twosubj_msdgt30);
+    tree_->Branch("n_fatjet_gt300_twosubj_msdgt30", &n_fatjet_gt300_twosubj_msdgt30);
+
     // note that the initialization of the user branches is made separately when calling declareUser*Branch
 }
 
@@ -822,6 +834,17 @@ void OutputTree::clear()
     recoJetMatchedToGenJet3 = -1;
     recoJetMatchedToGenJet4 = -1;    
 
+    //boosted classification
+    pass_VBFboosted_sel            = 0;
+    pass_VBFboosted_sel_nodPhi     = 0;
+    pass_VBFboosted_sel_nodEta     = 0;
+    pass_VBFboosted_sel_noang      = 0;
+    n_fatjet_gt250                 = 0;
+    n_fatjet_gt300                 = 0;
+    n_fatjet_gt250_twosubj         = 0;
+    n_fatjet_gt300_twosubj         = 0;
+    n_fatjet_gt250_twosubj_msdgt30 = 0;
+    n_fatjet_gt300_twosubj_msdgt30 = 0;
 
     userFloats_.resetAll();
     userInts_.resetAll();

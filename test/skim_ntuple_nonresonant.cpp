@@ -50,7 +50,11 @@ int main(int argc, char** argv)
         ("puWeight"  , po::value<string>()->default_value(""), "PU weight file name")
         ("seed"      , po::value<int>()->default_value(-1), "seed to be used in systematic uncertainties such as JEC, JER,etc")
         // ("kl-rew-list"  , po::value<std::vector<float>>()->multitoken()->default_value(std::vector<float>(0), "-"), "list of klambda values for reweight")
-        ("kl-rew"    , po::value<float>(),  "klambda value for reweighting")
+        ("kl-rew"    , po::value<float>(),  "klambda value for reweighting (default 1 if reweighting is performed)")
+        ("kt-rew"    , po::value<float>(),  "ktop value for reweighting (default 1 if reweighting is performed)")
+        ("c2-rew"    , po::value<float>(),  "c2 value for reweighting (default 0 if reweighting is performed)")
+        ("cg-rew"    , po::value<float>(),  "cg value for reweighting (default 0 if reweighting is performed)")
+        ("c2g-rew"    , po::value<float>(), "c2g value for reweighting (default 0 if reweighting is performed)")
         ("kl-map"    , po::value<string>()->default_value(""), "klambda input map for reweighting")
         // ("kl-histo"  , po::value<string>()->default_value("hhGenLevelDistr"), "klambda histogram name for reweighting")
         ("jes-shift-syst", po::value<string>()->default_value("nominal"), "Name of the JES (scale) source uncertainty to be shifted. Usage as <name>:<up/down>. Pass -nominal- to not shift the jets")
@@ -467,15 +471,39 @@ int main(int argc, char** argv)
         }
 
         // MC reweight initialization
-        if (opts.find("kl-rew") != opts.end()) // a kl value was passed
+        if (
+            opts.find("kl-rew")  != opts.end() ||
+            opts.find("kt-rew")  != opts.end() ||
+            opts.find("c2-rew")  != opts.end() ||
+            opts.find("cg-rew")  != opts.end() ||
+            opts.find("c2g-rew") != opts.end() 
+        ) // a kl value was passed
         {
-            float  kl_rew    = opts["kl-rew"].as<float>();  // target value
+            float  kl_rew    = (opts.find("kl-rew")  != opts.end() ? opts["kl-rew"].as<float>()  : 1);  // target value
+            float  kt_rew    = (opts.find("kt-rew")  != opts.end() ? opts["kt-rew"].as<float>()  : 1);  // target value
+            float  c2_rew    = (opts.find("c2-rew")  != opts.end() ? opts["c2-rew"].as<float>()  : 0);  // target value
+            float  cg_rew    = (opts.find("cg-rew")  != opts.end() ? opts["cg-rew"].as<float>()  : 0);  // target value
+            float  c2g_rew   = (opts.find("c2g-rew") != opts.end() ? opts["c2g-rew"].as<float>() : 0);  // target value
             string kl_map    = opts["kl-map"].as<string>(); // sample map fname
             string kl_histo  = "hhGenLevelDistr";           // sample map histo
             string kl_coeffs = config.readStringOpt("hhreweight::coeff_file"); // coefficient file
 
+            std::cout << "[INFO] ... initialising HH reweighter" << std::endl;
+            std::cout << "   - coefficient file       : " << kl_coeffs  << std::endl;
+            std::cout << "   - input sample map file  : " << kl_map     << std::endl;
+            std::cout << "   - input sample map histo : " << kl_histo   << std::endl;
+            std::cout << "   - kl  : " << kl_rew  << endl;
+            std::cout << "   - kt  : " << kt_rew  << endl;
+            std::cout << "   - c2  : " << c2_rew  << endl;
+            std::cout << "   - cg  : " << cg_rew  << endl;
+            std::cout << "   - c2g : " << c2g_rew << endl;
+
             oph.init_HH_reweighter(ot, kl_coeffs, kl_map, kl_histo);
-            oph.hhreweighter_kl_ = kl_rew;
+            oph.hhreweighter_kl_  = kl_rew;
+            oph.hhreweighter_kt_  = kt_rew;
+            oph.hhreweighter_c2_  = c2_rew;
+            oph.hhreweighter_cg_  = cg_rew;
+            oph.hhreweighter_c2g_ = c2g_rew;
         }
     }
 
@@ -547,6 +575,8 @@ int main(int argc, char** argv)
         if (useTriggerMatching) oph.TriggerMatchingModule(nat,ot,ei, listOfPassedTriggers);
 
         oph.save_objects_for_cut(nat, ot,ei);
+
+        oph.AddBoostedVariables(nat, ei, datasetYear);
 
         ec.updateSelected(weight);
         su::fill_output_tree(ot, nat, ei);

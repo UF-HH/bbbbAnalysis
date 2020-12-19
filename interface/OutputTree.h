@@ -440,7 +440,20 @@ class OutputTree {
         float TT_m;
         int TT_nPV;
         int TT_nPVgood;
-        int TT_nJet;  
+        int TT_nJet;
+
+        //boosted classification
+        int pass_VBFboosted_sel;
+        int pass_VBFboosted_sel_nodPhi;
+        int pass_VBFboosted_sel_nodEta;
+        int pass_VBFboosted_sel_noang;
+        int n_fatjet_gt250;
+        int n_fatjet_gt300;
+        int n_fatjet_gt250_twosubj;
+        int n_fatjet_gt300_twosubj;
+        int n_fatjet_gt250_twosubj_msdgt30;
+        int n_fatjet_gt300_twosubj_msdgt30;
+        
     private:
         void init_branches();
         std::unique_ptr<TTree> tree_;

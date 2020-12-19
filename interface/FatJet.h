@@ -6,7 +6,7 @@
 class FatJet : public Candidate
 {
     public:
-        FatJet() : Candidate(){typeId_=6;}
+        FatJet () : Candidate(){typeId_=6;}
         FatJet (int idx, NanoAODTree* nat) : Candidate(idx, nat){typeId_=6; buildP4();}
         ~FatJet(){};
         std::unique_ptr<Candidate> clone() const override{

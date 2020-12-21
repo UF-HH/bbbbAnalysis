@@ -10,6 +10,7 @@
 #include "Electron.h"
 #include "Muon.h"
 #include "GenPart.h"
+#include "FatJet.h"
 #include "HH4b_kinFit.h"
 #include "TRandom.h"
 #include "TMath.h"
@@ -732,8 +733,9 @@ void OfflineProducerHelper::compute_scaleFactors_bTagReshaping (const std::vecto
             // 0 is the default value for a missing line in the .csv file (e.g., an uncertainty available only for one flavour but not the others)
             // but there is not a way to check if the value was available or the default was returned
             // (who developed this horrible tool?)
+            // in that case, replace the syst-varied SF with the nominal one for this jet
             if (b_score >= 0 && w == 0)
-                w = 1;
+                w = btagCalibrationReader_all_->eval_auto_bounds("central", jf, aeta, pt, b_score);
 
             bSF *= w; // the SF is the product over the preselected jets - IMPORTANT : must be before cuts on b tag! (because it is a reshape)
         }
@@ -1235,7 +1237,11 @@ float OfflineProducerHelper::calculateEventWeight_AllWeights(NanoAODTree& nat, E
     if (hhreweighter_)
     {
 
-        float kl = hhreweighter_kl_;
+        float kl  = hhreweighter_kl_;
+        float kt  = hhreweighter_kt_;
+        float c2  = hhreweighter_c2_;
+        float cg  = hhreweighter_cg_;
+        float c2g = hhreweighter_c2g_;
         TLorentzVector vSum = ei.gen_H1->P4() + ei.gen_H2->P4();
         
         // boost to CM
@@ -1245,7 +1251,9 @@ float OfflineProducerHelper::calculateEventWeight_AllWeights(NanoAODTree& nat, E
         float gen_mHH          = vSum.M();
         float gen_costh_H1_cm  = vH1_cm.CosTheta();
 
-        double w = hhreweighter_->getWeight(kl, 1.0, gen_mHH, gen_costh_H1_cm);
+        // double w = hhreweighter_->getWeight(kl, 1.0, gen_mHH, gen_costh_H1_cm);
+        double w = hhreweighter_->getWeight(kl, kt, c2, cg, c2g, gen_mHH, gen_costh_H1_cm);
+
         ot.userFloat("HH_reweight") = w;
         eventWeight *= w;
     }
@@ -3278,6 +3286,133 @@ void OfflineProducerHelper::AddInclusiveCategoryVariables(NanoAODTree& nat, Even
        return;
 }
 
+void OfflineProducerHelper::AddBoostedVariables(NanoAODTree& nat, EventInfo& ei, int year)
+{
+    // from Santeri Laurila
+    // AK8 selection criteria in boosted VBF analysis:
+    // ->=2 AK8 jets ("FatJet" collection in NanoAOD) passing the following selections:
+    //  -two identified subjets: subJetIdx1>=0 and subJetIdx2>=0
+    //  -leading jet pT > 500 GeV, second-leading > 450 GeV for 2016 and 2018 (600 and 550 for 2017)
+    //  -softdrop mass > 30 GeV for both jets
+    //  -delta phi > 2.8 and delta eta < 1.4 between the two jets
+
+    std::vector<FatJet> AK8_vbfboosted_cands;
+    AK8_vbfboosted_cands.reserve(*(nat.nFatJet));
+
+    int n_fatjet_gt250                = 0;
+    int n_fatjet_gt300                = 0;
+    int n_fatjet_gt250_twosubj        = 0;
+    int n_fatjet_gt300_twosubj        = 0;
+    int n_fatjet_gt250_twosubj_msdgt30 = 0;
+    int n_fatjet_gt300_twosubj_msdgt30 = 0;
+
+    for (uint ifj = 0; ifj < *(nat.nFatJet); ++ ifj){
+        
+        FatJet fj (ifj, &nat);
+        int sj_idx1 = get_property(fj, FatJet_subJetIdx1);
+        int sj_idx2 = get_property(fj, FatJet_subJetIdx2);
+        float msd   = get_property(fj, FatJet_msoftdrop);
+
+        if (sj_idx1 >= 0 && sj_idx2 >= 0 && msd > 30)
+            AK8_vbfboosted_cands.push_back(fj);
+
+        // ggf boosted criteria
+        if (fj.P4().Pt() > 250){
+            n_fatjet_gt250 += 1;
+            if (sj_idx1 >= 0 && sj_idx2 >= 0)
+                n_fatjet_gt250_twosubj += 1;
+            if (sj_idx1 >= 0 && sj_idx2 >= 0 && msd > 30)
+                n_fatjet_gt250_twosubj_msdgt30 += 1;
+        }
+
+        if (fj.P4().Pt() > 300){
+            n_fatjet_gt300 += 1;
+            if (sj_idx1 >= 0 && sj_idx2 >= 0)
+                n_fatjet_gt300_twosubj += 1;
+            if (sj_idx1 >= 0 && sj_idx2 >= 0 && msd > 30)
+                n_fatjet_gt300_twosubj_msdgt30 += 1;            
+        }
+
+    }
+
+    // sort by pt
+    stable_sort(AK8_vbfboosted_cands.begin(), AK8_vbfboosted_cands.end(), [](const FatJet& a, const FatJet& b) -> bool
+            {return (a.P4().Pt() > b.P4().Pt());}
+    );
+
+    // cout << "post sorting .... " << AK8_vbfboosted_cands.size() << endl;
+    // for (uint i = 0; i < AK8_vbfboosted_cands.size(); ++i)
+    //     cout << i << " .. " << AK8_vbfboosted_cands.at(i).P4().Pt() << endl;
+
+    int minpt1;
+    int minpt2;
+
+    if (year == 2016){
+        minpt1 = 500;
+        minpt2 = 450;
+    }
+    else if (year == 2017){
+        minpt1 = 600;
+        minpt2 = 550;
+    }
+    else if (year == 2018){
+        minpt1 = 500;
+        minpt2 = 450;        
+    }
+    else
+        throw std::runtime_error(string("OfflineProducerHelper::AddBoostedVariables : year not recognized : ") + std::to_string(year));
+
+    bool pass_VBFboosted_sel = false;
+    bool pass_VBFboosted_sel_nodPhi = false;
+    bool pass_VBFboosted_sel_nodEta = false;
+    bool pass_VBFboosted_sel_noang = false;
+
+    if (AK8_vbfboosted_cands.size() >= 2) {
+        // check if they pass the VBF selections
+        for (uint ifj1 = 0; ifj1 < AK8_vbfboosted_cands.size() -1; ++ifj1){
+            for (uint ifj2 = ifj1+1; ifj2 < AK8_vbfboosted_cands.size(); ++ifj2){
+                FatJet fj1 = AK8_vbfboosted_cands.at(ifj1);
+                FatJet fj2 = AK8_vbfboosted_cands.at(ifj2);
+
+                bool pass_ptmin    = (fj1.P4().Pt() > minpt1 && fj2.P4().Pt() > minpt2);
+                bool pass_ang_dphi = (fj1.P4().DeltaPhi(fj2.P4()) > 2.8);
+                bool pass_ang_deta = (std::abs(fj1.P4().Eta() - fj2.P4().Eta()) < 1.4);
+
+                // if (fj1.P4().Pt() <= minpt1 || fj2.P4().Pt() <= minpt2)
+                //     continue;
+                // if (fj1.P4().DeltaPhi(fj2.P4()) <= 2.8)
+                //     continue;
+                // if ( std::abs(fj1.P4().Eta() - fj2.P4().Eta()) >= 1.4)
+                //     continue;
+
+                if (pass_ptmin && pass_ang_dphi && pass_ang_deta)
+                    pass_VBFboosted_sel = true;
+
+                if (pass_ptmin && pass_ang_deta)
+                    pass_VBFboosted_sel_nodPhi = true;
+
+                if (pass_ptmin && pass_ang_dphi)
+                    pass_VBFboosted_sel_nodEta = true;
+
+                if (pass_ptmin)
+                    pass_VBFboosted_sel_noang = true;
+            }
+        }
+    }
+
+    ei.pass_VBFboosted_sel            = (pass_VBFboosted_sel        ? 1 : 0);
+    ei.pass_VBFboosted_sel_nodPhi     = (pass_VBFboosted_sel_nodPhi ? 1 : 0);
+    ei.pass_VBFboosted_sel_nodEta     = (pass_VBFboosted_sel_nodEta ? 1 : 0);
+    ei.pass_VBFboosted_sel_noang      = (pass_VBFboosted_sel_noang  ? 1 : 0);
+    ei.n_fatjet_gt250                 = n_fatjet_gt250;
+    ei.n_fatjet_gt300                 = n_fatjet_gt300;
+    ei.n_fatjet_gt250_twosubj         = n_fatjet_gt250_twosubj;
+    ei.n_fatjet_gt300_twosubj         = n_fatjet_gt300_twosubj;
+    ei.n_fatjet_gt250_twosubj_msdgt30 = n_fatjet_gt250_twosubj_msdgt30;
+    ei.n_fatjet_gt300_twosubj_msdgt30 = n_fatjet_gt300_twosubj_msdgt30;
+}
+
+
 void OfflineProducerHelper::AddVBFCategoryVariables(NanoAODTree& nat, EventInfo& ei,std::vector<Jet> presel_jets){
        ei.JJ_j1 = presel_jets.at(4);
        ei.JJ_j2 = presel_jets.at(5);
@@ -3511,10 +3646,10 @@ void OfflineProducerHelper::init_BDT_evals()
 void OfflineProducerHelper::init_HH_reweighter(OutputTree& ot, std::string coeffFile, std::string hhreweighterInputMap, std::string histoName)
 {
     // initialise the reweighter
-    //std::cout << "[INFO] ... initialising HH reweighter" << std::endl;
-    //std::cout << "   - coefficient file       : " << coeffFile            << std::endl;
-    //std::cout << "   - input sample map file  : " << hhreweighterInputMap << std::endl;
-    //std::cout << "   - input sample map hisot : " << histoName            << std::endl;
+    // std::cout << "[INFO] ... initialising HH reweighter" << std::endl;
+    // std::cout << "   - coefficient file       : " << coeffFile            << std::endl;
+    // std::cout << "   - input sample map file  : " << hhreweighterInputMap << std::endl;
+    // std::cout << "   - input sample map histo : " << histoName            << std::endl;
 
     TFile* fIn = TFile::Open(hhreweighterInputMap.c_str());
     TH2D*  hIn = (TH2D*) fIn->Get(histoName.c_str());
@@ -3750,11 +3885,12 @@ std::vector<Jet> OfflineProducerHelper::bjJets_PreselectionCut(NanoAODTree& nat,
     }
 
 
-    //////////////////////////////////////////////////////////Crashes with data!!!
     //// the b tag SF for RESHAPING must be evaluated here, before applying any requirement on the b tag
-    //if (any_cast<string>(parameterList_->at("BTagScaleFactorMethod")) == "Reshaping"){
-    //    compute_scaleFactors_bTagReshaping ({{*(jets.begin()+0),*(jets.begin()+1),*(jets.begin()+2),*(jets.begin()+3)}}, nat, ot, *ei.event_weight);
-    //}
+    if(parameterList_->find("BTagScaleFactorMethod") != parameterList_->end()){ //is it a MC event
+        if (any_cast<string>(parameterList_->at("BTagScaleFactorMethod")) == "Reshaping"){
+           compute_scaleFactors_bTagReshaping ({{*(jets.begin()+0),*(jets.begin()+1),*(jets.begin()+2),*(jets.begin()+3)}}, nat, ot, *ei.event_weight);
+        }
+    }
 
     if(btags<MinimumNumberOfBTags) return outputJets;
     outputJets = {{*(jets.begin()+0),*(jets.begin()+1),*(jets.begin()+2),*(jets.begin()+3)}};

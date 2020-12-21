@@ -9,6 +9,7 @@
 #include <string>
 #include <iomanip>
 #include <algorithm>
+#include <tuple>
 
 #include <boost/program_options.hpp>
 namespace po = boost::program_options;
@@ -82,6 +83,21 @@ int main(int argc, char** argv)
     // optional test for reweight
     std::unique_ptr<HHReweight5D> hhreweighter;
     std::vector<float> klambdas = {-2, -1, 0, 1, 2, 5, 10};
+    std::vector<std::tuple<float,float,float,float,float> > benchmarks; // kl, kt, c2, cg, c2g
+    benchmarks.push_back(make_tuple(7.5, 1, -1, 0, 0));     //1
+    benchmarks.push_back(make_tuple(1, 1, 0.5, -0.8, 0.6)); //2
+    benchmarks.push_back(make_tuple(1, 1, -1.5, 0, -0.8));  //3
+    benchmarks.push_back(make_tuple(-3.5, 1.5, -3, 0, 0));  //4
+    benchmarks.push_back(make_tuple(1, 1, 0, 0.8, -1));     //5
+    benchmarks.push_back(make_tuple(2.4, 1, 0, 0.2, -0.2)); //6
+    benchmarks.push_back(make_tuple(5, 1, 0, 0.2, -0.2));   //7
+    benchmarks.push_back(make_tuple(15, 1, 0, -1, 1));      //8
+    benchmarks.push_back(make_tuple(1, 1, 1, -0.6, 0.6));   //9
+    benchmarks.push_back(make_tuple(10, 1.5, -1, 0, 0));    //10
+    benchmarks.push_back(make_tuple(2.4, 1, 0, 1, -1));     //11
+    benchmarks.push_back(make_tuple(15, 1, 1, 0, 0));       //12
+    benchmarks.push_back(make_tuple(1, 1, 0, 0, 0));        //SM
+
     if (opts["kl-map"].as<string>().size() > 0)
     {
             string kl_map    = opts["kl-map"].as<string>(); // sample map fname
@@ -133,17 +149,20 @@ int main(int argc, char** argv)
     // vars
     float gen_H1_m;
     float gen_H1_pt;
+    float gen_H1last_pt;
     float gen_H1_eta;
     float gen_H1_phi;
     TLorentzVector gen_H1_p4;
 
     float gen_H2_m;
     float gen_H2_pt;
+    float gen_H2last_pt;
     float gen_H2_eta;
     float gen_H2_phi;
     TLorentzVector gen_H2_p4;
 
     float gen_mHH;
+    float gen_HHlast_pt;
     float gen_costh_H1_cm;
     float gen_costh_H2_cm;
 
@@ -154,17 +173,20 @@ int main(int argc, char** argv)
     // branches
     tOut->Branch("gen_H1_m",   &gen_H1_m);
     tOut->Branch("gen_H1_pt",  &gen_H1_pt);
+    tOut->Branch("gen_H1last_pt",  &gen_H1last_pt);
     tOut->Branch("gen_H1_eta", &gen_H1_eta);
     tOut->Branch("gen_H1_phi", &gen_H1_phi);
     if (save_p4) tOut->Branch("gen_H1_p4",  &gen_H1_p4);
 
     tOut->Branch("gen_H2_m",   &gen_H2_m);
     tOut->Branch("gen_H2_pt",  &gen_H2_pt);
+    tOut->Branch("gen_H2last_pt",  &gen_H2last_pt);
     tOut->Branch("gen_H2_eta", &gen_H2_eta);
     tOut->Branch("gen_H2_phi", &gen_H2_phi);
     if (save_p4) tOut->Branch("gen_H2_p4",  &gen_H2_p4);
 
     tOut->Branch("gen_mHH",         &gen_mHH);
+    tOut->Branch("gen_HHlast_pt",   &gen_HHlast_pt); // pt from HH after showering
     tOut->Branch("gen_costh_H1_cm", &gen_costh_H1_cm);
     tOut->Branch("gen_costh_H2_cm", &gen_costh_H2_cm);
 
@@ -174,6 +196,7 @@ int main(int argc, char** argv)
 
     std::vector<float>  klambdas_branch(klambdas.size());
     std::vector<string> klambdas_names(klambdas.size());
+    std::vector<float>  benchmarks_branch(benchmarks.size());
     if (hhreweighter)
     {
         for (uint ikl = 0; ikl < klambdas.size(); ++ikl)
@@ -188,6 +211,14 @@ int main(int argc, char** argv)
             brname = string("HH_rew_") + brname;
             cout << ".... making reweight for " << kl << " in branch " << brname << endl;
             tOut->Branch(brname.c_str(), &klambdas_branch.at(ikl));
+        }
+
+        for (uint ibench = 0; ibench < benchmarks.size(); ++ibench)
+        {
+            std::string brname = "HH_rew_bench_";
+            brname += std::to_string(ibench+1);
+            cout << ".... making reweight for benchmark " << ibench << " in branch " << brname << endl;
+            tOut->Branch(brname.c_str(), &benchmarks_branch.at(ibench));
         }
     }
 
@@ -256,6 +287,12 @@ int main(int argc, char** argv)
         gen_costh_H1_cm  = vH1_cm.CosTheta();
         gen_costh_H2_cm  = vH2_cm.CosTheta();
 
+        // last copies
+        TLorentzVector vSum_last = ei.gen_H1_last->P4() + ei.gen_H2_last->P4();
+        gen_HHlast_pt = vSum_last.Pt();
+        gen_H1last_pt = ei.gen_H1_last->P4().Pt();
+        gen_H2last_pt = ei.gen_H2_last->P4().Pt();
+
         if (hhreweighter)
         {
             for (uint ikl = 0; ikl < klambdas.size(); ++ikl)
@@ -264,6 +301,21 @@ int main(int argc, char** argv)
                 float w = hhreweighter->getWeight(kl, 1.0, gen_mHH, gen_costh_H1_cm);
                 klambdas_branch.at(ikl) = w;
             }
+
+            for (uint ibench = 0; ibench < benchmarks.size(); ++ibench)
+            {
+                auto c = benchmarks.at(ibench);
+                float w = hhreweighter->getWeight(
+                    std::get<0>(c),
+                    std::get<1>(c),
+                    std::get<2>(c),
+                    std::get<3>(c),
+                    std::get<4>(c),
+                    gen_mHH,
+                    gen_costh_H1_cm);
+                benchmarks_branch.at(ibench) = w;
+            }
+
         }
 
         if (!histo_only) tOut->Fill();

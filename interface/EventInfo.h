@@ -330,6 +330,17 @@ struct EventInfo{
     boost::optional<int> TT_nPVgood;
     boost::optional<int> TT_nJet;        
 
+    //boosted classification
+    boost::optional<int> pass_VBFboosted_sel;
+    boost::optional<int> pass_VBFboosted_sel_nodPhi;
+    boost::optional<int> pass_VBFboosted_sel_nodEta;
+    boost::optional<int> pass_VBFboosted_sel_noang;
+    boost::optional<int> n_fatjet_gt250;
+    boost::optional<int> n_fatjet_gt300;
+    boost::optional<int> n_fatjet_gt250_twosubj;
+    boost::optional<int> n_fatjet_gt300_twosubj;
+    boost::optional<int> n_fatjet_gt250_twosubj_msdgt30;
+    boost::optional<int> n_fatjet_gt300_twosubj_msdgt30;
 };
 
 #endif

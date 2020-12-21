@@ -141,6 +141,48 @@ fi
 python scripts/submitSkimOnTier3.py --kl-rew $kl --kl-map weights/gg_HH_4B_EFTnodes_2018.root --outputName GGHH4B_rew_kl_${klname} \
         --input=inputFiles/2018NonResonantDiHiggs4BDataSets/GluGluToHHTo4B_EFTnodes_TuneCP5_PSWeights_13TeV-madgraph-pythia8.txt     --puWeight=weights/2018/PUweights_2018.root     --tag=$1 --cfg=config/skim_2018NonResonantDiHiggs4B.cfg --is-signal  --xs=0.010517 --njobs=200
 
+### EFT benchmarks LO
+
+python scripts/submitSkimOnTier3.py --kl-rew 7.5    --kt-rew 1  --c2-rew  -1    --cg-rew  0      --c2g-rew  0    --kl-map weights/gg_HH_4B_EFTnodes_2018.root --outputName GGHH4B_rew_bench_1 \
+        --input=inputFiles/2018NonResonantDiHiggs4BDataSets/GluGluToHHTo4B_EFTnodes_TuneCP5_PSWeights_13TeV-madgraph-pythia8.txt     --puWeight=weights/2018/PUweights_2018.root     --tag=$1 --cfg=config/skim_2018NonResonantDiHiggs4B.cfg --is-signal  --xs=0.001 --njobs=200
+
+python scripts/submitSkimOnTier3.py --kl-rew 1      --kt-rew 1  --c2-rew  0.5   --cg-rew  -0.8   --c2g-rew  0.6  --kl-map weights/gg_HH_4B_EFTnodes_2018.root --outputName GGHH4B_rew_bench_2 \
+        --input=inputFiles/2018NonResonantDiHiggs4BDataSets/GluGluToHHTo4B_EFTnodes_TuneCP5_PSWeights_13TeV-madgraph-pythia8.txt     --puWeight=weights/2018/PUweights_2018.root     --tag=$1 --cfg=config/skim_2018NonResonantDiHiggs4B.cfg --is-signal  --xs=0.001 --njobs=200
+
+python scripts/submitSkimOnTier3.py --kl-rew 1      --kt-rew 1  --c2-rew  -1.5  --cg-rew  0      --c2g-rew  -0.8 --kl-map weights/gg_HH_4B_EFTnodes_2018.root --outputName GGHH4B_rew_bench_3 \
+        --input=inputFiles/2018NonResonantDiHiggs4BDataSets/GluGluToHHTo4B_EFTnodes_TuneCP5_PSWeights_13TeV-madgraph-pythia8.txt     --puWeight=weights/2018/PUweights_2018.root     --tag=$1 --cfg=config/skim_2018NonResonantDiHiggs4B.cfg --is-signal  --xs=0.001 --njobs=200
+
+python scripts/submitSkimOnTier3.py --kl-rew -3.5   --kt-rew 1.5 --c2-rew  -3    --cg-rew  0      --c2g-rew  0    --kl-map weights/gg_HH_4B_EFTnodes_2018.root --outputName GGHH4B_rew_bench_4 \
+        --input=inputFiles/2018NonResonantDiHiggs4BDataSets/GluGluToHHTo4B_EFTnodes_TuneCP5_PSWeights_13TeV-madgraph-pythia8.txt     --puWeight=weights/2018/PUweights_2018.root     --tag=$1 --cfg=config/skim_2018NonResonantDiHiggs4B.cfg --is-signal  --xs=0.001 --njobs=200
+
+python scripts/submitSkimOnTier3.py --kl-rew 1      --kt-rew 1  --c2-rew  0     --cg-rew  0.8    --c2g-rew  -1   --kl-map weights/gg_HH_4B_EFTnodes_2018.root --outputName GGHH4B_rew_bench_5 \
+        --input=inputFiles/2018NonResonantDiHiggs4BDataSets/GluGluToHHTo4B_EFTnodes_TuneCP5_PSWeights_13TeV-madgraph-pythia8.txt     --puWeight=weights/2018/PUweights_2018.root     --tag=$1 --cfg=config/skim_2018NonResonantDiHiggs4B.cfg --is-signal  --xs=0.001 --njobs=200
+
+python scripts/submitSkimOnTier3.py --kl-rew 2.4    --kt-rew 1  --c2-rew  0     --cg-rew  0.2    --c2g-rew  -0.2 --kl-map weights/gg_HH_4B_EFTnodes_2018.root --outputName GGHH4B_rew_bench_6 \
+        --input=inputFiles/2018NonResonantDiHiggs4BDataSets/GluGluToHHTo4B_EFTnodes_TuneCP5_PSWeights_13TeV-madgraph-pythia8.txt     --puWeight=weights/2018/PUweights_2018.root     --tag=$1 --cfg=config/skim_2018NonResonantDiHiggs4B.cfg --is-signal  --xs=0.001 --njobs=200
+
+python scripts/submitSkimOnTier3.py --kl-rew 5      --kt-rew 1  --c2-rew  0     --cg-rew  0.2    --c2g-rew  -0.2 --kl-map weights/gg_HH_4B_EFTnodes_2018.root --outputName GGHH4B_rew_bench_7 \
+        --input=inputFiles/2018NonResonantDiHiggs4BDataSets/GluGluToHHTo4B_EFTnodes_TuneCP5_PSWeights_13TeV-madgraph-pythia8.txt     --puWeight=weights/2018/PUweights_2018.root     --tag=$1 --cfg=config/skim_2018NonResonantDiHiggs4B.cfg --is-signal  --xs=0.001 --njobs=200
+
+python scripts/submitSkimOnTier3.py --kl-rew 15     --kt-rew 1  --c2-rew  0     --cg-rew  -1     --c2g-rew  1    --kl-map weights/gg_HH_4B_EFTnodes_2018.root --outputName GGHH4B_rew_bench_8 \
+        --input=inputFiles/2018NonResonantDiHiggs4BDataSets/GluGluToHHTo4B_EFTnodes_TuneCP5_PSWeights_13TeV-madgraph-pythia8.txt     --puWeight=weights/2018/PUweights_2018.root     --tag=$1 --cfg=config/skim_2018NonResonantDiHiggs4B.cfg --is-signal  --xs=0.001 --njobs=200
+
+python scripts/submitSkimOnTier3.py --kl-rew 1      --kt-rew 1  --c2-rew  1     --cg-rew  -0.6   --c2g-rew  0.6  --kl-map weights/gg_HH_4B_EFTnodes_2018.root --outputName GGHH4B_rew_bench_9 \
+        --input=inputFiles/2018NonResonantDiHiggs4BDataSets/GluGluToHHTo4B_EFTnodes_TuneCP5_PSWeights_13TeV-madgraph-pythia8.txt     --puWeight=weights/2018/PUweights_2018.root     --tag=$1 --cfg=config/skim_2018NonResonantDiHiggs4B.cfg --is-signal  --xs=0.001 --njobs=200
+
+python scripts/submitSkimOnTier3.py --kl-rew 10     --kt-rew 1.5 --c2-rew  -1    --cg-rew  0      --c2g-rew  0    --kl-map weights/gg_HH_4B_EFTnodes_2018.root --outputName GGHH4B_rew_bench_10 \
+        --input=inputFiles/2018NonResonantDiHiggs4BDataSets/GluGluToHHTo4B_EFTnodes_TuneCP5_PSWeights_13TeV-madgraph-pythia8.txt     --puWeight=weights/2018/PUweights_2018.root     --tag=$1 --cfg=config/skim_2018NonResonantDiHiggs4B.cfg --is-signal  --xs=0.001 --njobs=200
+
+python scripts/submitSkimOnTier3.py --kl-rew 2.4    --kt-rew 1  --c2-rew  0     --cg-rew  1      --c2g-rew  -1   --kl-map weights/gg_HH_4B_EFTnodes_2018.root --outputName GGHH4B_rew_bench_11 \
+        --input=inputFiles/2018NonResonantDiHiggs4BDataSets/GluGluToHHTo4B_EFTnodes_TuneCP5_PSWeights_13TeV-madgraph-pythia8.txt     --puWeight=weights/2018/PUweights_2018.root     --tag=$1 --cfg=config/skim_2018NonResonantDiHiggs4B.cfg --is-signal  --xs=0.001 --njobs=200
+
+python scripts/submitSkimOnTier3.py --kl-rew 15     --kt-rew 1  --c2-rew  1     --cg-rew  0      --c2g-rew  0    --kl-map weights/gg_HH_4B_EFTnodes_2018.root --outputName GGHH4B_rew_bench_12 \
+        --input=inputFiles/2018NonResonantDiHiggs4BDataSets/GluGluToHHTo4B_EFTnodes_TuneCP5_PSWeights_13TeV-madgraph-pythia8.txt     --puWeight=weights/2018/PUweights_2018.root     --tag=$1 --cfg=config/skim_2018NonResonantDiHiggs4B.cfg --is-signal  --xs=0.001 --njobs=200
+
+python scripts/submitSkimOnTier3.py --kl-rew 1      --kt-rew 1  --c2-rew  0     --cg-rew  0      --c2g-rew  0    --kl-map weights/gg_HH_4B_EFTnodes_2018.root --outputName GGHH4B_rew_bench_SM \
+        --input=inputFiles/2018NonResonantDiHiggs4BDataSets/GluGluToHHTo4B_EFTnodes_TuneCP5_PSWeights_13TeV-madgraph-pythia8.txt     --puWeight=weights/2018/PUweights_2018.root     --tag=$1 --cfg=config/skim_2018NonResonantDiHiggs4B.cfg --is-signal  --xs=0.001 --njobs=200
+
+
 ####for kl in `seq -f %g -19 1 20`; do
 ####    klname=${kl/./d}
 ####    if [[ $klname == *-* ]]; then

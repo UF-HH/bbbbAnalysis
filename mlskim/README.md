@@ -5,7 +5,7 @@ After we produced the bbbb_ntuple skims of data and simulation, the next step is
 
 We have three groups of data and MC samples for Run 2 data analysis (2016, 2017 & 2018). Therefore, after producing the ntuples for each year, it is convenient to place them under the same directory in eos, say '/eos/uscms/store/user/user/bbbb_ntuples/Ntuples/'. For instance, we put the 2016 bbbb_ntuples in a folder called "2016" under Ntuples as /eos/uscms/store/user/bbbb_ntuples/Ntuples/2016, and the same for the other years.
 
-## Second step: Produce the outputskims
+## Second step: Run the outputskims
 The Outputskim.py code is able to process the inputskims files in data and MC samples using panda dataframes. It can take only the branches that we are interested in for the developments and final signal extraction. All list of samples, variables, weights, youreosdirectory, mvafiles are defined in the config files outputskim_201*.cfg in the folder config.
 
 The runOutputskim.sh script runs Outputskim.py and contains the multiple options to customize the outputskims:
@@ -28,7 +28,7 @@ source runOutputskim.sh $year
 ````
 This will create the output skims either on eos or locally in a folder called 'outputskims'. A subfolder with the year name will be created as well and will contain the files.
 
-## Thirs step: Run the background model
+## Third step: Run the background model
 The DataBackgroundModel.py code creates a data-driven background model taking as input the control region information in 3-btag and 4 -btag data. This method is based on the BDT-reweighter method (https://arxiv.org/abs/1608.05806) and uses the python package provided by the developers called hep_ml (https://arogozhnikov.github.io/hep_ml/). 
 
 The regions used for the training of the model are defined in modules/selections.py. The parameters of the BDT-reweighter are included in the config files. The script creates four weights (where Ana=AnalysisRegion and Val=ValidationRegion): Weight_AnaGGF@, Weight_AnaVBF@, Weight_ValGGF@ and Weight_ValVBF@, where @=1,2 categories. These weights are stored as branches in the output file (SKIM_MODEL_BKG.root). To run the background modeling:

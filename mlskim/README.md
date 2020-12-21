@@ -12,7 +12,7 @@ The runOutputskim.sh script runs Outputskim.py and contains the multiple options
 ```
 --config      : This is the config file, say config/outputskim_<YEAR>.cfg
 --casename    : This is the name of the folder with the ntuples on eos, say Ntuples
---eos         : Store output skims 
+--eos         : Store outputskims in eos 
 --data        : Run on Data
 --signal      : Run on Signals
 --mcbkgs      : Run on MC background

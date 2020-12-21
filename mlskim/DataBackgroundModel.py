@@ -14,11 +14,23 @@ import pickle
 import multiprocessing as mp
 from functools import partial
 import time
+from sklearn.utils import shuffle
 #My modules
 import modules.datatools as data
 import modules.plotter as plotter
 import modules.bdtreweighter as bdtreweighter
 import modules.selections as selector
+
+def AddGGFMVA(skim,ggfmvafile):
+	# open picked file and use it back again
+	#print '  *Adding the ggfmva in %s'%ggfmvafile
+	infile     = open(ggfmvafile,'rb')
+	ggfmva     = pickle.load(infile)
+	infile.close()
+	variables  = ggfmva.get('vars')
+	X          = skim[list(set(variables))] 
+	y_pred     = ggfmva.get('model').predict_proba(X)[:,1]
+	return y_pred
 
 def SaveReweighterModel(vars_training,modelargs,bdtreweighter,transferfactor,label):
 	## save the model as pickle
@@ -63,7 +75,7 @@ def BuildReweightingModel(data_3b, data_4b,category,tag,bkgclassifierparams,bkgp
 	##Let's slice data one more time to have the inputs for the bdt reweighting
 	############################################################################
 	if category =='GGF' or category =='GGF1' or category =='GGF2':
-		 variablescr = ['H1_b1_ptRegressed','H1_b2_ptRegressed','H2_b1_ptRegressed','H2_b2_ptRegressed','H1_m','H2_m','HH_m','H1_pt','H2_pt','h1h2_deltaEta','H1_bb_deltaR','H2_bb_deltaR','abs_costh_H1_ggfcm','HH_btag_b3_bres','abs_costh_H1_b1_h1cm','sum_3b_bscore','sum_4b_pt','HH_pt']	
+		 variablescr = ['H1_b1_ptRegressed','H1_b2_ptRegressed','H2_b1_ptRegressed','H2_b2_ptRegressed','H1_pt','H2_pt','H1_m','H2_m','HH_m','h1h2_deltaEta','H1_bb_deltaR','H2_bb_deltaR','abs_costh_H1_ggfcm','abs_costh_H1_b1_h1cm','sum_4b_pt','HH_pt','nBtagTight','sum_3b_bres','min_4b_deltaR','max_4b_deltaEta']	
 	elif category == 'VBF' or category =='VBF1' or category =='VBF2':
 		 variablescr = ['H1_b1_ptRegressed','H1_b2_ptRegressed','H2_b1_ptRegressed','H2_b2_ptRegressed','H1_m','H2_m','HH_m','H1_pt','H2_pt','h1h2_deltaEta','h1h2_deltaPhi','JJ_m','j1j2_deltaEta','GGFKiller']
 	else:
@@ -104,7 +116,7 @@ def BuildReweightingModel(data_3b, data_4b,category,tag,bkgclassifierparams,bkgp
 	##############################################################
 	## Save training information only if found a set candidate
 	##############################################################
-	#SaveReweighterModel(variablescr,modelargs,reweightermodel,transferfactor,tag)
+	SaveReweighterModel(variablescr,modelargs,reweightermodel,transferfactor,tag)
 	return foldingcr_weights,reweightermodel,transferfactor
 
 def BuildTransferFactorModel(data_3b, data_4b,category,tag):
@@ -129,7 +141,7 @@ def ApplyReweightingModel(reweightermodel,transferfactor,data_3b,data_4b,tag,bkg
 	##Let's slice data one more time to have the inputs for the bdt reweighting
 	############################################################################
 	if category =='GGF' or category =='GGF1' or category =='GGF2':
-		 variables = ['H1_b1_ptRegressed','H1_b2_ptRegressed','H2_b1_ptRegressed','H2_b2_ptRegressed','H1_m','H2_m','HH_m','H1_pt','H2_pt','h1h2_deltaEta','H1_bb_deltaR','H2_bb_deltaR','abs_costh_H1_ggfcm','HH_btag_b3_bres','abs_costh_H1_b1_h1cm','sum_3b_bscore','sum_4b_pt','HH_pt']
+		 variables = ['H1_b1_ptRegressed','H1_b2_ptRegressed','H2_b1_ptRegressed','H2_b2_ptRegressed','H1_pt','H2_pt','H1_m','H2_m','HH_m','h1h2_deltaEta','H1_bb_deltaR','H2_bb_deltaR','abs_costh_H1_ggfcm','abs_costh_H1_b1_h1cm','sum_4b_pt','HH_pt','nBtagTight','sum_3b_bres','min_4b_deltaR','max_4b_deltaEta']
 	elif category == 'VBF' or category =='VBF1' or category =='VBF2':
 		 variables = ['H1_b1_ptRegressed','H1_b2_ptRegressed','H2_b1_ptRegressed','H2_b2_ptRegressed','H1_m','H2_m','HH_m','H1_pt','H2_pt','h1h2_deltaEta','h1h2_deltaPhi','JJ_m','j1j2_deltaEta','GGFKiller']
 	else:
@@ -142,35 +154,7 @@ def ApplyReweightingModel(reweightermodel,transferfactor,data_3b,data_4b,tag,bkg
 	#####################################################
 	folding_weights= data.getmodelweights(original,original_weights,target,target_weights,reweightermodel,transferfactor,valflag,srflag)
 	########################################
-	## KS Test (as the developers of the method do), done just for the validation signal region as we are currently blinded
-	########################################
-	#if valflag==True and srflag==True:
-		############################################################################
-		##Individual and global tests of the validation signal region
-		############################################################################
-		#plotter.Draw1DHistosComparison(original, target, variables, original_weights,True,"%s_val%s_%ssr_originalprediction"%(tag,category,category) )
-		#plotter.Draw1DHistosComparison(original, target, variables, folding_weights,True,"%s_val%s_%ssr_modelprediction"%(tag,category,category) )
-		#ksresult_original = bdtreweighter.ks_test(original, target, variables, original_weights)
-		#ksresult_model    = bdtreweighter.ks_test(original, target, variables, folding_weights)	
-		#bdtreweighter.ks_comparison(variables,ksresult_original,ksresult_model)
-		#bdtreweighter.discrimination_test(original,target,original_weights,bkgclassifierparams,"%s_val%s_%ssr"%(tag,category,category),"originalprediction")
-		#bdtreweighter.discrimination_test(original,target,folding_weights,bkgclassifierparams,"%s_val%s_%ssr"%(tag,category,category),"modelprediction")
-		############################################################################
-		##Let's slice data one more time to have the observables tested
-		############################################################################
-		#if category == 'GGF1':
-		#	observable = ['GGFMVA1'] 
-		#	hfmt       = [50,0,1]
-		#elif category == 'GGF2':
-		#	observable = ['GGFMVA2'] 
-		#	hfmt       = [50,0,1]
-		#else:
-		#	observable = ['HH_m'] 
-		#	hfmt       = [80,200,1000]
-		#ori_obs,ori_weights = data.preparedataforprediction(data_3b,transferfactor,observable)
-		#tar_obs,tar_weights = data.preparedataforprediction(data_4b,1,observable)	    
-		#plotter.Draw1DHisto(ori_obs, tar_obs, observable[0], folding_weights, hfmt, False,"%s_%s_model"%(tag,category) )
-		#del ori_obs,tar_obs,ori_weights,tar_weights		
+	
 	return folding_weights
 
 
@@ -188,7 +172,7 @@ def ApplyTransferFactorModel(transferfactor,data_3b,data_4b,tag,category,valflag
 	return original_weights
 
 
-def AddModelWeights(dataset,bkgparams,bkgclassifierparams,weightname,categ,valflag,tag):
+def AddModelWeights(dataset,bkgparams,bkgclassifierparams,weightname,categ,valflag,tag,ggfmva1file1,ggfmva2file1,ggfmva1file2,ggfmva2file2,ggfmva1file1btag,ggfmva2file1btag,ggfmva1file2btag,ggfmva2file2btag):
 	print "\n"*2
 	#Slice the data sample to take only events with three/four b-tags among the two categories
 	print "[INFO] Preparing data and building BDT-reweighting model for %s using the 3b/4b CR data"%weightname
@@ -226,11 +210,32 @@ def AddModelWeights(dataset,bkgparams,bkgclassifierparams,weightname,categ,valfl
 	data_rest_3b_categ[weightname]    = weights_rest_categ
 	print "[INFO] Adding training id for MVA training"
 	if weightname=='Weight_AnaGGF' or weightname=='Weight_AnaGGF1' or weightname=='Weight_AnaGGF2':
+		#Create fraction labels for mva training
 		l = int(len(data_sr_3b_categ.index) / 2)
 		data_sr_3b_categ = data_sr_3b_categ.reset_index(drop=True)
-		data_sr_3b_categ.loc[:l,"%s_MVA"%weightname] = 0.
-		data_sr_3b_categ.loc[l:,"%s_MVA"%weightname] = 2.0  
-
+		data_sr_3b_categ.loc[l:,"%s_Frac"%weightname] = 0.0 #frac1 sample will create weights1
+		data_sr_3b_categ.loc[:l,"%s_Frac"%weightname] = 2.0 #frac2 sample will create weights2
+		#Re-evaluate the mva score swapping the mva training weights accordingly
+		if weightname=='Weight_AnaGGF1':
+			  data_sr_3b_categ.drop('GGFMVA1', axis=1, inplace=True)
+			  data_sr_3b_categ_1 = data_sr_3b_categ[(data_sr_3b_categ.Weight_AnaGGF1_Frac==0)]
+			  data_sr_3b_categ_2 = data_sr_3b_categ[(data_sr_3b_categ.Weight_AnaGGF1_Frac==2)]
+			  data_sr_3b_categ_1['GGFMVA1'] = AddGGFMVA(data_sr_3b_categ_1,ggfmva1file2) #frac1 evaluated with weights2
+			  data_sr_3b_categ_2['GGFMVA1'] = AddGGFMVA(data_sr_3b_categ_2,ggfmva1file1) #frac2 evaluated with weights1
+			  data_sr_3b_categ_1['GGFMVA1btag'] = AddGGFMVA(data_sr_3b_categ_1,ggfmva1file2btag) #frac1 evaluated with weights2
+			  data_sr_3b_categ_2['GGFMVA1btag'] = AddGGFMVA(data_sr_3b_categ_2,ggfmva1file1btag) #frac2 evaluated with weights1
+			  #merge them again
+			  data_sr_3b_categ = pandas.concat( (data_sr_3b_categ_1,data_sr_3b_categ_2))
+		if weightname=='Weight_AnaGGF2':
+			  data_sr_3b_categ_1 =  data_sr_3b_categ[(data_sr_3b_categ.Weight_AnaGGF2_Frac==0)]
+			  data_sr_3b_categ_2 =  data_sr_3b_categ[(data_sr_3b_categ.Weight_AnaGGF2_Frac==2)]
+			  data_sr_3b_categ_1['GGFMVA2'] = AddGGFMVA(data_sr_3b_categ_1,ggfmva2file2) #frac1 evaluated with weights2
+			  data_sr_3b_categ_2['GGFMVA2'] = AddGGFMVA(data_sr_3b_categ_2,ggfmva2file1) #frac2 evaluated with weights1
+			  data_sr_3b_categ_1['GGFMVA2btag'] = AddGGFMVA(data_sr_3b_categ_1,ggfmva2file2btag) #frac1 evaluated with weights2
+			  data_sr_3b_categ_2['GGFMVA2btag'] = AddGGFMVA(data_sr_3b_categ_2,ggfmva2file1btag) #frac2 evaluated with weights1
+			  #merge them again
+			  data_sr_3b_categ = pandas.concat( (data_sr_3b_categ_1,data_sr_3b_categ_2))
+ 
 	#Merge (concatenate) them and return the dataframe
 	print "[INFO] Concatenating all events in the dataframe"
 	datasetwithweight = pandas.concat( (data_cr_3b_categ,data_sr_3b_categ,data_rest_3b_categ), ignore_index=True   )
@@ -240,36 +245,36 @@ def AddModelWeights(dataset,bkgparams,bkgclassifierparams,weightname,categ,valfl
 	datasetwithweight                        = datasetwithweight.reset_index(drop=True)
 	return datasetwithweight
 
-def RunReweightingModel(dataset,bkgparams,classifierparams,case,directory,tag,valflag,vbfflag,subcatflag):
+def RunReweightingModel(dataset,bkgparams,classifierparams,case,directory,tag,valflag,vbfflag,subcatflag,ggfmva1file1,ggfmva2file1,ggfmva1file2,ggfmva2file2,ggfmva1file1btag,ggfmva2file1btag,ggfmva1file2btag,ggfmva2file2btag):
 	#Add weights for analysis
 	if valflag==True  and vbfflag==False: #Validation GGF
 		if subcatflag==1:
-			dataset=AddModelWeights(dataset,bkgparams,classifierparams,'Weight_ValGGF1','GGF1',valflag,'%s'%(tag))
+			dataset=AddModelWeights(dataset,bkgparams,classifierparams,'Weight_ValGGF1','GGF1',valflag,'%s'%(tag),ggfmva1file1,ggfmva2file1,ggfmva1file2,ggfmva2file2,ggfmva1file1btag,ggfmva2file1btag,ggfmva1file2btag,ggfmva2file2btag)
 		elif subcatflag==2:
-			dataset=AddModelWeights(dataset,bkgparams,classifierparams,'Weight_ValGGF2','GGF2',valflag,'%s'%(tag))
+			dataset=AddModelWeights(dataset,bkgparams,classifierparams,'Weight_ValGGF2','GGF2',valflag,'%s'%(tag),ggfmva1file1,ggfmva2file1,ggfmva1file2,ggfmva2file2,ggfmva1file1btag,ggfmva2file1btag,ggfmva1file2btag,ggfmva2file2btag)
 		else:
-			dataset=AddModelWeights(dataset,bkgparams,classifierparams,'Weight_ValGGF','GGF',valflag,'%s'%(tag))
+			dataset=AddModelWeights(dataset,bkgparams,classifierparams,'Weight_ValGGF','GGF',valflag,'%s'%(tag),ggfmva1file1,ggfmva2file1,ggfmva1file2,ggfmva2file2,ggfmva1file1btag,ggfmva2file1btag,ggfmva1file2btag,ggfmva2file2btag)
 	elif valflag==True and vbfflag==True: #Validation VBF
 		if subcatflag==1:
-			dataset=AddModelWeights(dataset,bkgparams,classifierparams,'Weight_ValVBF1','VBF1',valflag,'%s'%(tag))
+			dataset=AddModelWeights(dataset,bkgparams,classifierparams,'Weight_ValVBF1','VBF1',valflag,'%s'%(tag),ggfmva1file1,ggfmva2file1,ggfmva1file2,ggfmva2file2,ggfmva1file1btag,ggfmva2file1btag,ggfmva1file2btag,ggfmva2file2btag)
 		elif subcatflag==2:
-			dataset=AddModelWeights(dataset,bkgparams,classifierparams,'Weight_ValVBF2','VBF2',valflag,'%s'%(tag))
+			dataset=AddModelWeights(dataset,bkgparams,classifierparams,'Weight_ValVBF2','VBF2',valflag,'%s'%(tag),ggfmva1file1,ggfmva2file1,ggfmva1file2,ggfmva2file2,ggfmva1file1btag,ggfmva2file1btag,ggfmva1file2btag,ggfmva2file2btag)
 		else:
-			dataset=AddModelWeights(dataset,bkgparams,classifierparams,'Weight_ValVBF','VBF',valflag,'%s'%(tag))
+			dataset=AddModelWeights(dataset,bkgparams,classifierparams,'Weight_ValVBF','VBF',valflag,'%s'%(tag),ggfmva1file1,ggfmva2file1,ggfmva1file2,ggfmva2file2,ggfmva1file1btag,ggfmva2file1btag,ggfmva1file2btag,ggfmva2file2btag)
 	elif valflag==False and vbfflag==False: #Analysis GGF
 		if subcatflag==1: 
-			dataset=AddModelWeights(dataset,bkgparams,classifierparams,'Weight_AnaGGF1','GGF1',valflag,'%s'%(tag))
+			dataset=AddModelWeights(dataset,bkgparams,classifierparams,'Weight_AnaGGF1','GGF1',valflag,'%s'%(tag),ggfmva1file1,ggfmva2file1,ggfmva1file2,ggfmva2file2,ggfmva1file1btag,ggfmva2file1btag,ggfmva1file2btag,ggfmva2file2btag)
 		elif subcatflag==2:
-			dataset=AddModelWeights(dataset,bkgparams,classifierparams,'Weight_AnaGGF2','GGF2',valflag,'%s'%(tag))
+			dataset=AddModelWeights(dataset,bkgparams,classifierparams,'Weight_AnaGGF2','GGF2',valflag,'%s'%(tag),ggfmva1file1,ggfmva2file1,ggfmva1file2,ggfmva2file2,ggfmva1file1btag,ggfmva2file1btag,ggfmva1file2btag,ggfmva2file2btag)
 		else:
-			dataset=AddModelWeights(dataset,bkgparams,classifierparams,'Weight_AnaGGF','GGF',valflag,'%s'%(tag))		
+			dataset=AddModelWeights(dataset,bkgparams,classifierparams,'Weight_AnaGGF','GGF',valflag,'%s'%(tag),ggfmva1file1,ggfmva2file1,ggfmva1file2,ggfmva2file2,ggfmva1file1btag,ggfmva2file1btag,ggfmva1file2btag,ggfmva2file2btag)		
 	elif valflag==False and vbfflag==True: #Analysis VBF
 		if subcatflag==1: 
-			dataset=AddModelWeights(dataset,bkgparams,classifierparams,'Weight_AnaVBF1','VBF1',valflag,'%s'%(tag))
+			dataset=AddModelWeights(dataset,bkgparams,classifierparams,'Weight_AnaVBF1','VBF1',valflag,'%s'%(tag),ggfmva1file1,ggfmva2file1,ggfmva1file2,ggfmva2file2,ggfmva1file1btag,ggfmva2file1btag,ggfmva1file2btag,ggfmva2file2btag)
 		elif subcatflag==2:
-			dataset=AddModelWeights(dataset,bkgparams,classifierparams,'Weight_AnaVBF2','VBF2',valflag,'%s'%(tag))
+			dataset=AddModelWeights(dataset,bkgparams,classifierparams,'Weight_AnaVBF2','VBF2',valflag,'%s'%(tag),ggfmva1file1,ggfmva2file1,ggfmva1file2,ggfmva2file2,ggfmva1file1btag,ggfmva2file1btag,ggfmva1file2btag,ggfmva2file2btag)
 		else:
-			dataset=AddModelWeights(dataset,bkgparams,classifierparams,'Weight_AnaVBF','VBF',valflag,'%s'%(tag))
+			dataset=AddModelWeights(dataset,bkgparams,classifierparams,'Weight_AnaVBF','VBF',valflag,'%s'%(tag),ggfmva1file1,ggfmva2file1,ggfmva1file2,ggfmva2file2,ggfmva1file1btag,ggfmva2file1btag,ggfmva1file2btag,ggfmva2file2btag)
 	else:
 		"[ERROR] No weights are calculated, incorrect selection!"   	
 	return dataset
@@ -280,20 +285,28 @@ def RunReweightingModel(dataset,bkgparams,classifierparams,case,directory,tag,va
 parser = argparse.ArgumentParser(description='Command line parser of skim options')
 parser.add_argument('--config',  dest='cfgfile',  help='Name of config file',   required = True)
 parser.add_argument('--casename',dest='casename', help='Case name',   required = True)
-#parser.add_argument('--weight',  dest='weight',   help='Weights: (1) Ana-VBF, (2) Val-VBF, (3) Ana-GGF1, (4) Val-GGF1, (5) Ana-GGF2, (6) Val-GGF2',   required = True)
+parser.add_argument('--eos',    dest='eos', action='store_true', help='Save skims on eos')
+parser.add_argument('--no-eos', dest='eos', action='store_false',help='Do not save skims on eos')
+parser.set_defaults(eos=False)
 args = parser.parse_args()
 configfilename = args.cfgfile
 case           = args.casename
-#weight         = args.weight
+eos            = args.eos
 ###########Read Config file
 print "[INFO] Reading skim configuration file . . ."
 cfgparser = ConfigParser()
 cfgparser.read('%s'%configfilename)
 ##########Get skim variables
 print "[INFO] Getting configuration parameters . . ."
+eosdirectory   = ast.literal_eval(cfgparser.get("configuration","eosdirectory"))
+print "    -The eos directory:"
+print "      *",eosdirectory
 directory   = ast.literal_eval(cfgparser.get("configuration","directory"))
 print "    -The directory:"
 print "      *",directory
+seed        = ast.literal_eval(cfgparser.get("configuration","seed"))
+print "    -The seed:"
+print "      *",seed
 tag         = ast.literal_eval(cfgparser.get("configuration","tag"))
 print "    -The tag name:"
 print "      *",tag 
@@ -303,52 +316,77 @@ print "      *",ggf1anabkgparams
 ggf2anabkgparams = ast.literal_eval(cfgparser.get("configuration","ggf2anabkgparams"))
 print "    -The ggf-hh2 ana background parameters (trees, learning rate, max depth, min sample leaf, subsample, randomseed):"
 print "      *",ggf2anabkgparams
-vbfanabkgparams = ast.literal_eval(cfgparser.get("configuration","vbfanabkgparams"))
+vbfanabkgparams  = ast.literal_eval(cfgparser.get("configuration","vbfanabkgparams"))
 print "    -The vbf-hh ana background parameters (trees, learning rate, max depth, min sample leaf, subsample, randomseed):"
 print "      *",vbfanabkgparams
-
 ggf1valbkgparams = ast.literal_eval(cfgparser.get("configuration","ggf1valbkgparams"))
 print "    -The ggf-hh1 ana background parameters (trees, learning rate, max depth, min sample leaf, subsample, randomseed):"
 print "      *",ggf1valbkgparams
 ggf2valbkgparams = ast.literal_eval(cfgparser.get("configuration","ggf2valbkgparams"))
 print "    -The ggf-hh2 ana background parameters (trees, learning rate, max depth, min sample leaf, subsample, randomseed):"
 print "      *",ggf2valbkgparams
-vbfvalbkgparams = ast.literal_eval(cfgparser.get("configuration","vbfvalbkgparams"))
+vbfvalbkgparams  = ast.literal_eval(cfgparser.get("configuration","vbfvalbkgparams"))
 print "    -The vbf-hh ana background parameters (trees, learning rate, max depth, min sample leaf, subsample, randomseed):"
 print "      *",vbfvalbkgparams
+ggfmva1file1        = ast.literal_eval(cfgparser.get("configuration","GGFMVA1file1"))
+print "    -The ggfmva1 file1:   ",ggfmva1file1
+ggfmva2file1        = ast.literal_eval(cfgparser.get("configuration","GGFMVA2file1"))
+print "    -The ggfmva2 file1:   ",ggfmva2file1
+ggfmva1file2        = ast.literal_eval(cfgparser.get("configuration","GGFMVA1file2"))
+print "    -The ggfmva1 file1:   ",ggfmva1file2
+ggfmva2file2        = ast.literal_eval(cfgparser.get("configuration","GGFMVA2file2"))
+print "    -The ggfmva2 file1:   ",ggfmva2file2
+ggfmva1file1btag        = ast.literal_eval(cfgparser.get("configuration","GGFMVA1file1btag"))
+print "    -The ggfmva1 file1:   ",ggfmva1file1btag
+ggfmva2file1btag        = ast.literal_eval(cfgparser.get("configuration","GGFMVA2file1btag"))
+print "    -The ggfmva2 file1:   ",ggfmva2file1btag
+ggfmva1file2btag        = ast.literal_eval(cfgparser.get("configuration","GGFMVA1file2btag"))
+print "    -The ggfmva1 file1:   ",ggfmva1file2btag
+ggfmva2file2btag        = ast.literal_eval(cfgparser.get("configuration","GGFMVA2file2btag"))
+print "    -The ggfmva2 file1:   ",ggfmva2file2btag
 
 ##########Make background miodel
 print "[INFO] Making background model . . . "
-#Create folder to save training information
-os.system("mkdir bkgtraining")
-os.system("mkdir bkgtraining/mymodels")
+print "[INFO] The bkgmodel will be saved in eos: ",eos
 
 #Get data and create panda dataframes with specific variables, a.k.a. slicing the data. Then, create background model based on control region data
 datalist = []
-datalist.append('outputskims/%s/%s/SKIM_Data.root'%(case,directory))
+if eos==True:
+   datalist.append('%s/outputskims/%s/%s/SKIM_Data.root'%(eosdirectory,case,directory))
+else:
+   datalist.append('outputskims/%s/%s/SKIM_Data.root'%(case,directory))	
 dataset  = data.root2pandas(datalist,'bbbbTree')
 
+if directory=='20172018': 
+	dataset = shuffle(dataset,random_state=seed)
+	dataset = dataset.reset_index(drop=True) 
 #classifierparameters
 classifierparams=[40,0.3,2020]
-
 starttime = time.time()
+
 #Add for analysis region
-dataset = RunReweightingModel(dataset,ggf1anabkgparams,classifierparams,case,directory,tag,False,False,1)
-dataset = RunReweightingModel(dataset,ggf2anabkgparams,classifierparams,case,directory,tag,False,False,2)
-dataset = RunReweightingModel(dataset,vbfanabkgparams,classifierparams,case,directory,tag,False,True,1)
-dataset = RunReweightingModel(dataset,vbfanabkgparams,classifierparams,case,directory,tag,False,True,2)
+dataset = RunReweightingModel(dataset,ggf1anabkgparams,classifierparams,case,directory,tag,False,False,1,ggfmva1file1,ggfmva2file1,ggfmva1file2,ggfmva2file2,ggfmva1file1btag,ggfmva2file1btag,ggfmva1file2btag,ggfmva2file2btag)
+dataset = RunReweightingModel(dataset,ggf2anabkgparams,classifierparams,case,directory,tag,False,False,2,ggfmva1file1,ggfmva2file1,ggfmva1file2,ggfmva2file2,ggfmva1file1btag,ggfmva2file1btag,ggfmva1file2btag,ggfmva2file2btag)
+dataset = RunReweightingModel(dataset,vbfanabkgparams,classifierparams,case,directory,tag,False,True,1  ,ggfmva1file1,ggfmva2file1,ggfmva1file2,ggfmva2file2,ggfmva1file1btag,ggfmva2file1btag,ggfmva1file2btag,ggfmva2file2btag)
+dataset = RunReweightingModel(dataset,vbfanabkgparams,classifierparams,case,directory,tag,False,True,2  ,ggfmva1file1,ggfmva2file1,ggfmva1file2,ggfmva2file2,ggfmva1file1btag,ggfmva2file1btag,ggfmva1file2btag,ggfmva2file2btag)
 
-###Add for validation region
-dataset = RunReweightingModel(dataset,ggf1valbkgparams,classifierparams,case,directory,tag,True,False,1)
-dataset = RunReweightingModel(dataset,ggf2valbkgparams,classifierparams,case,directory,tag,True,False,2)
-dataset = RunReweightingModel(dataset,vbfvalbkgparams,classifierparams,case,directory,tag,True,True,1)
-dataset = RunReweightingModel(dataset,vbfvalbkgparams,classifierparams,case,directory,tag,True,True,2)
+#####Add for validation region
+dataset = RunReweightingModel(dataset,ggf1valbkgparams,classifierparams,case,directory,tag,True,False,1,ggfmva1file1,ggfmva2file1,ggfmva1file2,ggfmva2file2,ggfmva1file1btag,ggfmva2file1btag,ggfmva1file2btag,ggfmva2file2btag)
+dataset = RunReweightingModel(dataset,ggf2valbkgparams,classifierparams,case,directory,tag,True,False,2,ggfmva1file1,ggfmva2file1,ggfmva1file2,ggfmva2file2,ggfmva1file1btag,ggfmva2file1btag,ggfmva1file2btag,ggfmva2file2btag)
+dataset = RunReweightingModel(dataset,vbfvalbkgparams,classifierparams,case,directory,tag,True,True,1  ,ggfmva1file1,ggfmva2file1,ggfmva1file2,ggfmva2file2,ggfmva1file1btag,ggfmva2file1btag,ggfmva1file2btag,ggfmva2file2btag)
+dataset = RunReweightingModel(dataset,vbfvalbkgparams,classifierparams,case,directory,tag,True,True,2  ,ggfmva1file1,ggfmva2file1,ggfmva1file2,ggfmva2file2,ggfmva1file1btag,ggfmva2file1btag,ggfmva1file2btag,ggfmva2file2btag)
 
-##Save everything in a root file
-print "[INFO] Saving background model weight in file . . . "
-data.pandas2root(dataset,'bbbbTree',   'outputskims/%s/%s/SKIM_BKG_MODEL_tree.root'%(case,directory)  )
-data.roothist2root(datalist,'eff_histo','outputskims/%s/%s/SKIM_BKG_MODEL_hist.root'%(case,directory)  )
-os.system("hadd -f outputskims/%s/%s/SKIM_BKG_MODEL.root outputskims/%s/%s/SKIM_BKG_MODEL_tree.root outputskims/%s/%s/SKIM_BKG_MODEL_hist.root"%(case,directory,case,directory,case,directory))
-os.system("rm outputskims/%s/%s/SKIM_BKG_MODEL_tree.root outputskims/%s/%s/SKIM_BKG_MODEL_hist.root"%(case,directory,case,directory) )			
-
+###Save everything in a root file
+if eos==True:
+   print "[INFO] Saving background model weight in file . . . "
+   data.pandas2root(dataset,'bbbbTree',   '%s/outputskims/%s/%s/SKIM_BKG_MODEL_tree.root'%(eosdirectory,case,directory)  )
+   data.roothist2root(datalist,'eff_histo','%s/outputskims/%s/%s/SKIM_BKG_MODEL_hist.root'%(eosdirectory,case,directory)  )
+   os.system("hadd -f %s/outputskims/%s/%s/SKIM_BKG_MODEL.root      %s/outputskims/%s/%s/SKIM_BKG_MODEL_tree.root %s/outputskims/%s/%s/SKIM_BKG_MODEL_hist.root"%(eosdirectory,case,directory,eosdirectory,case,directory,eosdirectory,case,directory))
+   os.system("rm      %s/outputskims/%s/%s/SKIM_BKG_MODEL_tree.root %s/outputskims/%s/%s/SKIM_BKG_MODEL_hist.root"%(eosdirectory,case,directory,eosdirectory,case,directory) )			
+else:
+   print "[INFO] Saving background model weight in file . . . "
+   data.pandas2root(dataset,'bbbbTree',   'outputskims/%s/%s/SKIM_BKG_MODEL_tree.root'%(case,directory)  )
+   data.roothist2root(datalist,'eff_histo','outputskims/%s/%s/SKIM_BKG_MODEL_hist.root'%(case,directory)  )
+   os.system("hadd -f outputskims/%s/%s/SKIM_BKG_MODEL.root outputskims/%s/%s/SKIM_BKG_MODEL_tree.root outputskims/%s/%s/SKIM_BKG_MODEL_hist.root"%(case,directory,case,directory,case,directory))
+   os.system("rm outputskims/%s/%s/SKIM_BKG_MODEL_tree.root outputskims/%s/%s/SKIM_BKG_MODEL_hist.root"%(case,directory,case,directory) )				
 print('Running the background model took {} seconds'.format(time.time() - starttime))

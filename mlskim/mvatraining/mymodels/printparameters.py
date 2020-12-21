@@ -24,13 +24,12 @@ def GetTrainingModel(file):
 
 ###########OPTIONS
 parser = argparse.ArgumentParser(description='Command line parser of skim options')
-parser.add_argument('--dataset',  dest='dataset',  help='Name of config file',   required = True)
 parser.add_argument('--classifier',dest='classifier', help='Case name',   required = True)
 args = parser.parse_args()
-dataset    = args.dataset
+
 classifier = args.classifier
 
-file = '%s%s_bdt_xgboost.pkl'%(dataset,classifier)
+file = '%s'%(classifier)
 
 #Make printing
 GetTrainingModel(file)

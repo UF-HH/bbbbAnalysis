@@ -161,7 +161,7 @@ def getmodelweightsformc(original,original_weights,model,tfactor):
 	print "[INFO] Running prediction from BDT-reweighter ..."
 	ws_unnormalized = model.predict_weights(original,original_weights,lambda x: numpy.mean(x, axis=0))
 	#Normalized all reweighter weights to 1
-	weights = numpy.multiply(ws_unnormalized, (1/ws_unnormalized.sum())  )	
+	weights    = numpy.multiply(ws_unnormalized, (1/ws_unnormalized.sum())  )	
 	#Give them the normalization using the transfer factor derived in control regions
 	totalnorm  = original_weights.sum()*tfactor
 	weights    = numpy.multiply(weights,totalnorm)
@@ -239,8 +239,21 @@ def TotalMCEvents(sample):
 	file.Close()
 	return w
 
-def AddMCWeight(dataframe,lumi,file):
-	print TotalMCEvents(file)
+def AddMCWeightforBkgModel(dataframe,lumi,file):
 	scale                   = float((lumi*dataframe.iloc[0]['XS']))/TotalMCEvents(file)
-	dataframe['MC_Weight']  = scale*dataframe['bTagScaleFactor_central']*dataframe['PUWeight']*dataframe['genWeight']
+	dataframe['MC_Weight']  = scale*dataframe['bTagScaleFactor_central']*dataframe['PUWeight']*dataframe['genWeight']*dataframe['triggerScaleFactor']*dataframe['L1PreFiringWeight_Nom']
+	return dataframe
+
+def AddMCWeight(dataframe,lumi,file):
+	scale                   = float((lumi*dataframe.iloc[0]['XS']))/TotalMCEvents(file)
+	dataframe['MC_Weight']  = scale*dataframe['bTagScaleFactor_central']*dataframe['PUWeight']*dataframe['genWeight']*dataframe['triggerScaleFactor']
+	return dataframe
+
+def AddBtagMCWeight(dataframe,lumi,file):
+	scale                       = float((lumi*dataframe.iloc[0]['XS']))/TotalMCEvents(file)
+	dataframe['MC_Weight']      = scale*dataframe['bTagScaleFactor_central']*dataframe['PUWeight']*dataframe['genWeight']*dataframe['triggerScaleFactor'] 
+	#The corrected weights
+	dataframe['MC_BtagWeight']  = scale*dataframe['bTagScaleFactor_central']*dataframe['bTagScaleFactor_tight_central']*dataframe['PUWeight']*dataframe['genWeight']*dataframe['triggerScaleFactor'] 
+	bfactor                     = dataframe['MC_Weight'].sum() / dataframe['MC_BtagWeight'].sum()
+	dataframe['MC_BtagWeight']  = (bfactor)*dataframe['MC_BtagWeight']
 	return dataframe

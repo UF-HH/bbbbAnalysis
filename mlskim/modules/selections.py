@@ -23,17 +23,17 @@ def eventbtagregion(data,btagregion):
 	
 def eventcategory(data,category):
 	if   category == 'VBF':
-		 selected = data[ ((data.GGFKiller >=0.5) & (data.VBFEvent==1)) ]
-		 rejected = data[~((data.GGFKiller >=0.5) & (data.VBFEvent==1)) ] 
+		 selected = data[ (  (data.GGFKiller >=0.5) & (data.VBFEvent==1)) ]
+		 rejected = data[~(  (data.GGFKiller >=0.5) & (data.VBFEvent==1)) ] 
 	elif category == 'VBF1':
-		 selected = data[ ((data.GGFKiller >=0.5) & (data.VBFEvent==1) & (data.GGFKiller < 0.975)) ]
-		 rejected = data[~((data.GGFKiller >=0.5) & (data.VBFEvent==1) & (data.GGFKiller < 0.975)) ]		 
+		 selected = data[ (  (data.GGFKiller >=0.5) & (data.VBFEvent==1) & (data.GGFKiller < 0.97)) ]
+		 rejected = data[~(  (data.GGFKiller >=0.5) & (data.VBFEvent==1) & (data.GGFKiller < 0.97)) ]		 
 	elif category == 'VBF2':
-		 selected = data[ ((data.GGFKiller >=0.5) & (data.VBFEvent==1) & (data.GGFKiller >= 0.975)) ]
-		 rejected = data[~((data.GGFKiller >=0.5) & (data.VBFEvent==1) & (data.GGFKiller >= 0.975)) ]
+		 selected = data[ (  (data.GGFKiller >=0.5) & (data.VBFEvent==1) & (data.GGFKiller >= 0.97)) ]
+		 rejected = data[~(  (data.GGFKiller >=0.5) & (data.VBFEvent==1) & (data.GGFKiller >= 0.97)) ]
 	elif category == 'GGF':
-		 selected = data[ (((data.GGFKiller <0.5) & (data.VBFEvent==1)) | (data.VBFEvent==0)) ]    	
-		 rejected = data[~(((data.GGFKiller <0.5) & (data.VBFEvent==1)) | (data.VBFEvent==0)) ]
+		 selected = data[ (  ((data.GGFKiller <0.5) & (data.VBFEvent==1)) | (data.VBFEvent==0)) ]    	
+		 rejected = data[~(  ((data.GGFKiller <0.5) & (data.VBFEvent==1)) | (data.VBFEvent==0)) ]
 	elif category == 'GGF1':
 		 selected = data[ (  ((data.GGFKiller <0.5) & (data.VBFEvent==1) & (data.HH_m<450)) | ((data.VBFEvent==0) & (data.HH_m<450))  )  ]    	
 		 rejected = data[~(  ((data.GGFKiller <0.5) & (data.VBFEvent==1) & (data.HH_m<450)) | ((data.VBFEvent==0) & (data.HH_m<450))  )  ]
@@ -55,8 +55,8 @@ def eventmassregion(data,massregion,validation=False):
 	radius2  = 50
 	# is it validation regions or analysis region?
 	if validation:
-		center1 = 182
-		center2 = 175
+		center1 = 179
+		center2 = 172
 	else:
 		center1 = 125
 		center2 = 120    	

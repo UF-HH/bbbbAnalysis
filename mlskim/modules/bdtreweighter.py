@@ -22,7 +22,7 @@ from sklearn.model_selection import StratifiedKFold
 def reweightermodel(ioriginal,itarget,ioriginal_weights,itarget_weights,args): 
 	numpy.random.seed(args[5]) #Fix any random seed using numpy arrays
 	reweighter_base = reweight.GBReweighter(n_estimators=args[0], learning_rate=args[1], max_depth=args[2], min_samples_leaf=args[3],gb_args={'subsample': args[4]})
-	reweighter = reweight.FoldingReweighter(reweighter_base, random_state=args[5], n_folds=3, verbose=False)
+	reweighter = reweight.FoldingReweighter(reweighter_base, random_state=args[5], n_folds=2, verbose=False)
 	reweighter.fit(ioriginal,itarget,ioriginal_weights,itarget_weights)
 	return reweighter
 

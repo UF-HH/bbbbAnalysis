@@ -3081,6 +3081,12 @@ void OfflineProducerHelper::AddInclusiveCategoryVariables(NanoAODTree& nat, Even
            ei.HH_btag_b4_bres   = Get_bRegRes( presel_bjets_btags.at(3) );
            if( get_property( ei.HH_btag_b4.get() , Jet_btagDeepFlavB ) >= any_cast<float>(parameterList_->at("bMinDeepJet") ) ){ei.nBtag=4;}
            else{ei.nBtag=3;}
+           //ntights variable 
+           int ntights=0;
+           if( ei.HH_btag_b1_bscore.get() >= any_cast<float>(parameterList_->at("bMinDeepJetT") ) )ntights++;
+           if( ei.HH_btag_b2_bscore.get() >= any_cast<float>(parameterList_->at("bMinDeepJetT") ) )ntights++;
+           if( ei.HH_btag_b3_bscore.get() >= any_cast<float>(parameterList_->at("bMinDeepJetT") ) )ntights++;
+           ei.nBtagTightonMediumWP  = ntights; 
        }
        else
        {
@@ -3101,6 +3107,12 @@ void OfflineProducerHelper::AddInclusiveCategoryVariables(NanoAODTree& nat, Even
            ei.HH_btag_b4_bres   = Get_bRegRes( presel_bjets_btags.at(3) );
            if( get_property( ei.HH_btag_b4.get() , Jet_btagDeepB ) >= any_cast<float>(parameterList_->at("bMinDeepCSV") ) ){ei.nBtag=4;}
            else{ei.nBtag=3;}
+           //ntights variable 
+           int ntights=0;
+           if( ei.HH_btag_b1_bscore.get() >= any_cast<float>(parameterList_->at("bMinDeepCSVT") ) )ntights++;
+           if( ei.HH_btag_b2_bscore.get() >= any_cast<float>(parameterList_->at("bMinDeepCSVT") ) )ntights++;
+           if( ei.HH_btag_b3_bscore.get() >= any_cast<float>(parameterList_->at("bMinDeepCSVT") ) )ntights++;
+           ei.nBtagTightonMediumWP  = ntights;
        }
        ei.sum_3b_bscore = (ei.HH_btag_b1_bscore.get() + ei.HH_btag_b2_bscore.get() + ei.HH_btag_b3_bscore.get());
        ei.sum_3b_bres   = (ei.HH_btag_b1_bres.get() + ei.HH_btag_b2_bres.get() + ei.HH_btag_b3_bres.get());
@@ -3259,9 +3271,9 @@ void OfflineProducerHelper::AddInclusiveCategoryVariables(NanoAODTree& nat, Even
        ei.abs_costh_H2_b1_h2cm = abs(H2_b1_h2cm.CosTheta());
        ei.abs_costh_H2_b2_h2cm = abs(H2_b2_h2cm.CosTheta());
        //GGF-QCDKiller
-       ei.BDT3     = GetBDT3Score(ei);
-       ei.BDT3cat1 = GetBDT3cat1Score(ei);
-       ei.BDT3cat2 = GetBDT3cat2Score(ei);
+       ei.BDT3     = 1;//GetBDT3Score(ei);
+       ei.BDT3cat1 = 1;//GetBDT3cat1Score(ei);
+       ei.BDT3cat2 = 1;//GetBDT3cat2Score(ei);
 
        return;
 }

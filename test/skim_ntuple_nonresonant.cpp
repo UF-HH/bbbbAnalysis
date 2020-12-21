@@ -168,8 +168,6 @@ int main(int argc, char** argv)
     else if(preselectionCutStrategy == "VBFJetCut"){
         parameterList.emplace("bMinDeepCSV"             ,config.readFloatOpt("parameters::bMinDeepCSV"));
         parameterList.emplace("bMinDeepJet"             ,config.readFloatOpt("parameters::bMinDeepJet"));
-        parameterList.emplace("bMinDeepCSVT"            ,config.readFloatOpt("parameters::bMinDeepCSVT"));
-        parameterList.emplace("bMinDeepJetT"            ,config.readFloatOpt("parameters::bMinDeepJetT"));
         parameterList.emplace("bMinPt"                  ,config.readFloatOpt("parameters::bMinPt"     ));
         parameterList.emplace("bMaxAbsEta"              ,config.readFloatOpt("parameters::bMaxAbsEta" ));
         parameterList.emplace("bJetId"                  ,config.readIntOpt("parameters::bJetId"     ));
@@ -183,6 +181,8 @@ int main(int argc, char** argv)
         parameterList.emplace("FourthAntiBTagInfo"      ,config.readBoolOpt( "parameters::FourthAntiBTagInfo"));
         parameterList.emplace("BjetRegression"          ,config.readBoolOpt( "parameters::BjetRegression"));
         parameterList.emplace("NewestBtaggingAlgorithm" ,config.readBoolOpt( "parameters::NewestBtaggingAlgorithm")); 
+        parameterList.emplace("bMinDeepCSVT"            ,config.readFloatOpt("parameters::bMinDeepCSVT"));
+        parameterList.emplace("bMinDeepJetT"            ,config.readFloatOpt("parameters::bMinDeepJetT"));
     }
     else if(preselectionCutStrategy == "None"){
     }  

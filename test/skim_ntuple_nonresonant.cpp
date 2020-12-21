@@ -185,8 +185,8 @@ int main(int argc, char** argv)
         parameterList.emplace("FourthAntiBTagInfo"      ,config.readBoolOpt( "parameters::FourthAntiBTagInfo"));
         parameterList.emplace("BjetRegression"          ,config.readBoolOpt( "parameters::BjetRegression"));
         parameterList.emplace("NewestBtaggingAlgorithm" ,config.readBoolOpt( "parameters::NewestBtaggingAlgorithm")); 
-        parameterList.emplace("bMinDeepCSVT"            ,config.readFloatOpt("parameters::bMinDeepCSVT"));
-        parameterList.emplace("bMinDeepJetT"            ,config.readFloatOpt("parameters::bMinDeepJetT"));
+        parameterList.emplace("bMinDeepCSVTight"        ,config.readFloatOpt("parameters::bMinDeepCSVTight"));
+        parameterList.emplace("bMinDeepJetTight"        ,config.readFloatOpt("parameters::bMinDeepJetTight"));
     }
     else if(preselectionCutStrategy == "None"){
     }  

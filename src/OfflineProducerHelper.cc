@@ -3091,9 +3091,9 @@ void OfflineProducerHelper::AddInclusiveCategoryVariables(NanoAODTree& nat, Even
            else{ei.nBtag=3;}
            //ntights variable 
            int ntights=0;
-           if( ei.HH_btag_b1_bscore.get() >= any_cast<float>(parameterList_->at("bMinDeepJetT") ) )ntights++;
-           if( ei.HH_btag_b2_bscore.get() >= any_cast<float>(parameterList_->at("bMinDeepJetT") ) )ntights++;
-           if( ei.HH_btag_b3_bscore.get() >= any_cast<float>(parameterList_->at("bMinDeepJetT") ) )ntights++;
+           if( ei.HH_btag_b1_bscore.get() >= any_cast<float>(parameterList_->at("bMinDeepJetTight") ) )ntights++;
+           if( ei.HH_btag_b2_bscore.get() >= any_cast<float>(parameterList_->at("bMinDeepJetTight") ) )ntights++;
+           if( ei.HH_btag_b3_bscore.get() >= any_cast<float>(parameterList_->at("bMinDeepJetTight") ) )ntights++;
            ei.nBtagTightonMediumWP  = ntights; 
        }
        else
@@ -3117,9 +3117,9 @@ void OfflineProducerHelper::AddInclusiveCategoryVariables(NanoAODTree& nat, Even
            else{ei.nBtag=3;}
            //ntights variable 
            int ntights=0;
-           if( ei.HH_btag_b1_bscore.get() >= any_cast<float>(parameterList_->at("bMinDeepCSVT") ) )ntights++;
-           if( ei.HH_btag_b2_bscore.get() >= any_cast<float>(parameterList_->at("bMinDeepCSVT") ) )ntights++;
-           if( ei.HH_btag_b3_bscore.get() >= any_cast<float>(parameterList_->at("bMinDeepCSVT") ) )ntights++;
+           if( ei.HH_btag_b1_bscore.get() >= any_cast<float>(parameterList_->at("bMinDeepCSVTight") ) )ntights++;
+           if( ei.HH_btag_b2_bscore.get() >= any_cast<float>(parameterList_->at("bMinDeepCSVTight") ) )ntights++;
+           if( ei.HH_btag_b3_bscore.get() >= any_cast<float>(parameterList_->at("bMinDeepCSVTight") ) )ntights++;
            ei.nBtagTightonMediumWP  = ntights;
        }
        ei.sum_3b_bscore = (ei.HH_btag_b1_bscore.get() + ei.HH_btag_b2_bscore.get() + ei.HH_btag_b3_bscore.get());

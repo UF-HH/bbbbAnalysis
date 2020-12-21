@@ -42,7 +42,7 @@ The runDataBkgmodel.sh script runs DataBackgroundModel.py and contains the multi
 
 After defining the options that want to use in runDataBkgmodel.sh, to process the bkgmodel one simply run the script:
 ```
-source runDataBkgmodel.sh $year
+source runDataBkgmodel.sh $year #This will create the file outputskims/$year/SKIM_MODEL_BKG.root
 ````
 
 Note: To obtain the 2017+2018 combined background model, first you need to hadd the 2017 and 2018 data. Next place the file in a new directory '20172018' under outputskims.

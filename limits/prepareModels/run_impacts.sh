@@ -1,12 +1,12 @@
 #GGF impacts
 
-#source make_impacts.sh 2016 1 13.0
-#source make_impacts.sh 2017 1 15.5
-#source make_impacts.sh 2018 1 10.0
+source make_impacts.sh 2016 1 12.5
+source make_impacts.sh 20172018 1 8.9
+
 
 #VBF impacts
 
-source make_impacts.sh 2016 2 680.0
-#source make_impacts.sh 2017 2 760.0
-#source make_impacts.sh 2018 2 580.0
+source make_impacts.sh 2016 2 753.1
+source make_impacts.sh 20172018 2 637.5
+
 

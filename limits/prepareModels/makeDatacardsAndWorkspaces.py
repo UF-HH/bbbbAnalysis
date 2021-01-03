@@ -65,7 +65,7 @@ def readShapeFromAltHistos(root_inputfile, nominalname, systname, systformat='{n
     y_up  = 1. * h_up.Integral()
 
     if y_nom <= 0:
-        return (0, 0)
+        return (1, 1)
 
     var_dn = y_dn / y_nom
     var_up = y_up / y_nom
@@ -225,10 +225,10 @@ for categ in categories:
 
                 if ln_from_histo:
                     down, up  = readShapeFromAltHistos(root_inputfile, proc, syst_source)
-                    this_syst = '%.3f/%.3f' % (down, up)
+                    this_syst = '%.5f/%.5f' % (down, up)
                     maxdelta  = max([abs(1. - up), abs(1. - down)])
                     if syst_lnN_prune_value and maxdelta < syst_lnN_prune_value:
-                        # print "... [INFO] : systematics", syst_source, 'from histo is less than %.3f' % syst_lnN_prune_value, 'will be skipped'
+                        print "... [INFO] : systematics", syst_source, 'from histo is less than %.3f' % syst_lnN_prune_value, 'will be skipped'
                         this_syst = '-'
                 line_tokens.append(this_syst)
 
@@ -264,8 +264,10 @@ if args.docombination:
 
 if args.doworkspace:
     ##Make workspace
-    print "[INFO] Making workspace for all datacards using HHModel"
+    print "[INFO] Making workspace for all datacards using HHModelPinv"
     if datas[0] != 'data_obs':
-        for card in datacards: os.system('text2workspace.py %s -D %s -P HHModel:HHdefault &'%(card, datas[0]))
+        for card in datacards: os.system('text2workspace.py %s -D %s -P HHModelPinv:HHdefault --PO doNNLOscaling=false &'%(card, datas[0]))
+        #for card in datacards: os.system('text2workspace.py %s -D %s -P HHModel:HHdefault &'%(card, datas[0]))
     else:
-        for card in datacards: os.system('text2workspace.py %s -P HHModel:HHdefault &'%card)
+        for card in datacards: os.system('text2workspace.py %s -P HHModelPinv:HHdefault --PO doNNLOscaling=false &'%card)
+        #for card in datacards: os.system('text2workspace.py %s -P HHModel:HHdefault &'%card)

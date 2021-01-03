@@ -4,18 +4,16 @@ option=$2
 
 if [ "$option" == "1" ]; then
      #This is for control plots
-     echo "Running on datadriven control plots"
+     echo "Running on datadriven control plots and bias studies"
      folders=(GGFcateg1_CR_210_Histogram GGFcateg2_CR_210_Histogram VBFcateg1_CR_210_Histogram VBFcateg2_CR_210_Histogram GGFcateg1_CR_110_Histogram GGFcateg2_CR_110_Histogram VBFcateg1_CR_110_Histogram VBFcateg2_CR_110_Histogram  GGFcateg1_SR_210_Histogram GGFcateg2_SR_210_Histogram VBFcateg1_SR_210_Histogram VBFcateg2_SR_210_Histogram GGFcateg1_SR_110_Histogram GGFcateg2_SR_110_Histogram VBFcateg1_SR_110_Histogram VBFcateg2_SR_110_Histogram)
-     histograms=(H1_m_rot H2_m_rot H1_pt H2_pt HH_m h1h2_deltaEta h1h2_deltaPhi JJ_m j1j2_deltaEta abs_costh_H1_ggfcm H1_bb_deltaR H2_bb_deltaR HH_btag_b3_bscore HH_btag_b2_bscore HH_btag_b3_bres HH_m_1 HH_m_2 GGFMVA1 GGFMVA2 EventCount)
-     models=(MODEL MODEL_1p0_uinj_ggHH_kl_1_kt_1 MODEL_1p0_uinj_qqHH_CV_1_C2V_1_kl_1 ) 
-#     folders=(GGFcateg1_SR_110_Histogram GGFcateg2_SR_110_Histogram)
-#     histograms=(HH_m GGFMVA1 GGFMVA2 BDT3cat1 BDT3cat2 EventCount) 
-     mkdir MyBkgModelHistos
+     histograms=(H1_b1_ptRegressed H1_b2_ptRegressed H2_b1_ptRegressed H2_b2_ptRegressed H1_m H2_m HH_m H1_pt H2_pt h1h2_deltaEta H1_bb_deltaR H2_bb_deltaR abs_costh_H1_ggfcm HH_btag_b3_bres abs_costh_H1_b1_h1cm sum_4b_pt HH_pt sum_3b_bres min_4b_deltaR max_4b_deltaEta nBtagTightonMediumWP h1h2_deltaPhi JJ_m j1j2_deltaEta GGFKiller HH_m_1 HH_m_2 GGFMVA1 GGFMVA2 EventCount)
+     models=(MODEL) # MODEL_1p0_uinj_ggHH_kl_1_kt_1 MODEL_1p0_uinj_qqHH_CV_1_C2V_1_kl_1) 
+     mkdir MyDataModelHistosBDTR_New
      for dataset in ${datasets[@]}
      do
         #Start
-        cp -r BkgModelHistos${dataset} Histos${dataset}
-        cd Histos${dataset}
+        cp -r ControlBkgModelHistos${dataset} BkgModelHistos${dataset}
+        cd BkgModelHistos${dataset}
         #Change the folder tag from Btag3 to Btag4
         for folder in ${folders[@]}
         do
@@ -31,14 +29,14 @@ if [ "$option" == "1" ]; then
                done
         done  
         cd ..
-        mv BkgModelHistos${dataset} MyBkgModelHistos
-        mv Histos${dataset} MyBkgModelHistos
+        mv ControlBkgModelHistos${dataset} MyDataModelHistosBDTR_New
+        mv BkgModelHistos${dataset} MyDataModelHistosBDTR_New
      done
 elif [ "$option" == "2" ]; then
-   #This is for limit setting
-   echo "[INFO] Running on datadriven for combine"   
+   #This is for limit setting or bias studies
+   echo "[INFO] Running on datadriven for combine input"   
    folders=(GGFcateg1_SR_110_Histogram GGFcateg2_SR_110_Histogram VBFcateg1_SR_110_Histogram VBFcateg2_SR_110_Histogram)
-   histograms=(HH_m_1 HH_m_2 GGFMVA1 GGFMVA2) 
+   histograms=(HH_m_1 HH_m_2 GGFMVA1 GGFMVA2) #GGFMVA1btag GGFMVA2btag) 
    models=(MODEL)   
    for dataset in ${datasets[@]}
    do
@@ -60,16 +58,16 @@ elif [ "$option" == "2" ]; then
              done
       done  
       cd ..
-      mkdir MyHistos
-      mv Model3b24bHistos${dataset} MyHistos
-      mv ModelHistos${dataset} MyHistos
-      mv DataMCHistos${dataset} MyHistos
-      #Merge the root files
-      echo "[INFO] Preparing file for combine with Data/MC/datadriven histograms"
-      cd MyHistos
-      mkdir Histos${dataset}
-      hadd -f Histos${dataset}/outPlotter.root DataMCHistos${dataset}/outPlotter.root Model3b24bHistos${dataset}/outPlotter.root
-      cd ..  
+      #mkdir MyHistos
+      #mv Model3b24bHistos${dataset} MyHistos
+      #mv ModelHistos${dataset} MyHistos
+      #mv DataSignalHistos${dataset} MyHistos
+      ##Merge the root files
+      #echo "[INFO] Preparing file for combine with Data/MC/datadriven histograms"
+      #cd MyHistos
+      #mkdir Histos${dataset}
+      #hadd -f Histos${dataset}/outPlotter.root DataSignalHistos${dataset}/outPlotter.root Model3b24bHistos${dataset}/outPlotter.root
+      #cd ..  
    done
 else
      echo "[ERROR] Option is not correct!!"

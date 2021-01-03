@@ -128,8 +128,10 @@ for comb in combinations:
     print " - %s/%s_comb_%s.txt"%(folder,card_name,outcomb)
 
 ##Make workspace
-print "[INFO] Making workspace for all datacards using HHModel"
+print "[INFO] Making workspace for all datacards using HHModelPinv"
 if datas[0] != 'data_obs':
-    for card in datacards: os.system('text2workspace.py %s -D %s -P HHModel:HHdefault &'%(card, datas[0]))
+    #for card in datacards: os.system('text2workspace.py %s -D %s -P HHModel:HHdefault &'%(card, datas[0]))
+    for card in datacards: os.system('text2workspace.py %s -D %s -P HHModelPinv:HHdefault --PO doNNLOscaling=false &'%(card, datas[0]))
 else:
-    for card in datacards: os.system('text2workspace.py %s -P HHModel:HHdefault &'%card)
+    #for card in datacards: os.system('text2workspace.py %s -P HHModel:HHdefault &'%card)
+    for card in datacards: os.system('text2workspace.py %s -P HHModelPinv:HHdefault --PO doNNLOscaling=false &'%card)

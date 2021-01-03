@@ -76,7 +76,8 @@ def get_h_nominal_name(process, categ, obs):
 def RunPreparation(dataset,directory,processes,categandobs,tag, process_rename, syst_list, syst_to_comb):
 	#Get root file
 	# file = ROOT.TFile.Open("../../MyHistos/%s/outPlotter.root"%directory)
-	file = ROOT.TFile.Open("%s/outPlotter.root" % directory)
+	file      = ROOT.TFile.Open("%s/outPlotter.root" % directory)
+	file_norm = ROOT.TFile.Open("%s/outPlotter_norm.root" % directory)
 	
 	os.system('mkdir %s'%tag)
 	#Open output file
@@ -87,7 +88,13 @@ def RunPreparation(dataset,directory,processes,categandobs,tag, process_rename, 
 			# h=ROOT.TH1F()
 			#print "%s/Btag4_%s_SR_110_Histogram/%s_Btag4_%s_SR_110_Histogram_%s"%(process,categandobs[k][0],process,categandobs[k][0],categandobs[k][1])
 			
-			h = file.Get(get_h_nominal_name(process, categandobs[k][0], categandobs[k][1])) 
+			h = file.Get(get_h_nominal_name(process, categandobs[k][0], categandobs[k][1]))
+
+			#Rescale h to the h_norm if is GGFcateg1  or GGFcateg2
+			if (categandobs[k][0]=='GGFcateg1' or categandobs[k][0]=='GGFcateg2') and process!='DATA' and process!='MODEL':
+				h_norm =  file_norm.Get(get_h_nominal_name(process, categandobs[k][0], categandobs[k][1])) 
+				print "In ",process,", norm is going to be scaled from %f to %f because is %s"%(h.Integral(),h_norm.Integral(),categandobs[k][0])
+				h.Scale( h_norm.Integral() / h.Integral() )
 			
 			newname = process if process not in process_rename else process_rename[process]
 			h.SetName("%s" % newname)
@@ -99,7 +106,13 @@ def RunPreparation(dataset,directory,processes,categandobs,tag, process_rename, 
 		for process in processes:
 			newname = process if process not in process_rename else process_rename[process]
 			
-			h_nominal = file.Get(get_h_nominal_name(process, categandobs[k][0], categandobs[k][1]))
+			h_nominal      = file.Get(get_h_nominal_name(process, categandobs[k][0], categandobs[k][1]))
+
+			#Rescaling
+			if (categandobs[k][0]=='GGFcateg1' or categandobs[k][0]=='GGFcateg2') and process!='DATA' and process!='MODEL':
+				  h_nominal_norm = file_norm.Get(get_h_nominal_name(process, categandobs[k][0], categandobs[k][1])) 
+				  print "In ",process,", norm is going to be scaled from %f to %f because is %s"%(h_nominal.Integral(),h_nominal_norm.Integral(),categandobs[k][0])
+				  h_nominal.Scale( h_nominal_norm.Integral() / h_nominal.Integral() )
 
 			# parsing the input systematics
 			for sys_desc in syst_list:
@@ -119,10 +132,16 @@ def RunPreparation(dataset,directory,processes,categandobs,tag, process_rename, 
 					h_proto = '{sample}_{syst}_{direction}/{selection}/{sample}_{syst}_{direction}_{selection}_{variable}'
 				else:
 					h_proto = sys_read
-
 				for sd in sys_dirs:
 					hname = h_proto.format(sample=process, selection=selection, variable=variable, syst=sys_name, direction=sd)
-					h = file.Get(hname)
+					h     = file.Get(hname)
+
+					#Rescaling
+					if h: 
+						if ('GGFcateg1' in hname or 'GGFcateg2' in hname) and process!='DATA' and process!='MODEL':
+							  h_norm = file_norm.Get(hname) 
+							  print "In ",process,"/",sys_name,", norm is going to be scaled from %f to %f because is %s"%(h.Integral(),h_norm.Integral(),categandobs[k][0])
+							  h.Scale( h_norm.Integral() / h.Integral() )
 					if not h:
 						# raise RuntimeError("Histogram for systematics with name : %s : is not in the input file" % hname)
 						continue ## some cases (e.g. the data) won't have it
@@ -159,6 +178,13 @@ def RunPreparation(dataset,directory,processes,categandobs,tag, process_rename, 
 				histos_not_found  = []
 				for inpt in inputs:
 					h = file.Get(h_proto.format(sample=process, selection=selection, variable=variable, syst=inpt))
+
+					#Rescaling
+					if h:
+						if (categandobs[k][0]=='GGFcateg1' or categandobs[k][0]=='GGFcateg2') and process!='DATA' and process!='MODEL':
+							h_norm = file_norm.Get(h_proto.format(sample=process, selection=selection, variable=variable, syst=inpt)) 
+							print "In ",process,", norm is going to be scaled from %f to %f because is %s"%(h.Integral(),h_norm.Integral(),categandobs[k][0])
+							h.Scale( h_norm.Integral() / h.Integral() )					
 					if not h:
 						histos_not_found.append(inpt)
 						continue

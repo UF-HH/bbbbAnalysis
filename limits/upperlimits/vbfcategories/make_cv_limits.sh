@@ -25,7 +25,7 @@ for cv in `seq -f %.2f -3.0 0.05 3.0`; do
         -M AsymptoticLimits --run blind ../../../prepareModels/physicsmodel${YEAR}/datacard${YEAR}_comb_VBFcateg1VBFcateg2.root -D data_obs --redefineSignalPOIs r \
         --setParameters r_gghh=0,r_qqhh=1,kt=1,kl=1,C2V=1,CV=${cv} \
         -n cv_${cvname} \
-        --rMax 1500 --freezeNuisanceGroups theory \
+        --rMax 2000 --freezeNuisanceGroups theory \
         #--freezeParameters allConstrainedNuisances        
     cd ..
 done    

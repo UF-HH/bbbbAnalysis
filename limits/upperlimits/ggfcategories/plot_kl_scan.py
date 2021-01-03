@@ -57,6 +57,10 @@ elif dataid == '3':
   outname  = 'kl_scan_2018'
   datalumi = "2018, 59.7 fb^{-1} (13 TeV)"
 elif dataid == '4':
+  folder   = 'kl_limits_20172018'
+  outname  = 'kl_scan_20172018'
+  datalumi = "2017+2018, 101.2 fb^{-1} (13 TeV)"
+elif dataid == '5':
   folder   = 'kl_limits_run2'
   outname  = 'kl_scan_run2'
   datalumi = "Run-2, 137.1 fb^{-1} (13 TeV)"
@@ -78,10 +82,10 @@ elif categid == '2':
 elif categid == '3':
   categlat = 'GGF-HH Combination'
   outname += '_ggfcomb'
-  if dataid=='4':
-  	yaxismax=3500
+  if dataid=='5':
+  	yaxismax=4000
   else:
-  	yaxismax=6500  	
+  	yaxismax=7500  	
 elif categid == '4':
   categlat = 'ggF-HH + VBF-HH Combination'
   outname += '_fullcomb'
@@ -277,7 +281,7 @@ hframe.GetXaxis().SetTitleSize(0.055)
 hframe.GetYaxis().SetLabelSize(0.045)
 hframe.GetXaxis().SetLabelSize(0.045)
 hframe.GetXaxis().SetLabelOffset(0.012)
-hframe.GetYaxis().SetTitleOffset(1.2)
+hframe.GetYaxis().SetTitleOffset(1.3)
 hframe.GetXaxis().SetTitleOffset(1.1)
 hframe.GetYaxis().SetTitle("95% CL on #sigma_{ggF}(pp#rightarrowHH) [fb]")
 hframe.GetXaxis().SetTitle("#kappa_{#lambda}")

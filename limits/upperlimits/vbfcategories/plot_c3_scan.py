@@ -57,6 +57,10 @@ elif dataid == '3':
   outname  = 'c3_scan_2018'
   datalumi = "2018, 59.7 fb^{-1} (13 TeV)"
 elif dataid == '4':
+  folder   = 'c3_limits_20172018'
+  outname  = 'c3_scan_20172018'
+  datalumi = "2017+2018, 101.2 fb^{-1} (13 TeV)"
+elif dataid == '5':
   folder   = 'c3_limits_run2'
   outname  = 'c3_scan_run2'
   datalumi = "Run-2, 137.1 fb^{-1} (13 TeV)"

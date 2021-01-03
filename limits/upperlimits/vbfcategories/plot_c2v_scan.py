@@ -35,7 +35,7 @@ def getVals(fname):
 ################################################################################################
 ###########OPTIONS
 parser = argparse.ArgumentParser(description='Command line parser of skim options')
-parser.add_argument('--datasetid', dest='datasetid',help='Dataset:  (1) 2016, (2) 2017, (3) 2018, (4) Run2', required = True)
+parser.add_argument('--datasetid', dest='datasetid',help='Dataset:  (1) 2016, (2) 2017, (3) 2018, (4) 20172018, (5) Run2', required = True)
 parser.add_argument('--categid',   dest='categid',  help='Category: (1) VBFcateg1, (2) VBFcateg2, (3) VBF-HH-Combination and (4) Full Combination', required = True)
 args = parser.parse_args()
 ###########
@@ -57,6 +57,10 @@ elif dataid == '3':
   outname  = 'c2v_scan_2018'
   datalumi = "2018, 59.7 fb^{-1} (13 TeV)"
 elif dataid == '4':
+  folder   = 'c2v_limits_20172018'
+  outname  = 'c2v_scan_20172018'
+  datalumi = "2017+2018, 101.2 fb^{-1} (13 TeV)"
+elif dataid == '5':
   folder   = 'c2v_limits_run2'
   outname  = 'c2v_scan_run2'
   datalumi = "Run-2, 137.1 fb^{-1} (13 TeV)"

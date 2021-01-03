@@ -1,5 +1,5 @@
 ### make upper limits
-YEAR=$1 #2016/2017/2018
+YEAR=$1 #run2/2016/20172018
 CAT=$2  #0/1/2
 
 for kl in `seq -f %.1f -28.0 0.5 28.0`; do
@@ -34,7 +34,7 @@ for kl in `seq -f %.1f -28.0 0.5 28.0`; do
         -M AsymptoticLimits --run blind ../../../prepareModels/physicsmodel${YEAR}/datacard${YEAR}_${CATNAME}.root -D data_obs --redefineSignalPOIs r \
         --setParameters r_gghh=1,r_qqhh=0,kt=1,kl=${kl},C2V=1,CV=1 \
           -n kl_${klname} \
-          --rMax 100 --freezeNuisanceGroups theory\
-        --freezeParameters allConstrainedNuisances        
+          --rMax 200 --freezeNuisanceGroups theory\
+        #--freezeParameters allConstrainedNuisances        
     cd ..
 done    

@@ -84,8 +84,8 @@ print "WELCOME TO THE GGF-HH CALCULATOR"
 #Create an array with samples couplings(cv,c2v,kl) and their L0 xs
 sample_list = [
     sample(1,1,  val_xs = 0.010517),
-    sample(0,1,     val_xs = 0.023618),
-    #sample(2.45,1,  val_xs = 0.004455),
+    #sample(0,1,     val_xs = 0.023618),
+    sample(2.45,1,  val_xs = 0.004455),
     sample(5,1,     val_xs = 0.031072),
 ]  
 #Create an array with couplings (cv,c2v,kl) to scan. In our case is c2v scan.

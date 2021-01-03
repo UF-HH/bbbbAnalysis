@@ -1,8 +1,8 @@
 ### make upper limits
 YEAR=$1
 
-for c3 in `seq -f %.1f -28.0 0.5 0.5`; do
 #for c3 in `seq -f %.1f 1.0 1.0 1.0`; do
+for c3 in `seq -f %.1f 13.5 0.5 28.0`; do
      c3name=${c3}
      if [[ $c3name == *-* ]]; then
          c3name=${c3name/-/m_};

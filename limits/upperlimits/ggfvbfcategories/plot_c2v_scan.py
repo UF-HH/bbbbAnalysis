@@ -81,7 +81,7 @@ elif categid == '3':
   categlat = 'VBF-HH Combination'
   outname += '_vbfcomb_noggf'
 elif categid == '4':
-  categlat = 'ggF-HH + VBF-HH Combination'
+  categlat = 'ggF+VBF Combination'
   outname += '_fullcomb_noggf'
 else:
   print "Category is not specfied correctly! No plot is done"	

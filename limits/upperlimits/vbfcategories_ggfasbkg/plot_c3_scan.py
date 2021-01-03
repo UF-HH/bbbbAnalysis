@@ -35,7 +35,7 @@ def getVals(fname):
 ################################################################################################
 ###########OPTIONS
 parser = argparse.ArgumentParser(description='Command line parser of skim options')
-parser.add_argument('--datasetid', dest='datasetid',help='Dataset:  (1) 2016, (2) 2017, (3) 2018, (4) 20172018, (5) Run2', required = True)
+parser.add_argument('--datasetid', dest='datasetid',help='Dataset:  (1) 2016, (2) 2017, (3) 2018, (4) Run2', required = True)
 parser.add_argument('--categid',   dest='categid',  help='Category: (1) VBFcateg1, (2) VBFcateg2, (3) VBF-HH-Combination and (4) Full Combination', required = True)
 args = parser.parse_args()
 ###########
@@ -45,24 +45,24 @@ categid = args.categid
 
 ##Dataset properties
 if dataid == '1':
-  folder   = 'c2v_limits_2016'
-  outname  = 'c2v_scan_2016'
+  folder   = 'c3_limits_2016'
+  outname  = 'c3_scan_2016'
   datalumi = "2016, 35.9 fb^{-1} (13 TeV)"
 elif dataid == '2':
-  folder   = 'c2v_limits_2017'
-  outname  = 'c2v_scan_2017'
+  folder   = 'c3_limits_2017'
+  outname  = 'c3_scan_2017'
   datalumi = "2017, 41.5 fb^{-1} (13 TeV)"
 elif dataid == '3':
-  folder   = 'c2v_limits_2018'
-  outname  = 'c2v_scan_2018'
+  folder   = 'c3_limits_2018'
+  outname  = 'c3_scan_2018'
   datalumi = "2018, 59.7 fb^{-1} (13 TeV)"
 elif dataid == '4':
-  folder   = 'c2v_limits_20172018'
-  outname  = 'c2v_scan_20172018'
+  folder   = 'c3_limits_20172018'
+  outname  = 'c3_scan_20172018'
   datalumi = "2017+2018, 101.2 fb^{-1} (13 TeV)"
 elif dataid == '5':
-  folder   = 'c2v_limits_run2'
-  outname  = 'c2v_scan_run2'
+  folder   = 'c3_limits_run2'
+  outname  = 'c3_scan_run2'
   datalumi = "Run-2, 137.1 fb^{-1} (13 TeV)"
 else:
   print "Dataset is not specified correctly! No plot is done"	
@@ -71,18 +71,16 @@ else:
 ##Categories properties
 if categid == '1':
   categlat = 'VBF-HH Cat-1'
-  outname += '_vbfcat1_noggf'
-  folder  += '_1'
+  outname += '_vbfcat1_ggfasbkg'
 elif categid == '2':
   categlat = 'VBF-HH Cat-2'
-  outname += '_vbfcat2_noggf'
-  folder  += '_2' 
+  outname += '_vbfcat2_ggfasbkg' 
 elif categid == '3':
   categlat = 'VBF-HH Combination'
-  outname += '_vbfcomb_noggf'
+  outname += '_vbfcomb_ggfasbkg'
 elif categid == '4':
   categlat = 'ggF-HH + VBF-HH Combination'
-  outname += '_fullcomb_noggf'
+  outname += '_fullcomb_ggfasbkg'
 else:
   print "Category is not specfied correctly! No plot is done"	
   sys.exit()
@@ -107,7 +105,7 @@ grobs = ROOT.TGraph()
 coupling_xs = []
 lambdas = []
 #Get XS predicted 
-with open("../../vbflines/config/vbfhhc2vline.txt") as fobj:
+with open("../../vbflines/config/vbfhhc3line.txt") as fobj:
 	for line in fobj:
 		row = line.split()
 		coupling_xs.append( float(row[1])  )
@@ -125,7 +123,7 @@ for ipt, lam in enumerate(lambdas):
 	kl = kl.replace('+', 'p_')
 	#kl = kl.replace('.', 'd')
 	# print kl
-	fname = folder + '/' + 'higgsCombinec2v_{kl}.AsymptoticLimits.mH120.root'.format(kl=kl)
+	fname = folder + '/' + 'higgsCombinec3_{kl}.AsymptoticLimits.mH120.root'.format(kl=kl)
 	vals  = getVals(fname)
 	xs    = coupling_xs[k]
 	obs   = scaleToXS*0.0 ## FIXME
@@ -134,6 +132,7 @@ for ipt, lam in enumerate(lambdas):
 	exp   = vals[2][1]*xs*scaleToXS
 	p1s_t = vals[3][1]*xs*scaleToXS
 	p2s_t = vals[4][1]*xs*scaleToXS
+
 	## because the other code wants +/ sigma vars as deviations, without sign, from the centeal exp value...
 	p2s = p2s_t - exp
 	p1s = p1s_t - exp
@@ -269,14 +268,14 @@ pt6.SetTextFont(42)
 pt6.SetTextSize(0.05)
 pt6.SetBorderSize(0)
 pt6.SetTextAlign(32)
-pt6.AddText("#mu_{ggF}=0")
+pt6.AddText("#mu_{ggF}=1")
 
-graph1 = ROOT.TGraph("../../vbflines/config/vbfhhc2vline.txt")
+graph1 = ROOT.TGraph("../../vbflines/config/vbfhhc3line.txt")
 graph1.SetLineColor(6)
 graph1.SetLineWidth(3)
 for k in range (0,graph1.GetN()): graph1.GetY()[k] *= scaleToXS
 
-hframe = ROOT.TH1F('hframe', '', 100, -5, 7.0)
+hframe = ROOT.TH1F('hframe', '', 100, -28.0, 28.0)
 hframe.SetMinimum(0.5)
 hframe.SetMaximum(900000)
 hframe.GetYaxis().SetTitleSize(0.047)
@@ -287,7 +286,7 @@ hframe.GetXaxis().SetLabelOffset(0.012)
 hframe.GetYaxis().SetTitleOffset(1.2)
 hframe.GetXaxis().SetTitleOffset(1.1)
 hframe.GetYaxis().SetTitle("95% CL on #sigma_{VBF}(pp#rightarrowHHjj) [fb]")
-hframe.GetXaxis().SetTitle("c_{2V}")
+hframe.GetXaxis().SetTitle("c_{3}=#kappa_{#lambda}")
 
 hframe.SetStats(0)
 ROOT.gPad.SetTicky()

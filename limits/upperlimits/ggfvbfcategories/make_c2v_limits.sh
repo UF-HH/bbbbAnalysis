@@ -22,7 +22,7 @@ for c2v in `seq -f %.1f -5.0 0.1 7.0`; do
 
      if [[ $CAT == "0" ]]; then
          FLDRNAME="c2v_limits_${YEAR}"
-         CATNAME="comb_VBFcateg1VBFcateg2"
+         CATNAME="comb_GGFcateg1GGFcateg2VBFcateg1VBFcateg2"
      else
          FLDRNAME="c2v_limits_${YEAR}_${CAT}"
          CATNAME="VBFcateg${CAT}"

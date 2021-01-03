@@ -22,8 +22,8 @@ for cv in `seq -f %.2f -3.0 0.05 3.0`; do
 
     cd ${FLDRNAME}
     combine \
-        -M AsymptoticLimits --run blind ../../../prepareModels/physicsmodel${YEAR}/datacard${YEAR}_comb_VBFcateg1VBFcateg2.root -D data_obs --redefineSignalPOIs r_qqhh \
-        --setParameters r_gghh=0,kt=1,kl=1,C2V=1,CV=${cv} \
+        -M AsymptoticLimits --run blind ../../../prepareModels/physicsmodel${YEAR}/datacard${YEAR}_comb_GGFcateg1GGFcateg2VBFcateg1VBFcateg2.root -D data_obs --redefineSignalPOIs r_qqhh \
+        --setParameters r_gghh=1,kt=1,kl=1,C2V=1,CV=${cv} \
         -n cv_${cvname} \
          --freezeParameters THU_HH,pdf_Higgs_gg,mtop_ggHH,QCDscale_qqHH,pdf_Higgs_qq,BR_decay_hbbhbb,r  #This is for including systematics  
          # --freezeParameters rgx{.*},r  #This is for stat only        

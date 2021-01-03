@@ -23,7 +23,7 @@ for c3 in `seq -f %.1f -28.0 0.5 28.0`; do
     cd ${FLDRNAME}
     combine \
         -M AsymptoticLimits --run blind ../../../prepareModels/physicsmodel${YEAR}/datacard${YEAR}_comb_VBFcateg1VBFcateg2.root -D data_obs --redefineSignalPOIs r_qqhh \
-        --setParameters r_gghh=0,kt=1,kl=${c3},C2V=1,CV=1 \
+        --setParameters r_gghh=1,kt=1,kl=${c3},C2V=1,CV=1 \
          -n c3_${c3name} \
          --freezeParameters THU_HH,pdf_Higgs_gg,mtop_ggHH,QCDscale_qqHH,pdf_Higgs_qq,BR_decay_hbbhbb,r  #This is for including systematics  
          # --freezeParameters rgx{.*},r  #This is for stat only    

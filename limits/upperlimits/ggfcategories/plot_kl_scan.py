@@ -71,24 +71,24 @@ else:
 ##Categories properties
 if categid == '1':
   categlat = 'GGF-HH Cat-1'
-  outname += '_ggfcat1'
+  outname += '_ggfcat1_novbf'
   folder +='_1'
   yaxismax=8000
 elif categid == '2':
   categlat = 'GGF-HH Cat-2'
-  outname += '_ggfcat2' 
+  outname += '_ggfcat2_novbf' 
   folder +='_2'
   yaxismax=8000
 elif categid == '3':
   categlat = 'GGF-HH Combination'
-  outname += '_ggfcomb'
+  outname += '_ggfcomb_novbf'
   if dataid=='5':
   	yaxismax=4000
   else:
   	yaxismax=7500  	
 elif categid == '4':
   categlat = 'ggF-HH + VBF-HH Combination'
-  outname += '_fullcomb'
+  outname += '_fullcomb_novbf'
 else:
   print "Category is not specfied correctly! No plot is done"	
   sys.exit()
@@ -268,6 +268,16 @@ pt5.SetBorderSize(0)
 pt5.SetTextAlign(32)
 pt5.AddText(categlat)
 
+pt6 = ROOT.TPaveText(0.6819196+0.036,0.650357+0.015+0.02,0.9008929+0.036,0.7475595+0.015,"brNDC")
+pt6.SetTextAlign(12)
+pt6.SetFillColor(ROOT.kWhite)
+pt6.SetFillStyle(1001)
+pt6.SetTextFont(42)
+pt6.SetTextSize(0.05)
+pt6.SetBorderSize(0)
+pt6.SetTextAlign(32)
+pt6.AddText("#mu_{VBF}=0")
+
 graph1 = ROOT.TGraph("../../vbflines/config/ggfhhc3line.txt")
 graph1.SetLineColor(6)
 graph1.SetLineWidth(3)
@@ -303,6 +313,7 @@ c1.RedrawAxis("g")
 legend.Draw()
 pt3.Draw()
 pt4.Draw()
+pt6.Draw()
 pt5.Draw()
 c1.Update()
 c1.SaveAs("%s.png"%outname)

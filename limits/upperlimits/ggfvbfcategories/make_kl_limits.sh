@@ -21,7 +21,7 @@ for kl in `seq -f %.1f -28.0 0.5 28.0`; do
 
      if [[ $CAT == "0" ]]; then
          FLDRNAME="kl_limits_${YEAR}"
-         CATNAME="comb_GGFcateg1GGFcateg2"
+         CATNAME="comb_GGFcateg1GGFcateg2VBFcateg1VBFcateg2"
      else
          FLDRNAME="kl_limits_${YEAR}_${CAT}"
          CATNAME="GGFcateg${CAT}"

@@ -32,7 +32,7 @@ for kl in `seq -f %.1f -28.0 0.5 28.0`; do
     cd ${FLDRNAME}
     combine \
         -M AsymptoticLimits --run blind ../../../prepareModels/physicsmodel${YEAR}/datacard${YEAR}_${CATNAME}.root -D data_obs --redefineSignalPOIs r_gghh \
-          --setParameters r_qqhh=0,kt=1,kl=${kl},C2V=1,CV=1 \
+          --setParameters r_qqhh=1,kt=1,kl=${kl},C2V=1,CV=1 \
           -n kl_${klname} \
          --freezeParameters THU_HH,pdf_Higgs_gg,mtop_ggHH,QCDscale_qqHH,pdf_Higgs_qq,BR_decay_hbbhbb,r  #This is for including systematics  
          # --freezeParameters rgx{.*},r  #This is for stat only        

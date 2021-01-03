@@ -22,7 +22,7 @@ for c2v in `seq -f %.1f -5.0 0.1 7.0`; do
 
      if [[ $CAT == "0" ]]; then
          FLDRNAME="c2v_limits_${YEAR}"
-         CATNAME="comb_VBFcateg1VBFcateg2"
+         CATNAME="comb_GGFcateg1GGFcateg2VBFcateg1VBFcateg2"
      else
          FLDRNAME="c2v_limits_${YEAR}_${CAT}"
          CATNAME="VBFcateg${CAT}"
@@ -33,7 +33,7 @@ for c2v in `seq -f %.1f -5.0 0.1 7.0`; do
     cd ${FLDRNAME}
     combine \
         -M AsymptoticLimits --run blind ../../../prepareModels/physicsmodel${YEAR}/datacard${YEAR}_${CATNAME}.root -D data_obs --redefineSignalPOIs r_qqhh \
-        --setParameters r_gghh=0,kt=1,kl=1,CV=1,C2V=${c2v} \
+        --setParameters r_gghh=1,kt=1,kl=1,CV=1,C2V=${c2v} \
          -n c2v_${c2vname} \
          --freezeParameters THU_HH,pdf_Higgs_gg,mtop_ggHH,QCDscale_qqHH,pdf_Higgs_qq,BR_decay_hbbhbb,r  #This is for including systematics  
          # --freezeParameters rgx{.*},r  #This is for stat only    

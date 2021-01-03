@@ -71,18 +71,18 @@ else:
 ##Categories properties
 if categid == '1':
   categlat = 'VBF-HH Cat-1'
-  outname += '_vbfcat1_noggf'
+  outname += '_vbfcat1_ggfasbkg'
   folder  += '_1'
 elif categid == '2':
   categlat = 'VBF-HH Cat-2'
-  outname += '_vbfcat2_noggf'
+  outname += '_vbfcat2_ggfasbkg'
   folder  += '_2' 
 elif categid == '3':
   categlat = 'VBF-HH Combination'
-  outname += '_vbfcomb_noggf'
+  outname += '_vbfcomb_ggfasbkg'
 elif categid == '4':
-  categlat = 'ggF-HH + VBF-HH Combination'
-  outname += '_fullcomb_noggf'
+  categlat = 'ggF+VBF Combination'
+  outname += '_fullcomb_ggfasbkg'
 else:
   print "Category is not specfied correctly! No plot is done"	
   sys.exit()
@@ -269,7 +269,7 @@ pt6.SetTextFont(42)
 pt6.SetTextSize(0.05)
 pt6.SetBorderSize(0)
 pt6.SetTextAlign(32)
-pt6.AddText("#mu_{ggF}=0")
+pt6.AddText("#mu_{ggF}=1")
 
 graph1 = ROOT.TGraph("../../vbflines/config/vbfhhc2vline.txt")
 graph1.SetLineColor(6)

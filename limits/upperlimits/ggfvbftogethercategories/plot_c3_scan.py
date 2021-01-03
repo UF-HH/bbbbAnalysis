@@ -35,7 +35,7 @@ def getVals(fname):
 ################################################################################################
 ###########OPTIONS
 parser = argparse.ArgumentParser(description='Command line parser of skim options')
-parser.add_argument('--datasetid', dest='datasetid',help='Dataset:  (1) 2016, (2) 2017, (3) 2018, (4) Run2', required = True)
+parser.add_argument('--datasetid', dest='datasetid',help='Dataset:  (1) 2016, (2) 2017, (3) 2018, (4) 2017+2018 , (5) Run2', required = True)
 parser.add_argument('--categid',   dest='categid',  help='Category: (1) GGF/VBFcateg1, (2) GGF/VBFcateg2, (3) GGF/VBF-HH-Combination and (4) Full Combination', required = True)
 args = parser.parse_args()
 ###########
@@ -57,6 +57,10 @@ elif dataid == '3':
   outname  = 'c3_scan_2018'
   datalumi = "2018, 59.7 fb^{-1} (13 TeV)"
 elif dataid == '4':
+  folder   = 'c3limits_20172018'
+  outname  = 'c3_scan_20172018'
+  datalumi = "20172018, 131.1 fb^{-1} (13 TeV)"
+elif dataid == '5':
   folder   = 'c3limits_run2'
   outname  = 'c3_scan_run2'
   datalumi = "Run-2, 137.1 fb^{-1} (13 TeV)"
@@ -66,17 +70,17 @@ else:
 
 ##Categories properties
 if categid == '1':
-  categlat = 'GGF-HH Cat-1'
+  categlat = 'GGF-HH/VBF-HH Cat-1'
   outname += '_ggfcat1'
 elif categid == '2':
-  categlat = 'GGF-HH Cat-2'
+  categlat = 'GGF-HH/VBF-HH Cat-2'
   outname += '_ggfcat2' 
 elif categid == '3':
-  categlat = 'GGF-HH Combination'
+  categlat = 'GGF-HH/VBF-HH Combination'
   outname += '_ggfcomb'
 elif categid == '4':
   categlat = 'ggF+VBF Combination'
-  outname += '_fullcomb'
+  outname += '_fullcombtogether'
 else:
   print "Category is not specfied correctly! No plot is done"	
   sys.exit()
@@ -128,7 +132,7 @@ for ipt, lam in enumerate(lambdas):
 	kl = kl.replace('+', 'p_')
 	#kl = kl.replace('.', 'd')
 	# print kl
-	fname = folder + '/' + 'higgsCombinec3_{kl}.AsymptoticLimits.mH120.root'.format(kl=kl)
+	fname = folder + '/' + 'higgsCombinekl_{kl}.AsymptoticLimits.mH120.root'.format(kl=kl)
 	vals  = getVals(fname)
 	xs    = coupling_xs[k]
 	obs   = scaleToXS*0.0 ## FIXME
@@ -265,6 +269,16 @@ pt5.SetBorderSize(0)
 pt5.SetTextAlign(32)
 pt5.AddText(categlat)
 
+pt6 = ROOT.TPaveText(0.6819196+0.036,0.650357+0.015+0.02,0.9008929+0.036,0.7475595+0.015,"brNDC")
+pt6.SetTextAlign(12)
+pt6.SetFillColor(ROOT.kWhite)
+pt6.SetFillStyle(1001)
+pt6.SetTextFont(42)
+pt6.SetTextSize(0.05)
+pt6.SetBorderSize(0)
+pt6.SetTextAlign(32)
+pt6.AddText("#mu_{ggF}=1, #mu_{VBF}=1")
+
 graph1 = ROOT.TGraph("../../vbflines/config/ggfhhc3line.txt")
 graph1.SetLineColor(6)
 graph1.SetLineWidth(3)
@@ -300,6 +314,9 @@ c1.RedrawAxis("g")
 legend.Draw()
 pt3.Draw()
 pt4.Draw()
+pt6.Draw()
 pt5.Draw()
+
 c1.Update()
 c1.SaveAs("%s.png"%outname)
+c1.SaveAs("%s.pdf"%outname)

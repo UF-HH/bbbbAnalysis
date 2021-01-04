@@ -44,7 +44,7 @@ single_pts_list = [
         'CV'       : 1,
         'C2V'       : 1,
         'rootfile' : file_in,
-        'name'     : 'qqHH_CV_1_C2V_1_kl_1',
+        'name'     : 'qqHH_CV_1_C2V_1_kl_1_%i' % year,
         'cfg'      : cfg_in,
     },
     {
@@ -52,7 +52,7 @@ single_pts_list = [
         'CV'       : 1,
         'C2V'      : 2,
         'rootfile' : file_in,
-        'name'     : 'qqHH_CV_1_C2V_2_kl_1',
+        'name'     : 'qqHH_CV_1_C2V_2_kl_1_%i' % year,
         'cfg'      : cfg_in,
     },
     {
@@ -60,7 +60,7 @@ single_pts_list = [
         'CV'       : 1,
         'C2V'      : 1,
         'rootfile' : file_in,
-        'name'     : 'qqHH_CV_1_C2V_1_kl_0',
+        'name'     : 'qqHH_CV_1_C2V_1_kl_0_%i' % year,
         'cfg'      : cfg_in,
     },
     {
@@ -68,7 +68,7 @@ single_pts_list = [
         'CV'       : 1,
         'C2V'      : 1,
         'rootfile' : file_in,
-        'name'     : 'qqHH_CV_1_C2V_1_kl_2',
+        'name'     : 'qqHH_CV_1_C2V_1_kl_2_%i' % year,
         'cfg'      : cfg_in,
     },
     {
@@ -76,7 +76,7 @@ single_pts_list = [
         'CV'       : 0.5,
         'C2V'      : 1,
         'rootfile' : file_in,
-        'name'     : 'qqHH_CV_0p5_C2V_1_kl_1',
+        'name'     : 'qqHH_CV_0p5_C2V_1_kl_1_%i' % year,
         'cfg'      : cfg_in,
     },
     {
@@ -84,18 +84,18 @@ single_pts_list = [
         'CV'       : 1.5,
         'C2V'      : 1,
         'rootfile' : file_in,
-        'name'     : 'qqHH_CV_1p5_C2V_1_kl_1',
+        'name'     : 'qqHH_CV_1p5_C2V_1_kl_1_%i' % year,
         'cfg'      : cfg_in,
     },
 ]
 
 input_samples = [
-    eut.effReader(file_in, 'qqHH_CV_1_C2V_1_kl_1'),
-    eut.effReader(file_in, 'qqHH_CV_1_C2V_2_kl_1'),
-    eut.effReader(file_in, 'qqHH_CV_1_C2V_1_kl_0'),
-    eut.effReader(file_in, 'qqHH_CV_1_C2V_1_kl_2'),
-    eut.effReader(file_in, 'qqHH_CV_0p5_C2V_1_kl_1'),
-    eut.effReader(file_in, 'qqHH_CV_1p5_C2V_1_kl_1'),
+    eut.effReader(file_in, 'qqHH_CV_1_C2V_1_kl_1_%i' % year),
+    eut.effReader(file_in, 'qqHH_CV_1_C2V_2_kl_1_%i' % year),
+    eut.effReader(file_in, 'qqHH_CV_1_C2V_1_kl_0_%i' % year),
+    eut.effReader(file_in, 'qqHH_CV_1_C2V_1_kl_2_%i' % year),
+    eut.effReader(file_in, 'qqHH_CV_0p5_C2V_1_kl_1_%i' % year),
+    eut.effReader(file_in, 'qqHH_CV_1p5_C2V_1_kl_1_%i' % year),
 ]
 
 input_samples_pts = [eut.effReader(x['rootfile'], x['name']) for x in single_pts_list]
@@ -110,12 +110,12 @@ for i in range(len(input_samples_pts)):
 ## NOTE : the xs is actually taken from the files, not from val_xs
 # VBF : val_CV, val_C2V, val_kl
 VBF_sample_list = [
-    hhs.VBFHHSample(1,1,1,   val_xs = 0.00054/(0.3364), label = 'qqHH_CV_1_C2V_1_kl_1'  ),
-    hhs.VBFHHSample(1,2,1,   val_xs = 0.00472/(0.3364), label = 'qqHH_CV_1_C2V_2_kl_1'  ),
-    hhs.VBFHHSample(1,1,2,   val_xs = 0.00044/(0.3364), label = 'qqHH_CV_1_C2V_1_kl_2'  ),
-    hhs.VBFHHSample(1,1,0,   val_xs = 0.00145/(0.3364), label = 'qqHH_CV_1_C2V_1_kl_0'  ),
-    hhs.VBFHHSample(0.5,1,1, val_xs = 0.00353/(0.3364), label = 'qqHH_CV_0p5_C2V_1_kl_1'),
-    hhs.VBFHHSample(1.5,1,1, val_xs = 0.02149/(0.3364), label = 'qqHH_CV_1p5_C2V_1_kl_1'),
+    hhs.VBFHHSample(1,1,1,   val_xs = 0.00054/(0.3364), label = 'qqHH_CV_1_C2V_1_kl_1_%i' % year  ),
+    hhs.VBFHHSample(1,2,1,   val_xs = 0.00472/(0.3364), label = 'qqHH_CV_1_C2V_2_kl_1_%i' % year  ),
+    hhs.VBFHHSample(1,1,2,   val_xs = 0.00044/(0.3364), label = 'qqHH_CV_1_C2V_1_kl_2_%i' % year  ),
+    hhs.VBFHHSample(1,1,0,   val_xs = 0.00145/(0.3364), label = 'qqHH_CV_1_C2V_1_kl_0_%i' % year  ),
+    hhs.VBFHHSample(0.5,1,1, val_xs = 0.00353/(0.3364), label = 'qqHH_CV_0p5_C2V_1_kl_1_%i' % year),
+    hhs.VBFHHSample(1.5,1,1, val_xs = 0.02149/(0.3364), label = 'qqHH_CV_1p5_C2V_1_kl_1_%i' % year),
 ]
 
 scales = hhs.VBFHHFormula(VBF_sample_list)

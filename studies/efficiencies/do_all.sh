@@ -1,8 +1,7 @@
 #### make all the eff plots for the AN
-
-# for year in 2016 2017 2018; do
+for year in 2016 2017 2018; do
 # for year in 2016; do
-for year in 2017 2018; do
+# for year in 2017 2018; do
     ## ggF signal
     python eff_vs_klambda.py $year
     for p in mHHcateg GGFvsVBF; do python frac_categ_GGF_vs_klambda.py $p $year; done

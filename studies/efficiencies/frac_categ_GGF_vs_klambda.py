@@ -60,33 +60,33 @@ single_pts_list = [
     {
         'kl'       : 1,
         'rootfile' : file_in,
-        'name'     : 'ggHH_kl_1_kt_1',
+        'name'     : 'ggHH_kl_1_kt_1_%i' % year,
         'cfg'      : cfg_in,
     },
     {
         'kl'       : 0,
         'rootfile' : file_in,
-        'name'     : 'ggHH_kl_0_kt_1',
+        'name'     : 'ggHH_kl_0_kt_1_%i' % year,
         'cfg'      : cfg_in,
     },
     {
         'kl'       : 2.45,
         'rootfile' : file_in,
-        'name'     : 'ggHH_kl_2p45_kt_1',
+        'name'     : 'ggHH_kl_2p45_kt_1_%i' % year,
         'cfg'      : cfg_in,
     },
     {
         'kl'       : 5,
         'rootfile' : file_in,
-        'name'     : 'ggHH_kl_5_kt_1',
+        'name'     : 'ggHH_kl_5_kt_1_%i' % year,
         'cfg'      : cfg_in,
     },
 ]
 
 input_samples = [
-    eut.effReader(file_in, 'ggHH_kl_0_kt_1'),
-    eut.effReader(file_in, 'ggHH_kl_1_kt_1'),
-    eut.effReader(file_in, 'ggHH_kl_2p45_kt_1'),
+    eut.effReader(file_in, 'ggHH_kl_0_kt_1_%i' % year),
+    eut.effReader(file_in, 'ggHH_kl_1_kt_1_%i' % year),
+    eut.effReader(file_in, 'ggHH_kl_2p45_kt_1_%i' % year),
     # eut.effReader(file_in, 'ggHH_kl_5_kt_1'),
 ]
 
@@ -101,9 +101,9 @@ for i in range(len(input_samples_pts)):
 
 ## NOTE : the xs is actually taken from the files, not from val_xs
 GGF_sample_list = [
-    hhs.GGFHHSample(0,1,    val_xs = 0.06007, label = 'ggHH_kl_0_kt_1'  ),
-    hhs.GGFHHSample(1,1,    val_xs = 0.02675, label = 'ggHH_kl_1_kt_1'  ),
-    hhs.GGFHHSample(2.45,1, val_xs = 0.01133, label = 'ggHH_kl_2p45_kt_1'  ),
+    hhs.GGFHHSample(0,1,    val_xs = 0.06007, label = 'ggHH_kl_0_kt_1_%i' % year),
+    hhs.GGFHHSample(1,1,    val_xs = 0.02675, label = 'ggHH_kl_1_kt_1_%i' % year),
+    hhs.GGFHHSample(2.45,1, val_xs = 0.01133, label = 'ggHH_kl_2p45_kt_1_%i' % year),
     # hhs.GGFHHSample(5,1,    val_xs = 0.07903, label = 'ggHH_kl_5_kt_1'  ),
 ]
 

@@ -12,14 +12,14 @@ python scripts/submitSkimOnTier3.py --input=inputFiles/2018NonResonantDiHiggs4BD
 python scripts/submitSkimOnTier3.py --input=inputFiles/2018NonResonantDiHiggs4BDataSets/GluGluToHHTo4B_node_cHHH2p45_TuneCP5_PSWeights_13TeV-powheg-pythia8.txt               --puWeight=weights/2018/PUweights_2018.root --tag=$1 --cfg=config/skim_2018NonResonantDiHiggs4B.cfg --is-signal --xs=0.004455  --njobs=10  --is-nlo-sig
 python scripts/submitSkimOnTier3.py --input=inputFiles/2018NonResonantDiHiggs4BDataSets/GluGluToHHTo4B_node_cHHH5_TuneCP5_PSWeights_13TeV-powheg-pythia8.txt                  --puWeight=weights/2018/PUweights_2018.root --tag=$1 --cfg=config/skim_2018NonResonantDiHiggs4B.cfg --is-signal --xs=0.031072  --njobs=10  --is-nlo-sig
 python scripts/submitSkimOnTier3.py --input=inputFiles/2018NonResonantDiHiggs4BDataSets/VBF_HH_CV_1_C2V_0_C3_1_dipoleRecoilOff-TuneCP5_PSweights_13TeV-madgraph-pythia8.txt   --puWeight=weights/2018/PUweights_2018.root --tag=$1 --cfg=config/skim_2018NonResonantDiHiggs4B.cfg --is-signal --xs=0.009169  --njobs=10
-python scripts/submitSkimOnTier3.py --input=inputFiles/2018NonResonantDiHiggs4BDataSets/VBF_HH_CV_1_C2V_1_C3_1_dipoleRecoilOff-TuneCP5_PSweights_13TeV-madgraph-pythia8.txt   --puWeight=weights/2018/PUweights_2018.root --tag=$1 --cfg=config/skim_2018NonResonantDiHiggs4B.cfg --is-signal --xs=0.000585  --njobs=10
-python scripts/submitSkimOnTier3.py --input=inputFiles/2018NonResonantDiHiggs4BDataSets/VBF_HH_CV_1_C2V_2_C3_1_dipoleRecoilOff-TuneCP5_PSweights_13TeV-madgraph-pythia8.txt   --puWeight=weights/2018/PUweights_2018.root --tag=$1 --cfg=config/skim_2018NonResonantDiHiggs4B.cfg --is-signal --xs=0.004823  --njobs=10
+python scripts/submitSkimOnTier3.py --input=inputFiles/2018NonResonantDiHiggs4BDataSets/VBF_HH_CV_1_C2V_1_C3_1_dipoleRecoilOff-TuneCP5_PSweights_13TeV-madgraph-pythia8.txt   --puWeight=weights/2018/PUweights_2018.root --tag=$1 --cfg=config/skim_2018NonResonantDiHiggs4B.cfg --is-signal --xs=0.000585  --njobs=10 --is-VBF-sig
+python scripts/submitSkimOnTier3.py --input=inputFiles/2018NonResonantDiHiggs4BDataSets/VBF_HH_CV_1_C2V_2_C3_1_dipoleRecoilOff-TuneCP5_PSweights_13TeV-madgraph-pythia8.txt   --puWeight=weights/2018/PUweights_2018.root --tag=$1 --cfg=config/skim_2018NonResonantDiHiggs4B.cfg --is-signal --xs=0.004823  --njobs=10 --is-VBF-sig
 python scripts/submitSkimOnTier3.py --input=inputFiles/2018NonResonantDiHiggs4BDataSets/VBF_HH_CV_1_C2V_1_C3_2_dipoleRecoilOff-TuneCP5_PSweights_13TeV-madgraph-pythia8.txt   --puWeight=weights/2018/PUweights_2018.root --tag=$1 --cfg=config/skim_2018NonResonantDiHiggs4B.cfg --is-signal --xs=0.000482  --njobs=10
 python scripts/submitSkimOnTier3.py --input=inputFiles/2018NonResonantDiHiggs4BDataSets/VBF_HH_CV_1_C2V_1_C3_0_dipoleRecoilOff-TuneCP5_PSweights_13TeV-madgraph-pythia8.txt   --puWeight=weights/2018/PUweights_2018.root --tag=$1 --cfg=config/skim_2018NonResonantDiHiggs4B.cfg --is-signal --xs=0.001558  --njobs=10
 python scripts/submitSkimOnTier3.py --input=inputFiles/2018NonResonantDiHiggs4BDataSets/VBF_HH_CV_0_5_C2V_1_C3_1_dipoleRecoilOff-TuneCP5_PSweights_13TeV-madgraph-pythia8.txt --puWeight=weights/2018/PUweights_2018.root --tag=$1 --cfg=config/skim_2018NonResonantDiHiggs4B.cfg --is-signal --xs=0.003656  --njobs=10
 python scripts/submitSkimOnTier3.py --input=inputFiles/2018NonResonantDiHiggs4BDataSets/VBF_HH_CV_1_5_C2V_1_C3_1_dipoleRecoilOff-TuneCP5_PSweights_13TeV-madgraph-pythia8.txt --puWeight=weights/2018/PUweights_2018.root --tag=$1 --cfg=config/skim_2018NonResonantDiHiggs4B.cfg --is-signal --xs=0.022412  --njobs=10
 
-#Extra signals
+##Extra signals
 python scripts/submitSkimOnTier3.py --input=inputFiles/2018NonResonantDiHiggs4BDataSets/gg_HH_bbbb_012j_nanoAOD_Petrucciani_2018.txt                          --puWeight=weights/2018/PUweights_2018.root --tag=$1 --cfg=config/skim_2018NonResonantDiHiggs4B.cfg --is-signal --xs=0.010517  --njobs=10
 python scripts/submitSkimOnTier3.py --input=inputFiles/2018NonResonantDiHiggs4BDataSets/VBF_HH_CV_1_C2V_1_C3_1-TuneCP5_PSweights_13TeV-madgraph-pythia8.txt   --puWeight=weights/2018/PUweights_2018.root --tag=$1 --cfg=config/skim_2018NonResonantDiHiggs4B.cfg --is-signal --xs=0.000585  --njobs=10
 python scripts/submitSkimOnTier3.py --input=inputFiles/2018NonResonantDiHiggs4BDataSets/VBF_HH_CV_1_C2V_2_C3_1-TuneCP5_PSweights_13TeV-madgraph-pythia8.txt   --puWeight=weights/2018/PUweights_2018.root --tag=$1 --cfg=config/skim_2018NonResonantDiHiggs4B.cfg --is-signal --xs=0.004823  --njobs=10
@@ -47,7 +47,7 @@ python scripts/submitSkimOnTier3.py --input=inputFiles/2018NonResonantDiHiggs4BD
 
 #######################################################################################################################
 
-################# block for systematics variations of JEC
+################## block for systematics variations of JEC
 jecSystFullList=(
     AbsoluteMPFBias
     AbsoluteScale
@@ -80,16 +80,16 @@ jecSystFullList=(
 
 jecSystList=(
   Absolute
-  Absolute_2017
+  Absolute_2018
   BBEC1
-  BBEC1_2017
+  BBEC1_2018
   EC2
-  EC2_2017
+  EC2_2018
   FlavorQCD
   HF
-  HF_2017
+  HF_2018
   RelativeBal
-  RelativeSample_2017
+  RelativeSample_2018
 )
 
 

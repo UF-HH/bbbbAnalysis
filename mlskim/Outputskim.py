@@ -129,6 +129,11 @@ def TreeDevelopment(sample,filelist,columns_input,case,directory,lepveto,trigmat
 	skim['Weight_ValVBF2']      = value
 	skim['Weight_AnaGGF1_Frac'] = value
 	skim['Weight_AnaGGF2_Frac'] = value
+	#New branches for the new method
+	skim['Weight_AnaGGF1_New']  = value
+	skim['Weight_AnaGGF2_New']  = value
+	skim['Weight_ValGGF1_New']  = value
+	skim['Weight_ValGGF2_New']  = value
 
 	#Create the MVAs evaluating half with one weight and half with other weight in signal and data
 	skim['Frac1']        = value

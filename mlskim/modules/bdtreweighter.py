@@ -38,7 +38,7 @@ def check_ks_of_expression(expression):
 
 def roc_auc_study(data,labels,weights,args,tag,name,draw):
 		os.system("mkdir bkgtraining/myplots")
-		cv = StratifiedKFold(n_splits=3,shuffle=True,random_state=args[2])
+		cv = StratifiedKFold(n_splits=2,shuffle=True,random_state=args[2])
 		tprs = []
 		aucs = []
 		mean_fpr = numpy.linspace(0, 1, 100)
@@ -100,9 +100,59 @@ def roc_auc_study(data,labels,weights,args,tag,name,draw):
 def discrimination_test(original,target,weights,args,tag,name,draw):
 	data    = numpy.concatenate([original, target])
 	labels  = numpy.array([0] * len(original) + [1] * len(target))
-	w       = numpy.concatenate([weights / weights.sum() * len(target), [1] * len(target)])
+	#w       = numpy.concatenate([weights / weights.sum() * len(target), [1] * len(target)])
+	w       = numpy.concatenate([weights, [1] * len(target)])
+	#w       = numpy.concatenate([weights, [10] * len(target)])
 	roc_auc = roc_auc_study(data,labels,w,args,tag,name,draw)
+	roc_auc_crosscheck(data,labels,w)
 	return  roc_auc
+
+def roc_auc_crosscheck(data,labels,w):
+    #sklearn
+    Xtr, Xts, Ytr, Yts, Wtr, Wts = train_test_split(data, labels, w, random_state=2020, train_size=0.50)
+    clf = GradientBoostingClassifier(subsample=0.6, n_estimators=100).fit(Xtr, Ytr, sample_weight=Wtr)
+    roc_auc_sklearn = roc_auc_score(Yts, clf.predict_proba(Xts)[:, 1], sample_weight=Wts)
+    print("The cross-check (sklearn): ", round(roc_auc_sklearn,4) )	
+    #Mine
+    fpr, tpr, _ = my_roc_curve(Yts, clf.predict_proba(Xts)[:, 1], Wts)
+    roc_auc     = auc(fpr, tpr)
+    print("The cross-check (mycode):  ", round(roc_auc,4) )
+
+def getefficiencies(tr,y_true,y_pred,weights):
+    signorm  = 0 
+    bkgnorm  = 0
+    sigcount = 0
+    bkgcount = 0
+    wts = weights
+    lbs = y_true
+    for k in range(0,len(y_true)):
+        if lbs[k]==1: #get signal info
+           signorm+=wts[k]
+           if y_pred[k]>=tr: sigcount+=wts[k]
+        else:            #get bkg info
+           bkgnorm+=wts[k]
+           if y_pred[k]>=tr: bkgcount+=wts[k]           
+    sigeff = float(sigcount/signorm)
+    bkgeff = float(bkgcount/bkgnorm) 
+    return sigeff,bkgeff
+
+def my_roc_curve(y_true, y_pred,weights):
+    thresholds = [0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95]
+    fpr=[]
+    tpr=[]
+    #Initialize
+    fpr.append(1)
+    tpr.append(1)
+    #Intermediate
+    for tr in thresholds:
+       sigeff,bkgeff = getefficiencies(tr,y_true,y_pred,weights)
+       fpr.append(bkgeff)
+       tpr.append(sigeff)
+    #Finalize
+    fpr.append(0)
+    tpr.append(0)       
+    return fpr, tpr, thresholds
+
 
 def ks_comparison(variables,ks_noweight,ks_weight):
 	print "[INFO] Runninng KS-test on each variable to define the bdt-reweighter paramaters:"
@@ -127,7 +177,7 @@ def ks_comparison(variables,ks_noweight,ks_weight):
 def discrimination_comparison(roc_auc_nowts,roc_auc_wts):
 	passdiscriminationtest=False
 	if roc_auc_nowts > roc_auc_wts: passdiscriminationtest=True
-	if round(roc_auc_wts,3) >= 0.485 and round(roc_auc_wts,3) <= 0.515: 
+	if round(roc_auc_wts,3) >= 0.480 and round(roc_auc_wts,3) <= 0.520: 
 		passdiscriminationtest=True
 	else:
 		passdiscriminationtest=False		

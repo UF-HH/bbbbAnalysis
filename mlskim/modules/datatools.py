@@ -23,6 +23,13 @@ from sklearn.externals.joblib import dump, load
 import modules.plotter as plotter
 import modules.bdtreweighter as bdtreweighter
 
+def GetTotalError(a,b):
+    sigma_a = math.sqrt(a)
+    sigma_b = math.sqrt(b)
+    tf = a/b
+    uncertainty = abs(tf)*math.sqrt( ((sigma_a*sigma_a)/(a*a)) + ((sigma_b*sigma_b)/(b*b)) )
+    return uncertainty
+
 def PrepareFeaturesFromSkim(skim,features,tag):
 	#Get features
 	data = skim[features]
@@ -240,8 +247,12 @@ def TotalMCEvents(sample):
 	return w
 
 def AddMCWeightforBkgModel(dataframe,lumi,file):
-	scale                   = float((lumi*dataframe.iloc[0]['XS']))/TotalMCEvents(file)
-	dataframe['MC_Weight']  = scale*dataframe['bTagScaleFactor_central']*dataframe['PUWeight']*dataframe['genWeight']*dataframe['triggerScaleFactor']*dataframe['L1PreFiringWeight_Nom']
+	scale                       = float((lumi*dataframe.iloc[0]['XS']))/TotalMCEvents(file)
+	dataframe['MC_Weight']      = scale*dataframe['bTagScaleFactor_central']*dataframe['PUWeight']*dataframe['genWeight']*dataframe['triggerScaleFactor']*dataframe['L1PreFiringWeight_Nom'] 
+	#The corrected weights
+	dataframe['MC_BtagWeight']  = scale*dataframe['bTagScaleFactor_central']*dataframe['bTagScaleFactor_tight_central']*dataframe['PUWeight']*dataframe['genWeight']*dataframe['triggerScaleFactor']*dataframe['L1PreFiringWeight_Nom'] 
+	bfactor                     = dataframe['MC_Weight'].sum() / dataframe['MC_BtagWeight'].sum()
+	dataframe['MC_BtagWeight']  = (bfactor)*dataframe['MC_BtagWeight']
 	return dataframe
 
 def AddMCWeight(dataframe,lumi,file):

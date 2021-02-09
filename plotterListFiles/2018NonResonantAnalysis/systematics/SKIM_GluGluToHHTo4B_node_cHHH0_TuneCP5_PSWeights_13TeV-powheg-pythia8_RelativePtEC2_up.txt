@@ -1,0 +1,1 @@
+/eos/uscms/store/user/guerrero/bbbb_ntuples/outputskims/NtuplesV7/2018/SKIM_GluGluToHHTo4B_node_cHHH0_TuneCP5_PSWeights_13TeV-powheg-pythia8_RelativePtEC2_up.root

@@ -1,0 +1,1 @@
+/uscms_data/d3/guerrero/Run2/HH2020/Spring/CMSSW_10_2_13/src/bbbbAnalysis/mlskim/outputskims/Ntuples/2017/SKIM_VBFHHTo4B_CV_1_C2V_1_C3_1_13TeV-madgraph_PileUpPtHF_down.root

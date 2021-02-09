@@ -4,6 +4,7 @@ import matplotlib
 import root_numpy
 import pandas
 import glob
+import math
 from root_numpy import root2array
 from numpy.lib.recfunctions import stack_arrays
 
@@ -26,11 +27,11 @@ def eventcategory(data,category):
 		 selected = data[ (  (data.GGFKiller >=0.5) & (data.VBFEvent==1)) ]
 		 rejected = data[~(  (data.GGFKiller >=0.5) & (data.VBFEvent==1)) ] 
 	elif category == 'VBF1':
-		 selected = data[ (  (data.GGFKiller >=0.5) & (data.VBFEvent==1) & (data.GGFKiller < 0.97)) ]
-		 rejected = data[~(  (data.GGFKiller >=0.5) & (data.VBFEvent==1) & (data.GGFKiller < 0.97)) ]		 
+		 selected = data[ (  (data.GGFKiller >=0.5) & (data.VBFEvent==1) & (data.GGFKiller < 0.970)) ]
+		 rejected = data[~(  (data.GGFKiller >=0.5) & (data.VBFEvent==1) & (data.GGFKiller < 0.970)) ]		 
 	elif category == 'VBF2':
-		 selected = data[ (  (data.GGFKiller >=0.5) & (data.VBFEvent==1) & (data.GGFKiller >= 0.97)) ]
-		 rejected = data[~(  (data.GGFKiller >=0.5) & (data.VBFEvent==1) & (data.GGFKiller >= 0.97)) ]
+		 selected = data[ (  (data.GGFKiller >=0.5) & (data.VBFEvent==1) & (data.GGFKiller >= 0.970)) ]
+		 rejected = data[~(  (data.GGFKiller >=0.5) & (data.VBFEvent==1) & (data.GGFKiller >= 0.970)) ]
 	elif category == 'GGF':
 		 selected = data[ (  ((data.GGFKiller <0.5) & (data.VBFEvent==1)) | (data.VBFEvent==0)) ]    	
 		 rejected = data[~(  ((data.GGFKiller <0.5) & (data.VBFEvent==1)) | (data.VBFEvent==0)) ]
@@ -57,12 +58,26 @@ def eventmassregion(data,massregion,validation=False):
 	if validation:
 		center1 = 179
 		center2 = 172
+		center1_rot = math.sqrt( (179*179) + (172*172) )
 	else:
 		center1 = 125
-		center2 = 120    	
+		center2 = 120
+		center1_rot = math.sqrt( (125*125) + (120*120) )    	
 	if   massregion == 'CR':
 		selected = data[ (((data.H1_m-center1)**2+(data.H2_m-center2)**2)**(0.5) >= radius1) & (((data.H1_m-center1)**2+(data.H2_m-center2)**2)**(0.5) <= radius2) ]
 		rejected = data[  ~(   (((data.H1_m-center1)**2+(data.H2_m-center2)**2)**(0.5) >= radius1) & (((data.H1_m-center1)**2+(data.H2_m-center2)**2)**(0.5) <= radius2)  )  ] 
+	elif massregion == 'CRUP':
+		selected = data[ (((data.H1_m-center1)**2+(data.H2_m-center2)**2)**(0.5) >= radius1) & (((data.H1_m-center1)**2+(data.H2_m-center2)**2)**(0.5) <= (radius2+4)  ) ]
+		rejected = data[  ~(   (((data.H1_m-center1)**2+(data.H2_m-center2)**2)**(0.5) >= radius1) & (((data.H1_m-center1)**2+(data.H2_m-center2)**2)**(0.5) <= (radius2+4) )  )  ] 
+	elif massregion == 'CRDN':
+		selected = data[ (((data.H1_m-center1)**2+(data.H2_m-center2)**2)**(0.5) >= radius1) & (((data.H1_m-center1)**2+(data.H2_m-center2)**2)**(0.5) <= (radius2-4)  ) ]
+		rejected = data[  ~(   (((data.H1_m-center1)**2+(data.H2_m-center2)**2)**(0.5) >= radius1) & (((data.H1_m-center1)**2+(data.H2_m-center2)**2)**(0.5) <= (radius2-4)  )  )  ] 
+	elif massregion == 'CRB':
+		selected = data[ (((data.H1_m-center1)**2+(data.H2_m-center2)**2)**(0.5) >= radius1) & (((data.H1_m-center1)**2+(data.H2_m-center2)**2)**(0.5) <= radius2) & ( (data.H1_m-center1)*(data.H2_m-center2) < 0 ) ]
+		rejected = data[  ~(   (((data.H1_m-center1)**2+(data.H2_m-center2)**2)**(0.5) >= radius1) & (((data.H1_m-center1)**2+(data.H2_m-center2)**2)**(0.5) <= radius2)  & ( (data.H1_m-center1)*(data.H2_m-center2) < 0 )  )  ] 
+	elif massregion == 'CRA':
+		selected = data[ (((data.H1_m-center1)**2+(data.H2_m-center2)**2)**(0.5) >= radius1) & (((data.H1_m-center1)**2+(data.H2_m-center2)**2)**(0.5) <= radius2) & ( (data.H1_m-center1)*(data.H2_m-center2) >= 0 ) ]
+		rejected = data[  ~(   (((data.H1_m-center1)**2+(data.H2_m-center2)**2)**(0.5) >= radius1) & (((data.H1_m-center1)**2+(data.H2_m-center2)**2)**(0.5) <= radius2)  & ( (data.H1_m-center1)*(data.H2_m-center2) >= 0 )  )  ] 
 	elif massregion == 'SR':
 		selected = data[((data.H1_m-center1)**2+(data.H2_m-center2)**2)**(0.5) <  radius1 ]
 		rejected = data[((data.H1_m-center1)**2+(data.H2_m-center2)**2)**(0.5) >= radius1 ]

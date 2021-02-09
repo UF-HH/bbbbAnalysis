@@ -1,0 +1,1 @@
+/eos/uscms/store/user/guerrero/bbbb_ntuples/outputskims/NtuplesPA/2016/SKIM_ZZTo4bQ01j_5f_TuneCP5_amcatNLO_FXFX_pythia8.root

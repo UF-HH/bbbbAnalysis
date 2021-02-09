@@ -1,0 +1,1 @@
+/eos/uscms/store/user/guerrero/bbbb_ntuples/outputskims/NtuplesV7/2018/SKIM_VBF_HH_CV_1_C2V_2_C3_1_dipoleRecoilOff-TuneCP5_PSweights_13TeV-madgraph-pythia8_RelativeJERHF_up.root

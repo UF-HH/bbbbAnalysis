@@ -8,7 +8,7 @@ if [ "$option" == "1" ]; then
      folders=(GGFcateg1_CR_210_Histogram GGFcateg2_CR_210_Histogram VBFcateg1_CR_210_Histogram VBFcateg2_CR_210_Histogram GGFcateg1_CR_110_Histogram GGFcateg2_CR_110_Histogram VBFcateg1_CR_110_Histogram VBFcateg2_CR_110_Histogram  GGFcateg1_SR_210_Histogram GGFcateg2_SR_210_Histogram VBFcateg1_SR_210_Histogram VBFcateg2_SR_210_Histogram GGFcateg1_SR_110_Histogram GGFcateg2_SR_110_Histogram VBFcateg1_SR_110_Histogram VBFcateg2_SR_110_Histogram)
      histograms=(H1_b1_ptRegressed H1_b2_ptRegressed H2_b1_ptRegressed H2_b2_ptRegressed H1_m H2_m HH_m H1_pt H2_pt h1h2_deltaEta H1_bb_deltaR H2_bb_deltaR abs_costh_H1_ggfcm HH_btag_b3_bres abs_costh_H1_b1_h1cm sum_4b_pt HH_pt sum_3b_bres min_4b_deltaR max_4b_deltaEta nBtagTightonMediumWP h1h2_deltaPhi JJ_m j1j2_deltaEta GGFKiller HH_m_1 HH_m_2 GGFMVA1 GGFMVA2 EventCount)
      models=(MODEL) # MODEL_1p0_uinj_ggHH_kl_1_kt_1 MODEL_1p0_uinj_qqHH_CV_1_C2V_1_kl_1) 
-     mkdir MyDataModelHistosBDTR_New
+     mkdir MyDataModelHistosBDTR
      for dataset in ${datasets[@]}
      do
         #Start
@@ -29,15 +29,15 @@ if [ "$option" == "1" ]; then
                done
         done  
         cd ..
-        mv ControlBkgModelHistos${dataset} MyDataModelHistosBDTR_New
-        mv BkgModelHistos${dataset} MyDataModelHistosBDTR_New
+        mv ControlBkgModelHistos${dataset} MyDataModelHistosBDTR
+        mv BkgModelHistos${dataset} MyDataModelHistosBDTR
      done
 elif [ "$option" == "2" ]; then
    #This is for limit setting or bias studies
    echo "[INFO] Running on datadriven for combine input"   
-   folders=(GGFcateg1_SR_110_Histogram GGFcateg2_SR_110_Histogram VBFcateg1_SR_110_Histogram VBFcateg2_SR_110_Histogram)
+   folders=(GGFcateg1_SR_110_Histogram GGFcateg2_SR_110_Histogram VBFcateg1_SR_110_Histogram VBFcateg2_SR_110_Histogram GGFcateg1_SR_210_Histogram GGFcateg2_SR_210_Histogram VBFcateg1_SR_210_Histogram VBFcateg2_SR_210_Histogram)
    histograms=(HH_m_1 HH_m_2 GGFMVA1 GGFMVA2) #GGFMVA1btag GGFMVA2btag) 
-   models=(MODEL)   
+   models=(MODEL MODEL_Shape_Up MODEL_Shape_Down)   
    for dataset in ${datasets[@]}
    do
       #Start

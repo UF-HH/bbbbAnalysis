@@ -1,1 +1,1 @@
-/uscms_data/d3/guerrero/Run2/HH2019/Fall2019/CMSSW_10_2_5/src/bbbbAnalysis/mlskim/outputskims/New2017/SKIM_BKG_MODEL.root
+/eos/uscms/store/user/guerrero/bbbb_ntuples/outputskims/NtuplesPA/2017/SKIM_BKG_MODEL.root

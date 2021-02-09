@@ -1,0 +1,1 @@
+/uscms_data/d3/guerrero/Run2/HH2020/Spring/CMSSW_10_2_13/src/bbbbAnalysis/mlskim/outputskims/NtuplesPA/2018/SKIM_gg_HH_bbbb_012j_nanoAOD_Petrucciani_2018.root

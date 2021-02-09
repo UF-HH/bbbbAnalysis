@@ -104,8 +104,8 @@ def TreeDevelopment(sample,filelist,columns_input,case,directory,lepveto,trigmat
 	#Create two new columns with mHH (one for SM(1), other for BSM(2) )
 	skim['HH_m_1'] = skim['HH_m']
 	skim['HH_m_2'] = skim['HH_m']
-	skim['H1_m_v'] = skim['H1_m'] - 57
-	skim['H2_m_v'] = skim['H2_m'] - 55
+	skim['H1_m_v'] = skim['H1_m'] - 54
+	skim['H2_m_v'] = skim['H2_m'] - 52
 
 	#Rotation variables:
 	theta = math.atan(-float(1/1.04) )

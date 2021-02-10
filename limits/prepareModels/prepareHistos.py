@@ -82,7 +82,10 @@ def RunPreparation(dataset,directory,processes,categandobs,tag, process_rename, 
 	os.system('mkdir %s'%tag)
 	#Open output file
 	for k in range(0,len(categandobs)):
-		hfile = ROOT.TFile('%s/outPlotter_%s.root'%(tag,categandobs[k][0]), 'RECREATE')
+		if categandobs[k][0]=='VBFcateg2':
+		    hfile = ROOT.TFile('%s/outPlotter_%s.root'%(tag,categandobs[k][0]), 'RECREATE')
+		else:
+			hfile = ROOT.TFile('%s/outPlotter_%s_nobkgshapeunc.root'%(tag,categandobs[k][0]), 'RECREATE')
 		for process in processes:
 			#Get histograms
 			# h=ROOT.TH1F()

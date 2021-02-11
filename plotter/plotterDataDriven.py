@@ -120,43 +120,46 @@ if args.quit : ROOT.gROOT.SetBatch(True)
 #############   read configs   ############
 ###########################################
 
-cfgName        = Tools.findInFolder  (args.dir+"/", '*plotter*.cfg')
 outplotterName = Tools.findInFolder  (args.dir+"/", 'outPlotter.root')
-
-cfg = cfgr.ConfigReader (args.dir + "/" + cfgName)
-dataList = cfg.readListOption("general::data")
-# dataList = ['data_obs'] ## data are merged by hand into a single collection
-sigList         = cfg.readListOption("general::signals")
-bkgList         = cfg.readListOption("general::datadriven")
-
+if args.DataCond == 20172018:
+  sigList       = ['qqHH_CV_1_C2V_2_kl_1_2018','qqHH_CV_1_C2V_2_kl_1_2017','ggHH_kl_1_kt_1_2018','ggHH_kl_1_kt_1_2017']#,'SingleH','TT','TT_H']
+else:
+  sigList       = ['qqHH_CV_1_C2V_2_kl_1_2016','qqHH_CV_1_C2V_2_kl_1_2016','ggHH_kl_1_kt_1_2016','ggHH_kl_1_kt_1_2016']#,'SingleH','TT','TT_H']
+#  cfgName       = Tools.findInFolder  (args.dir+"/", '*plotter*.cfg')
+#  cfg           = cfgr.ConfigReader (args.dir + "/" + cfgName)
+#  sigList       = cfg.readListOption("general::signals")
+bkgList         = ['MODEL']
+dataList        = ['DATA']
 if not dataList : dataList = []
 if not sigList  : sigList  = []
 if not bkgList  : bkgList  = []
 
-# the background that were merged together - either at plotting level or at postprocessings
-replacements = {}
-secname = 'pp_merge'
-if cfg.hasSection(secname) and cfg.config[secname]:
-		for name in cfg.config[secname]:
-				replacements[name] = cfg.readListOption(secname+'::'+name)
-secname = 'merge'
-if cfg.hasSection(secname) and cfg.config[secname]:
-		for name in cfg.config[secname]:
-				replacements[name] = cfg.readListOption(secname+'::'+name)
-for name in replacements:
-		thelist = None
-		if replacements[name][0] in dataList:
-				thelist = dataList
-		elif replacements[name][0] in bkgList:
-				thelist = bkgList
-		elif replacements[name][0] in sigList:
-				thelist = sigList
-		else:
-				print "** WARNING: I cannot find the name", replacements[name][0], "to replace"
-		
-		for old in replacements[name]:
-				thelist.remove(old)
-		thelist.append(name)
+#if args.DataCond != 20172018: 
+#	cfgName  = Tools.findInFolder  (args.dir+"/", '*plotter*.cfg')
+#	cfg      = cfgr.ConfigReader (args.dir + "/" + cfgName)
+#	# the background that were merged together - either at plotting level or at postprocessings
+#	replacements = {}
+#	secname = 'pp_merge'
+#	if cfg.hasSection(secname) and cfg.config[secname]:
+#			for name in cfg.config[secname]:
+#					replacements[name] = cfg.readListOption(secname+'::'+name)
+#	secname = 'merge'
+#	if cfg.hasSection(secname) and cfg.config[secname]:
+#			for name in cfg.config[secname]:
+#					replacements[name] = cfg.readListOption(secname+'::'+name)
+#	for name in replacements:
+#			thelist = None
+#			if replacements[name][0] in dataList:
+#					thelist = dataList
+#			elif replacements[name][0] in bkgList:
+#					thelist = bkgList
+#			elif replacements[name][0] in sigList:
+#					thelist = sigList
+#			else:
+#					print "** WARNING: I cannot find the name", replacements[name][0], "to replace"
+#			for old in replacements[name]:
+#					thelist.remove(old)
+#			thelist.append(name)
 
 ###########################################
 #############  retrieve plots  ############
@@ -171,39 +174,30 @@ hSigs         = Tools.retrieveHistos  (rootFile, sigList,        args.var, sel) 
 hBkgs         = Tools.retrieveHistos  (rootFile, bkgList,        args.var, sel) #, "bkg": tags are unused now
 hDatas        = Tools.retrieveHistos  (rootFile, dataList,       args.var, sel) #, "DATA": tags are unused now
 
-#### FIXME: leaving some portion of the old code as example, but most likely something different is needed for postfit
 if args.postfit:
 		raise RuntimeError("Postfit plots are not yet implemented")    
-#     print "** INFO: going to scale to postfit yields"
-#     postfitscales, postfiterrors = parsePostiftFile(pfyieldfilename, chtransl[(chnumber, categnumber)])
-#     for bkg in hBkgs:
-#         if bkg in postfitscales:
-#             # print "** scale : " , bkg, postfitscales[bkg], ' ... ' , chtransl[(chnumber, categnumber)], chnumber, categnumber
-#             hBkgs[bkg].Scale(postfitscales[bkg])
-#         else:
-#             print " ** warning: no postfit scale for ", bkg
 
 ###########################################
 ########  retrieve/compute errors  ########
 ###########################################
 
-# print 'Cannot state channel type ' , args.channel, ' --> no way to determine errors, using dummy cfg'
-systFile = 'userSystCfgExample.cfg'
+# this part deals with bkg model uncertainty from transfer factor in control regions
+hist_region = args.sel.split("_")
+hist_region_name = hist_region[1]+"_"+hist_region[2]+"_"+hist_region[3]
+print hist_region_name
+if hist_region_name=='GGFcateg1_SR_110' or hist_region_name=='GGFcateg2_SR_110' or hist_region_name=='VBFcateg1_SR_110' or hist_region_name=='VBFcateg2_SR_110':
+   systFile = 'syst/%i/userSystCfg_%s_%s_ana.cfg'%(args.DataCond,hist_region[1],hist_region[2])
+elif hist_region_name=='GGFcateg1_SR_210' or hist_region_name=='GGFcateg2_SR_210' or hist_region_name=='VBFcateg1_SR_210' or hist_region_name=='VBFcateg2_SR_210':
+   systFile = 'syst/%i/userSystCfg_%s_%s_val.cfg'%(args.DataCond,hist_region[1],hist_region[2])
+else:
+   systFile = 'userSystCfgExample.cfg'
 print  "... evaluating the bkg syst errors for the envelope from file", systFile
 uh = uhe.UserHistoError(systFile)
 
-## FIXME: uh.histos currently using hBkgs, i.e. all the bkgs processed and not the restricted list
-## however the code checks that all bks are being used with check_selected_bkg
-## restriction to implement when the 
 uh.histos = dict (hBkgs)
 if args.postfit:
 	uh.externalDict = dict(postfiterrors)
 histoErr = uh.getErrorEnvelope()
-
-########## Signal scales ##########
-## you can define a dictionary that rescales by the specifies value a specific signal process
-## note that this is applied independently from the global "sigscale" passed to the SampleHist class
-## FIXME : the two scalings can be harmonised in a single place
 
 sigscales = {}
 
@@ -221,36 +215,39 @@ sigToPlot = collections.OrderedDict()
 bkgToPlot = collections.OrderedDict()
 
 if args.DataCond == 2016:
-		sigToPlot['qqHH_CV_1_C2V_2_kl_1'] = ['qqHH_CV_1_C2V_2_kl_1']
-#		sigToPlot['qqHH_CV_1_C2V_1_kl_1'] = ['qqHH_CV_1_C2V_1_kl_1']
-		sigToPlot['ggHH_kl_1_kt_1']       = ['ggHH_kl_1_kt_1']
-#		sigToPlot['ggHH_kl_2p45_kt_1']    = ['ggHH_kl_2p45_kt_1']
-#		sigToPlot['ZZ_4B']   = ['ZZ_4B']
-		sigToPlot['SingleH'] = ['SingleH']
-		sigToPlot['TT']      = ['TT']
+		sigToPlot['qqHH_CV_1_C2V_2_kl_1'] = ['qqHH_CV_1_C2V_2_kl_1_2016']
+		sigToPlot['ggHH_kl_1_kt_1']       = ['ggHH_kl_1_kt_1_2016']
+#		sigToPlot['SingleH'] = ['SingleH']
+#		sigToPlot['TT']      = ['TT']
 		bkgToPlot['MODEL']   = ['MODEL'] 
 elif args.DataCond == 2017:   
-		sigToPlot['qqHH_CV_1_C2V_2_kl_1'] = ['qqHH_CV_1_C2V_2_kl_1']
-#		sigToPlot['qqHH_CV_1_C2V_1_kl_1'] = ['qqHH_CV_1_C2V_1_kl_1']
-		sigToPlot['ggHH_kl_1_kt_1']       = ['ggHH_kl_1_kt_1']
-#		sigToPlot['ggHH_kl_5_kt_1']       = ['ggHH_kl_5_kt_1']
-#		sigToPlot['ZZ_4B']      = ['ZZ_4B']
-		sigToPlot['SingleH']    = ['SingleH'] 
-		sigToPlot['TT']         = ['TT'] 
-		bkgToPlot['MODEL']   = ['MODEL'] 
+		sigToPlot['qqHH_CV_1_C2V_2_kl_1'] = ['qqHH_CV_1_C2V_2_kl_1_2017']
+		sigToPlot['ggHH_kl_1_kt_1']       = ['ggHH_kl_1_kt_1_2017']
+#		sigToPlot['SingleH']    = ['SingleH'] 
+#		sigToPlot['TT']         = ['TT'] 
+		bkgToPlot['MODEL']      = ['MODEL'] 
+elif args.DataCond == 2018:   
+		sigToPlot['qqHH_CV_1_C2V_2_kl_1'] = ['qqHH_CV_1_C2V_2_kl_1_2018']
+		sigToPlot['ggHH_kl_1_kt_1']       = ['ggHH_kl_1_kt_1_2018']
+#		sigToPlot['SingleH']    = ['SingleH'] 
+#		sigToPlot['TT']         = ['TT'] 
+		bkgToPlot['MODEL']      = ['MODEL'] 
+elif args.DataCond == 20172018:   
+		sigToPlot['qqHH_CV_1_C2V_2_kl_1'] = ['qqHH_CV_1_C2V_2_kl_1_2018','qqHH_CV_1_C2V_2_kl_1_2017']
+		sigToPlot['ggHH_kl_1_kt_1']       = ['ggHH_kl_1_kt_1_2018','ggHH_kl_1_kt_1_2017']
+#		sigToPlot['SingleH']    = ['SingleH'] 
+#		sigToPlot['TT']         = ['TT'] 
+		bkgToPlot['MODEL']      = ['MODEL'] 
 else:
 		sigToPlot['qqHH_CV_1_C2V_2_kl_1'] = ['qqHH_CV_1_C2V_2_kl_1']
-#		sigToPlot['qqHH_CV_1_C2V_1_kl_1'] = ['qqHH_CV_1_C2V_1_kl_1']
 		sigToPlot['ggHH_kl_1_kt_1']       = ['ggHH_kl_1_kt_1']
-#		sigToPlot['ggHH_kl_5_kt_1']       = ['ggHH_kl_5_kt_1']
-#		sigToPlot['ZZ_4B']      = ['ZZ_4B']
 		sigToPlot['SingleH']    = ['SingleH'] 
 		sigToPlot['TT']         = ['TT']
 		bkgToPlot['MODEL']   = ['MODEL'] 
 
 
 ### check that I am not forgetting any background
-check_selected_bkg(allbkg = bkgList, chosenbkg=bkgToPlot)
+#check_selected_bkg(allbkg = bkgList, chosenbkg=bkgToPlot)
 
 ###########################################
 ############  prepare plotter  ############
@@ -272,7 +269,12 @@ shc.logy       = args.log
 shc.logx       = args.logx
 shc.ratio      = args.ratio
 shc.sbplot     = args.sbplot
-shc.lumi       = float(cfg.readOption ("general::lumi"))/1000. # from pb to fb
+if args.DataCond == 20172018:
+ shc.lumi       = float(41529+59740)/1000. # from pb to fb
+elif args.DataCond== 2016:
+ shc.lumi       = float(35922)/1000.	
+else: 
+ shc.lumi      = float(cfg.readOption ("general::lumi"))/1000. # from pb to fb	
 shc.chan       = 'HH #rightarrow bbbb'
 shc.selection  = None if not args.sel else '%s'%selectionlabel
 shc.region     = None if not args.sel else '%s'%regionlabel

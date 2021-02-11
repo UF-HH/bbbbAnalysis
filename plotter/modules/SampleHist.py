@@ -281,8 +281,8 @@ class SampleHistColl:
 
         self.lowerpadbottommargin = 0.35
 
-        self.ratioymin = 0.5
-        self.ratioymax = 1.5
+        self.ratioymin = 0.7
+        self.ratioymax = 1.3
         self.sbymin = 0
         self.sbymax = 5
 
@@ -602,7 +602,7 @@ class SampleHistColl:
 
             #self.hratioframe.GetXaxis().SetTitle(bkgStack.GetXaxis().GetName())
             if self.title: self.hratioframe.SetTitle(self.title)
-            if self.ratio: self.hratioframe.GetYaxis().SetTitle ("Data/MC")
+            if self.ratio: self.hratioframe.GetYaxis().SetTitle ("Data/Bkg.")
             elif self.sbplot: self.hratioframe.GetYaxis().SetTitle ("S/B")
             self.hratioframe.GetXaxis().SetTitleOffset(self.ratioxtitleoffset)
             self.hratioframe.GetYaxis().SetTitleOffset(self.ytitleoffset)
@@ -865,10 +865,10 @@ class SampleHistColl:
             print "** Warning : SampleHistColl : makeErrorHisto : no self.stackErrorHist provided, no bkg errors will be drawn"
             return
         
-        self.stackErrorHist.SetFillStyle(3345)
-        self.stackErrorHist.SetFillColor(ROOT.kGray+2)
-        self.stackErrorHist.SetMarkerColor(ROOT.kGray+2)
-        self.stackErrorHist.SetLineColor(ROOT.kGray+2)
+        self.stackErrorHist.SetFillStyle(3008)
+        self.stackErrorHist.SetFillColor(ROOT.kAzure+2)
+        self.stackErrorHist.SetMarkerColor(ROOT.kAzure+2)
+        self.stackErrorHist.SetLineColor(ROOT.kAzure+2)
         self.stackErrorHist.SetLineWidth(0)
         self.stackErrorHist.SetMarkerSize(0)
         self.stackErrorHist.SetMarkerStyle(0)

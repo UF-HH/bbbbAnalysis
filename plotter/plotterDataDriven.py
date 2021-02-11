@@ -174,8 +174,13 @@ hSigs         = Tools.retrieveHistos  (rootFile, sigList,        args.var, sel) 
 hBkgs         = Tools.retrieveHistos  (rootFile, bkgList,        args.var, sel) #, "bkg": tags are unused now
 hDatas        = Tools.retrieveHistos  (rootFile, dataList,       args.var, sel) #, "DATA": tags are unused now
 
-if args.postfit:
-		raise RuntimeError("Postfit plots are not yet implemented")    
+# if args.postfit:
+# 	# in order to generate the postfit values:
+# 	# combine -M FitDiagnostics datacardrun2_comb_GGFcateg1GGFcateg2VBFcateg1VBFcateg2.root --autoBoundsPOIs r --freezeParameters r_gghh,r_qqhh,kl,kt,CV,C2V --X-rtd MINIMIZER_analytic --saveShapes --saveWithUncertainties --X-rtd MINIMIZER_analytic
+# 	postift_input = '/uscms/home/lcadamur/nobackup/bbbbAnalysis_combine_overlap/CMSSW_10_2_13/src/hig-20-005/physicsmodelrun2/higgsCombineTest.FitDiagnostics.mH120.root'
+# 	print '... [INFO] : doing plots post-fit : opening fit file', postift_input
+# 	fIn = ROOT.TFile.Open(postift_input)
+# 	# raise RuntimeError("Postfit plots are not yet implemented")    
 
 ###########################################
 ########  retrieve/compute errors  ########
@@ -195,9 +200,41 @@ print  "... evaluating the bkg syst errors for the envelope from file", systFile
 uh = uhe.UserHistoError(systFile)
 
 uh.histos = dict (hBkgs)
-if args.postfit:
-	uh.externalDict = dict(postfiterrors)
+# if args.postfit:
+# 	uh.externalDict = dict(postfiterrors)
 histoErr = uh.getErrorEnvelope()
+hpostfit = []
+if args.postfit:
+	
+	# remaps inputs to this plotter to datacard bins
+	categ_mapper = {
+		'GGFcateg1_SR_110' : 'GGFcateg1_{}'.format(args.DataCond),
+		'GGFcateg2_SR_110' : 'GGFcateg2_{}'.format(args.DataCond),
+		'VBFcateg1_SR_110' : 'VBFcateg1_{}'.format(args.DataCond),
+		'VBFcateg2_SR_110' : 'VBFcateg2_{}'.format(args.DataCond),
+	}
+	# in order to generate the postfit values:
+	# combine -M FitDiagnostics datacardrun2_comb_GGFcateg1GGFcateg2VBFcateg1VBFcateg2.root --autoBoundsPOIs r --freezeParameters r_gghh,r_qqhh,kl,kt,CV,C2V --X-rtd MINIMIZER_analytic --saveShapes --saveWithUncertainties --X-rtd MINIMIZER_analytic
+	postift_input = '/uscms/home/lcadamur/nobackup/bbbbAnalysis_combine_overlap/CMSSW_10_2_13/src/hig-20-005/physicsmodelrun2/fitDiagnostics.root'
+	print '... [INFO] : doing plots post-fit : opening fit file', postift_input
+	fIn = ROOT.TFile.Open(postift_input)
+	# raise RuntimeError("Postfit plots are not yet implemented")    
+	hPostFitName = 'shapes_fit_b/{}/total_background'.format(categ_mapper[hist_region_name])
+	print '... [INFO] : doing plots post-fit : histo name', hPostFitName
+	hPostFit = fIn.Get(hPostFitName)
+	# hpostfit.append(hPostFit)
+	for ibin in range(1, histoErr.GetNbinsX()+1):
+		histoErr.SetBinContent(ibin, hPostFit.GetBinContent(ibin))
+		histoErr.SetBinError(ibin, hPostFit.GetBinError(ibin))
+
+	### now to the same for every process
+	for name_bkg in hBkgs.keys():
+		print '.... doing postfit of', name_bkg
+		hPostFitBkg = fIn.Get('shapes_fit_b/{}/{}'.format(categ_mapper[hist_region_name], name_bkg))
+		for ibin in range(1, histoErr.GetNbinsX()+1):
+			hBkgs[name_bkg].SetBinContent(ibin, hPostFitBkg.GetBinContent(ibin))
+			hBkgs[name_bkg].SetBinError(ibin, hPostFitBkg.GetBinError(ibin))
+
 
 sigscales = {}
 

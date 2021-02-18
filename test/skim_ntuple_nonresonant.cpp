@@ -57,9 +57,9 @@ int main(int argc, char** argv)
         ("c2g-rew"    , po::value<float>(), "c2g value for reweighting (default 0 if reweighting is performed)")
         ("kl-map"    , po::value<string>()->default_value(""), "klambda input map for reweighting")
         // ("kl-histo"  , po::value<string>()->default_value("hhGenLevelDistr"), "klambda histogram name for reweighting")
+        ("jes-shift-mult", po::value<double>()->default_value(1.0), "Magnify the JES sys by this factor (for JES shape studies). Defaults to 1 for standard systematics")
         ("jes-shift-syst", po::value<string>()->default_value("nominal"), "Name of the JES (scale) source uncertainty to be shifted. Usage as <name>:<up/down>. Pass -nominal- to not shift the jets")
         ("jer-shift-syst", po::value<string>()->default_value("nominal"), "Name of the JER (resolution) source uncertainty to be shifted. Usage as <jer/bjer>:<up/down>. Pass -nominal- to not shift the jets")
-        // pairing variables
         ("bbbbChoice"    , po::value<string>()->default_value("BothClosestToDiagonal"), "bbbb pairing choice")
         ("mh1mh2"        , po::value<float>()->default_value(1.05), "Ratio Xo/Yo or 1/slope of the diagonal") 
         ("option"        , po::value<int>()->default_value(0), "Option: 0=Nominal, 1=Alternative 1, 2=Alternative 2") 
@@ -460,7 +460,7 @@ int main(int argc, char** argv)
     if(!is_data)
     {
         oph.initializeApplyJERAndBregSmearing(opts["jer-shift-syst"].as<string>());
-        oph.initializeApplyJESshift(opts["jes-shift-syst"].as<string>());
+        oph.initializeApplyJESshift(opts["jes-shift-syst"].as<string>(), opts["jes-shift-mult"].as<double>());
         oph.initializeObjectsForEventWeight(ot,ec,opts["puWeight"].as<string>(),xs);
         oph.initializeObjectsBJetForScaleFactors(ot);
         oph.initializeObjectsL1PrefiringForScaleFactors(ot);

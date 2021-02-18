@@ -1772,7 +1772,7 @@ std::vector<Jet> OfflineProducerHelper::applyJECVariation(NanoAODTree& nat, std:
 
 // ----------------- Compute JEC - END --------------------- //
 
-void OfflineProducerHelper::initializeApplyJESshift(std::string syst_and_direction)
+void OfflineProducerHelper::initializeApplyJESshift(std::string syst_and_direction, double multiplier)
 {
     // parse the string to get the systematic name and the direction.
     // the string is expected to be formatted as systematicName:direction
@@ -1811,8 +1811,10 @@ void OfflineProducerHelper::initializeApplyJESshift(std::string syst_and_directi
         string msg = "OfflineProducerHelper::initializeApplyJESshift : input string [" + syst_and_direction + string("] is malformed : cannot understand direction (up/down) : aborting");
         throw std::runtime_error(msg);
     }
+    jes_syst_mult_ = multiplier;
 
     cout << "[INFO] ... jets will be shifted for JEC systematics according to systematic : " << jes_syst_shift_name_ << " : " << (jes_syst_shift_dir_is_up_ ? "up" : "down") << endl;
+    cout << "[INFO] ... jet JEC shift will be magnified by a factor of : " << jes_syst_mult_ << endl;
 
     return;
 }
@@ -1835,7 +1837,7 @@ std::vector<Jet> OfflineProducerHelper::applyJESshift(NanoAODTree &nat, const st
         double corr_factor = jcu_->getUncertainty(direction_is_up);
 
         Jet jet = jets.at(ijet);
-        jet.setP4(jet.P4() * (1 + shift * corr_factor) ); // set the shifted p4 ...
+        jet.setP4(jet.P4() * (1 + shift * corr_factor * jes_syst_mult_) ); // set the shifted p4 ...
         jet.buildP4Regressed(); // ... and reset the regressed p4 to be recomputed
         result.emplace_back(jet);
 
@@ -3410,6 +3412,11 @@ void OfflineProducerHelper::AddBoostedVariables(NanoAODTree& nat, EventInfo& ei,
     ei.n_fatjet_gt300_twosubj         = n_fatjet_gt300_twosubj;
     ei.n_fatjet_gt250_twosubj_msdgt30 = n_fatjet_gt250_twosubj_msdgt30;
     ei.n_fatjet_gt300_twosubj_msdgt30 = n_fatjet_gt300_twosubj_msdgt30;
+
+    if (AK8_vbfboosted_cands.size() > 0)
+        ei.fatjet1 = AK8_vbfboosted_cands.at(0);
+    if (AK8_vbfboosted_cands.size() > 1)
+        ei.fatjet2 = AK8_vbfboosted_cands.at(1);
 }
 
 

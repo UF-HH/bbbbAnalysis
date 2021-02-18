@@ -469,6 +469,30 @@ void SkimUtils::fill_output_tree(OutputTree& ot, NanoAODTree& nat, EventInfo& ei
     if (ei.n_fatjet_gt250_twosubj_msdgt30) ot.n_fatjet_gt250_twosubj_msdgt30 = *ei.n_fatjet_gt250_twosubj_msdgt30;
     if (ei.n_fatjet_gt300_twosubj_msdgt30) ot.n_fatjet_gt300_twosubj_msdgt30 = *ei.n_fatjet_gt300_twosubj_msdgt30;
 
+    if (ei.fatjet1){
+        COPY_m_pt_eta_phi_p4(fatjet1);
+        if (nat.FatJet_ParticleNetMD_probQCDb.IsValid())      ot.fatjet1_ParticleNetMD_probQCDb      = get_property(ei.fatjet1.get(), FatJet_ParticleNetMD_probQCDb);
+        if (nat.FatJet_ParticleNetMD_probQCDbb.IsValid())     ot.fatjet1_ParticleNetMD_probQCDbb     = get_property(ei.fatjet1.get(), FatJet_ParticleNetMD_probQCDbb);
+        if (nat.FatJet_ParticleNetMD_probQCDc.IsValid())      ot.fatjet1_ParticleNetMD_probQCDc      = get_property(ei.fatjet1.get(), FatJet_ParticleNetMD_probQCDc);
+        if (nat.FatJet_ParticleNetMD_probQCDcc.IsValid())     ot.fatjet1_ParticleNetMD_probQCDcc     = get_property(ei.fatjet1.get(), FatJet_ParticleNetMD_probQCDcc);
+        if (nat.FatJet_ParticleNetMD_probQCDothers.IsValid()) ot.fatjet1_ParticleNetMD_probQCDothers = get_property(ei.fatjet1.get(), FatJet_ParticleNetMD_probQCDothers);
+        if (nat.FatJet_ParticleNetMD_probXbb.IsValid())       ot.fatjet1_ParticleNetMD_probXbb       = get_property(ei.fatjet1.get(), FatJet_ParticleNetMD_probXbb);
+        if (nat.FatJet_ParticleNetMD_probXcc.IsValid())       ot.fatjet1_ParticleNetMD_probXcc       = get_property(ei.fatjet1.get(), FatJet_ParticleNetMD_probXcc);
+        if (nat.FatJet_ParticleNetMD_probXqq.IsValid())       ot.fatjet1_ParticleNetMD_probXqq       = get_property(ei.fatjet1.get(), FatJet_ParticleNetMD_probXqq);
+    }
+
+    if (ei.fatjet2){
+        COPY_m_pt_eta_phi_p4(fatjet2);
+        if (nat.FatJet_ParticleNetMD_probQCDb.IsValid())      ot.fatjet2_ParticleNetMD_probQCDb      = get_property(ei.fatjet2.get(), FatJet_ParticleNetMD_probQCDb);
+        if (nat.FatJet_ParticleNetMD_probQCDbb.IsValid())     ot.fatjet2_ParticleNetMD_probQCDbb     = get_property(ei.fatjet2.get(), FatJet_ParticleNetMD_probQCDbb);
+        if (nat.FatJet_ParticleNetMD_probQCDc.IsValid())      ot.fatjet2_ParticleNetMD_probQCDc      = get_property(ei.fatjet2.get(), FatJet_ParticleNetMD_probQCDc);
+        if (nat.FatJet_ParticleNetMD_probQCDcc.IsValid())     ot.fatjet2_ParticleNetMD_probQCDcc     = get_property(ei.fatjet2.get(), FatJet_ParticleNetMD_probQCDcc);
+        if (nat.FatJet_ParticleNetMD_probQCDothers.IsValid()) ot.fatjet2_ParticleNetMD_probQCDothers = get_property(ei.fatjet2.get(), FatJet_ParticleNetMD_probQCDothers);
+        if (nat.FatJet_ParticleNetMD_probXbb.IsValid())       ot.fatjet2_ParticleNetMD_probXbb       = get_property(ei.fatjet2.get(), FatJet_ParticleNetMD_probXbb);
+        if (nat.FatJet_ParticleNetMD_probXcc.IsValid())       ot.fatjet2_ParticleNetMD_probXcc       = get_property(ei.fatjet2.get(), FatJet_ParticleNetMD_probXcc);
+        if (nat.FatJet_ParticleNetMD_probXqq.IsValid())       ot.fatjet2_ParticleNetMD_probXqq       = get_property(ei.fatjet2.get(), FatJet_ParticleNetMD_probXqq);
+    }
+
     // fill the tree
     ot.fill();
 

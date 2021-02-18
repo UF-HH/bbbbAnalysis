@@ -17,6 +17,7 @@
 #include "Muon.h"
 #include "Electron.h"
 #include "GenPart.h"
+#include "FatJet.h"
 
 struct EventInfo{
 
@@ -341,6 +342,9 @@ struct EventInfo{
     boost::optional<int> n_fatjet_gt300_twosubj;
     boost::optional<int> n_fatjet_gt250_twosubj_msdgt30;
     boost::optional<int> n_fatjet_gt300_twosubj_msdgt30;
+
+    boost::optional<FatJet> fatjet1;
+    boost::optional<FatJet> fatjet2;
 };
 
 #endif

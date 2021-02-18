@@ -443,6 +443,26 @@ void OutputTree::init_branches()
     tree_->Branch("n_fatjet_gt250_twosubj_msdgt30", &n_fatjet_gt250_twosubj_msdgt30);
     tree_->Branch("n_fatjet_gt300_twosubj_msdgt30", &n_fatjet_gt300_twosubj_msdgt30);
 
+    BRANCH_m_pt_eta_phi_p4(fatjet1);
+    tree_->Branch("fatjet1_ParticleNetMD_probQCDb",      &fatjet1_ParticleNetMD_probQCDb);
+    tree_->Branch("fatjet1_ParticleNetMD_probQCDbb",     &fatjet1_ParticleNetMD_probQCDbb);
+    tree_->Branch("fatjet1_ParticleNetMD_probQCDc",      &fatjet1_ParticleNetMD_probQCDc);
+    tree_->Branch("fatjet1_ParticleNetMD_probQCDcc",     &fatjet1_ParticleNetMD_probQCDcc);
+    tree_->Branch("fatjet1_ParticleNetMD_probQCDothers", &fatjet1_ParticleNetMD_probQCDothers);
+    tree_->Branch("fatjet1_ParticleNetMD_probXbb",       &fatjet1_ParticleNetMD_probXbb);
+    tree_->Branch("fatjet1_ParticleNetMD_probXcc",       &fatjet1_ParticleNetMD_probXcc);
+    tree_->Branch("fatjet1_ParticleNetMD_probXqq",       &fatjet1_ParticleNetMD_probXqq);
+
+    BRANCH_m_pt_eta_phi_p4(fatjet2);
+    tree_->Branch("fatjet2_ParticleNetMD_probQCDb",      &fatjet2_ParticleNetMD_probQCDb);
+    tree_->Branch("fatjet2_ParticleNetMD_probQCDbb",     &fatjet2_ParticleNetMD_probQCDbb);
+    tree_->Branch("fatjet2_ParticleNetMD_probQCDc",      &fatjet2_ParticleNetMD_probQCDc);
+    tree_->Branch("fatjet2_ParticleNetMD_probQCDcc",     &fatjet2_ParticleNetMD_probQCDcc);
+    tree_->Branch("fatjet2_ParticleNetMD_probQCDothers", &fatjet2_ParticleNetMD_probQCDothers);
+    tree_->Branch("fatjet2_ParticleNetMD_probXbb",       &fatjet2_ParticleNetMD_probXbb);
+    tree_->Branch("fatjet2_ParticleNetMD_probXcc",       &fatjet2_ParticleNetMD_probXcc);
+    tree_->Branch("fatjet2_ParticleNetMD_probXqq",       &fatjet2_ParticleNetMD_probXqq);
+
     // note that the initialization of the user branches is made separately when calling declareUser*Branch
 }
 
@@ -845,6 +865,26 @@ void OutputTree::clear()
     n_fatjet_gt300_twosubj         = 0;
     n_fatjet_gt250_twosubj_msdgt30 = 0;
     n_fatjet_gt300_twosubj_msdgt30 = 0;
+
+    CLEAR_m_pt_eta_phi_p4(fatjet1);
+    fatjet1_ParticleNetMD_probQCDb      = -999;
+    fatjet1_ParticleNetMD_probQCDbb     = -999;
+    fatjet1_ParticleNetMD_probQCDc      = -999;
+    fatjet1_ParticleNetMD_probQCDcc     = -999;
+    fatjet1_ParticleNetMD_probQCDothers = -999;
+    fatjet1_ParticleNetMD_probXbb       = -999;
+    fatjet1_ParticleNetMD_probXcc       = -999;
+    fatjet1_ParticleNetMD_probXqq       = -999;
+
+    CLEAR_m_pt_eta_phi_p4(fatjet2);
+    fatjet2_ParticleNetMD_probQCDb      = -999;
+    fatjet2_ParticleNetMD_probQCDbb     = -999;
+    fatjet2_ParticleNetMD_probQCDc      = -999;
+    fatjet2_ParticleNetMD_probQCDcc     = -999;
+    fatjet2_ParticleNetMD_probQCDothers = -999;
+    fatjet2_ParticleNetMD_probXbb       = -999;
+    fatjet2_ParticleNetMD_probXcc       = -999;
+    fatjet2_ParticleNetMD_probXqq       = -999;
 
     userFloats_.resetAll();
     userInts_.resetAll();

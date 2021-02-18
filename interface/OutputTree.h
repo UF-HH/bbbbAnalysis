@@ -454,6 +454,28 @@ class OutputTree {
         int n_fatjet_gt250_twosubj_msdgt30;
         int n_fatjet_gt300_twosubj_msdgt30;
         
+        // info on the boosted candidates
+        DECLARE_m_pt_eta_phi_p4(fatjet1);
+        float fatjet1_ParticleNetMD_probQCDb;
+        float fatjet1_ParticleNetMD_probQCDbb;
+        float fatjet1_ParticleNetMD_probQCDc;
+        float fatjet1_ParticleNetMD_probQCDcc;
+        float fatjet1_ParticleNetMD_probQCDothers;
+        float fatjet1_ParticleNetMD_probXbb;
+        float fatjet1_ParticleNetMD_probXcc;
+        float fatjet1_ParticleNetMD_probXqq;
+
+        DECLARE_m_pt_eta_phi_p4(fatjet2);
+        float fatjet2_ParticleNetMD_probQCDb;
+        float fatjet2_ParticleNetMD_probQCDbb;
+        float fatjet2_ParticleNetMD_probQCDc;
+        float fatjet2_ParticleNetMD_probQCDcc;
+        float fatjet2_ParticleNetMD_probQCDothers;
+        float fatjet2_ParticleNetMD_probXbb;
+        float fatjet2_ParticleNetMD_probXcc;
+        float fatjet2_ParticleNetMD_probXqq;
+
+
     private:
         void init_branches();
         std::unique_ptr<TTree> tree_;

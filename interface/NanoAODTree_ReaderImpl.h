@@ -178,6 +178,15 @@ class NanoAODTree_ReaderImpl {
         NanoReaderArray<Float_t>   FatJet_tau4                          {fReader, "FatJet_tau4"};
         NanoReaderArray<Int_t>     FatJet_subJetIdx1                    {fReader, "FatJet_subJetIdx1"};
         NanoReaderArray<Int_t>     FatJet_subJetIdx2                    {fReader, "FatJet_subJetIdx2"};
+        // variables that are specific to the custom nanoAOD with boosted information
+        NanoReaderArray<Float_t>   FatJet_ParticleNetMD_probQCDb        {fReader, "FatJet_ParticleNetMD_probQCDb"};
+        NanoReaderArray<Float_t>   FatJet_ParticleNetMD_probQCDbb       {fReader, "FatJet_ParticleNetMD_probQCDbb"};
+        NanoReaderArray<Float_t>   FatJet_ParticleNetMD_probQCDc        {fReader, "FatJet_ParticleNetMD_probQCDc"};
+        NanoReaderArray<Float_t>   FatJet_ParticleNetMD_probQCDcc       {fReader, "FatJet_ParticleNetMD_probQCDcc"};
+        NanoReaderArray<Float_t>   FatJet_ParticleNetMD_probQCDothers   {fReader, "FatJet_ParticleNetMD_probQCDothers"};
+        NanoReaderArray<Float_t>   FatJet_ParticleNetMD_probXbb         {fReader, "FatJet_ParticleNetMD_probXbb"};
+        NanoReaderArray<Float_t>   FatJet_ParticleNetMD_probXcc         {fReader, "FatJet_ParticleNetMD_probXcc"};
+        NanoReaderArray<Float_t>   FatJet_ParticleNetMD_probXqq         {fReader, "FatJet_ParticleNetMD_probXqq"};
 
         NanoReaderValue<UInt_t>    nGenJetAK8                           {fReader, "nGenJetAK8"};
         NanoReaderArray<Float_t>   GenJetAK8_eta                        {fReader, "GenJetAK8_eta"};

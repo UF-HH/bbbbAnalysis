@@ -882,7 +882,6 @@ void OutputTree::clear()
     n_fatjet_gt250_twosubj_msdgt30 = 0;
     n_fatjet_gt300_twosubj_msdgt30 = 0;
 
-<<<<<<< HEAD
     //VBFjets
     VBFcandidates=0;
     VBFj1candidates=0;
@@ -897,7 +896,7 @@ void OutputTree::clear()
     VBF_j1j2_dEta=0;
     VBF_opt1_j1j2_dEta=0;
     VBF_opt2_j1j2_dEta=0;
-=======
+
     CLEAR_m_pt_eta_phi_p4(fatjet1);
     fatjet1_ParticleNetMD_probQCDb      = -999;
     fatjet1_ParticleNetMD_probQCDbb     = -999;
@@ -917,7 +916,7 @@ void OutputTree::clear()
     fatjet2_ParticleNetMD_probXbb       = -999;
     fatjet2_ParticleNetMD_probXcc       = -999;
     fatjet2_ParticleNetMD_probXqq       = -999;
->>>>>>> 3d09b30bde87cabcedcc075a557e6a8ff7c5f282
+
 
     userFloats_.resetAll();
     userInts_.resetAll();

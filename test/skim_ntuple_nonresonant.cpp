@@ -560,6 +560,9 @@ int main(int argc, char** argv)
         if(!is_data) weight = oph.calculateEventWeight(nat, ei, ot, ec);
         ec.updateProcessed(weight);
         
+        //Match gen-reco jets to quarks 
+        if (is_signal) oph.match_gen_recojets(nat, ei, is_VBF_sig);
+        
         //Trigger cut (only if asked explicitly in cfg file)
         std::vector<std::string> listOfPassedTriggers = nat.getTrgPassed();
         if( listOfPassedTriggers.size() == 0  && triggerVector.size()>0 ) continue;

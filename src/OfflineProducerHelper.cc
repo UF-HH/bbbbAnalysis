@@ -3944,6 +3944,10 @@ std::vector<Jet> OfflineProducerHelper::bjJets_PreselectionCut(NanoAODTree& nat,
         }
         ++jt;
     }
+
+    //Study multiplicity of jets
+    StudyVBFCandidates(nat,ei,ot,jets); 
+
     if(jets.size() < 2) return outputJets;
     //Check if event has at least two VBF-jet candidates (OppositeEtaJetPair), otherwise returns only b-jets candidates
     std::vector<Jet> VBFjets = OppositeEtaJetPair(jets);
@@ -3952,6 +3956,71 @@ std::vector<Jet> OfflineProducerHelper::bjJets_PreselectionCut(NanoAODTree& nat,
     outputJets.insert(outputJets.end(),VBFjets.begin(),VBFjets.end());
     return outputJets;
 }
+
+void OfflineProducerHelper::StudyVBFCandidates(NanoAODTree& nat, EventInfo& ei, OutputTree &ot, std::vector<Jet> jets){
+//Initialize variables
+float Eta1Eta2= 0;
+float dEta= 0; 
+float dMjj= 0;
+float dEtaMax= 0; 
+float dMjjMax= 0;
+int idx_opt1=-1,idx_opt2=-1;
+Jet VBFj1;
+std::vector<Jet> VBFj2s;
+
+// Number of total VBF jet candidates
+ei.VBFcandidates = jets.size();
+
+//Order the VBF jets py pt
+stable_sort(jets.begin(), jets.end(), [](const Jet & a, const Jet & b) -> bool
+{ return ( a.P4().Pt() >  b.P4().Pt()  );});
+
+// Number of VBF j1 candidates
+ei.VBFj1candidates = jets.size();
+if (jets.size()>0)
+{
+    VBFj1        = jets.at(0);
+    ei.VBFj1_qid = GetQuarkIdentifier(ei,jets.at(0));
+}
+
+//Number of VBF j2 candidates (opposite eta sign)
+for (uint y=1;y<jets.size();y++ )
+{
+        Eta1Eta2 = jets.at(0).P4().Eta()*jets.at(y).P4().Eta();
+        if (Eta1Eta2<0) VBFj2s.push_back(jets.at(y));
+}
+ei.VBFj2candidates = VBFj2s.size();
+
+//Purity of the different VBFjet options
+if(VBFj2s.size()>0)
+{   
+     //Option 0: Nominal (highest pt jet)
+     ei.VBFj2_qid = GetQuarkIdentifier(ei,VBFj2s.at(0));
+     ei.VBF_JJ_m       = (VBFj1.P4() + VBFj2s.at(0).P4()).M();
+     ei.VBF_j1j2_dEta  = abs(VBFj1.P4().Eta() - VBFj2s.at(0).P4().Eta());
+     //Option 1: max delta
+     for (uint y=0;y<VBFj2s.size();y++ )
+     {
+             dEta = abs(VBFj1.P4().Eta()-VBFj2s.at(y).P4().Eta()) ;
+             if (dEta>dEtaMax) {idx_opt1=y; dEtaMax=dEta;}
+     }
+     ei.VBFj2_opt1_qid      = GetQuarkIdentifier(ei,VBFj2s.at(idx_opt1));
+     ei.VBF_opt1_JJ_m       = (VBFj1.P4() + VBFj2s.at(idx_opt1).P4()).M();
+     ei.VBF_opt1_j1j2_dEta  = abs(VBFj1.P4().Eta() - VBFj2s.at(idx_opt1).P4().Eta());
+     //Option 2: max mjj
+     for (uint y=0;y<VBFj2s.size();y++ )
+     {
+             dMjj = (VBFj1.P4()+VBFj2s.at(y).P4()).M() ;
+             if (dMjj>dMjjMax) {idx_opt2=y; dMjjMax=dMjj;}
+     }
+     ei.VBFj2_opt2_qid      = GetQuarkIdentifier(ei,VBFj2s.at(idx_opt2));
+     ei.VBF_opt2_JJ_m       = (VBFj1.P4() + VBFj2s.at(idx_opt2).P4()).M();
+     ei.VBF_opt2_j1j2_dEta  = abs(VBFj1.P4().Eta() - VBFj2s.at(idx_opt2).P4().Eta());
+}
+
+
+}
+
 
 std::vector<Jet> OfflineProducerHelper::ExternalEtaJetPair(std::vector<Jet> jets, std::vector<Jet> bjets){
 //Check Max abs(Eta) among the b-jets

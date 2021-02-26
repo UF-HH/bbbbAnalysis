@@ -469,6 +469,23 @@ void SkimUtils::fill_output_tree(OutputTree& ot, NanoAODTree& nat, EventInfo& ei
     if (ei.n_fatjet_gt250_twosubj_msdgt30) ot.n_fatjet_gt250_twosubj_msdgt30 = *ei.n_fatjet_gt250_twosubj_msdgt30;
     if (ei.n_fatjet_gt300_twosubj_msdgt30) ot.n_fatjet_gt300_twosubj_msdgt30 = *ei.n_fatjet_gt300_twosubj_msdgt30;
 
+    //VBF studies
+    if (ei.VBFcandidates)        ot.VBFcandidates       = *ei.VBFcandidates;
+    if (ei.VBFj1candidates)      ot.VBFj1candidates     = *ei.VBFj1candidates;
+    if (ei.VBFj2candidates)      ot.VBFj2candidates     = *ei.VBFj2candidates;
+    if (ei.VBFj1_qid)            ot.VBFj1_qid           = *ei.VBFj1_qid;
+    if (ei.VBFj2_qid)            ot.VBFj2_qid           = *ei.VBFj2_qid;
+    if (ei.VBFj2_opt1_qid)       ot.VBFj2_opt1_qid      = *ei.VBFj2_opt1_qid;
+    if (ei.VBFj2_opt2_qid)       ot.VBFj2_opt2_qid      = *ei.VBFj2_opt2_qid;
+
+    if      (ei.VBF_JJ_m)            ot.VBF_JJ_m      =      *ei.VBF_JJ_m;
+    if (ei.VBF_opt1_JJ_m)       ot.VBF_opt1_JJ_m      = *ei.VBF_opt1_JJ_m;
+    if (ei.VBF_opt2_JJ_m)       ot.VBF_opt2_JJ_m      = *ei.VBF_opt2_JJ_m;
+
+    if      (ei.VBF_j1j2_dEta)            ot.VBF_j1j2_dEta      =      *ei.VBF_j1j2_dEta;
+    if (ei.VBF_opt1_j1j2_dEta)       ot.VBF_opt1_j1j2_dEta      = *ei.VBF_opt1_j1j2_dEta;
+    if (ei.VBF_opt2_j1j2_dEta)       ot.VBF_opt2_j1j2_dEta      = *ei.VBF_opt2_j1j2_dEta;
+
     // fill the tree
     ot.fill();
 

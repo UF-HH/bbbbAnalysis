@@ -443,6 +443,22 @@ void OutputTree::init_branches()
     tree_->Branch("n_fatjet_gt250_twosubj_msdgt30", &n_fatjet_gt250_twosubj_msdgt30);
     tree_->Branch("n_fatjet_gt300_twosubj_msdgt30", &n_fatjet_gt300_twosubj_msdgt30);
 
+    //VBFjets
+    tree_->Branch("VBFcandidates",            &VBFcandidates);
+    tree_->Branch("VBFj1candidates",          &VBFj1candidates);
+    tree_->Branch("VBFj2candidates",          &VBFj2candidates);
+    tree_->Branch("VBFj1_qid",          &VBFj1_qid);
+    tree_->Branch("VBFj2_qid",          &VBFj2_qid);
+    tree_->Branch("VBFj2_opt1_qid",          &VBFj2_opt1_qid);
+    tree_->Branch("VBFj2_opt2_qid",          &VBFj2_opt2_qid);
+
+    tree_->Branch("VBF_JJ_m",                    &VBF_JJ_m);
+    tree_->Branch("VBF_opt1_JJ_m",               &VBF_opt1_JJ_m);
+    tree_->Branch("VBF_opt2_JJ_m",               &VBF_opt2_JJ_m);
+    tree_->Branch("VBF_j1j2_dEta",               &VBF_j1j2_dEta);
+    tree_->Branch("VBF_opt1_j1j2_dEta",          &VBF_opt1_j1j2_dEta);
+    tree_->Branch("VBF_opt2_j1j2_dEta",          &VBF_opt2_j1j2_dEta);
+
     // note that the initialization of the user branches is made separately when calling declareUser*Branch
 }
 
@@ -845,6 +861,21 @@ void OutputTree::clear()
     n_fatjet_gt300_twosubj         = 0;
     n_fatjet_gt250_twosubj_msdgt30 = 0;
     n_fatjet_gt300_twosubj_msdgt30 = 0;
+
+    //VBFjets
+    VBFcandidates=0;
+    VBFj1candidates=0;
+    VBFj2candidates=0;
+    VBFj1_qid=0;
+    VBFj2_qid=0;
+    VBFj2_opt1_qid=0;
+    VBFj2_opt2_qid=0;
+    VBF_JJ_m=0;
+    VBF_opt1_JJ_m=0;
+    VBF_opt2_JJ_m=0;
+    VBF_j1j2_dEta=0;
+    VBF_opt1_j1j2_dEta=0;
+    VBF_opt2_j1j2_dEta=0;
 
     userFloats_.resetAll();
     userInts_.resetAll();

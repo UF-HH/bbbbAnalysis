@@ -453,7 +453,21 @@ class OutputTree {
         int n_fatjet_gt300_twosubj;
         int n_fatjet_gt250_twosubj_msdgt30;
         int n_fatjet_gt300_twosubj_msdgt30;
-        
+
+        //VBF jets
+        int VBFcandidates;
+        int VBFj2candidates;
+        int VBFj1candidates;
+        int VBFj2_qid;
+        int VBFj1_qid;        
+        int VBFj2_opt1_qid;
+        int VBFj2_opt2_qid;
+        float VBF_JJ_m;        
+        float VBF_opt1_JJ_m;
+        float VBF_opt2_JJ_m;
+        float VBF_j1j2_dEta;        
+        float VBF_opt1_j1j2_dEta;
+        float VBF_opt2_j1j2_dEta;
     private:
         void init_branches();
         std::unique_ptr<TTree> tree_;

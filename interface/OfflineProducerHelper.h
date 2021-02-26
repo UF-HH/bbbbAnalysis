@@ -426,6 +426,7 @@ class OfflineProducerHelper{
         std::vector<Jet> OppositeEtaJetPair(std::vector<Jet> jjets);
         std::vector<Jet> HighestPtJetPair(std::vector<Jet> jjets); 
         std::vector<Jet> ExternalEtaJetPair(std::vector<Jet> jjets, std::vector<Jet> bjets);  
+        void StudyVBFCandidates(NanoAODTree& nat, EventInfo& ei, OutputTree &ot, std::vector<Jet> jets);
         //functions for gen-level studies
         void match_gen_recojets(NanoAODTree& nat, EventInfo& ei, bool vbfmode);
         std::vector<int> GetMatchedJetIdx(NanoAODTree& nat, EventInfo& ei,const std::vector<Jet> jets, bool vbfmode);

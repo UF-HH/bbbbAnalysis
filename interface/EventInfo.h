@@ -341,6 +341,22 @@ struct EventInfo{
     boost::optional<int> n_fatjet_gt300_twosubj;
     boost::optional<int> n_fatjet_gt250_twosubj_msdgt30;
     boost::optional<int> n_fatjet_gt300_twosubj_msdgt30;
+
+    //VBF jets
+    boost::optional<int> VBFcandidates;
+    boost::optional<int> VBFj1candidates;
+    boost::optional<int> VBFj2candidates;
+    boost::optional<int> VBFj1_qid;
+    boost::optional<int> VBFj2_qid;
+    boost::optional<int> VBFj2_opt1_qid;
+    boost::optional<int> VBFj2_opt2_qid;
+    boost::optional<float> VBF_JJ_m;
+    boost::optional<float> VBF_opt1_JJ_m;
+    boost::optional<float> VBF_opt2_JJ_m;
+    boost::optional<float> VBF_j1j2_dEta;
+    boost::optional<float> VBF_opt1_j1j2_dEta;
+    boost::optional<float> VBF_opt2_j1j2_dEta;
+
 };
 
 #endif

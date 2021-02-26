@@ -3953,7 +3953,7 @@ std::vector<Jet> OfflineProducerHelper::bjJets_PreselectionCut(NanoAODTree& nat,
     }
 
     //Study multiplicity of jets
-    StudyVBFCandidates(nat,ei,ot,jets); 
+    //StudyVBFCandidates(nat,ei,ot,jets); 
 
     if(jets.size() < 2) return outputJets;
     //Check if event has at least two VBF-jet candidates (OppositeEtaJetPair), otherwise returns only b-jets candidates

@@ -110,6 +110,7 @@ class OfflineProducerHelper{
         const static std::string nominal_jes_syst_shift_name;
         std::string jes_syst_shift_name_ = nominal_jes_syst_shift_name;
         bool        jes_syst_shift_dir_is_up_;
+        double      jes_syst_mult_;
         std::unique_ptr<JetCorrectorParameters>   jcp_;
         std::unique_ptr<JetCorrectionUncertainty> jcu_;
 
@@ -371,7 +372,7 @@ class OfflineProducerHelper{
         std::vector<Jet> applyJERsmearing(NanoAODTree& nat, std::vector<Jet> jets, Variation variation = Variation::NOMINAL);
 
         // function that applies whatever smearing strategy is defined in the parameters, and returns the jet
-        void initializeApplyJESshift(std::string syst_and_direction);
+        void initializeApplyJESshift(std::string syst_and_direction, double multiplier = 1.0);
         std::vector<Jet> applyJESshift(NanoAODTree &nat, const std::vector<Jet> &jets, bool direction_is_up);
 
         // smear the jets (resolution values can be set for up/down with class member parameters for systematic studies)

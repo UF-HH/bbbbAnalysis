@@ -301,6 +301,7 @@ int main(int argc, char** argv)
                 parameterList.emplace("RandomGeneratorSeed"  ,config.readIntOpt   ("parameters::RandomGeneratorSeed"  ));                
             parameterList.emplace("JERResolutionFile"        ,config.readStringOpt("parameters::JERResolutionFile"    ));
             parameterList.emplace("JERScaleFactorFile"       ,config.readStringOpt("parameters::JERScaleFactorFile"   ));          
+            parameterList.emplace("bRegressionSmearType"     ,config.readIntOpt   ("parameters::bRegressionSmearType" ));
         }
         else if(JERstrategy == "None"){
             cout << "[INFO] ... No JER correction is applied to the jets" << endl;

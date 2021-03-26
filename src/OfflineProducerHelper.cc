@@ -1504,6 +1504,8 @@ void OfflineProducerHelper::initializeApplyJERAndBregSmearing(std::string syst_a
         jetResolution_            = std::unique_ptr<JME::JetResolution>           (new JME::JetResolution           (any_cast<string>(parameterList_->at("JERResolutionFile" ))));
         gRandom->SetSeed(any_cast<int>(parameterList_->at("RandomGeneratorSeed")));
 
+        breg_smear_type_ = any_cast<int>(parameterList_->at("bRegressionSmearType"));
+
         if (syst_and_direction == "nominal")
         {
             jer_dir_      = Variation::NOMINAL;
@@ -1578,6 +1580,7 @@ void OfflineProducerHelper::initializeApplyJERAndBregSmearing(std::string syst_a
 
         cout << "[INFO] ... for the standard JER smearing the resolution systematics used is : " << s_jer_var << endl;
         cout << "[INFO] ... for the standard b jet regression JER smearing the resolution systematics used is : " << s_breg_jer_var << endl;
+        cout << "[INFO] ... smearing type of the b regressed energy (0: standard, 1: dedicated smearing) : " << breg_smear_type_ << endl;
     } // handling StandardJER
 
     return;
@@ -1636,7 +1639,7 @@ std::vector<Jet> OfflineProducerHelper::applyJERAndBregSmearing(NanoAODTree& nat
         float bregcorr          = Get_bRegCorr(iJet);
         float smearedbreg_jetpt = unsmeared_jetP4.Pt()*bregcorr;
         float smearedbreg_jeten = unsmeared_jetP4.E()*bregcorr; 
-        if(genJetId>=0 && genJetId < numberOfGenJets) //generated jet was found and saved
+        if(genJetId>=0 && genJetId < numberOfGenJets && breg_smear_type_ == 1) //generated jet was found and saved + required to run dedicated smearing
         {
             //Get the genjet P4
             GenJet genjet           = GenJet(genJetId, &nat);

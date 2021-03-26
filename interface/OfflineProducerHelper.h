@@ -117,6 +117,7 @@ class OfflineProducerHelper{
         // to define the smearing parameters of all the incoming jets
         Variation jer_dir_;      // NOMINAL, UP, DOWN
         Variation breg_jer_dir_; // b regression smearing does not use the same class for the smearing, but I encode nominal, up, down with the same enum
+        int breg_smear_type_; // 0 : just apply b reg on top of standard smearing . 1: apply custom smearing on top of regressed pT (a la VH(bb) )
 
         // -------------------------------------------------------------------------------
         // helpers for the BDT evaluation

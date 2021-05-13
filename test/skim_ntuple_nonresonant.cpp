@@ -55,6 +55,7 @@ int main(int argc, char** argv)
         ("c2-rew"    , po::value<float>(),  "c2 value for reweighting (default 0 if reweighting is performed)")
         ("cg-rew"    , po::value<float>(),  "cg value for reweighting (default 0 if reweighting is performed)")
         ("c2g-rew"    , po::value<float>(), "c2g value for reweighting (default 0 if reweighting is performed)")
+        ("nlo-rew"    , po::value<bool>()->zero_tokens()->implicit_value(true)->default_value(false), "do the reweighting at NLO")
         ("kl-map"    , po::value<string>()->default_value(""), "klambda input map for reweighting")
         // ("kl-histo"  , po::value<string>()->default_value("hhGenLevelDistr"), "klambda histogram name for reweighting")
         ("jes-shift-mult", po::value<double>()->default_value(1.0), "Magnify the JES sys by this factor (for JES shape studies). Defaults to 1 for standard systematics")
@@ -485,12 +486,20 @@ int main(int argc, char** argv)
             float  c2_rew    = (opts.find("c2-rew")  != opts.end() ? opts["c2-rew"].as<float>()  : 0);  // target value
             float  cg_rew    = (opts.find("cg-rew")  != opts.end() ? opts["cg-rew"].as<float>()  : 0);  // target value
             float  c2g_rew   = (opts.find("c2g-rew") != opts.end() ? opts["c2g-rew"].as<float>() : 0);  // target value
+            
+            bool nlo_rew = opts["nlo-rew"].as<bool>();
+            std::cout << "[INFO] ... will make a EFT reweighting at NLO? " << std::boolalpha << nlo_rew << std::noboolalpha << std::endl;
+            
             string kl_map    = opts["kl-map"].as<string>(); // sample map fname
-            string kl_histo  = "hhGenLevelDistr";           // sample map histo
+            string kl_histo  = (nlo_rew ? "hhGenLevelDistr_forNLO" : "hhGenLevelDistr"); // sample map histo
+            
             string kl_coeffs = config.readStringOpt("hhreweight::coeff_file"); // coefficient file
+            string kl_coeffs_legacy_LO  = config.readStringOpt("hhreweight::coeff_file_legacy_LO"); // coefficient file
+            string kl_coeffs_legacy_NLO = config.readStringOpt("hhreweight::coeff_file_legacy_NLO"); // coefficient file
 
             std::cout << "[INFO] ... initialising HH reweighter" << std::endl;
-            std::cout << "   - coefficient file       : " << kl_coeffs  << std::endl;
+            std::cout << "   - coefficient file (LO rew.) : " << kl_coeffs  << std::endl;
+            std::cout << "   - coefficient file (NLO rew.) : " << kl_coeffs_legacy_NLO  << std::endl;
             std::cout << "   - input sample map file  : " << kl_map     << std::endl;
             std::cout << "   - input sample map histo : " << kl_histo   << std::endl;
             std::cout << "   - kl  : " << kl_rew  << endl;
@@ -499,7 +508,10 @@ int main(int argc, char** argv)
             std::cout << "   - cg  : " << cg_rew  << endl;
             std::cout << "   - c2g : " << c2g_rew << endl;
 
-            oph.init_HH_reweighter(ot, kl_coeffs, kl_map, kl_histo);
+            if (nlo_rew)
+                oph.init_HH_reweighter_NLO(ot, kl_coeffs_legacy_LO, kl_coeffs_legacy_NLO, kl_map, kl_histo);
+            else
+                oph.init_HH_reweighter(ot, kl_coeffs, kl_map, kl_histo);
             oph.hhreweighter_kl_  = kl_rew;
             oph.hhreweighter_kt_  = kt_rew;
             oph.hhreweighter_c2_  = c2_rew;

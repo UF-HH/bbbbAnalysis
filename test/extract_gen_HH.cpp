@@ -55,6 +55,7 @@ int main(int argc, char** argv)
         ("maxEvts"   , po::value<int>()->default_value(-1),     "max number of events to process")
         ("kl-map"    , po::value<string>()->default_value(""), "klambda input map for reweighting")
         // flags
+        ("add-nlo-rew", po::value<bool>()->zero_tokens()->implicit_value(true)->default_value(false), "add also the reweighting at NLO")
         ("save-p4"   , po::value<bool>()->zero_tokens()->implicit_value(true)->default_value(false), "save the tlorentzvectors in the output")
         ("histo-only", po::value<bool>()->zero_tokens()->implicit_value(true)->default_value(false), "just produce reweight histograms, do not store TTree (default is false)")    
     ;
@@ -77,11 +78,13 @@ int main(int argc, char** argv)
     // task flags
     bool save_p4    = opts["save-p4"].as<bool>();
     bool histo_only = opts["histo-only"].as<bool>();
+    bool add_nlo_rew = opts["add-nlo-rew"].as<bool>();
 
     OfflineProducerHelper oph;
 
     // optional test for reweight
     std::unique_ptr<HHReweight5D> hhreweighter;
+    std::unique_ptr<HHReweight5D_NLO> hhreweighterNLO;
     std::vector<float> klambdas = {-2, -1, 0, 1, 2, 5, 10};
     std::vector<std::tuple<float,float,float,float,float> > benchmarks; // kl, kt, c2, cg, c2g
     benchmarks.push_back(make_tuple(7.5, 1, -1, 0, 0));     //1
@@ -104,9 +107,19 @@ int main(int argc, char** argv)
             string kl_histo  = "hhGenLevelDistr";           // sample map histo
             string kl_coeffs = "weights/coefficientsByBin_extended_3M_costHHSim_19-4.txt"; // coefficient file
 
+            // NLO stuff
+            string kl_histo_NLO  = "hhGenLevelDistr_forNLO";           // sample map histo
+            string kl_coeffs_LO  = "weights/pm_pw_LO-Ais-13TeV_V2.txt"; // coefficient file
+            string kl_coeffs_NLO = "weights/pm_pw_NLO_Ais_13TeV_V2.txt"; // coefficient file
+
             TFile* fIn = TFile::Open(kl_map.c_str());
+            
             TH2D*  hIn = (TH2D*) fIn->Get(kl_histo.c_str());
             hhreweighter = std::unique_ptr<HHReweight5D> (new HHReweight5D(kl_coeffs.c_str(), hIn));
+
+            TH2D*  hIn_NLO = (TH2D*) fIn->Get(kl_histo_NLO.c_str());            
+            if (add_nlo_rew) hhreweighterNLO = std::unique_ptr<HHReweight5D_NLO> (new HHReweight5D_NLO(kl_coeffs_LO, kl_coeffs_NLO, hIn_NLO));
+
             fIn->Close();
     }
 
@@ -195,9 +208,14 @@ int main(int argc, char** argv)
     tOut->Branch("LHE_Njets",  &LHE_Njets);
 
     std::vector<float>  klambdas_branch(klambdas.size());
-    std::vector<string> klambdas_names(klambdas.size());
+    // std::vector<string> klambdas_names(klambdas.size());
     std::vector<float>  benchmarks_branch(benchmarks.size());
-    if (hhreweighter)
+
+    std::vector<float>  klambdas_NLO_branch(klambdas.size());
+    // std::vector<string> klambdas_NLO_names(klambdas.size());
+    std::vector<float>  benchmarks_NLO_branch(benchmarks.size());
+
+    if (hhreweighter || hhreweighterNLO)
     {
         for (uint ikl = 0; ikl < klambdas.size(); ++ikl)
         {
@@ -208,17 +226,34 @@ int main(int argc, char** argv)
             std::string brname = stream.str();
             std::replace( brname.begin(), brname.end(), '-', 'm');
             std::replace( brname.begin(), brname.end(), '.', 'd');
-            brname = string("HH_rew_") + brname;
-            cout << ".... making reweight for " << kl << " in branch " << brname << endl;
-            tOut->Branch(brname.c_str(), &klambdas_branch.at(ikl));
+            
+            if (hhreweighter){
+                brname = string("HH_rew_") + brname;
+                cout << ".... making reweight for " << kl << " in branch " << brname << endl;
+                tOut->Branch(brname.c_str(), &klambdas_branch.at(ikl));
+            }
+            if (hhreweighterNLO){
+                brname = string("HH_rew_NLO_") + brname;
+                cout << ".... making reweight NLO for " << kl << " in branch " << brname << endl;
+                tOut->Branch(brname.c_str(), &klambdas_NLO_branch.at(ikl));
+            }
         }
 
         for (uint ibench = 0; ibench < benchmarks.size(); ++ibench)
         {
-            std::string brname = "HH_rew_bench_";
-            brname += std::to_string(ibench+1);
-            cout << ".... making reweight for benchmark " << ibench << " in branch " << brname << endl;
-            tOut->Branch(brname.c_str(), &benchmarks_branch.at(ibench));
+            if (hhreweighter){
+                std::string brname = "HH_rew_bench_";
+                brname += std::to_string(ibench+1);
+                cout << ".... making reweight for benchmark " << ibench << " in branch " << brname << endl;
+                tOut->Branch(brname.c_str(), &benchmarks_branch.at(ibench));
+            }
+
+            if (hhreweighterNLO){
+                std::string brname = "HH_rew_bench_NLO_";
+                brname += std::to_string(ibench+1);
+                cout << ".... making reweight NLO for benchmark " << ibench << " in branch " << brname << endl;
+                tOut->Branch(brname.c_str(), &benchmarks_NLO_branch.at(ibench));
+            }
         }
     }
 
@@ -236,6 +271,21 @@ int main(int argc, char** argv)
     TH2D* hMap       = new TH2D ("hhGenLevelDistr", "hhGenLevelDistr", nbins_mHH, binning_mHH, nbins_cth, binning_cth );
     // TH2F* hMapFolded = new TH2F ("hhGenLevelDistrFolded", "hhGenLevelDistrFolded", 90, 0, 1800, 5, 0, 1); // won't be used for reweight
     TH1D* hMap1D     = new TH1D ("hhGenLevelDistr1D", "hhGenLevelDistr1D", nbins_mHH, binning_mHH);
+
+
+    double binning_mHH_NLO [37] = { 250.,   270.,  290.,  310.,  330.,
+                            350.,   370.,  390.,  410.,  430.,
+                            450.,   470.,  490.,  510.,  530.,
+                            550.,   570.,  590.,  610.,  630.,
+                            650.,   670.,  700.,  750.,  800.,
+                            850.,   900.,  950., 1000., 1100.,
+                            1200., 1300., 1400., 1500., 1750., 2000., 5000.};
+    double binning_cth_NLO [5]  = {0.0, 0.4, 0.6, 0.8, 1.0} ;
+    int nbins_mHH_NLO = 36; // size of arrays - 1
+    int nbins_cth_NLO = 4;  // size of arrays - 1
+
+    TH2D* hMap_NLO    = new TH2D ("hhGenLevelDistr_forNLO", "hhGenLevelDistr_forNLO", nbins_mHH_NLO, binning_mHH_NLO, nbins_cth_NLO, binning_cth_NLO);
+    TH1D* hMap_NLO_1D = new TH1D ("hhGenLevelDistr_forNLO_1D", "hhGenLevelDistr_forNLO_1D", nbins_mHH_NLO, binning_mHH_NLO);
 
     ////////////////////////////////////////////////////////////////////////
     // Execute event loop
@@ -293,29 +343,49 @@ int main(int argc, char** argv)
         gen_H1last_pt = ei.gen_H1_last->P4().Pt();
         gen_H2last_pt = ei.gen_H2_last->P4().Pt();
 
-        if (hhreweighter)
+        if (hhreweighter || hhreweighterNLO)
         {
             for (uint ikl = 0; ikl < klambdas.size(); ++ikl)
             {
                 float kl = klambdas.at(ikl);
-                float w = hhreweighter->getWeight(kl, 1.0, gen_mHH, gen_costh_H1_cm);
-                klambdas_branch.at(ikl) = w;
+                
+                if (hhreweighter){
+                    float w = hhreweighter->getWeight(kl, 1.0, gen_mHH, gen_costh_H1_cm);
+                    klambdas_branch.at(ikl) = w;
+                }
+                if (hhreweighterNLO){
+                    float w = hhreweighterNLO->getWeight(kl, 1.0, 0.0, 0.0, 0.0, gen_mHH, gen_costh_H1_cm);
+                    klambdas_NLO_branch.at(ikl) = w;
+                }
             }
 
             for (uint ibench = 0; ibench < benchmarks.size(); ++ibench)
             {
                 auto c = benchmarks.at(ibench);
-                float w = hhreweighter->getWeight(
-                    std::get<0>(c),
-                    std::get<1>(c),
-                    std::get<2>(c),
-                    std::get<3>(c),
-                    std::get<4>(c),
-                    gen_mHH,
-                    gen_costh_H1_cm);
-                benchmarks_branch.at(ibench) = w;
+                
+                if (hhreweighter){
+                    float w = hhreweighter->getWeight(
+                        std::get<0>(c),
+                        std::get<1>(c),
+                        std::get<2>(c),
+                        std::get<3>(c),
+                        std::get<4>(c),
+                        gen_mHH,
+                        gen_costh_H1_cm);
+                    benchmarks_branch.at(ibench) = w;
+                }
+                if (hhreweighterNLO){
+                    float w = hhreweighterNLO->getWeight(
+                        std::get<0>(c),
+                        std::get<1>(c),
+                        std::get<2>(c),
+                        std::get<3>(c),
+                        std::get<4>(c),
+                        gen_mHH,
+                        gen_costh_H1_cm);
+                    benchmarks_NLO_branch.at(ibench) = w;
+                }
             }
-
         }
 
         if (!histo_only) tOut->Fill();
@@ -324,6 +394,9 @@ int main(int argc, char** argv)
         hMap   -> Fill(gen_mHH, TMath::Abs(gen_costh_H1_cm));
         hMap1D -> Fill(gen_mHH);
 
+        hMap_NLO    -> Fill(gen_mHH, TMath::Abs(gen_costh_H1_cm));
+        hMap_NLO_1D -> Fill(gen_mHH);
+
     }
 
     cout << "[INFO] ... done, saving output file" << endl;
@@ -331,5 +404,6 @@ int main(int argc, char** argv)
     if (!histo_only) tOut->Write();
     hMap   -> Write();
     hMap1D -> Write();
-
+    hMap_NLO    ->Write();
+    hMap_NLO_1D ->Write();
 }

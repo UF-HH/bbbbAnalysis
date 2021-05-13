@@ -1234,7 +1234,7 @@ float OfflineProducerHelper::calculateEventWeight_AllWeights(NanoAODTree& nat, E
     }
 
     // hh reweight if needed
-    if (hhreweighter_)
+    if (hhreweighter_ || hhreweighterNLO_)
     {
 
         float kl  = hhreweighter_kl_;
@@ -1252,7 +1252,11 @@ float OfflineProducerHelper::calculateEventWeight_AllWeights(NanoAODTree& nat, E
         float gen_costh_H1_cm  = vH1_cm.CosTheta();
 
         // double w = hhreweighter_->getWeight(kl, 1.0, gen_mHH, gen_costh_H1_cm);
-        double w = hhreweighter_->getWeight(kl, kt, c2, cg, c2g, gen_mHH, gen_costh_H1_cm);
+        double w;
+        if (hhreweighter_)
+            w = hhreweighter_->getWeight(kl, kt, c2, cg, c2g, gen_mHH, gen_costh_H1_cm);
+        else
+            w = hhreweighterNLO_->getWeight(kl, kt, c2, cg, c2g, gen_mHH, gen_costh_H1_cm);
 
         ot.userFloat("HH_reweight") = w;
         eventWeight *= w;
@@ -3667,6 +3671,19 @@ void OfflineProducerHelper::init_HH_reweighter(OutputTree& ot, std::string coeff
     fIn->Close();
 
     // create the needed branches for the reweigh
+    ot.declareUserFloatBranch("HH_reweight", 1.0);
+}
+
+void OfflineProducerHelper::init_HH_reweighter_NLO(OutputTree& ot, std::string coeffFileLO, std::string coeffFileNLO, std::string hhreweighterInputMap, std::string histoName)
+{
+    TFile* fIn = TFile::Open(hhreweighterInputMap.c_str());
+    TH2D*  hIn = (TH2D*) fIn->Get(histoName.c_str());
+    hhreweighterNLO_ = std::unique_ptr<HHReweight5D_NLO> (new HHReweight5D_NLO (coeffFileLO, coeffFileNLO, hIn));
+    fIn->Close();
+
+    // create the needed branches for the reweigh
+    // NOTE: for simplicity I am the same branch name for **both** the LO and NLO reweightings
+    // the user must ensure that just one init method is called
     ot.declareUserFloatBranch("HH_reweight", 1.0);
 }
 

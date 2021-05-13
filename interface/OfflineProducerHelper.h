@@ -28,6 +28,7 @@
 #include "SkimEffCounter.h"
 #include "BDTEval.h"
 #include "HHReweight5D.h"
+#include "HHReweight5D_NLO.h"
 #include "TriggerEfficiencyCalculator.h"
 #include "TriggerEfficiencyCalculator_TriggerMatched.h"
 
@@ -53,6 +54,7 @@ class OfflineProducerHelper{
             eval_BDT3cat2_ = std::unique_ptr<BDTEval> (new BDTEval (float_varlist_BDT3cat2, std::vector<std::string>(0)) );
             // HH reweighters
             hhreweighter_    = std::unique_ptr<HHReweight5D>(nullptr);
+            hhreweighterNLO_ = std::unique_ptr<HHReweight5D_NLO>(nullptr);
             hhreweighter_kl_  = 1.0;
             hhreweighter_kt_  = 1.0;
             hhreweighter_c2_  = 0.0;
@@ -68,6 +70,7 @@ class OfflineProducerHelper{
         std::unique_ptr<BDTEval> eval_BDT3cat1_;
         std::unique_ptr<BDTEval> eval_BDT3cat2_;
         std::unique_ptr<HHReweight5D> hhreweighter_;
+        std::unique_ptr<HHReweight5D_NLO> hhreweighterNLO_;
         float hhreweighter_kl_;
         float hhreweighter_kt_;
         float hhreweighter_c2_;
@@ -193,7 +196,7 @@ class OfflineProducerHelper{
 
         void init_BDT_evals();
         void init_HH_reweighter(OutputTree& ot, std::string coeffFile, std::string hhreweighterInputMap, std::string histoName);
-
+        void init_HH_reweighter_NLO(OutputTree& ot, std::string coeffFileLO, std::string coeffFileNLO, std::string hhreweighterInputMap, std::string histoName);
         // -------------------------------------------------------------------------------
 
         // All maps need to be cleared otherwise we have a glibc detected

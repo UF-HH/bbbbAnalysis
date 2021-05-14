@@ -273,7 +273,7 @@ if not args.xrdcptaronly:
         writeln(outScript, '%s' % this_full_command)
         writeln(outScript, 'echo "... execution finished with status $?"')
         writeln(outScript, 'echo "... copying output file %s to EOS in %s"' % (outputFileName, outputEOSName))
-        writeln(outScript, 'xrdcp -s %s %s' % (outputFileName, outputEOSName)) ## no not force overwrite output in destination
+        writeln(outScript, 'xrdcp -f -s %s %s' % (outputFileName, outputEOSName)) ## force overwrite output in destination (needed for resubmit)
         writeln(outScript, 'echo "... copy done with status $?"')
         # writeln(outScript, 'remove the input and output files if you dont want it automatically transferred when the job ends')
         # writeln(outScript, 'rm nameOfOutputFile.root')

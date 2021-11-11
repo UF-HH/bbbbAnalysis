@@ -246,6 +246,12 @@ for categ in categories:
         writeln (fcard, '')
         writeln (fcard, '* autoMCStats 10')
 
+    if dsetname=='2016':
+        writeln (fcard,'lumiscale rateParam * *HH*2016_hbbhbb 1.01135794221')
+        writeln (fcard,'nuisance edit freeze lumiscale')
+
+    fcard.close()
+
 #Make combined datacards
 if args.docombination:
     print "[INFO] Making combined datacards: "
@@ -253,8 +259,6 @@ if args.docombination:
         combstr="python ../../../../HiggsAnalysis/CombinedLimit/scripts/combineCards.py "
         outcomb=""
         for k in  range(0,len(comb)):
-            # print k, card_name, comb[k]
-            # combstr+="card%i=%s_%s.txt "%(k,card_name,comb[k])
             combstr+="%s=%s_%s.txt "%(comb[k],card_name,comb[k])
             outcomb+="%s"%comb[k]
         combstr+="> %s_comb_%s.txt"%(card_name,outcomb)

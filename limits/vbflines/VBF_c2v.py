@@ -87,7 +87,7 @@ def calculatecoeffients(sample_list,couplingstoscan):
     coeffs = c.transpose() * Minv # coeffs * s is the sigma, accessing per component gives each sample scaling
     sigma  = coeffs*s  
 
-    with open('vbfhhc2vline.txt', 'w') as the_file:
+    with open('config/vbfhhc2vline.txt', 'w') as the_file:
      for j in range(0, len(couplingstoscan)):
          ###### target values
          couplings = couplingstoscan[j]

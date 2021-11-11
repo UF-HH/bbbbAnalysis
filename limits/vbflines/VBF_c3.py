@@ -110,7 +110,7 @@ def calculatecoeffients(sample_list,couplingstoscan):
             if abs(factors[k]) == 0: factors[k]=0 
             if abs(factors[k]) < 0.001: factors[k]=0 
          print ">>> XS(fb) = %f, target (CV,C2V,kl) = (%.2f,%.1f,%.1f)" %((xsec)/(1), t_CV, t_C2V, t_kl )  
-         the_file.write('%.2f %.5f\n'%(t_kl,(xsec)/(1)))
+         the_file.write('%.2f %.6f\n'%(t_kl,(xsec)/(1)))
 
 
 #################################################################################################

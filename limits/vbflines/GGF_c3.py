@@ -76,7 +76,7 @@ def calculatecoeffients(sample_list,couplingstoscan):
          #   if abs(factors[k]) == 0: factors[k]=0 
          #   if abs(factors[k]) < 0.001: factors[k]=0 
          print ">>> XS(fb) = %f, target (kt,kt) = (%.2f,%.2f), coefficients (c1,c2,c3) = (%.5f,%.5f,%.5f)" %((xsec)/(1), t_kl, t_kt,factors[0],factors[1],factors[2])  
-         the_file.write('%.2f %.5f\n'%(t_kl,(xsec)/(1)))
+         the_file.write('%.2f %.6f\n'%(t_kl,(xsec)/(1)))
 
 #################################################################################################
 print "WELCOME TO THE GGF-HH CALCULATOR"

@@ -10,6 +10,7 @@ from argparse import ArgumentParser
 ROOT.gROOT.SetBatch(True)
 ROOT.gStyle.SetOptStat(0)
 
+##This is done using the fitDiagnostics file, below the one used for the preliminary results
 fname = '/uscms/home/guerrero/nobackup/Run2/HH2020/Spring/CMSSW_10_2_13/src/bbbbAnalysis/limits/prepareModelsApproval/physicsmodelrun2/fitDiagnostics.root'
 
 ## NOTE: if we use shapes_fit_b, there will be no signal in the output to compute log10(S/B)

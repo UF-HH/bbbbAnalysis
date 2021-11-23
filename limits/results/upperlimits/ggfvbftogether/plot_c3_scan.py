@@ -277,7 +277,7 @@ pt2.AddText(datalumi)
 #pt3.SetFillStyle(0)
 #pt3.AddText("Preliminary")
 
-pt4 = ROOT.TPaveText(0.6819196+0.036,0.7280357+0.015+0.02,0.9008929+0.036,0.8175595+0.015,"brNDC")
+pt4 = ROOT.TPaveText(0.6819196+0.036,0.7180357+0.015+0.02,0.9008929+0.036,0.8075595+0.015,"brNDC")
 pt4.SetTextAlign(12)
 pt4.SetFillColor(ROOT.kWhite)
 pt4.SetFillStyle(1001)
